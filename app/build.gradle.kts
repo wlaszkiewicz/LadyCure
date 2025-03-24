@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.ladycure"
-        minSdk = 23
+        minSdk = 25
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -80,3 +80,5 @@ dependencies {
     // For preview support
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.0")
 }
+
+apply(plugin = "com.google.gms.google-services")
