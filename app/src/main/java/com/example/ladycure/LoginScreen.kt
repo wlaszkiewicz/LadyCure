@@ -1,6 +1,7 @@
 package com.example.ladycure
 
 import LadyCureTheme
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,21 +19,32 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.ladycure.ui.theme.ThemeManager
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun LoginScreen(navController: NavController) {
     // Use the default theme colors consistently
-    MaterialTheme {
+    LadyCureTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
+
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.kapibara),
+                contentDescription = "Capybara background",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(1f), // Adjust opacity (0.1f - 0.3f works well for backgrounds)
+                contentScale = ContentScale.Crop
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -40,6 +52,21 @@ fun LoginScreen(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Text(
+                    text = " ",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = " ",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = " ",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Text(
                     text = "Welcome to LadyCure",
                     style = MaterialTheme.typography.headlineLarge,
@@ -97,6 +124,7 @@ fun LoginScreen(navController: NavController) {
                         .padding(top = 16.dp)
                         .clickable { navController.navigate("register") }
                 )
+
             }
         }
     }
@@ -122,8 +150,7 @@ fun authenticate(
 @Composable
 fun LoginScreenPreview() {
     val navController = rememberNavController()
-    ThemeManager.setTheme(ThemeManager.AppTheme.PURPLE)
-    LadyCureTheme(dynamicColor = false) { // Force default theme in preview
+    LadyCureTheme {  // Removed dynamicColor parameter
         LoginScreen(navController)
     }
 }
