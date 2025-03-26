@@ -71,7 +71,7 @@ fun HomeScreen(navController: NavController) {
                 verticalArrangement = Arrangement.Center
             ) {
 
-                Text("TWOJA STARA ZAPIERDALA", color = textColor)
+                Text("tu cos bedzie", color = textColor)
 
 
             }
