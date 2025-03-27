@@ -51,12 +51,14 @@ class RegisterViewModel(
             uiState = uiState.copy(isLoading = true)
             val result = registerUseCase(
                 uiState.email,
+                uiState.name,
+                uiState.surname,
+                uiState.dateOfBirth,
                 uiState.password
             )
             uiState = uiState.copy(isLoading = false)
 
             if (result.isSuccess) {
-                // Add user to database
                 navController.navigate("login")
             } else {
                 uiState = uiState.copy(
