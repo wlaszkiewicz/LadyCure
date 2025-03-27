@@ -80,6 +80,8 @@ dependencies {
     // For preview support
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.0")
 
+    implementation("com.google.firebase:firebase-firestore")
+
 }
 
 apply(plugin = "com.google.gms.google-services")
