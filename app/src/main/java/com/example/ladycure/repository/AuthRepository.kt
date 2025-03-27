@@ -19,8 +19,9 @@ class AuthRepository {
                 "name" to name,
                 "surname" to surname,
                 "dob" to dateOfBirth,
+                "role" to "user"
             )
-            firestore.collection("patients").document(user.uid).set(userData)
+            firestore.collection("user").document(user.uid).set(userData)
                 .addOnSuccessListener { }
                 .addOnFailureListener { throw Exception("User registration failed") }
 

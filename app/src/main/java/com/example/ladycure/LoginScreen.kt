@@ -1,6 +1,7 @@
 package com.example.ladycure
 
 import LadyCureTheme
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -136,12 +138,31 @@ fun authenticate(
     navController: NavController
 ) {
     val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance("telecure")
+
     auth.signInWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                navController.navigate("home")
+                val user = auth.currentUser
+                user?.let {
+                    firestore.collection("user").document(it.uid).get()
+                        .addOnSuccessListener { document ->
+                            if (document.exists()) {
+                                val role = document.getString("role")
+                                if (role == "admin") {
+                                    navController.navigate("admin")
+                                } else {
+                                    navController.navigate("home")
+                                }
+                            } else {
+                            }
+                        }
+                        .addOnFailureListener {
+                            // Show error message: Failed to retrieve user data
+                        }
+                }
             } else {
-                // Show error message
+                // Show error message: Authentication failed
             }
         }
 }
