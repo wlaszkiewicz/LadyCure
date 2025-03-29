@@ -36,8 +36,8 @@ fun LoginScreen(navController: NavController) {
                     contentDescription = "Capybara background",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(400.dp)// Adjust the height as needed
-                        .padding(bottom = 10.dp),
+                        .height(350.dp)
+                        .padding(bottom = 30.dp),
                     contentScale = ContentScale.Crop
                 )
                 Column(
@@ -58,7 +58,7 @@ fun LoginScreen(navController: NavController) {
                         color = MaterialTheme.colorScheme.onBackground
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(30.dp))
 
                     val emailState = remember { mutableStateOf("") }
                     val passwordState = remember { mutableStateOf("") }
@@ -69,7 +69,7 @@ fun LoginScreen(navController: NavController) {
                         label = { Text("Email") },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(20.dp),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -81,7 +81,7 @@ fun LoginScreen(navController: NavController) {
                         label = { Text("Password") },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(20.dp),
                         visualTransformation = PasswordVisualTransformation(),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -94,7 +94,7 @@ fun LoginScreen(navController: NavController) {
                                 authenticate(emailState.value, passwordState.value, navController)
                             }
                         },
-                        modifier = Modifier.padding(top = 16.dp)
+                        modifier = Modifier.padding(top = 20.dp)
                     ) {
                         Text(
                             text = "Login",
@@ -106,7 +106,7 @@ fun LoginScreen(navController: NavController) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier
-                            .padding(top = 20.dp)
+                            .padding(top = 30.dp)
                             .clickable { navController.navigate("register") }
                     )
                 }
