@@ -1,28 +1,19 @@
 package com.example.ladycure
 
 import LadyCureTheme
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement.Top
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -32,103 +23,109 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    // Use the default theme colors consistently
     LadyCureTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
-
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.kapibara),
-                contentDescription = "Capybara background",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(1f), // Adjust opacity (0.1f - 0.3f works well for backgrounds)
-                contentScale = ContentScale.Crop
-            )
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxSize()
             ) {
-                Text(
-                    text = " ",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = " ",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = " ",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Welcome to LadyCure",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Please login to continue",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                val emailState = remember { mutableStateOf("") }
-                val passwordState = remember { mutableStateOf("") }
-
-                TextField(
-                    value = emailState.value,
-                    onValueChange = { emailState.value = it },
-                    label = { Text("Email") },
+                Image(
+                    painter = painterResource(id = R.drawable.kapi2),
+                    contentDescription = "Capybara background",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                        colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    )
+                        .height(400.dp)// Adjust the height as needed
+                        .padding(bottom = 10.dp),
+                    contentScale = ContentScale.Crop
                 )
-                TextField(
-                    value = passwordState.value,
-                    onValueChange = { passwordState.value = it },
-                    label = { Text("Password") },
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    )
-                )
-                Button(
-                    onClick = {
-                        authenticate(emailState.value, passwordState.value, navController)
-                    },
-                    modifier = Modifier.padding(top = 16.dp)
+                        .fillMaxSize()
+                    .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
                 ) {
                     Text(
-                        text = "Login",
-                        style = MaterialTheme.typography.titleMedium
+                        text = "Welcome to LadyCure",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Please login to continue",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    val emailState = remember { mutableStateOf("") }
+                    val passwordState = remember { mutableStateOf("") }
+
+                    TextField(
+                        value = emailState.value,
+                        onValueChange = { emailState.value = it },
+                        label = { Text("Email") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        )
+                    )
+                    TextField(
+                        value = passwordState.value,
+                        onValueChange = { passwordState.value = it },
+                        label = { Text("Password") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        visualTransformation = PasswordVisualTransformation(),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        )
+                    )
+                    Button(
+                        onClick = {
+                            if (validInput(emailState.value, passwordState.value)) {
+                                authenticate(emailState.value, passwordState.value, navController)
+                            }
+                        },
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Text(
+                            text = "Login",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    Text(
+                        text = "Don't have an account? Register",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier
+                            .padding(top = 20.dp)
+                            .clickable { navController.navigate("register") }
                     )
                 }
-                Text(
-                    text = "Don't have an account? Register",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier
-                        .padding(top = 16.dp)
-                        .clickable { navController.navigate("register") }
-                )
-
             }
         }
+    }
+}
+
+fun validInput(email: String, password: String): Boolean {
+    return when {
+        email.isEmpty() -> {
+            // Show snackbar or toast: "Email is empty"
+            false
+        }
+        password.isEmpty() -> {
+            // Show snackbar or toast: "Password is empty"
+            false
+        }
+        else -> true
     }
 }
 
@@ -145,7 +142,7 @@ fun authenticate(
             if (task.isSuccessful) {
                 val user = auth.currentUser
                 user?.let {
-                    firestore.collection("user").document(it.uid).get()
+                    firestore.collection("users").document(it.uid).get()
                         .addOnSuccessListener { document ->
                             if (document.exists()) {
                                 val role = document.getString("role")
@@ -155,6 +152,7 @@ fun authenticate(
                                     navController.navigate("home")
                                 }
                             } else {
+                                // Show error message: User data not found
                             }
                         }
                         .addOnFailureListener {
@@ -171,7 +169,7 @@ fun authenticate(
 @Composable
 fun LoginScreenPreview() {
     val navController = rememberNavController()
-    LadyCureTheme {  // Removed dynamicColor parameter
+    LadyCureTheme {
         LoginScreen(navController)
     }
 }
