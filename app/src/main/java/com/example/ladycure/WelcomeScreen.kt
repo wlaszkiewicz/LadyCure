@@ -29,28 +29,20 @@ fun WelcomeScreen(navController: NavController) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ladycurelogo),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = "App Logo",
                     modifier = Modifier
-                        .size(320.dp)
-                        .padding(bottom = 48.dp),
-                    contentScale = ContentScale.Fit
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 32.dp),
+                    contentScale = ContentScale.Crop
                 )
-//                Text(
-//                    text = "Welcome to LadyCure",
-//                    style = MaterialTheme.typography.headlineLarge.copy(
-//                        fontWeight = FontWeight.Bold,
-//                        fontSize = 28.sp
-//                    ),
-//                    color = MaterialTheme.colorScheme.primary,
-//                    modifier = Modifier.padding(bottom = 24.dp)
-//                )
                 Button(
                     onClick = { navController.navigate("login") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 32.dp)
-                        .height(48.dp),
+                        .height(55.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
@@ -68,7 +60,7 @@ fun WelcomeScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 32.dp)
-                        .height(48.dp),
+                        .height(55.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.primary
                     )
