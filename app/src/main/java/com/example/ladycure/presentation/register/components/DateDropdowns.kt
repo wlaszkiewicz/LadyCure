@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.util.Calendar
 import kotlin.collections.toList
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.ButtonDefaults
 
 @Composable
 fun DateDropdowns(
@@ -71,7 +74,9 @@ fun DayDropdown(
     Box(modifier = modifier) {
         OutlinedButton(
             onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+
         ) {
             Text(selectedDay.toString())
             Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Day")
@@ -111,7 +116,9 @@ fun MonthDropdown(
     Box(modifier = modifier) {
         OutlinedButton(
             onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+
         ) {
             Text(months[selectedMonth - 1])
             Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Month")
@@ -148,7 +155,9 @@ fun YearDropdown(
     Box(modifier = modifier) {
         OutlinedButton(
             onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+
         ) {
             Text(selectedYear.toString())
             Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Year")

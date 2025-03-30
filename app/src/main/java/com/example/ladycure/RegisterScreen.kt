@@ -28,7 +28,7 @@ fun RegisterScreen(navController: NavController) {
     LadyCureTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
-
+            color = MaterialTheme.colorScheme.background,
             ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(24.dp),

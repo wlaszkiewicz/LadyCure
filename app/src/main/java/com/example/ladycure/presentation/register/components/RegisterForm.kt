@@ -39,13 +39,8 @@ fun RegisterForm(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val textFieldColors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
-            focusedIndicatorColor = Color(0xFFDA70D6), // Lavender border
-            unfocusedIndicatorColor = Color(0xFFDDA0DD),
-            cursorColor = Color(0xFF4B0082),
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
         )
         OutlinedTextField(
             value = state.email,
@@ -113,7 +108,12 @@ fun RegisterForm(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
         ) {
             if (state.isLoading) {
-                Icon(Icons.Filled.Favorite, contentDescription = "Loading", tint = Color.White)
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else if (state.isSuccess) {
+                Text("❤", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             } else {
                 Text("✨ Register Now! ✨", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }

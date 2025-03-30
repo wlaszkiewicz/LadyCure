@@ -53,31 +53,6 @@ fun DefaultPreview() {
     LadyCureTheme {
         AppNavigation()
     }
-}
-
-@Composable
-fun HomeScreen(navController: NavController) {
-    Surface() {
-        Column(modifier = Modifier.fillMaxSize()) {
-
-            val uiColor = if (isSystemInDarkTheme()) Color.White else Color.Black
-            val textColor = if (isSystemInDarkTheme()) Color.Black else Color.White
-
-            val emailState = remember { mutableStateOf("") }
-            val passwordState = remember { mutableStateOf("") }
-
-            Column(
-                modifier = Modifier.fillMaxHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-
-                Text("tu cos bedzie", color = textColor)
-
-
-            }
-        }
-    }
 
 }
 
