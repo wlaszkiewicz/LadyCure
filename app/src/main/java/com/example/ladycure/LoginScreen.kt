@@ -2,6 +2,7 @@ package com.example.ladycure
 
 import LadyCureTheme
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement.Top
@@ -25,25 +26,37 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun LoginScreen(navController: NavController) {
     LadyCureTheme {
         Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.kapi2),
-                    contentDescription = "Capybara background",
+            Column(modifier = Modifier.fillMaxSize().background(
+                color = MaterialTheme.colorScheme.background))  {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(350.dp)
-                        .padding(bottom = 30.dp),
-                    contentScale = ContentScale.Crop
-                )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.80f)
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.kapi2),
+                        contentDescription = "Capybara background",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(350.dp)
+                            .padding(bottom = 30.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                    .padding(16.dp),
+                        .background(MaterialTheme.colorScheme.background) // This ensures the rest of the screen has the correct color
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
                 ) {
@@ -109,6 +122,16 @@ fun LoginScreen(navController: NavController) {
                             .padding(top = 30.dp)
                             .clickable { navController.navigate("register") }
                     )
+//                    Image(
+//                        painter = painterResource(id = R.drawable.bottom_kapi2),
+//                        contentDescription = "App Logo",
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(horizontal = 20.dp)
+//                            .padding(top = 30.dp)
+//                            .padding(bottom = 32.dp),
+//                        contentScale = ContentScale.Crop
+//                    )
                 }
             }
         }

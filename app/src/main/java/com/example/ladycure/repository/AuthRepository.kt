@@ -21,12 +21,26 @@ class AuthRepository {
                 "dob" to dateOfBirth,
                 "role" to "user"
             )
-            firestore.collection("user").document(user.uid).set(userData)
+            firestore.collection("users").document(user.uid).set(userData)
                 .addOnSuccessListener { }
                 .addOnFailureListener { throw Exception("User registration failed") }
 
             Result.success(Unit)
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserData(userId: String): Result<Map<String, Any>> {
+        return try {
+            val document = firestore.collection("users").document(userId).get().await()
+            if (document.exists()) {
+                Result.success(document.data ?: emptyMap())
+            } else {
+                Result.failure(Exception("User data not found"))
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error fetching user data", e)
             Result.failure(e)
         }
     }
