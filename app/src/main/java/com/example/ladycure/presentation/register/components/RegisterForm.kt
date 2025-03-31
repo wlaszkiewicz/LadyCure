@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ladycure.presentation.register.RegisterUiState
 import androidx.compose.material3.*
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun RegisterForm(
@@ -36,7 +37,8 @@ fun RegisterForm(
     Column(
         modifier = modifier
             .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         val textFieldColors = TextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -67,6 +69,18 @@ fun RegisterForm(
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "🎂 Date of Birth",
+            style =  MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 16.sp
+                ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth().padding(horizontal = 14.dp),
+            textAlign = TextAlign.Left
+        )
 
         DateDropdowns(
             selectedDay = state.selectedDay,
@@ -101,7 +115,7 @@ fun RegisterForm(
             onClick = onRegisterClick,
             enabled = state.isValid() && !state.isLoading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFDA70D6), // Cute pink-purple color
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(50),

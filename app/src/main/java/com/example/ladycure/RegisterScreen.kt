@@ -1,8 +1,13 @@
 package com.example.ladycure
 
 import LadyCureTheme
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +27,7 @@ import com.example.ladycure.domain.RegisterUseCase
 import com.example.ladycure.presentation.register.RegisterViewModel
 import com.example.ladycure.presentation.register.components.RegisterForm
 import com.example.ladycure.repository.AuthRepository
-
+import androidx.core.net.toUri
 @Composable
 fun RegisterScreen(navController: NavController) {
     val viewModel: RegisterViewModel = viewModel(factory = RegisterViewModelFactory())
@@ -35,25 +40,59 @@ fun RegisterScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState()),  // Add scrolling if content is long
+
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = " Welcome to LadyCure! ",
-                    fontSize = 24.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Fill in the details below to get started! ✨",
-                    fontSize = 16.sp,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Welcome to LadyCure!",
+                        fontSize = 24.sp,
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Fill in the details below to get started! ✨",
+                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    TextButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = "mailto:ladycure_admin@gmail.com".toUri()
+                            }
+                            navController.context.startActivity(intent)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Are you a doctor? Contact us here.",
+                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
                 RegisterForm(
                     state = uiState,
@@ -88,6 +127,7 @@ fun RegisterScreen(navController: NavController) {
 
                 TextButton(
                     onClick = { navController.navigate("login") },
+
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
@@ -99,9 +139,12 @@ fun RegisterScreen(navController: NavController) {
                             fontSize = 16.sp
                         ),
                         textAlign = TextAlign.Center,
+
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))  // Bottom padding
             }
         }
     }

@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement.Top
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -36,6 +38,7 @@ fun LoginScreen(navController: NavController) {
     LadyCureTheme {
         Surface(
             modifier = Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState()),  // Add scrolling if content is long
         ) {
             Column(modifier = Modifier.fillMaxSize().background(
                 color = MaterialTheme.colorScheme.background))  {
