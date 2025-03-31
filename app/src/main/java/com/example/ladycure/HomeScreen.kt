@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import LadyCureTheme
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,8 +48,10 @@ fun HomeScreen(navController: NavController) {
     LadyCureTheme {
 
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState()),  // Add scrolling if content is long
             color = MaterialTheme.colorScheme.background
+
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
