@@ -3,6 +3,8 @@ package com.example.ladycure.presentation.register.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
@@ -18,6 +20,9 @@ import androidx.compose.ui.unit.sp
 import com.example.ladycure.presentation.register.RegisterUiState
 import androidx.compose.material3.*
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 
 @Composable
@@ -34,11 +39,11 @@ fun RegisterForm(
     onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val textFieldColors = TextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -49,7 +54,9 @@ fun RegisterForm(
             onValueChange = onEmailChange,
             label = { Text("📧 Email") },
             colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
         )
 
         OutlinedTextField(
@@ -57,7 +64,9 @@ fun RegisterForm(
             onValueChange = onNameChange,
             label = { Text("🌸 Name") },
             colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
         )
 
         OutlinedTextField(
@@ -65,7 +74,9 @@ fun RegisterForm(
             onValueChange = onSurnameChange,
             label = { Text("💖 Surname") },
             colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -73,10 +84,10 @@ fun RegisterForm(
         Text(
             text = "🎂 Date of Birth",
             style =  MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 16.sp
-                ),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 16.sp
+            ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth().padding(horizontal = 14.dp),
             textAlign = TextAlign.Left
@@ -99,7 +110,9 @@ fun RegisterForm(
             label = { Text("🔒 Password") },
             colors = textFieldColors,
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
         )
 
         OutlinedTextField(
@@ -108,14 +121,16 @@ fun RegisterForm(
             label = { Text("💜 Confirm Password") },
             colors = textFieldColors,
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onRegisterClick() })
         )
 
         Button(
             onClick = onRegisterClick,
             enabled = state.isValid() && !state.isLoading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFFDA70D6),
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(50),
@@ -132,7 +147,6 @@ fun RegisterForm(
                 Text("✨ Register Now! ✨", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
-
 
         state.errorMessage?.let {
             Text(
