@@ -13,8 +13,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -40,6 +42,7 @@ fun RegisterScreen(navController: NavController) {
                     .fillMaxSize()
                     .padding(horizontal = 24.dp)
                     .verticalScroll(rememberScrollState()),  // Add scrolling if content is long
+
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -124,12 +127,19 @@ fun RegisterScreen(navController: NavController) {
 
                 TextButton(
                     onClick = { navController.navigate("login") },
-                    modifier = Modifier.fillMaxWidth()
+
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
                 ) {
                     Text(
-                        "Already have an account? Login",
+                        "Already have an account?\nLogin",
                         fontSize = 14.sp,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = TextStyle(
+                            fontSize = 16.sp
+                        ),
+                        textAlign = TextAlign.Center,
+
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }

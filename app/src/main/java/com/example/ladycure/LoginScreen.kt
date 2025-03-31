@@ -8,17 +8,26 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement.Top
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
@@ -78,6 +87,7 @@ fun LoginScreen(navController: NavController) {
 
                     val emailState = remember { mutableStateOf("") }
                     val passwordState = remember { mutableStateOf("") }
+                    val focusManager = LocalFocusManager.current
 
                     TextField(
                         value = emailState.value,
@@ -86,6 +96,9 @@ fun LoginScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(20.dp),
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(
+                            FocusDirection.Down) }),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -99,6 +112,12 @@ fun LoginScreen(navController: NavController) {
                             .fillMaxWidth()
                             .padding(20.dp),
                         visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (validInput(emailState.value, passwordState.value)) {
+                                authenticate(emailState.value, passwordState.value, navController)
+                            }
+                        }),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -117,14 +136,25 @@ fun LoginScreen(navController: NavController) {
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
-                    Text(
-                        text = "Don't have an account? Register",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier
-                            .padding(top = 30.dp)
-                            .clickable { navController.navigate("register") }
-                    )
+
+
+                    TextButton (
+                        onClick = { navController.navigate("register") },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    ) {
+                        Text("Don't have an account?\nRegister",
+                            fontSize = 14.sp,
+                            style = TextStyle(
+                                // fontFamily = FontFamily.Serif, // Change this to your desired font family
+                                //fontWeight = FontWeight.Bold,  // Change this to your desired font weight
+                                fontSize = 16.sp              // Change this to your desired font size
+                            ),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.secondary)
+                    }
+
+
+
 //                    Image(
 //                        painter = painterResource(id = R.drawable.bottom_kapi2),
 //                        contentDescription = "App Logo",
