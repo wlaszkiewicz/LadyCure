@@ -54,23 +54,40 @@ fun WelcomeScreen(navController: NavController) {
     if (showDialog) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Select Your Gender") },
+            title = {
+                Text(
+                    text = "Select Your Gender",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
             text = {
-                Column(verticalArrangement = Arrangement.Center) {
-                    Button(onClick = { showDialog = false }) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = { showDialog = false },
+                        modifier = Modifier.width(150.dp)
+                    ) {
                         Text("Female")
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        shouldShowUninstall = true // Start uninstall process
-                        showDialog = false // Close dialog
-                        ITSAMAN = true // Set the flag to true
-                    }) {
+                    Button(
+                        onClick = {
+                            shouldShowUninstall = true // Start uninstall process
+                            showDialog = false // Close dialog
+                            ITSAMAN = true // Set the flag to true
+                        },
+                        modifier = Modifier.width(150.dp)
+                    ) {
                         Text("Male")
                     }
                 }
             },
-            confirmButton = {}
+            confirmButton = {},
+            modifier = Modifier.wrapContentSize()
         )
     }
 
