@@ -2,12 +2,30 @@ import androidx.compose.ui.graphics.Color
 
 val Black = Color(0xFF000000)
 
-// Default PINK Theme Colors
-val DefaultBackground = Color(0xFFEdd6E0)
-val DefaultPrimary = Color(0xFFD29CB4)
-val DefaultPrimaryVariant = Color(0xFFC4809E)
-val DefaultSecondary = Color(0xFFB66488)
-val DefaultSecondaryVariant = Color(0xFFA14E73)
+val Pink10 = Color(0xFFEdd6E0)
+val Pink20 = Color(0xFFD29CB4)
+val Pink30 = Color(0xFFB66488)
+val Pink40 = Color(0xFFD29CB4)
+val Pink80 = Color(0xFFC4809E)
+val Pink90 = Color(0xFFA14E73)
+
+val Neutral99 = Color(0xFF0A0A0A)
+
+val DefaultBackground = Pink10
+val DefaultPrimary = Pink40
+val DefaultPrimaryVariant =Pink80
+val DefaultSecondary =Pink30
+val DefaultSecondaryVariant =Pink90
+val DefaultOnPrimary = Neutral99
+
+
+
+//// Default PINK Theme Colors
+//val DefaultBackground = Color(0xFFEdd6E0)
+//val DefaultPrimary = Color(0xFFD29CB4)
+//val DefaultPrimaryVariant = Color(0xFFC4809E)
+//val DefaultSecondary = Color(0xFFB66488)
+//val DefaultSecondaryVariant = Color(0xFFA14E73)
 
 // Red Theme Colors
 val RedBackground = Color(0xFFD39999)

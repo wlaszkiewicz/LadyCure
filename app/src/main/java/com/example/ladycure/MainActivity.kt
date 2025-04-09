@@ -45,6 +45,9 @@ fun AppNavigation() {
         composable("register") { RegisterScreen(navController) }
         composable("home") { HomeScreen(navController) }
         composable("admin") { AdminScreen(navController)}
+        composable("doctor") { SearchDoctorsScreen(navController) }
+        composable("chat") { ChatScreen(navController) }
+        composable("profile") { ProfileScreen(navController) }
     }
 }
 

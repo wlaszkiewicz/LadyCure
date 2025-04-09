@@ -1,5 +1,9 @@
 package com.example.ladycure
 
+import DefaultBackground
+import DefaultOnPrimary
+import DefaultPrimary
+import DefaultSecondary
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
