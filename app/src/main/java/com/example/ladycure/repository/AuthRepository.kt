@@ -45,6 +45,26 @@ class AuthRepository {
         }
     }
 
+    suspend fun getCurrentUser(): Map<String, String>? {
+        val user = auth.currentUser
+        return user?.let {
+            try {
+                val document = firestore.collection("users").document(it.uid).get().await()
+                if (document.exists()) {
+                    mapOf(
+                        "name" to (document.getString("name") ?: ""),
+                        "surname" to (document.getString("surname") ?: ""),
+                        "email" to (document.getString("email") ?: "")
+                    )
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
 //    suspend fun getDoctorsBySpecification(specification: String): Result<List<Map<String, Any>>> {
 //        return try {
 //            val querySnapshot = firestore.collection("Doctors")

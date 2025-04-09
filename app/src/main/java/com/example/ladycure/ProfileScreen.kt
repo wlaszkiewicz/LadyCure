@@ -32,6 +32,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,9 +43,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.example.ladycure.repository.AuthRepository
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
+
+    val repository = AuthRepository()
+    val userData = remember { mutableStateOf<Map<String, String>?>(null) }
+
+    LaunchedEffect(Unit) {
+        userData.value = repository.getCurrentUser()
+    }
+
     Scaffold(
         bottomBar = { BottomNavBar(navController = navController) }
     ) { innerPadding ->
@@ -76,18 +88,22 @@ fun ProfileScreen(navController: NavHostController) {
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "User Name",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = DefaultPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = "user@example.com",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = DefaultOnPrimary.copy(alpha = 0.6f)
+                userData.value?.let { user ->
+                    Text(
+                        text = "${user["name"]} ${user["surname"]}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = DefaultPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${user["email"]}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.6f)
+                    )
+                } ?: Text(
+                    text = "Loading user data...",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = DefaultOnPrimary
                 )
             }
 
