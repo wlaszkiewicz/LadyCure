@@ -47,7 +47,6 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Dodanie nagłówka jako osobnego elementu
             item {
                 Text(
                     text = "Find Doctors",
@@ -57,7 +56,6 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                 )
             }
 
-            // Dodanie pola wyszukiwania
             item {
                 OutlinedTextField(
                     value = "",
@@ -83,7 +81,6 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                 )
             }
 
-            // Dodanie kategorii lekarzy
             item {
                 Text(
                     text = "Specialties",
