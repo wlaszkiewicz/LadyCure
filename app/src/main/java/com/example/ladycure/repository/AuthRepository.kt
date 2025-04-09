@@ -44,4 +44,31 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+//    suspend fun getDoctorsBySpecification(specification: String): Result<List<Map<String, Any>>> {
+//        return try {
+//            val querySnapshot = firestore.collection("Doctors")
+//                .whereEqualTo("specification", specification)
+//                .get()
+//                .await()
+//            val doctors = querySnapshot.documents.map { it.data ?: emptyMap() }
+//            Result.success(doctors)
+//        } catch (e: Exception) {
+//            Result.failure(e)
+//        }
+//    }
+
+    suspend fun getDoctorsBySpecification(specification: String): Result<List<Map<String, Any>>> {
+        return try {
+            val querySnapshot = firestore.collection("users")
+                .whereEqualTo("role", "doctor")
+                .whereEqualTo("specification", specification)
+                .get()
+                .await()
+            val doctors = querySnapshot.documents.map { it.data ?: emptyMap() }
+            Result.success(doctors)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

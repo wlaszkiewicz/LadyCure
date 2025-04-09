@@ -58,6 +58,10 @@ fun AppNavigation() {
         composable(Screen.Doctors.route) { SearchDoctorsScreen(navController) }
         composable(Screen.Chat.route) { ChatScreen(navController) }
         composable(Screen.Profile.route) { ProfileScreen(navController) }
+        composable("doctors/{specification}") { backStackEntry ->
+            val specification = backStackEntry.arguments?.getString("specification") ?: ""
+            DoctorsListScreen(navController, specification)
+        }
     }
 }
 

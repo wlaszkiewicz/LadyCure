@@ -4,10 +4,9 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,7 +29,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 
 
@@ -89,17 +87,34 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                 )
             }
 
-            items(listOf("Gynecology", "Cardiology", "Dermatology")) { category ->
-                DoctorCategory(category)
+            items(
+                listOf(
+                    "Gynecology",
+                    "Cardiology",
+                    "Dermatology",
+                    "Pediatrics",
+                    "Neurology",
+                    "Orthopedics",
+                    "Psychiatry",
+                    "Ophthalmology",
+                    "Oncology",
+                    "Endocrinology"
+                )
+            ) { specification ->
+                DoctorSpecification(name = specification) {
+                    navController.navigate("doctors/$specification")
+                }
             }
         }
     }
 }
 
 @Composable
-fun DoctorCategory(name: String) {
+fun DoctorSpecification(name: String, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.size(120.dp, 80.dp),
+        modifier = Modifier
+            .size(120.dp, 80.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = DefaultPrimary.copy(alpha = 0.1f)
