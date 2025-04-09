@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -81,28 +83,52 @@ fun SearchDoctorsScreen(navController: NavHostController) {
 
             item {
                 Text(
-                    text = "Specialties",
+                    text = "Specializations",
                     style = MaterialTheme.typography.titleMedium,
                     color = DefaultPrimary
                 )
             }
 
-            items(
-                listOf(
-                    "Gynecology",
-                    "Cardiology",
-                    "Dermatology",
-                    "Pediatrics",
-                    "Neurology",
-                    "Orthopedics",
-                    "Psychiatry",
-                    "Ophthalmology",
-                    "Oncology",
-                    "Endocrinology"
-                )
-            ) { specification ->
-                DoctorSpecification(name = specification) {
-                    navController.navigate("doctors/$specification")
+            val specializations = listOf(
+                "Cardiology",
+                "Dentistry",
+                "Dermatology",
+                "Endocrinology",
+                "Gastroenterology",
+                "Gynecology",
+                "Neurology",
+                "Oncology",
+                "Ophthalmology",
+                "Orthopedics",
+                "Pediatrics",
+                "Physiotherapy",
+                "Psychiatry",
+                "Radiology"
+            )
+
+            val groupedSpecializations = specializations.chunked(2)
+
+            items(groupedSpecializations) { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    for (specification in rowItems) {
+                        Box(
+                            modifier = Modifier.weight(1f)
+                                .padding(horizontal = 4.dp)
+                        ) {
+                            DoctorSpecification(name = specification) {
+                                navController.navigate("doctors/$specification")
+                            }
+                        }
+                    }
+
+                    if (rowItems.size < 2) {
+                        for (i in 1..(2 - rowItems.size)) {
+                            Box(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -113,7 +139,8 @@ fun SearchDoctorsScreen(navController: NavHostController) {
 fun DoctorSpecification(name: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .size(120.dp, 80.dp)
+            .fillMaxWidth()
+            .aspectRatio(1.5f) // Adjust aspect ratio as needed
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
@@ -128,7 +155,8 @@ fun DoctorSpecification(name: String, onClick: () -> Unit) {
                 text = name,
                 style = MaterialTheme.typography.labelLarge,
                 color = DefaultPrimary,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp)
             )
         }
     }
