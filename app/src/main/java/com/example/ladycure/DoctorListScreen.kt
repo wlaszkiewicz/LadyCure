@@ -27,12 +27,14 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -86,6 +88,7 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
 @Composable
 fun DoctorCard(doctor: Map<String, Any>) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -95,101 +98,139 @@ fun DoctorCard(doctor: Map<String, Any>) {
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header with doctor icon and name
             Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_doctor),
                     contentDescription = "Doctor Icon",
                     tint = DefaultPrimary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(28.dp)
                 )
-                Text(
-                    text = "dr. ${doctor["name"] as? String ?: "Unknown"} ${doctor["surname"] as? String ?: ""}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = DefaultPrimary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
+                Column(modifier = Modifier.padding(start = 12.dp)) {
+                    Text(
+                        text = "dr. ${doctor["name"] as? String ?: "Unknown"} ${doctor["surname"] as? String ?: ""}",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = DefaultPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = doctor["specification"] as? String ?: "Not specified",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
+                }
             }
 
-            // Add specialization
-            Text(
-                text = "Specialization: ${doctor["specification"] as? String ?: "Not specified"}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DefaultOnPrimary
-            )
-
-            // Add address
-            Text(
-                text = "Address: ${doctor["address"] as? String ?: "Not available"}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DefaultOnPrimary
-            )
-
-            // Add consultation price
-            Text(
-                text = "Consultation price: ${doctor["consultationPrice"] as? String ?: doctor["consultationPrice"] as? Number ?: "Not specified"} zł",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DefaultOnPrimary,
-                fontWeight = FontWeight.Bold
-            )
-
-            // Add star ratings
-            Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            // Doctor details section
+            Column(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val rating = (doctor["rating"] as? Number)?.toFloat() ?: 0f
-                val reviewCount = doctor["reviewCount"] as? Int ?: 0
-
-                StarRating(
-                    rating = rating,
-                    modifier = Modifier.padding(end = 4.dp)
-                )
-
-                Text(
-                    text = "%.1f ($reviewCount reviews)".format(rating),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = DefaultOnPrimary.copy(alpha = 0.8f)
-                )
-
-                Button(
-                    onClick = { showConfirmationDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary,
-                        //contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                // Address and rating row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Book an appointment")
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_location_pin),
+                        contentDescription = "Location Icon",
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+
+                    Text(
+                        text = " ${doctor["address"] as? String ?: "Not available"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    val rating = (doctor["rating"] as? Number)?.toFloat() ?: 0f
+                    //val reviewCount = doctor["reviewCount"] as? Int ?: 0
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        StarRating(
+                            rating = rating,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+//                        Text(
+//                            text = "%.1f ($reviewCount)".format(rating),
+//                            style = MaterialTheme.typography.labelMedium,
+//                            color = DefaultOnPrimary
+//                        )
+                    }
                 }
+
+                // Price section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Consultation price:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary
+                    )
+                    Text(
+                        text = "${doctor["consultationPrice"] as? String ?: doctor["consultationPrice"] as? Number ?: "Not specified"} zł",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = DefaultPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // Book appointment button
+            Button(
+                onClick = { showConfirmationDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DefaultPrimary,
+                    //contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(8.dp),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 2.dp,
+                    pressedElevation = 4.dp
+                )
+            ) {
+                Text(
+                    text = "Book an appointment",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
             }
         }
 
+        // Confirmation dialog
         if (showConfirmationDialog) {
             AlertDialog(
                 onDismissRequest = { showConfirmationDialog = false },
                 title = {
                     Text(
-                        text= "Confirm an appointment",
+                        text = "Confirm appointment",
                         style = MaterialTheme.typography.headlineSmall,
                         color = DefaultPrimary
                     )
                 },
                 text = {
-                    Text("Are you sure you want to book an appointment with ${doctor["name"]} ${doctor["surname"]}?",)
+                    Text(
+                        text = "Are you sure you want to book an appointment with dr. ${doctor["name"]} ${doctor["surname"]}?",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 },
                 confirmButton = {
                     Button(
-                        onClick = {
-                            showConfirmationDialog = false
-                            // Tutaj można dodać logikę umawiania wizyty
-                        },
+                        onClick = { showConfirmationDialog = false },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DefaultPrimary,
                             //contentColor = Color.White
@@ -199,14 +240,10 @@ fun DoctorCard(doctor: Map<String, Any>) {
                     }
                 },
                 dismissButton = {
-                    Button(
-                        onClick = { showConfirmationDialog = false },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
-                            contentColor = DefaultOnPrimary
-                        )
+                    TextButton(
+                        onClick = { showConfirmationDialog = false }
                     ) {
-                        Text("Cancel")
+                        Text("Cancel", color = DefaultPrimary)
                     }
                 }
             )
