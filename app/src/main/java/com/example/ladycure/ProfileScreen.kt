@@ -23,33 +23,42 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.ladycure.repository.AuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
 
     val repository = AuthRepository()
     val userData = remember { mutableStateOf<Map<String, String>?>(null) }
+    var showAccountSettingsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         userData.value = repository.getCurrentUser()
@@ -95,11 +104,6 @@ fun ProfileScreen(navController: NavHostController) {
                         color = DefaultPrimary,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = "${user["email"]}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                    )
                 } ?: Text(
                     text = "Loading user data...",
                     style = MaterialTheme.typography.bodyLarge,
@@ -118,7 +122,11 @@ fun ProfileScreen(navController: NavHostController) {
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                ProfileOption("Account Settings", Icons.Default.AccountCircle)
+                ProfileOption(
+                    text = "Account Settings",
+                    icon = Icons.Default.AccountCircle,
+                    onClick = { showAccountSettingsDialog = true }
+                )
                 ProfileOption("Notifications", Icons.Default.Notifications)
                 ProfileOption("Privacy", Icons.Default.Lock)
                 ProfileOption("Help & Support", Icons.Default.Home)
@@ -139,17 +147,34 @@ fun ProfileScreen(navController: NavHostController) {
             }
         }
     }
+
+    if (showAccountSettingsDialog) {
+        AccountSettingsDialog(
+            userData = userData.value,
+            onDismiss = { showAccountSettingsDialog = false },
+            onSave = { updatedData ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    val result = repository.updateUserData(updatedData)
+                    if (result.isSuccess) {
+                        userData.value = updatedData
+                    } else {
+                    }
+                    showAccountSettingsDialog = false
+                }
+            }
+        )
+    }
 }
 
 @Composable
-fun ProfileOption(text: String, icon: ImageVector) {
+fun ProfileOption(text: String, icon: ImageVector, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = DefaultPrimary.copy(alpha = 0.1f)
         ),
-        onClick = { /* Handle option click */ }
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -168,4 +193,78 @@ fun ProfileOption(text: String, icon: ImageVector) {
             )
         }
     }
+}
+
+@Composable
+fun AccountSettingsDialog(
+    userData: Map<String, String>?,
+    onDismiss: () -> Unit,
+    onSave: (Map<String, String>) -> Unit
+) {
+    var name by remember { mutableStateOf(TextFieldValue(userData?.get("name") ?: "")) }
+    var surname by remember { mutableStateOf(TextFieldValue(userData?.get("surname") ?: "")) }
+    var dob by remember { mutableStateOf(TextFieldValue(userData?.get("dob") ?: "")) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Account Settings", color = DefaultPrimary) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = surname,
+                    onValueChange = { surname = it },
+                    label = { Text("Surname") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = dob,
+                    onValueChange = { dob = it },
+                    label = { Text("Date of Birth") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("YYYY-MM-DD") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val updatedData = mapOf(
+                        "name" to name.text,
+                        "surname" to surname.text,
+                        "dob" to dob.text
+                    )
+                    onSave(updatedData)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DefaultPrimary,
+                    contentColor = DefaultOnPrimary
+                )
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
+                    contentColor = DefaultPrimary
+                )
+            ) {
+                Text("Cancel")
+            }
+        },
+        containerColor = DefaultBackground
+    )
 }

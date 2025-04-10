@@ -54,7 +54,8 @@ class AuthRepository {
                     mapOf(
                         "name" to (document.getString("name") ?: ""),
                         "surname" to (document.getString("surname") ?: ""),
-                        "email" to (document.getString("email") ?: "")
+                        "email" to (document.getString("email") ?: ""),
+                        "dob" to (document.getString("dob") ?: "")
                     )
                 } else {
                     null
@@ -91,4 +92,27 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun updateUserData(updatedData: Map<String, String>): Result<Unit> {
+        return try {
+            val user = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
+
+            // Create a map with only the fields we want to update
+            val updateMap = mutableMapOf<String, Any>()
+            updatedData["name"]?.let { updateMap["name"] = it }
+            updatedData["surname"]?.let { updateMap["surname"] = it }
+            updatedData["dob"]?.let { updateMap["dob"] = it }
+
+            // Update Firestore document
+            firestore.collection("users").document(user.uid)
+                .update(updateMap)
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error updating user data", e)
+            Result.failure(e)
+        }
+    }
+
 }

@@ -261,9 +261,9 @@ fun StarRating(
     Row(modifier = modifier) {
         for (i in 1..maxStars) {
             val starIcon = when {
-                i <= rating -> R.drawable.baseline_star_rate // Filled star
-                i - 0.5 <= rating -> R.drawable.baseline_star_half // Half star
-                else -> R.drawable.baseline_star_border// Empty star
+                i <= rating -> R.drawable.baseline_star_rate
+                i - 0.5 <= rating -> R.drawable.baseline_star_half
+                else -> R.drawable.baseline_star_border
             }
 
             Icon(

@@ -7,7 +7,7 @@ data class User(
     val email: String,
     val name: String,
     val surname: String,
-    val dob: String,
+    val dateOfBirth: String,
     val role : String,
     val profilePictureUrl: String,
     //for doctors only
