@@ -1,10 +1,6 @@
 package com.example.ladycure
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import DefaultSecondary
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +34,13 @@ data class User(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(navController: NavController) {
+    // LadyCure color scheme
+    val primaryColor = Color(0xFFFF6B8B) // Brand pink
+    val surfaceColor = Color(0xFFF8F8F8) // Light background
+    val cardColor = Color(0xFFFFFFFF) // White cards
+    val textColor = Color(0xFF333333) // Dark text
+    val secondaryTextColor = Color(0xFF666666) // Secondary text
+
     val db = FirebaseFirestore.getInstance("telecure")
     var users by remember { mutableStateOf<List<User>>(emptyList()) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -47,9 +52,8 @@ fun AdminScreen(navController: NavController) {
         db.collection("users").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
 
-            val userList = mutableListOf<User>()
-            snapshot?.documents?.forEach { document ->
-                val user = User(
+            users = snapshot?.documents?.mapNotNull { document ->
+                User(
                     id = document.id,
                     name = document.getString("name") ?: "",
                     surname = document.getString("surname") ?: "",
@@ -57,176 +61,41 @@ fun AdminScreen(navController: NavController) {
                     role = document.getString("role") ?: "user",
                     dob = document.getString("dob") ?: ""
                 )
-                userList.add(user)
-            }
-            users = userList
+            } ?: emptyList()
         }
     }
 
+    // Edit Dialog
     if (showEditDialog && selectedUser != null) {
-        AlertDialog(
-            onDismissRequest = { showEditDialog = false },
-            title = {
-                Text(
-                    text = "Edit User Data",
-                    color = DefaultPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    OutlinedTextField(
-                        value = editedUser.name,
-                        onValueChange = { editedUser = editedUser.copy(name = it) },
-                        label = { Text("First Name") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedLabelColor = DefaultPrimary,
-                            unfocusedLabelColor = DefaultPrimary.copy(alpha = 0.6f)
+        EditUserDialog(
+            user = editedUser,
+            primaryColor = primaryColor,
+            onDismiss = { showEditDialog = false },
+            onSave = {
+                selectedUser?.let { user ->
+                    db.collection("users").document(user.id).update(
+                        mapOf(
+                            "name" to editedUser.name,
+                            "surname" to editedUser.surname,
+                            "email" to editedUser.email,
+                            "role" to editedUser.role,
+                            "dob" to editedUser.dob
                         )
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = editedUser.surname,
-                        onValueChange = { editedUser = editedUser.copy(surname = it) },
-                        label = { Text("Last Name") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedLabelColor = DefaultPrimary,
-                            unfocusedLabelColor = DefaultPrimary.copy(alpha = 0.6f)
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = editedUser.email,
-                        onValueChange = { editedUser = editedUser.copy(email = it) },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedLabelColor = DefaultPrimary,
-                            unfocusedLabelColor = DefaultPrimary.copy(alpha = 0.6f)
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = editedUser.dob,
-                        onValueChange = { editedUser = editedUser.copy(dob = it) },
-                        label = { Text("Date of Birth") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedLabelColor = DefaultPrimary,
-                            unfocusedLabelColor = DefaultPrimary.copy(alpha = 0.6f)
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Role:",
-                        color = DefaultPrimary.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    val roles = listOf("user", "doctor", "admin")
-                    roles.forEach { role ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                                .clickable { editedUser = editedUser.copy(role = role) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (editedUser.role == role) DefaultPrimary.copy(alpha = 0.2f)
-                                else DefaultBackground
-                            )
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(12.dp)
-                            ) {
-                                RadioButton(
-                                    selected = editedUser.role == role,
-                                    onClick = { editedUser = editedUser.copy(role = role) },
-                                    colors = RadioButtonDefaults.colors(
-                                        selectedColor = DefaultPrimary
-                                    )
-                                )
-                                Text(
-                                    text = role.capitalize(),
-                                    modifier = Modifier.padding(start = 8.dp),
-                                    color = DefaultOnPrimary
-                                )
-                            }
-                        }
-                    }
+                    ).addOnSuccessListener { showEditDialog = false }
                 }
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        selectedUser?.let { user ->
-                            db.collection("users").document(user.id).update(
-                                mapOf(
-                                    "name" to editedUser.name,
-                                    "surname" to editedUser.surname,
-                                    "email" to editedUser.email,
-                                    "role" to editedUser.role,
-                                    "dob" to editedUser.dob
-                                )
-                            ).addOnSuccessListener {
-                                showEditDialog = false
-                            }.addOnFailureListener { e ->
-                                println("Error updating document: $e")
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary,
-                        contentColor = DefaultOnPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Save Changes")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showEditDialog = false },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        "Cancel",
-                        color = DefaultPrimary
-                    )
-                }
-            },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = DefaultBackground
+            onUserChange = { editedUser = it }
         )
     }
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
-                        "Admin Dashboard",
-                        color = DefaultPrimary,
-                        fontWeight = FontWeight.Bold
+                        "User Management",
+                        color = textColor,
+                        fontWeight = FontWeight.SemiBold
                     )
                 },
                 navigationIcon = {
@@ -234,115 +103,270 @@ fun AdminScreen(navController: NavController) {
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = DefaultPrimary
+                            tint = primaryColor
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DefaultBackground,
-                    titleContentColor = DefaultPrimary
+                    containerColor = surfaceColor,
+                    titleContentColor = textColor
                 )
             )
         },
-        containerColor = DefaultBackground
-    ) { innerPadding ->
-        LazyColumn(
+        containerColor = surfaceColor
+    ) { padding ->
+        when {
+            users.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = primaryColor)
+                }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(users) { user ->
+                        UserCard(
+                            user = user,
+                            cardColor = cardColor,
+                            primaryColor = primaryColor,
+                            textColor = textColor,
+                            secondaryTextColor = secondaryTextColor,
+                            onEditClick = {
+                                selectedUser = user
+                                editedUser = user.copy()
+                                showEditDialog = true
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserCard(
+    user: User,
+    cardColor: Color,
+    primaryColor: Color,
+    textColor: Color,
+    secondaryTextColor: Color,
+    onEditClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "User Management",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = DefaultPrimary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    text = "${user.name} ${user.surname}",
+                    color = textColor,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = user.email,
+                    color = secondaryTextColor,
+                    fontSize = 14.sp
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "DOB: ${user.dob}",
+                        color = secondaryTextColor,
+                        fontSize = 13.sp
+                    )
+
+                    RoleBadge(role = user.role, primaryColor = primaryColor)
+                }
+            }
+
+            IconButton(
+                onClick = onEditClick,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit user",
+                    tint = primaryColor
                 )
             }
+        }
+    }
+}
 
-            if (users.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "Loading users...",
-                            color = DefaultOnPrimary.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            } else {
-                items(users) { user ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = DefaultPrimary.copy(alpha = 0.1f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = "${user.name} ${user.surname}",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DefaultPrimary
-                                )
-                                Text(
-                                    text = user.email,
-                                    fontSize = 14.sp,
-                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = "DOB: ${user.dob}",
-                                    fontSize = 14.sp,
-                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = "Role: ${user.role.capitalize()}",
-                                    fontSize = 14.sp,
-                                    color = when (user.role) {
-                                        "admin" -> DefaultPrimary
-                                        "doctor" -> DefaultSecondary
-                                        else -> DefaultOnPrimary.copy(alpha = 0.6f)
-                                    },
-                                    fontWeight = when (user.role) {
-                                        "admin", "doctor" -> FontWeight.Bold
-                                        else -> FontWeight.Normal
-                                    }
-                                )
-                            }
+@Composable
+private fun RoleBadge(role: String, primaryColor: Color) {
+    val (backgroundColor, roleTextColor) = when (role) {
+        "admin" -> primaryColor.copy(alpha = 0.2f) to primaryColor
+        "doctor" -> Color(0xFF4CAF50).copy(alpha = 0.2f) to Color(0xFF4CAF50)
+        else -> Color(0xFF2196F3).copy(alpha = 0.2f) to Color(0xFF2196F3)
+    }
 
-                            IconButton(
-                                onClick = {
-                                    selectedUser = user
-                                    editedUser = user.copy()
-                                    showEditDialog = true
-                                },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Edit,
-                                    contentDescription = "Edit user",
-                                    tint = DefaultPrimary
-                                )
-                            }
-                        }
-                    }
-                }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = when (role) {
+                "admin" -> "Admin"
+                "doctor" -> "Doctor"
+                else -> "User"
+            },
+            color = roleTextColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun EditUserDialog(
+    user: User,
+    primaryColor: Color,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+    onUserChange: (User) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Edit User",
+                color = primaryColor,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = user.name,
+                    onValueChange = { onUserChange(user.copy(name = it)) },
+                    label = { Text("First Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                OutlinedTextField(
+                    value = user.surname,
+                    onValueChange = { onUserChange(user.copy(surname = it)) },
+                    label = { Text("Last Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                OutlinedTextField(
+                    value = user.email,
+                    onValueChange = { onUserChange(user.copy(email = it)) },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                OutlinedTextField(
+                    value = user.dob,
+                    onValueChange = { onUserChange(user.copy(dob = it)) },
+                    label = { Text("Date of Birth") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Text("Role", style = MaterialTheme.typography.labelLarge)
+
+                RoleSelection(
+                    selectedRole = user.role,
+                    primaryColor = primaryColor,
+                    onRoleSelected = { onUserChange(user.copy(role = it)) }
+                )
             }
+        },
+        confirmButton = {
+            Button(
+                onClick = onSave,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = primaryColor,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Save Changes")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    "Cancel",
+                    color = primaryColor
+                )
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color(0xFFFFFFFF)
+    )
+}
+
+@Composable
+private fun RoleSelection(
+    selectedRole: String,
+    primaryColor: Color,
+    onRoleSelected: (String) -> Unit
+) {
+    val roles = listOf("user", "doctor", "admin")
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        roles.forEach { role ->
+            FilterChip(
+                selected = selectedRole == role,
+                onClick = { onRoleSelected(role) },
+                label = {
+                    Text(
+                        role.capitalize(),
+                        color = if (selectedRole == role) Color.White else primaryColor
+                    )
+                },
+                modifier = Modifier.weight(1f),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = primaryColor,
+                    selectedLabelColor = Color.White,
+                    containerColor = Color.Transparent,
+                    labelColor = primaryColor
+                ),
+                shape = RoundedCornerShape(8.dp)
+            )
         }
     }
 }
