@@ -36,9 +36,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.ladycure.HealthTips.getDailyTip
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -139,6 +139,7 @@ fun HomeScreen(navController: NavHostController) {
             }
 
             // Health tips card
+            val dailyTip = remember { getDailyTip() }
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -157,7 +158,7 @@ fun HomeScreen(navController: NavHostController) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Stay hydrated and drink at least 8 glasses of water daily for optimal health.",
+                        text = dailyTip,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f)
                     )
