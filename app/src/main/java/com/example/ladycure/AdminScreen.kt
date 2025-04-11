@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,12 +62,19 @@ import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 
 data class User(
-    val id: String,
-    val name: String,
-    val surname: String,
-    val email: String,
-    val role: String,
-    val dob: String
+    val id: String = "",
+    val name: String = "",
+    val surname: String = "",
+    val email: String = "",
+    val role: String = "",
+    val dob: String = "",
+    // Doctor-specific fields
+    val specification: String = "",
+    val address: String = "",
+    val consultationPrice: String = "",
+    val availability: String = "",
+    val rating: Double? = null,
+    val reviews: String = ""
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,7 +103,13 @@ fun AdminScreen(navController: NavController) {
                         surname = doc.getString("surname") ?: "",
                         email = doc.getString("email") ?: "",
                         role = doc.getString("role") ?: "user",
-                        dob = doc.getString("dob") ?: ""
+                        dob = doc.getString("dob") ?: "",
+                        specification = doc.getString("specification") ?: "",
+                        address = doc.getString("address") ?: "",
+                        consultationPrice = doc.getString("consultationPrice") ?: "",
+                        availability = doc.getString("availability") ?: "",
+                        rating = doc.getDouble("rating"),
+                        reviews = doc.getString("reviews") ?: ""
                     )
                 } ?: emptyList()
             }
@@ -116,26 +130,45 @@ fun AdminScreen(navController: NavController) {
 
     // Edit Dialog
     if (showEditDialog && selectedUser != null) {
+
         EditUserDialog(
             user = editedUser,
             onDismiss = { showEditDialog = false },
             onSave = {
                 selectedUser?.let { user ->
-                    db.collection("users").document(user.id).update(
-                        mapOf(
-                            "name" to editedUser.name,
-                            "surname" to editedUser.surname,
-                            "email" to editedUser.email,
-                            "role" to editedUser.role,
-                            "dob" to editedUser.dob
-                        )
-                    ).addOnSuccessListener { showEditDialog = false }
+                    val updates = hashMapOf<String, Any>(
+                        "name" to editedUser.name,
+                        "surname" to editedUser.surname,
+                        "email" to editedUser.email,
+                        "role" to editedUser.role,
+                        "dob" to editedUser.dob
+                    )
+
+                    if (editedUser.role == "doctor") {
+                        updates["specification"] = editedUser.specification
+                        updates["address"] = editedUser.address
+                        updates["consultationPrice"] = editedUser.consultationPrice
+                        updates["availability"] = editedUser.availability
+                        editedUser.rating?.let { updates["rating"] = it }
+                    }
+
+                    db.collection("users").document(user.id)
+                        .update(updates)
+                        .addOnSuccessListener {
+                            showEditDialog = false
+
+                            val currentTab = selectedTab
+                            selectedTab = ""
+                            selectedTab = currentTab
+                        }
+                        .addOnFailureListener { e ->
+                            println("Error updating user: ${e.message}")
+                        }
                 }
             },
             onUserChange = { editedUser = it }
         )
     }
-
     Scaffold(
         topBar = {
             Column {
@@ -276,50 +309,94 @@ private fun UserCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "${user.name} ${user.surname}",
-                    color = DefaultPrimaryVariant,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = user.email,
-                    color = DefaultOnPrimary.copy(alpha = 0.8f),
-                    fontSize = 14.sp
-                )
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "DOB: ${user.dob}",
-                        color = DefaultOnPrimary.copy(alpha = 0.6f),
-                        fontSize = 13.sp
+                        text = "${user.name} ${user.surname}",
+                        color = DefaultPrimaryVariant,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
 
-                    RoleBadge(role = user.role)
+                    Text(
+                        text = user.email,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "DOB: ${user.dob}",
+                            color = DefaultOnPrimary.copy(alpha = 0.6f),
+                            fontSize = 13.sp
+                        )
+
+                        RoleBadge(role = user.role)
+                    }
+                }
+
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit user",
+                        tint = DefaultPrimary
+                    )
                 }
             }
 
-            IconButton(
-                onClick = onEditClick,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = "Edit user",
-                    tint = DefaultPrimary
-                )
+            // Additional doctor information
+            if (user.role == "doctor") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "Specialization: ${user.specification}",
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = "Address: ${user.address}",
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = "Consultation price: ${user.consultationPrice} PLN",
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = "Availability: ${user.availability.ifEmpty { "Not specified" }}",
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = "Rating: ${user.rating?.toString() ?: "No ratings"}",
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
     }
@@ -361,6 +438,9 @@ private fun EditUserDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 50.dp),
         title = {
             Text(
                 "Edit User",
@@ -370,9 +450,13 @@ private fun EditUserDialog(
         },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Basic user info
                 OutlinedTextField(
                     value = user.name,
                     onValueChange = { onUserChange(user.copy(name = it)) },
@@ -430,11 +514,88 @@ private fun EditUserDialog(
                 )
 
                 Text("Role", style = MaterialTheme.typography.labelLarge, color = DefaultPrimary)
-
                 RoleSelection(
                     selectedRole = user.role,
                     onRoleSelected = { onUserChange(user.copy(role = it)) }
                 )
+
+                // Doctor-specific fields (shown only when role is doctor)
+                if (user.role == "doctor") {
+                    Text("Doctor Details", style = MaterialTheme.typography.labelLarge, color = DefaultPrimary)
+
+                    OutlinedTextField(
+                        value = user.specification,
+                        onValueChange = { onUserChange(user.copy(specification = it)) },
+                        label = { Text("Specialization") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = DefaultBackground,
+                            unfocusedContainerColor = DefaultBackground,
+                            focusedIndicatorColor = DefaultPrimary,
+                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = user.address,
+                        onValueChange = { onUserChange(user.copy(address = it)) },
+                        label = { Text("Address") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = DefaultBackground,
+                            unfocusedContainerColor = DefaultBackground,
+                            focusedIndicatorColor = DefaultPrimary,
+                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = user.consultationPrice,
+                        onValueChange = { onUserChange(user.copy(consultationPrice = it)) },
+                        label = { Text("Consultation Price (PLN)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = DefaultBackground,
+                            unfocusedContainerColor = DefaultBackground,
+                            focusedIndicatorColor = DefaultPrimary,
+                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = user.availability,
+                        onValueChange = { onUserChange(user.copy(availability = it)) },
+                        label = { Text("Availability") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = DefaultBackground,
+                            unfocusedContainerColor = DefaultBackground,
+                            focusedIndicatorColor = DefaultPrimary,
+                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = user.rating?.toString() ?: "",
+                        onValueChange = {
+                            val newRating = it.toDoubleOrNull()
+                            onUserChange(user.copy(rating = newRating))
+                        },
+                        label = { Text("Rating") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = DefaultBackground,
+                            unfocusedContainerColor = DefaultBackground,
+                            focusedIndicatorColor = DefaultPrimary,
+                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
+                        )
+                    )
+                }
             }
         },
         confirmButton = {
