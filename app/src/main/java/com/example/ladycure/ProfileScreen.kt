@@ -3,6 +3,7 @@ package com.example.ladycure
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,10 +43,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.ladycure.repository.AuthRepository
@@ -59,6 +63,7 @@ fun ProfileScreen(navController: NavHostController) {
     val repository = AuthRepository()
     val userData = remember { mutableStateOf<Map<String, String>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
+    var showSupportDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         userData.value = repository.getCurrentUser()
@@ -129,7 +134,12 @@ fun ProfileScreen(navController: NavHostController) {
                 )
                 ProfileOption("Notifications", Icons.Default.Notifications)
                 ProfileOption("Privacy", Icons.Default.Lock)
-                ProfileOption("Help & Support", Icons.Default.Home)
+                ProfileOption(
+                    text = "Help & Support",
+                    icon = painterResource(id = R.drawable.baseline_contact_support),
+                    isVector = true,
+                    onClick = { showSupportDialog = true }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -164,10 +174,55 @@ fun ProfileScreen(navController: NavHostController) {
             }
         )
     }
+
+    if (showSupportDialog) {
+        AlertDialog(
+            onDismissRequest = { showSupportDialog = false },
+            title = { Text("Need Help?", color = DefaultPrimary) },
+            text = {
+                Text("If you need assistance, please contact us via email.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Open email intent
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = "mailto:ladycure_admin@gmail.com".toUri()
+                        }
+                        navController.context.startActivity(intent)
+                        showSupportDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DefaultPrimary,
+                        contentColor = DefaultOnPrimary
+                    )
+                ) {
+                    Text("Contact Us")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showSupportDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
+                        contentColor = DefaultPrimary
+                    )
+                ) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = DefaultBackground
+        )
+    }
 }
 
 @Composable
-fun ProfileOption(text: String, icon: ImageVector, onClick: () -> Unit = {}) {
+fun ProfileOption(
+    text: String,
+    icon: Any,
+    isVector: Boolean = false,
+    onClick: () -> Unit = {}
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -181,11 +236,19 @@ fun ProfileOption(text: String, icon: ImageVector, onClick: () -> Unit = {}) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = text,
-                tint = DefaultPrimary
-            )
+            if (isVector) {
+                Icon(
+                    painter = icon as Painter,
+                    contentDescription = text,
+                    tint = DefaultPrimary
+                )
+            } else {
+                Icon(
+                    imageVector = icon as ImageVector,
+                    contentDescription = text,
+                    tint = DefaultPrimary
+                )
+            }
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyLarge,
