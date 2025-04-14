@@ -3,8 +3,12 @@ package com.example.ladycure
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -88,6 +92,7 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
 @Composable
 fun DoctorCard(doctor: Map<String, Any>) {
     var showConfirmationDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -147,7 +152,24 @@ fun DoctorCard(doctor: Map<String, Any>) {
                         text = " ${doctor["address"] as? String ?: "Not available"}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                val address = doctor["address"] as? String ?: ""
+                                if (address.isNotEmpty()) {
+                                    val mapUri = Uri.encode("geo:0,0?q=$address")
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(mapUri))
+                                    intent.setPackage("com.google.android.apps.maps")
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: ActivityNotFoundException) {
+                                        // If google maps are not installed, open browser
+                                        val webUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=$address")
+                                        val webIntent = Intent(Intent.ACTION_VIEW, webUri)
+                                        context.startActivity(webIntent)
+                                    }
+                                }
+                            }
                     )
 
                     val rating = (doctor["rating"] as? Number)?.toFloat() ?: 0f
