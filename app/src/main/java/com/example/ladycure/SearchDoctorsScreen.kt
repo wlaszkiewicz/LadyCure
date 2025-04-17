@@ -32,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.ladycure.User
+import com.example.ladycure.data.Specialization
 
 
 @Composable
@@ -90,20 +92,20 @@ fun SearchDoctorsScreen(navController: NavHostController) {
             }
 
             val specializations = listOf(
-                "Cardiology",
-                "Dentistry",
-                "Dermatology",
-                "Endocrinology",
-                "Gastroenterology",
-                "Gynecology",
-                "Neurology",
-                "Oncology",
-                "Ophthalmology",
-                "Orthopedics",
-                "Pediatrics",
-                "Physiotherapy",
-                "Psychiatry",
-                "Radiology"
+                Specialization.CARDIOLOGY.displayName,
+                Specialization.DENTISTRY.displayName,
+                Specialization.DERMATOLOGY.displayName,
+                Specialization.ENDOCRINOLOGY.displayName,
+                Specialization.GYNECOLOGY.displayName,
+                Specialization.NEUROLOGY.displayName,
+                Specialization.ONCOLOGY.displayName,
+                Specialization.OPHTHALMOLOGY.displayName,
+                Specialization.ORTHOPEDICS.displayName,
+                Specialization.PEDIATRICS.displayName,
+                Specialization.PHYSIOTHERAPY.displayName,
+                Specialization.RADIOLOGY.displayName,
+                Specialization.PSYCHIATRY.displayName
+
             )
 
             val groupedSpecializations = specializations.chunked(2)

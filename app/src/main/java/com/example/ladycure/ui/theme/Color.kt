@@ -2,10 +2,10 @@ import androidx.compose.ui.graphics.Color
 
 val Black = Color(0xFF000000)
 
-val Pink10 = Color(0xFFEdd6E0)
+val Pink10 = Color(0xFFF1E0E7)
 val Pink20 = Color(0xFFD29CB4)
 val Pink30 = Color(0xFFB66488)
-val Pink40 = Color(0xFFD29CB4)
+val Pink40 = Color(0xFFD38BB0)
 val Pink80 = Color(0xFFC4809E)
 val Pink90 = Color(0xFFA14E73)
 
