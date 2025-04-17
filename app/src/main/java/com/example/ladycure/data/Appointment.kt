@@ -8,7 +8,11 @@ data class Appointment(
     val time: String,
     val status: Status,
     val type: AppointmentType,
-    val price: Double
+    val price: Double,
+    val address: String = "",
+    val doctorName: String = "",
+    val comments: String = "",
+
 )
 {
     companion object {
