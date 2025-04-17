@@ -24,30 +24,66 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.text.style.TextAlign
-
+import com.example.ladycure.repository.AuthRepository
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun WelcomeScreen(navController: NavController) {
+    val context = LocalContext.current
+    val isLoggedIn by remember { mutableStateOf(checkIfUserIsLoggedIn(context)) }
+
+    LoadingScreen(isLoading = isLoggedIn)
+
+    // If user is logged in, navigate to home screen
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            navController.navigate("home") {
+                // Clear back stack so user can't go back to welcome screen
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        }
+    }
+
+    // Only show the gender selection/login screen if user is not logged in
+    if (!isLoggedIn) {
+        WelcomeContent(navController)
+    }
+}
+
+@Composable
+fun LoadingScreen(isLoading: Boolean) {
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    }
+}
+
+@Composable
+fun WelcomeContent(navController: NavController) {
     val context = LocalContext.current
     var showDialog by remember { mutableStateOf(true) }
     var shouldShowUninstall by remember { mutableStateOf(false) }
     var ITSAMAN by remember { mutableStateOf(false) }
 
     val uninstallLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        // When the user returns from the uninstall screen
         if (isAppInstalled(context)) {
-            // If app is still installed, show the prompt again
             shouldShowUninstall = true
         }
     }
 
-    // Trigger uninstall prompt when shouldShowUninstall changes
     LaunchedEffect(shouldShowUninstall) {
         if (shouldShowUninstall) {
             val packageName = context.packageName
             val intent = Intent(Intent.ACTION_DELETE, Uri.fromParts("package", packageName, null))
             uninstallLauncher.launch(intent)
-            shouldShowUninstall = false // Reset flag, will be set again if needed
+            shouldShowUninstall = false
         }
     }
 
@@ -76,9 +112,9 @@ fun WelcomeScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
                         onClick = {
-                            shouldShowUninstall = true // Start uninstall process
-                            showDialog = false // Close dialog
-                            ITSAMAN = true // Set the flag to true
+                            shouldShowUninstall = true
+                            showDialog = false
+                            ITSAMAN = true
                         },
                         modifier = Modifier.width(150.dp)
                     ) {
@@ -112,7 +148,7 @@ fun WelcomeScreen(navController: NavController) {
         }
     }
 
-        if (!showDialog && !ITSAMAN) {
+    if (!showDialog && !ITSAMAN) {
         LadyCureTheme {
             Surface(
                 modifier = Modifier.fillMaxSize(),
@@ -175,6 +211,16 @@ fun WelcomeScreen(navController: NavController) {
     }
 }
 
+
+fun checkIfUserIsLoggedIn(context: Context): Boolean {
+    val user = Firebase.auth.currentUser
+    if (user != null) {
+        return true
+    } else {
+        return false
+    }
+}
+
 @Preview
 @Composable
 fun WelcomeScreenPreview() {
@@ -187,8 +233,8 @@ fun WelcomeScreenPreview() {
 fun isAppInstalled(context: Context): Boolean {
     return try {
         context.packageManager.getPackageInfo(context.packageName, 0)
-        true  // App is still installed
+        true
     } catch (e: Exception) {
-        false // App has been uninstalled
+        false
     }
 }

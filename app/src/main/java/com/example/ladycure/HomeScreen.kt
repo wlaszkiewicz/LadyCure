@@ -42,6 +42,10 @@ import com.example.ladycure.HealthTips.getDailyTip
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.ladycure.data.Appointment
+import com.example.ladycure.data.AppointmentType
+import com.example.ladycure.data.Status
+import com.example.ladycure.presentation.home.components.AppointmentsSection
 
 
 @Composable
@@ -100,7 +104,6 @@ fun HomeScreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -164,6 +167,31 @@ fun HomeScreen(navController: NavHostController) {
                     )
                 }
             }
+
+            AppointmentsSection(
+                appointments = listOf(
+                    Appointment(
+                        appointmentId = "123",
+                        doctorId = "Smith",
+                        patientId = "P001",
+                        date = "30th Dec 2023",
+                        time = "10:00 AM",
+                        status = Status.CONFIRMED,
+                        type = AppointmentType.EYE_TEST,
+                        price = 50.0
+                    ),
+                    Appointment(
+                        appointmentId = "124",
+                        doctorId = "Johnson",
+                        patientId = "P002",
+                        date = "31st Dec 2023",
+                        time = "11:00 AM",
+                        status = Status.PENDING,
+                        type = AppointmentType.DENTAL_IMPLANT,
+                        price = 30.0
+                    )
+                )
+            )
 
             // Quick actions
             Text(

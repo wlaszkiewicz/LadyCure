@@ -145,7 +145,8 @@ fun ProfileScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { /* Handle logout */ },
+                onClick = { logOut(navController)
+                          },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DefaultPrimary,
@@ -331,3 +332,41 @@ fun AccountSettingsDialog(
         containerColor = DefaultBackground
     )
 }
+
+fun logOut(navController: NavHostController) {
+    val authRepo = AuthRepository()
+    CoroutineScope(Dispatchers.IO).launch {
+        authRepo.signOut()
+        CoroutineScope(Dispatchers.Main).launch {
+            navController.navigate("welcome")
+        }
+    }
+}
+
+
+//     private fun updateEmail() {
+//        // [START update_email]
+//        val user = Firebase.auth.currentUser
+//
+//        user!!.updateEmail("user@example.com")
+//            .addOnCompleteListener { task ->
+//                if (task.isSuccessful) {
+//                    Log.d(TAG, "User email address updated.")
+//                }
+//            }
+//        // [END update_email]
+//    }
+//
+//    private fun updatePassword() {
+//        // [START update_password]
+//        val user = Firebase.auth.currentUser
+//        val newPassword = "SOME-SECURE-PASSWORD"
+//
+//        user!!.updatePassword(newPassword)
+//            .addOnCompleteListener { task ->
+//                if (task.isSuccessful) {
+//                    Log.d(TAG, "User password updated.")
+//                }
+//            }
+//        // [END update_password]
+//    }

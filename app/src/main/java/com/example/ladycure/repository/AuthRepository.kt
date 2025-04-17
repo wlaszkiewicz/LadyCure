@@ -1,7 +1,9 @@
 package com.example.ladycure.repository
 
 import android.util.Log
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -113,6 +115,10 @@ class AuthRepository {
             Log.e("AuthRepository", "Error updating user data", e)
             Result.failure(e)
         }
+    }
+
+    suspend fun signOut() {
+        Firebase.auth.signOut()
     }
 
 }
