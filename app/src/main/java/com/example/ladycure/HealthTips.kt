@@ -56,4 +56,8 @@ object HealthTips {
             return tips[it.nextInt(tips.size)]
         }
     }
+
+    fun getRandomTip(): String {
+        return tips[Random.nextInt(tips.size)]
+    }
 }

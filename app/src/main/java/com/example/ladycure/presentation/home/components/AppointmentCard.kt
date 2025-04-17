@@ -295,6 +295,7 @@ fun PreviewAppointmentDetailsDialog() {
 
 @Composable
 fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
+    val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Color(0xFF4CAF50)
         Status.PENDING -> Color(0xFFFFC107)
@@ -441,10 +442,10 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
-                        onClick = onDismiss,
+                        onClick = { showCancelConfirmation.value = true }, // Changed from onDismiss
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxWidth(),  // Important for centering
+                            .fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, Color.Red),
                         colors = ButtonDefaults.buttonColors(
@@ -453,15 +454,7 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                         ),
                         contentPadding = PaddingValues(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center  // This centers the text
-                        ) {
-                            Text(
-                                text = "Cancel",
-                                color = Color.Red.copy(alpha = 0.8f),
-                            )
-                        }
+                        Text("Cancel", color = Color.Red.copy(alpha = 0.8f))
                     }
 
                     Button(
@@ -477,7 +470,57 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                 }
             }
         }
+
+        // Confirmation Dialog
+        if (showCancelConfirmation.value) {
+            AlertDialog(
+                onDismissRequest = { showCancelConfirmation.value = false },
+                title = {
+                    Text(
+                        text = "Cancel Appointment",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = DefaultPrimary
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Are you sure you want to cancel this appointment with Dr. ${appointment.doctorName} on ${appointment.date}?",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showCancelConfirmation.value = false
+                            onDismiss()
+                            //cancellation logic here
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red.copy(alpha = 0.5f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Yes, Cancel")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { showCancelConfirmation.value = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultPrimary.copy(alpha = 0.1f),
+                            contentColor = DefaultPrimary
+                        )
+                    ) {
+                        Text("No, Keep It")
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                containerColor = Color.White
+            )
+        }
     }
+
+
 }
 
 @Composable

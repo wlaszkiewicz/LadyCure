@@ -4,13 +4,16 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import LadyCureTheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,12 +25,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.HealthTips.getDailyTip
+import com.example.ladycure.HealthTips.getRandomTip
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -161,7 +163,16 @@ fun HomeScreen(navController: NavHostController) {
             }
 
             // Health tips card
-            val dailyTip = remember { getDailyTip() }
+            var dailyTip by remember { mutableStateOf(getDailyTip()) }
+
+            var setToTodays = remember { mutableStateOf(false) }
+
+            if (dailyTip != getDailyTip()) {
+                setToTodays.value = false
+            } else {
+                setToTodays.value = true
+            }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -173,12 +184,40 @@ fun HomeScreen(navController: NavHostController) {
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "Daily Health Tip",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = DefaultPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row{
+                        Text(
+                            text = "Daily Health Tip",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = DefaultPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(
+                            onClick = { dailyTip = getRandomTip() },
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Regenerate Tip",
+                                tint = DefaultPrimary
+                            )
+                        }
+                        if (!setToTodays.value) {
+                            IconButton(
+                                onClick = { dailyTip = getDailyTip() },
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = "Todays Tip",
+                                    tint = DefaultPrimary
+                                )
+                            }
+                        }
+                    }
                     Text(
                         text = dailyTip,
                         style = MaterialTheme.typography.bodyMedium,
