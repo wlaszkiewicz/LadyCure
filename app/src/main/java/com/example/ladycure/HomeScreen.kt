@@ -3,6 +3,7 @@ package com.example.ladycure
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import BabyBlue
 import LadyCureTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -188,8 +189,8 @@ fun HomeScreen(navController: NavHostController) {
                         Text(
                             text = "Daily Health Tip",
                             style = MaterialTheme.typography.titleLarge,
-                            color = DefaultPrimary,
-                            fontWeight = FontWeight.Bold
+                            color = DefaultOnPrimary,
+                            fontWeight = FontWeight.Normal
                         )
                         IconButton(
                             onClick = { dailyTip = getRandomTip() },
@@ -294,7 +295,5 @@ fun HomeScreen(navController: NavHostController) {
 @Preview
 @Composable
 fun HomeScreenPreview() {
-    LadyCureTheme {
-        HomeScreen(navController = rememberNavController())
-    }
+    HomeScreen(navController = rememberNavController())
 }

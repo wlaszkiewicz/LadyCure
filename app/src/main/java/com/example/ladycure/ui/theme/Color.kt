@@ -9,8 +9,8 @@ val Pink40 = Color(0xFFC281A9)
 val Pink80 = Color(0xFFC4809E)
 val Pink90 = Color(0xFFA14E73)
 
-
-val Neutral99 = Color(0xFF0A0A0A)
+val BabyBlue = Color(0xFF5DB4EF)
+val Neutral99 = Color(0xFF261D1E)
 
 val DefaultBackground = Pink10
 val DefaultPrimary = Pink40

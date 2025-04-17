@@ -1,7 +1,7 @@
 package com.example.ladycure.presentation.home.components
 
 import DefaultPrimary
-
+import DefaultOnPrimary
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -59,18 +59,39 @@ fun BookAppointmentSection(
     }
 }
 
+
+
+//val specializationColors = listOf(
+//    Color(0xFFFFF0F5), // Lavender Blush (very light pink)
+//    Color(0xFFF0F8FF),
+//    Color.White
+//)
+
+
+
 @Composable
 fun SpecializationCard(
     specialization: Specialization,
     onSpecializationSelected: (Specialization) -> Unit
 ) {
+
+    val specializationColors = listOf(Color(0xFFFFF0F5),
+        Color(0xFFF0F8FF),
+        Color(0xFFFAFAD2),
+        Color(0xFFF5FFFA),
+        Color(0xFFFFFACD),
+        Color(0xFFEAFFEA),
+    )
+
+    val cardColor = specializationColors[specialization.ordinal % specializationColors.size]
+
     Card(
         modifier = Modifier
             .width(150.dp)
             .height(140.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.9f)
+            containerColor = cardColor.copy(alpha = 0.9f) // Slightly transparent
         ),
         onClick = { onSpecializationSelected(specialization) },
         elevation = CardDefaults.cardElevation(
@@ -109,8 +130,8 @@ fun SpecializationCard(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = specialization.displayName,
-                style = MaterialTheme.typography.labelMedium,
-                color = DefaultPrimary,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
+                color = DefaultOnPrimary,
                 textAlign = TextAlign.Center
             )
         }
@@ -126,6 +147,8 @@ fun PreviewBookAppointmentSection() {
             Specialization.CARDIOLOGY,
             Specialization.DERMATOLOGY,
             Specialization.GYNECOLOGY,
+            Specialization.PEDIATRICS,
+            Specialization.PSYCHIATRY,
         ),
         onSpecializationSelected = {}
     )
