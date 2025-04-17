@@ -30,10 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.User
-import com.example.ladycure.data.Specialization
+import com.example.ladycure.data.doctor.Specialization
 
 
 @Composable
@@ -91,22 +93,7 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                 )
             }
 
-            val specializations = listOf(
-                Specialization.CARDIOLOGY.displayName,
-                Specialization.DENTISTRY.displayName,
-                Specialization.DERMATOLOGY.displayName,
-                Specialization.ENDOCRINOLOGY.displayName,
-                Specialization.GYNECOLOGY.displayName,
-                Specialization.NEUROLOGY.displayName,
-                Specialization.ONCOLOGY.displayName,
-                Specialization.OPHTHALMOLOGY.displayName,
-                Specialization.ORTHOPEDICS.displayName,
-                Specialization.PEDIATRICS.displayName,
-                Specialization.PHYSIOTHERAPY.displayName,
-                Specialization.RADIOLOGY.displayName,
-                Specialization.PSYCHIATRY.displayName
-
-            )
+            val specializations = Specialization.entries.map { it.displayName }
 
             val groupedSpecializations = specializations.chunked(2)
 
@@ -162,4 +149,10 @@ fun DoctorSpecification(name: String, onClick: () -> Unit) {
             )
         }
     }
+}
+
+@Preview
+@Composable
+fun SearchDoctorsScreenPreview() {
+    SearchDoctorsScreen(navController = rememberNavController())
 }

@@ -47,6 +47,20 @@ class AuthRepository {
         }
     }
 
+    suspend fun getDoctors(): Result<List<Map<String, Any>>> {
+        return try {
+            val querySnapshot = firestore.collection("users")
+                .whereEqualTo("role", "doctor")
+                .get()
+                .await()
+            val doctors = querySnapshot.documents.map { it.data ?: emptyMap() }
+            Result.success(doctors)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error fetching doctors", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun getCurrentUser(): Map<String, String>? {
         val user = auth.currentUser
         return user?.let {
