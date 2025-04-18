@@ -87,6 +87,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation(libs.firebase.storage.ktx)
+
 }
 
 apply(plugin = "com.google.gms.google-services")

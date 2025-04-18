@@ -4,7 +4,12 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AlertDialog
@@ -40,30 +44,59 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import coil.compose.rememberAsyncImagePainter
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.ImageUploader
+import com.example.ladycure.utility.rememberImagePickerLauncher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.let
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
-
+    val context = LocalContext.current
     val repository = AuthRepository()
+    val imageUploader = remember { ImageUploader(context) }
     val userData = remember { mutableStateOf<Map<String, String>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    var imageUri: Uri? by remember { mutableStateOf(null) }
+    val imagePickerLauncher = rememberImagePickerLauncher { uri ->
+        imageUri = uri
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val userId = repository.getCurrentUserId() ?: return@launch
+                imageUploader.uploadImage(uri, userId).fold(
+                    onSuccess = { downloadUrl ->
+                        repository.updateProfilePicture(downloadUrl)
+                        userData.value = repository.getCurrentUser()
+                        errorMessage = "" // Clear any previous errors
+                    },
+                    onFailure = { e ->
+                        errorMessage = "Failed to update profile picture: ${e.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Error: ${e.message}"
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         userData.value = repository.getCurrentUser()
@@ -88,33 +121,50 @@ fun ProfileScreen(navController: NavHostController) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(120.dp)
+                        .size(150.dp)
                         .clip(CircleShape)
+                        .border(
+                            width = 4.dp,
+                            color = DefaultPrimary, // Pink border
+                            shape = CircleShape
+                        )
                         .background(DefaultPrimary.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Profile",
-                        tint = DefaultPrimary,
-                        modifier = Modifier.size(100.dp)
+                    val currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
+                    val painter = if (imageUri != null) {
+                        rememberAsyncImagePainter(imageUri)
+                    } else if (currentImageUrl.isNotEmpty()) {
+                        rememberAsyncImagePainter(currentImageUrl)
+                    } else {
+                        painterResource(R.drawable.profile_pic)
+                    }
+
+                    Image(
+                        painter = painter,
+                        contentDescription = "Profile Picture",
+                        contentScale = ContentScale.Crop,  // This ensures the image fills the circle
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .clickable { imagePickerLauncher.launch("image/*") }
                     )
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                userData.value?.let { user ->
-                    Text(
-                        text = "${user["name"]} ${user["surname"]}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = DefaultPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                } ?: Text(
-                    text = "Loading user data...",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = DefaultOnPrimary
-                )
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            userData.value?.let { user ->
+                Text(
+                    text = "${user["name"]} ${user["surname"]}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = DefaultPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+            } ?: Text(
+                text = "Loading user data...",
+                style = MaterialTheme.typography.bodyLarge,
+                color = DefaultOnPrimary
+            )
 
             // Settings options
             Column(
@@ -145,8 +195,9 @@ fun ProfileScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { logOut(navController)
-                          },
+                onClick = {
+                    logOut(navController)
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DefaultPrimary,
@@ -156,6 +207,13 @@ fun ProfileScreen(navController: NavHostController) {
             ) {
                 Text("Sign Out")
             }
+
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Red,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
         }
     }
 
@@ -169,6 +227,7 @@ fun ProfileScreen(navController: NavHostController) {
                     if (result.isSuccess) {
                         userData.value = updatedData
                     } else {
+
                     }
                     showAccountSettingsDialog = false
                 }
@@ -343,7 +402,7 @@ fun logOut(navController: NavHostController) {
     }
 }
 
-
+// DEPRECATED ANO DOESNT WORK ANYMORE :((( :
 //     private fun updateEmail() {
 //        // [START update_email]
 //        val user = Firebase.auth.currentUser
@@ -370,3 +429,5 @@ fun logOut(navController: NavHostController) {
 //            }
 //        // [END update_password]
 //    }
+
+
