@@ -11,6 +11,20 @@ class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance("telecure")
 
+    suspend fun updateProfilePicture(imageUrl: String): Result<Unit> = try {
+        val currentUser = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
+        firestore.collection("users").document(currentUser.uid)
+            .update("profilePictureUrl", imageUrl)
+            .await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    fun getCurrentUserId(): String? {
+        return auth.currentUser?.uid
+    }
+
     suspend fun register(email: String, name: String, surname: String, dateOfBirth: String, password: String): Result<Unit> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
@@ -71,7 +85,8 @@ class AuthRepository {
                         "name" to (document.getString("name") ?: ""),
                         "surname" to (document.getString("surname") ?: ""),
                         "email" to (document.getString("email") ?: ""),
-                        "dob" to (document.getString("dob") ?: "")
+                        "dob" to (document.getString("dob") ?: ""),
+                        "profilePictureUrl" to (document.getString("profilePictureUrl") ?: "")
                     )
                 } else {
                     null
@@ -82,18 +97,6 @@ class AuthRepository {
         }
     }
 
-//    suspend fun getDoctorsBySpecification(specification: String): Result<List<Map<String, Any>>> {
-//        return try {
-//            val querySnapshot = firestore.collection("Doctors")
-//                .whereEqualTo("specification", specification)
-//                .get()
-//                .await()
-//            val doctors = querySnapshot.documents.map { it.data ?: emptyMap() }
-//            Result.success(doctors)
-//        } catch (e: Exception) {
-//            Result.failure(e)
-//        }
-//    }
 
     suspend fun getDoctorsBySpecification(specification: String): Result<List<Map<String, Any>>> {
         return try {
@@ -133,6 +136,17 @@ class AuthRepository {
 
     suspend fun signOut() {
         Firebase.auth.signOut()
+    }
+
+
+    suspend fun getUserField(fieldName: String): Result<String?> {
+        return try {
+            val currentUser = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
+            val document = firestore.collection("users").document(currentUser.uid).get().await()
+            Result.success(document.getString(fieldName))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
 }

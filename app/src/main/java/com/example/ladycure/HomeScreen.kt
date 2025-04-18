@@ -3,10 +3,10 @@ package com.example.ladycure
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
-import BabyBlue
-import LadyCureTheme
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.background
@@ -41,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.ladycure.HealthTips.getDailyTip
 import com.example.ladycure.HealthTips.getRandomTip
 import com.example.ladycure.repository.AuthRepository
@@ -52,39 +53,6 @@ import com.example.ladycure.data.doctor.Specialization
 import com.example.ladycure.data.Status
 import com.example.ladycure.presentation.home.components.AppointmentsSection
 import com.example.ladycure.presentation.home.components.BookAppointmentSection
-
-
-@Composable
-fun QuickActionButton(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .padding(16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DefaultPrimary.copy(alpha = 0.1f)
-        ),
-        onClick = onClick
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = DefaultPrimary,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = DefaultPrimary
-            )
-        }
-    }
-}
 
 
 @Composable
@@ -152,14 +120,30 @@ fun HomeScreen(navController: NavHostController) {
                         .size(56.dp)
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
+
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Profile",
-                        tint = DefaultPrimary,
+                    IconButton(
+                        onClick = { navController.navigate(Screen.Profile.route) },
                         modifier = Modifier.size(48.dp)
-                    )
+                    ) {
+                        var userProfileUrl = userData.value.getOrNull()?.get("profilePictureUrl") as? String
+                        if (userProfileUrl != null) {
+                            Image(painter = rememberAsyncImagePainter(userProfileUrl), contentDescription = "Profile Picture",
+                                contentScale = ContentScale.Crop,  // This ensures the image fills the circle
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape))
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile",
+                                tint = DefaultPrimary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+
                 }
             }
 
@@ -265,30 +249,6 @@ fun HomeScreen(navController: NavHostController) {
                     )
                 )
             )
-
-//            // Quick actions
-//            Text(
-//                text = "Quick Actions",
-//                style = MaterialTheme.typography.titleMedium,
-//                color = DefaultPrimary,
-//                modifier = Modifier.padding(top = 8.dp)
-//            )
-//
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.spacedBy(16.dp)
-//            ) {
-//                QuickActionButton(
-//                    icon = Icons.Default.Face,
-//                    label = "Doctors",
-//                    onClick = { navController.navigate(Screen.Doctors.route) }
-//                )
-//                QuickActionButton(
-//                    icon = Icons.Default.Call,
-//                    label = "Chat",
-//                    onClick = { navController.navigate(Screen.Chat.route) }
-//                )
-//            }
         }
     }
 }
