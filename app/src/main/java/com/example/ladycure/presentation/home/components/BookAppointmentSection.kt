@@ -78,9 +78,8 @@ fun SpecializationCard(
     val specializationColors = listOf(Color(0xFFFFF0F5),
         Color(0xFFF0F8FF),
         Color(0xFFFAFAD2),
-        Color(0xFFF5FFFA),
-        Color(0xFFFFFACD),
-        Color(0xFFEAFFEA),
+        Color(0xFFE9FFEB),
+        Color(0xFFE2DCFA)
     )
 
     val cardColor = specializationColors[specialization.ordinal % specializationColors.size]
