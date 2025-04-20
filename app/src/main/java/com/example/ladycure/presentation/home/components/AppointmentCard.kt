@@ -44,7 +44,6 @@ fun AppointmentsSection(appointments: List<Appointment>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
     ) {
         Text(
             text = "Upcoming Appointments",
@@ -68,7 +67,7 @@ fun AppointmentsSection(appointments: List<Appointment>) {
                 )
             }
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 appointments.forEach { appointment ->
                     ModernAppointmentCard(appointment)
                 }

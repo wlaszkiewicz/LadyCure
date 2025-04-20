@@ -46,7 +46,6 @@ import com.example.ladycure.HealthTips.getDailyTip
 import com.example.ladycure.HealthTips.getRandomTip
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Specialization
@@ -60,197 +59,202 @@ fun HomeScreen(navController: NavHostController) {
 
     var auth = FirebaseAuth.getInstance()
     var user = auth.currentUser
-    var firestore = FirebaseFirestore.getInstance()
     var authRepo = AuthRepository()
 
-    val showBookingDialog = remember { mutableStateOf(false) }
     val selectedSpecialization = remember { mutableStateOf<Specialization?>(null) }
-
-    var userData = remember { mutableStateOf(Result.success(emptyMap<String, Any>())) }
-
-    LaunchedEffect(user?.uid) {
-        user?.uid?.let { uid ->
-            userData.value = authRepo.getUserData(uid)
-        }
-    }
-
-    val doctors = remember { mutableStateOf(emptyList<Map<String, Any>>()) }
+    val userData = remember { mutableStateOf<Map<String, String>?>(null) }
+    val selectedCity = remember { mutableStateOf("Wrocław") }
 
     LaunchedEffect(Unit) {
-        val result = authRepo.getDoctors()
-        if (result.isSuccess) {
-            val doctorsList = result.getOrNull() ?: emptyList()
-            doctors.value = doctorsList
-        } else {
-            // Handle error
-        }
+        userData.value = authRepo.getCurrentUser()
     }
 
-    Scaffold(
-        bottomBar = { BottomNavBar(navController = navController) }
-    ) { innerPadding ->
+    if (userData.value == null) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(DefaultBackground)
-                .padding(innerPadding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header with greeting
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            CircularProgressIndicator(
+                color = DefaultPrimary,
+                modifier = Modifier.size(48.dp)
+            )
+        }
+    } else {
+        Scaffold(
+            bottomBar = { BottomNavBar(navController = navController) }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DefaultBackground)
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Column {
-                    Text(
-                        text = "Hii, ${userData.value.getOrNull()?.get("name") ?: ""}",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = DefaultPrimary
-                    )
-                }
-
-                // User avatar
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(DefaultPrimary.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center,
-
+                // Header with greeting
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { navController.navigate(Screen.Profile.route) },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        var userProfileUrl = userData.value.getOrNull()?.get("profilePictureUrl") as? String
-                        if (userProfileUrl != null) {
-                            Image(painter = rememberAsyncImagePainter(userProfileUrl), contentDescription = "Profile Picture",
-                                contentScale = ContentScale.Crop,  // This ensures the image fills the circle
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape))
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Profile",
-                                tint = DefaultPrimary,
-                                modifier = Modifier.size(48.dp)
-                            )
-                        }
+                    Column {
+                        Text(
+                            text = "Hii, ${userData.value?.get("name") ?: ""}",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = DefaultPrimary
+                        )
                     }
 
-                }
-            }
+                    // User avatar
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(DefaultPrimary.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center,
 
-            // Health tips card
-            var dailyTip by remember { mutableStateOf(getDailyTip()) }
-
-            var setToTodays = remember { mutableStateOf(false) }
-
-            if (dailyTip != getDailyTip()) {
-                setToTodays.value = false
-            } else {
-                setToTodays.value = true
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.5f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row{
-                        Text(
-                            text = "Daily Health Tip",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = DefaultOnPrimary,
-                            fontWeight = FontWeight.Normal
-                        )
-                        IconButton(
-                            onClick = { dailyTip = getRandomTip() },
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .size(24.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Regenerate Tip",
-                                tint = DefaultPrimary
-                            )
+                        IconButton(
+                            onClick = { navController.navigate("profile") },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            var userProfileUrl = userData.value?.get("profilePictureUrl") as? String
+                            if (userProfileUrl != null) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(userProfileUrl),
+                                    contentDescription = "Profile Picture",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Profile",
+                                    tint = DefaultPrimary,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
                         }
-                        if (!setToTodays.value) {
+
+                    }
+                }
+
+                // Health tips card
+                var dailyTip by remember { mutableStateOf(getDailyTip()) }
+
+                var setToTodays = remember { mutableStateOf(false) }
+
+                if (dailyTip != getDailyTip()) {
+                    setToTodays.value = false
+                } else {
+                    setToTodays.value = true
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row {
+                            Text(
+                                text = "Daily Health Tip",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = DefaultOnPrimary,
+                                fontWeight = FontWeight.Normal
+                            )
                             IconButton(
-                                onClick = { dailyTip = getDailyTip() },
+                                onClick = { dailyTip = getRandomTip() },
                                 modifier = Modifier
                                     .padding(start = 8.dp)
                                     .size(24.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.CalendarToday,
-                                    contentDescription = "Todays Tip",
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Regenerate Tip",
                                     tint = DefaultPrimary
                                 )
                             }
+                            if (!setToTodays.value) {
+                                IconButton(
+                                    onClick = { dailyTip = getDailyTip() },
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarToday,
+                                        contentDescription = "Todays Tip",
+                                        tint = DefaultPrimary
+                                    )
+                                }
+                            }
                         }
+                        Text(
+                            text = dailyTip,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DefaultOnPrimary.copy(alpha = 0.8f)
+                        )
                     }
-                    Text(
-                        text = dailyTip,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultOnPrimary.copy(alpha = 0.8f)
-                    )
                 }
-            }
 
-            BookAppointmentSection(
-                navController = navController,
-                specializations = Specialization.entries,
-                onSpecializationSelected = { specialization ->
-                    selectedSpecialization.value = specialization
-                    showBookingDialog.value = true
-                }
-            )
+                BookAppointmentSection(
+                    navController = navController,
+                    specializations = Specialization.entries,
+                    onCitySelected = { city ->
+                        selectedCity.value = city
+                    },
+                    onSpecializationSelected = { specialization ->
+                        selectedSpecialization.value = specialization
+                        navController.navigate("book_appointment/${selectedCity.value}/${specialization.displayName}")
+                    }
+                )
 
-            AppointmentsSection(
-                appointments = listOf(
-                    Appointment(
-                        appointmentId = "123",
-                        doctorId = "7PF99RFwlAc85r1760yyaMnvfo33",
-                        patientId = "P001",
-                        date = "30th Dec 2023",
-                        time = "10:00 AM",
-                        status = Status.CONFIRMED,
-                        type = AppointmentType.EYE_TEST,
-                        price = 50.0,
-                        address = "123 Main St, City",
-                        doctorName = "Ava Kum",
-                        comments = "Don't forget your glasses!"
-                    ),
-                    Appointment(
-                        appointmentId = "124",
-                        doctorId = "RE2CoEAtEmXbYdhQ7PotN1rFqMk1",
-                        patientId = "P002",
-                        date = "31st Dec 2023",
-                        time = "11:00 AM",
-                        status = Status.PENDING,
-                        type = AppointmentType.DENTAL_IMPLANT,
-                        price = 30.0,
-                        doctorName = "Artur Kot",
-                        comments = "Make sure to arrive 15 minutes early. Bring your ID.",
+                AppointmentsSection(
+                    appointments = listOf(
+                        Appointment(
+                            appointmentId = "123",
+                            doctorId = "7PF99RFwlAc85r1760yyaMnvfo33",
+                            patientId = "P001",
+                            date = "30th Dec 2023",
+                            time = "10:00 AM",
+                            status = Status.CONFIRMED,
+                            type = AppointmentType.EYE_TEST,
+                            price = 50.0,
+                            address = "123 Main St, City",
+                            doctorName = "Ava Kum",
+                            comments = "Don't forget your glasses!"
+                        ),
+                        Appointment(
+                            appointmentId = "124",
+                            doctorId = "RE2CoEAtEmXbYdhQ7PotN1rFqMk1",
+                            patientId = "P002",
+                            date = "31st Dec 2023",
+                            time = "11:00 AM",
+                            status = Status.PENDING,
+                            type = AppointmentType.DENTAL_IMPLANT,
+                            price = 30.0,
+                            doctorName = "Artur Kot",
+                            comments = "Make sure to arrive 15 minutes early. Bring your ID.",
+                        )
                     )
                 )
-            )
+            }
         }
     }
+
 }
 @Preview
 @Composable

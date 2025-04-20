@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.ladycure.data.doctor.Specialization
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,10 +58,16 @@ fun AppNavigation() {
         composable(Screen.Home.route) { HomeScreen(navController) }
         composable(Screen.Doctors.route) { SearchDoctorsScreen(navController) }
         composable(Screen.Chat.route) { ChatScreen(navController) }
-        composable(Screen.Profile.route) { ProfileScreen(navController) }
+        composable(Screen.Profile.route) { ProfileScreen(
+            navController) }
         composable("doctors/{specification}") { backStackEntry ->
             val specification = backStackEntry.arguments?.getString("specification") ?: ""
             DoctorsListScreen(navController, specification)
+        }
+        composable("book_appointment/{city}/{specialization}") { backStackEntry ->
+            val city = backStackEntry.arguments?.getString("city") ?: ""
+            val specialization = backStackEntry.arguments?.getString("specialization") ?: ""
+            BookAppointmentScreen(navController, city, Specialization.valueOf(specialization.uppercase()))
         }
     }
 }

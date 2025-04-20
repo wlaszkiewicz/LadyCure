@@ -33,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -125,30 +126,62 @@ fun ProfileScreen(navController: NavHostController) {
                         .clip(CircleShape)
                         .border(
                             width = 4.dp,
-                            color = DefaultPrimary, // Pink border
+                            color = DefaultPrimary,
                             shape = CircleShape
                         )
                         .background(DefaultPrimary.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
                     val currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
-                    val painter = if (imageUri != null) {
-                        rememberAsyncImagePainter(imageUri)
-                    } else if (currentImageUrl.isNotEmpty()) {
-                        rememberAsyncImagePainter(currentImageUrl)
-                    } else {
-                        painterResource(R.drawable.profile_pic)
+
+                    when {
+                        // Show loading indicator while user data is being fetched
+                        userData.value == null -> {
+                            CircularProgressIndicator(
+                                color = DefaultPrimary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                        // Show user's profile picture if available
+                        currentImageUrl.isNotEmpty() -> {
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    model = currentImageUrl,
+                                    onLoading = { }
+                                ),
+                                contentDescription = "Profile Picture",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .clickable { imagePickerLauncher.launch("image/*") }
+                            )
+                        }
+                        // Show default profile picture if no URL is available
+                        else -> {
+                            Image(
+                                painter = painterResource(R.drawable.profile_pic),
+                                contentDescription = "Default Profile Picture",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .clickable { imagePickerLauncher.launch("image/*") }
+                            )
+                        }
                     }
 
-                    Image(
-                        painter = painter,
-                        contentDescription = "Profile Picture",
-                        contentScale = ContentScale.Crop,  // This ensures the image fills the circle
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .clickable { imagePickerLauncher.launch("image/*") }
-                    )
+                    // If there's a temporary image URI (from image picker), show it
+                    imageUri?.let { uri ->
+                        Image(
+                            painter = rememberAsyncImagePainter(uri),
+                            contentDescription = "Selected Profile Picture",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                        )
+                    }
                 }
             }
 
