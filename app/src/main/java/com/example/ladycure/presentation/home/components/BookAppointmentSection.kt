@@ -37,15 +37,12 @@ import androidx.compose.runtime.setValue
 fun BookAppointmentSection(
     navController: NavHostController,
     specializations: List<Specialization>,
+    onCitySelected: (String) -> Unit = {},
     onSpecializationSelected: (Specialization) -> Unit
 ) {
-    // State for location dropdown visibility
     var showLocationDropdown by remember { mutableStateOf(false) }
-
-    // State for selected location
     var selectedLocation by remember { mutableStateOf("Detecting your location...") }
 
-    // List of available locations
     val availableLocations = listOf(
         "Wrocław", "Warszawa", "Kraków", "Łódź", "Poznań",
         "Gdańsk", "Szczecin", "Bydgoszcz", "Lublin", "Katowice",
@@ -72,9 +69,6 @@ fun BookAppointmentSection(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        // Chose location
-
-        // Location selection with dropdown
 
         Box(modifier = Modifier.fillMaxWidth()) {
             Card(
@@ -125,7 +119,6 @@ fun BookAppointmentSection(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .heightIn(max = 300.dp)
-            //        .verticalScroll(rememberScrollState())  // Scroll modifier here
                     .background(
                         color = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(12.dp)
@@ -143,6 +136,7 @@ fun BookAppointmentSection(
                         onClick = {
                             selectedLocation = location
                             showLocationDropdown = false
+                            onCitySelected(selectedLocation)
                         },
                         modifier = Modifier.padding(horizontal = 8.dp),
                         colors = MenuDefaults.itemColors(
@@ -152,7 +146,6 @@ fun BookAppointmentSection(
                 }
             }
         }
-
 
         // Horizontal scrollable list of specializations
         val scrollState = rememberScrollState()

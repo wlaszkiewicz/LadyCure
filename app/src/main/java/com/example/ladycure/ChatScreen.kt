@@ -26,8 +26,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.example.ladycure.presentation.home.components.BottomNavBar
+import com.example.ladycure.presentation.home.components.Screen
 
 @Composable
 fun ChatScreen(navController: NavHostController) {

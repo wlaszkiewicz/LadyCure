@@ -31,15 +31,22 @@ import com.google.firebase.auth.auth
 @Composable
 fun WelcomeScreen(navController: NavController) {
     val context = LocalContext.current
-    val isLoggedIn by remember { mutableStateOf(checkIfUserIsLoggedIn(context)) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isLoggedIn by remember { mutableStateOf(false) }
 
-    LoadingScreen(isLoading = isLoggedIn)
+    LaunchedEffect(Unit) {
+        // Check auth state asynchronously
+        Firebase.auth.addAuthStateListener { auth ->
+            isLoggedIn = auth.currentUser != null
+            isLoading = false
+        }
+    }
 
-    // If user is logged in, navigate to home screen
+    LoadingScreen(isLoading = isLoading)
+
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
             navController.navigate("home") {
-                // Clear back stack so user can't go back to welcome screen
                 popUpTo(navController.graph.startDestinationId) {
                     inclusive = true
                 }
@@ -48,7 +55,7 @@ fun WelcomeScreen(navController: NavController) {
     }
 
     // Only show the gender selection/login screen if user is not logged in
-    if (!isLoggedIn) {
+    if (!isLoading && !isLoggedIn) {
         WelcomeContent(navController)
     }
 }
@@ -211,15 +218,6 @@ fun WelcomeContent(navController: NavController) {
     }
 }
 
-
-fun checkIfUserIsLoggedIn(context: Context): Boolean {
-    val user = Firebase.auth.currentUser
-    if (user != null) {
-        return true
-    } else {
-        return false
-    }
-}
 
 @Preview
 @Composable

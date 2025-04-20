@@ -3,9 +3,7 @@ package com.example.ladycure
 import LadyCureTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement.Top
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
@@ -21,7 +19,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -54,7 +51,7 @@ fun LoginScreen(navController: NavController) {
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
                     )
                     Image(
-                        painter = painterResource(id = R.drawable.kapi2),
+                        painter = painterResource(id = R.drawable.login_kapi),
                         contentDescription = "Capybara background",
                         modifier = Modifier
                             .fillMaxWidth()
