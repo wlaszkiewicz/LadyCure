@@ -47,19 +47,6 @@ class AuthRepository {
         }
     }
 
-    suspend fun getUserData(userId: String): Result<Map<String, Any>> {
-        return try {
-            val document = firestore.collection("users").document(userId).get().await()
-            if (document.exists()) {
-                Result.success(document.data ?: emptyMap())
-            } else {
-                Result.failure(Exception("User data not found"))
-            }
-        } catch (e: Exception) {
-            Log.e("AuthRepository", "Error fetching user data", e)
-            Result.failure(e)
-        }
-    }
 
     suspend fun getDoctors(): Result<List<Map<String, Any>>> {
         return try {
@@ -74,6 +61,8 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+
 
     suspend fun getCurrentUser(): Map<String, String>? {
         val user = auth.currentUser

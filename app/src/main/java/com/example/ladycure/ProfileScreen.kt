@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
+import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.ImageUploader
 import com.example.ladycure.utility.rememberImagePickerLauncher

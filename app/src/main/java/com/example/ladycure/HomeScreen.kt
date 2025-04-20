@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -35,15 +35,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.ladycure.HealthTips.getDailyTip
-import com.example.ladycure.HealthTips.getRandomTip
+import com.example.ladycure.utility.HealthTips.getDailyTip
+import com.example.ladycure.utility.HealthTips.getRandomTip
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.example.ladycure.data.Appointment
@@ -52,6 +51,7 @@ import com.example.ladycure.data.doctor.Specialization
 import com.example.ladycure.data.Status
 import com.example.ladycure.presentation.home.components.AppointmentsSection
 import com.example.ladycure.presentation.home.components.BookAppointmentSection
+import com.example.ladycure.presentation.home.components.BottomNavBar
 
 
 @Composable
@@ -100,15 +100,26 @@ fun HomeScreen(navController: NavHostController) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = "Hii, ${userData.value?.get("name") ?: ""}",
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = DefaultPrimary
+                    Text(
+                        text = "Hii, ${userData.value?.get("name") ?: ""}",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = DefaultPrimary
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton( onClick = { //navController.navigate("notifications")
+                         },
+                        modifier = Modifier.size(30.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
+                        Spacer(modifier = Modifier.size(8.dp))
 
                     // User avatar
                     Box(
@@ -138,10 +149,11 @@ fun HomeScreen(navController: NavHostController) {
                                     imageVector = Icons.Default.AccountCircle,
                                     contentDescription = "Profile",
                                     tint = DefaultPrimary,
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.fillMaxSize()
                                 )
                             }
                         }
+                    }
 
                     }
                 }

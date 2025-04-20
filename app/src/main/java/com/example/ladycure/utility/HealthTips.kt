@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.utility
 
 import java.util.Calendar
 import kotlin.random.Random
@@ -58,6 +58,6 @@ object HealthTips {
     }
 
     fun getRandomTip(): String {
-        return tips[Random.nextInt(tips.size)]
+        return tips[Random.Default.nextInt(tips.size)]
     }
 }

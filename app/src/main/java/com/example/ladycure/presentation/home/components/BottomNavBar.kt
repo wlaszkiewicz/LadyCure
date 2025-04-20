@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.presentation.home.components
 
 import DefaultBackground
 import DefaultOnPrimary
