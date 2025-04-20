@@ -168,7 +168,7 @@ fun WelcomeContent(navController: NavController) {
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp)
                             .padding(bottom = 32.dp),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.FillWidth
                     )
                     Button(
                         onClick = { navController.navigate("login") },

@@ -51,7 +51,7 @@ fun LoginScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(0.80f)
-                            .background(MaterialTheme.colorScheme.primary)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
                     )
                     Image(
                         painter = painterResource(id = R.drawable.kapi2),
