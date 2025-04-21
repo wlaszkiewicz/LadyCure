@@ -32,27 +32,27 @@ class ImageUploader(private val context: Context) {
 
     suspend fun uploadImage(uri: Uri, userId: String): Result<String> {
         return try {
-            // 1. Get the old image URL
-            val oldUrl = authRepo.getUserField("profilePictureUrl").getOrNull()
+//            // 1. Get the old image URL
+//            val oldUrl = authRepo.getUserField("profilePictureUrl").getOrNull()
 
             // 2. Upload the new image first (to ensure we don't lose both if deletion fails)
             val newImageRef = storageRef.child("profile_images/$userId/${UUID.randomUUID()}")
             newImageRef.putFile(uri).await()
             val downloadUrl = newImageRef.downloadUrl.await().toString()
 
-            // 3. Delete the old image if it exists
-            oldUrl?.let { url ->
-                try {
-                    // Validate the URL is a Firebase Storage URL
-                    if (url.startsWith("gs://") || url.contains("firebasestorage.googleapis.com")) {
-                        val oldRef = storage.getReferenceFromUrl(url)
-                        oldRef.delete().await()
-                    }
-                } catch (e: Exception) {
-                    // Log the error but don't fail the whole operation
-                    Log.e("ImageUploader", "Failed to delete old image: ${e.message}")
-                }
-            }
+//            // 3. Delete the old image if it exists
+//            oldUrl?.let { url ->
+//                try {
+//                    // Validate the URL is a Firebase Storage URL
+//                    if (url.startsWith("gs://") || url.contains("firebasestorage.googleapis.com")) {
+//                        val oldRef = storage.getReferenceFromUrl(url)
+//                        oldRef.delete().await()
+//                    }
+//                } catch (e: Exception) {
+//                    // Log the error but don't fail the whole operation
+//                    Log.e("ImageUploader", "Failed to delete old image: ${e.message}")
+//                }
+//            }
 
             // 4. Return the new URL
             Result.success(downloadUrl)

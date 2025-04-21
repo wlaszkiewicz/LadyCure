@@ -1,10 +1,13 @@
 package com.example.ladycure.repository
 
 import android.util.Log
+import com.example.ladycure.data.doctor.DoctorAvailability
+import com.example.ladycure.data.doctor.Specialization
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository {
@@ -94,7 +97,7 @@ class AuthRepository {
                 .whereEqualTo("specification", specification)
                 .get()
                 .await()
-            val doctors = querySnapshot.documents.map { it.data ?: emptyMap() }
+            val doctors = querySnapshot.documents.map { it.data?.plus("id" to it.id) ?: mapOf("id" to it.id) }
             Result.success(doctors)
         } catch (e: Exception) {
             Result.failure(e)
@@ -138,4 +141,62 @@ class AuthRepository {
         }
     }
 
+
+    suspend fun getAllDoctorAvailabilitiesBySpecialization(specialization: String, city: String): List<DoctorAvailability> {
+        val doctors = firestore.collection("users")
+            .whereEqualTo("role", "doctor")
+            .whereEqualTo("city", city)
+            .whereEqualTo("specification", specialization)
+            .get()
+            .await()
+            .documents
+
+        val allAvailabilities = mutableListOf<DoctorAvailability>()
+
+        for (doctor in doctors) {
+            val availabilities = doctor.reference.collection("availability")
+                .get()
+                .await()
+                .documents
+                .map { doc ->
+                    DoctorAvailability(
+                        doctorId = doctor.id,
+                        date = doc.id,
+                        startTime = doc.getString("startTime") ?: "",
+                        endTime = doc.getString("endTime") ?: "",
+                    )
+                }
+            allAvailabilities.addAll(availabilities)
+        }
+        return allAvailabilities
+    }
+
+
+    suspend fun getDoctorAvailability(doctorId: String): Result<List<Map<String, Any>>> {
+        return try {
+            val availabilities = Firebase.firestore.collection("users")
+                .document(doctorId)
+                .collection("availability")
+                .get()
+                .await()
+                .documents
+                .map { doc -> doc.data ?: emptyMap() }
+            Result.success(availabilities)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getDoctorById(doctorId: String): Result<Map<String, Any>?> {
+        return try {
+            val document = firestore.collection("users").document(doctorId).get().await()
+            if (document.exists()) {
+                Result.success(document.data)
+            } else {
+                Result.success(null)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

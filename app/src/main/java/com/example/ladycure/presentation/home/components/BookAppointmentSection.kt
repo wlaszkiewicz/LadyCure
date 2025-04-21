@@ -214,6 +214,7 @@ fun SpecializationCard(
             // You would replace this with actual icons for each specialization
             Icon(
                 painter = when (specialization.displayName) {
+                    "Family Medicine" -> painterResource(id = com.example.ladycure.R.drawable.ic_family_medicine)
                     "Cardiology" -> painterResource(id = com.example.ladycure.R.drawable.ic_cardiology)
                     "Dentistry" -> painterResource(id = com.example.ladycure.R.drawable.ic_dentistry)
                     "Dermatology" -> painterResource(id = com.example.ladycure.R.drawable.ic_dermatology)

@@ -87,7 +87,7 @@ fun ModernAppointmentCard(appointment: Appointment) {
     }
 
     Card(
-        modifier = Modifier.width(280.dp), // Set a fixed width
+        modifier = Modifier.width(280.dp),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp,
@@ -118,6 +118,7 @@ fun ModernAppointmentCard(appointment: Appointment) {
                 ) {
                     Icon(
                         painter = when (appointment.type.specialization) {
+                            "Family Medicine" -> painterResource(id = R.drawable.ic_family_medicine)
                             "Cardiology" -> painterResource(id = R.drawable.ic_cardiology)
                             "Dentistry" -> painterResource(id = R.drawable.ic_dentistry)
                             "Dermatology" -> painterResource(id = R.drawable.ic_dermatology)
