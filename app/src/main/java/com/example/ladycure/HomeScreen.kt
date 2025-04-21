@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -40,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.SubcomposeAsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.ladycure.utility.HealthTips.getDailyTip
 import com.example.ladycure.utility.HealthTips.getRandomTip
@@ -136,13 +138,33 @@ fun HomeScreen(navController: NavHostController) {
                         ) {
                             var userProfileUrl = userData.value?.get("profilePictureUrl") as? String
                             if (userProfileUrl != null) {
-                                Image(
-                                    painter = rememberAsyncImagePainter(userProfileUrl),
+                                SubcomposeAsyncImage(
+                                    model = userProfileUrl,
                                     contentDescription = "Profile Picture",
-                                    contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .clip(CircleShape)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop,
+                                    loading = {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                color = DefaultPrimary
+                                            )
+                                        }
+                                    },
+                                    error = {
+                                        Icon(
+                                            imageVector = Icons.Default.Error,
+                                            contentDescription = "Error loading image",
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            tint = Color.Gray
+                                        )
+                                    }
                                 )
                             } else {
                                 Icon(
@@ -230,7 +252,7 @@ fun HomeScreen(navController: NavHostController) {
                     },
                     onSpecializationSelected = { specialization ->
                         selectedSpecialization.value = specialization
-                        navController.navigate("book_appointment/${selectedCity.value}/${specialization.displayName}")
+                        navController.navigate("services/${selectedCity.value}/${specialization.displayName}")
                     }
                 )
 

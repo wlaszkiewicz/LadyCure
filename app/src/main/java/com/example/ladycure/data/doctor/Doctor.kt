@@ -9,6 +9,12 @@ data class Doctor(
     val reviews: List<Review>,
     val address: String,
     val consultationPrice: String,
+    val rating: Double,
+    val experience: String,
+    val languages: List<String>,
+    val city: String,
+    val phoneNumber: String,
+    val bio: String,
     override val email: String,
     override val name: String,
     override val surname: String,
@@ -16,6 +22,7 @@ data class Doctor(
     override val profilePictureUrl: String,
     override val role: Role = Role.DOCTOR
 ) : User(
+    id = "",
     email = email,
     name = name,
     surname = surname,
@@ -26,9 +33,10 @@ data class Doctor(
 
 
 enum class Specialization(val displayName: String) {
+    FAMILY_MEDICINE("Family Medicine"),
+    DERMATOLOGY("Dermatology"),
     CARDIOLOGY("Cardiology"),
     DENTISTRY("Dentistry"),
-    DERMATOLOGY("Dermatology"),
     ENDOCRINOLOGY("Endocrinology"),
     GYNECOLOGY("Gynecology"),
     NEUROLOGY("Neurology"),
@@ -39,4 +47,19 @@ enum class Specialization(val displayName: String) {
     PSYCHIATRY("Psychiatry"),
     PHYSIOTHERAPY("Physiotherapy"),
     RADIOLOGY("Radiology"),
+    OTHER("Other");
+
+    companion object {
+        fun fromDisplayName(displayName: String): Specialization {
+            return values().firstOrNull { it.displayName == displayName } ?: OTHER
+        }
+
+    }
 }
+
+data class DoctorAvailability(
+    val doctorId: String,
+    val date: String,
+    val startTime: String,
+    val endTime: String
+)

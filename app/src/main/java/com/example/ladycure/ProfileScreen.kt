@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AlertDialog
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
+import coil.compose.SubcomposeAsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
@@ -136,14 +138,12 @@ fun ProfileScreen(navController: NavHostController) {
                     val currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
 
                     when {
-                        // Show loading indicator while user data is being fetched
                         userData.value == null -> {
                             CircularProgressIndicator(
                                 color = DefaultPrimary,
                                 modifier = Modifier.size(48.dp)
                             )
                         }
-                        // Show user's profile picture if available
                         currentImageUrl.isNotEmpty() -> {
                             Image(
                                 painter = rememberAsyncImagePainter(
@@ -157,8 +157,36 @@ fun ProfileScreen(navController: NavHostController) {
                                     .clip(CircleShape)
                                     .clickable { imagePickerLauncher.launch("image/*") }
                             )
+                            SubcomposeAsyncImage(
+                                model = currentImageUrl,
+                                contentDescription = "Profile Picture",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .clickable { imagePickerLauncher.launch("image/*")},
+                                loading = {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = DefaultPrimary
+                                        )
+                                    }
+                                },
+                                error = {
+                                    Icon(
+                                        imageVector = Icons.Default.Error,
+                                        contentDescription = "Error fetching image",
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        tint = Color.Gray
+                                    )
+                                }
+                            )
                         }
-                        // Show default profile picture if no URL is available
                         else -> {
                             Image(
                                 painter = painterResource(R.drawable.profile_pic),
