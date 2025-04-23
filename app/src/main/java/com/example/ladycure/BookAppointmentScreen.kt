@@ -340,25 +340,9 @@ private fun ServiceInfoChip(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Icon(
-                painter = when (service.specialization) {
-                    "Family Medicine" -> painterResource(id = com.example.ladycure.R.drawable.ic_family_medicine)
-                    "Cardiology" -> painterResource(id = com.example.ladycure.R.drawable.ic_cardiology)
-                    "Dentistry" -> painterResource(id = com.example.ladycure.R.drawable.ic_dentistry)
-                    "Dermatology" -> painterResource(id = com.example.ladycure.R.drawable.ic_dermatology)
-                    "Gynecology" -> painterResource(id = com.example.ladycure.R.drawable.ic_gynecology)
-                    "Endocrinology" -> painterResource(id = com.example.ladycure.R.drawable.ic_endocrinology)
-                    "Gastroenterology" -> painterResource(id = com.example.ladycure.R.drawable.ic_gastroenterology)
-                    "Neurology" -> painterResource(id = com.example.ladycure.R.drawable.ic_neurology)
-                    "Oncology" -> painterResource(id = com.example.ladycure.R.drawable.ic_oncology)
-                    "Ophthalmology" -> painterResource(id = com.example.ladycure.R.drawable.ic_ophthalmology)
-                    "Orthopedics" -> painterResource(id = com.example.ladycure.R.drawable.ic_orthopedics)
-                    "Pediatrics" -> painterResource(id = com.example.ladycure.R.drawable.ic_pediatrics)
-                    "Physiotherapy" -> painterResource(id = com.example.ladycure.R.drawable.ic_physiotherapy)
-                    "Psychiatry" -> painterResource(id = com.example.ladycure.R.drawable.ic_psychology)
-                    "Radiology" -> painterResource(id = com.example.ladycure.R.drawable.ic_radiology)
-                    else -> painterResource(id = com.example.ladycure.R.drawable.ic_medical_services)
-                },
+                painter = painterResource(Specialization.fromDisplayName(service.specialization).icon),
                 contentDescription = "Service type",
                 tint = DefaultPrimary,
                 modifier = Modifier.size(20.dp)
