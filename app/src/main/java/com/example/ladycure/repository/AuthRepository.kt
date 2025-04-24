@@ -28,7 +28,13 @@ class AuthRepository {
         return auth.currentUser?.uid
     }
 
-    suspend fun register(email: String, name: String, surname: String, dateOfBirth: String, password: String): Result<Unit> {
+    suspend fun register(
+        email: String,
+        name: String,
+        surname: String,
+        dateOfBirth: String,
+        password: String
+    ): Result<Unit> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user ?: throw Exception("User registration failed")
@@ -66,7 +72,6 @@ class AuthRepository {
     }
 
 
-
     suspend fun getCurrentUser(): Map<String, String>? {
         val user = auth.currentUser
         return user?.let {
@@ -97,14 +102,15 @@ class AuthRepository {
                 .whereEqualTo("specification", specification)
                 .get()
                 .await()
-            val doctors = querySnapshot.documents.map { it.data?.plus("id" to it.id) ?: mapOf("id" to it.id) }
+            val doctors =
+                querySnapshot.documents.map { it.data?.plus("id" to it.id) ?: mapOf("id" to it.id) }
             Result.success(doctors)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun updateUserData(updatedData: Map<String, String>): Result<Unit> {
+    suspend fun updateUserData(updatedData: Map<String, String>): Result<Map<String, Any>?> {
         return try {
             val user = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
 
@@ -115,13 +121,22 @@ class AuthRepository {
             updatedData["dob"]?.let { updateMap["dob"] = it }
 
             // Update Firestore document
-            firestore.collection("users").document(user.uid)
-                .update(updateMap)
-                .await()
-
-            Result.success(Unit)
+            try {
+                firestore.collection("users").document(user.uid)
+                    .update(updateMap)
+                    .await()
+            } catch (e: Exception) {
+                Log.e("AuthRepository", "Error updating user data", e)
+                return Result.failure(e)
+            }
+            // Fetch the updated document
+            val document = firestore.collection("users").document(user.uid).get().await()
+            if (document.exists()) {
+                Result.success(document.data)
+            } else {
+                Result.failure(Exception("User document does not exist"))
+            }
         } catch (e: Exception) {
-            Log.e("AuthRepository", "Error updating user data", e)
             Result.failure(e)
         }
     }
