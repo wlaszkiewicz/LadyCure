@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -86,128 +87,135 @@ fun ModernAppointmentCard(appointment: Appointment) {
         else -> Color(0xFFF44336) // Red
     }
 
-    Card(
-        modifier = Modifier.width(280.dp),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 8.dp
-        ),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.9f)
-        ),
-        onClick = {
-            showDetailsDialog.value = true
-        }
+    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp))
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
+        Card(
+            modifier = Modifier.width(280.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.9f)
+            ),
+            onClick = {
+                showDetailsDialog.value = true
+            }
         ) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Column(
+                modifier = Modifier.padding(20.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(DefaultPrimary.copy(alpha = 0.1f))
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
+                // Header
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        painter = when (appointment.type.specialization) {
-                            "Family Medicine" -> painterResource(id = R.drawable.ic_family_medicine)
-                            "Cardiology" -> painterResource(id = R.drawable.ic_cardiology)
-                            "Dentistry" -> painterResource(id = R.drawable.ic_dentistry)
-                            "Dermatology" -> painterResource(id = R.drawable.ic_dermatology)
-                            "Gynecology" -> painterResource(id = R.drawable.ic_gynecology)
-                            "Endocrinology" -> painterResource(id = R.drawable.ic_endocrinology)
-                            "Gastroenterology" -> painterResource(id = R.drawable.ic_gastroenterology)
-                            "Neurology" -> painterResource(id = R.drawable.ic_neurology)
-                            "Oncology" -> painterResource(id = R.drawable.ic_oncology)
-                            "Ophthalmology" -> painterResource(id = R.drawable.ic_ophthalmology)
-                            "Orthopedics" -> painterResource(id = R.drawable.ic_orthopedics)
-                            "Pediatrics" -> painterResource(id = R.drawable.ic_pediatrics)
-                            "Physiotherapy" -> painterResource(id = R.drawable.ic_physiotherapy)
-                            "Psychiatry" -> painterResource(id = R.drawable.ic_psychology)
-                            "Radiology" -> painterResource(id = R.drawable.ic_radiology)
-                            else -> painterResource(id = R.drawable.ic_medical_services)
-                        },
-                        contentDescription = appointment.type.specialization
-                            ?: "Medical Appointment",
-                        tint = DefaultPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(DefaultPrimary.copy(alpha = 0.1f))
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = when (appointment.type.specialization) {
+                                "Family Medicine" -> painterResource(id = R.drawable.ic_family_medicine)
+                                "Cardiology" -> painterResource(id = R.drawable.ic_cardiology)
+                                "Dentistry" -> painterResource(id = R.drawable.ic_dentistry)
+                                "Dermatology" -> painterResource(id = R.drawable.ic_dermatology)
+                                "Gynecology" -> painterResource(id = R.drawable.ic_gynecology)
+                                "Endocrinology" -> painterResource(id = R.drawable.ic_endocrinology)
+                                "Gastroenterology" -> painterResource(id = R.drawable.ic_gastroenterology)
+                                "Neurology" -> painterResource(id = R.drawable.ic_neurology)
+                                "Oncology" -> painterResource(id = R.drawable.ic_oncology)
+                                "Ophthalmology" -> painterResource(id = R.drawable.ic_ophthalmology)
+                                "Orthopedics" -> painterResource(id = R.drawable.ic_orthopedics)
+                                "Pediatrics" -> painterResource(id = R.drawable.ic_pediatrics)
+                                "Physiotherapy" -> painterResource(id = R.drawable.ic_physiotherapy)
+                                "Psychiatry" -> painterResource(id = R.drawable.ic_psychology)
+                                "Radiology" -> painterResource(id = R.drawable.ic_radiology)
+                                else -> painterResource(id = R.drawable.ic_medical_services)
+                            },
+                            contentDescription = appointment.type.specialization
+                                ?: "Medical Appointment",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = appointment.type.displayName,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                        Text(
+                            text = "Dr. ${appointment.doctorName}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    }
                 }
 
-                Column {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            "Date",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Text(appointment.date, style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Text(
+                            "Time",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Text(appointment.time, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Footer
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(statusColor.copy(alpha = 0.1f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = appointment.status.name.lowercase()
+                                .replaceFirstChar { it.uppercase() },
+                            color = statusColor,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+
                     Text(
-                        text = appointment.type.displayName,
+                        text = "$${appointment.price}",
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold,
+                            color = DefaultPrimary
                         )
                     )
-                    Text(
-                        text = "Dr. ${appointment.doctorName}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text("Date", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text(appointment.date, style = MaterialTheme.typography.bodyMedium)
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Text("Time", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text(appointment.time, style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Footer
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(statusColor.copy(alpha = 0.1f))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = appointment.status.name.lowercase()
-                            .replaceFirstChar { it.uppercase() },
-                        color = statusColor,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-
-                Text(
-                    text = "$${appointment.price}",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = DefaultPrimary
-                    )
-                )
             }
         }
     }

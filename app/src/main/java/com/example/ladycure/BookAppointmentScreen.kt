@@ -235,7 +235,7 @@ private fun AppointmentHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 50.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+            .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -340,25 +340,9 @@ private fun ServiceInfoChip(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Icon(
-                painter = when (service.specialization) {
-                    "Family Medicine" -> painterResource(id = com.example.ladycure.R.drawable.ic_family_medicine)
-                    "Cardiology" -> painterResource(id = com.example.ladycure.R.drawable.ic_cardiology)
-                    "Dentistry" -> painterResource(id = com.example.ladycure.R.drawable.ic_dentistry)
-                    "Dermatology" -> painterResource(id = com.example.ladycure.R.drawable.ic_dermatology)
-                    "Gynecology" -> painterResource(id = com.example.ladycure.R.drawable.ic_gynecology)
-                    "Endocrinology" -> painterResource(id = com.example.ladycure.R.drawable.ic_endocrinology)
-                    "Gastroenterology" -> painterResource(id = com.example.ladycure.R.drawable.ic_gastroenterology)
-                    "Neurology" -> painterResource(id = com.example.ladycure.R.drawable.ic_neurology)
-                    "Oncology" -> painterResource(id = com.example.ladycure.R.drawable.ic_oncology)
-                    "Ophthalmology" -> painterResource(id = com.example.ladycure.R.drawable.ic_ophthalmology)
-                    "Orthopedics" -> painterResource(id = com.example.ladycure.R.drawable.ic_orthopedics)
-                    "Pediatrics" -> painterResource(id = com.example.ladycure.R.drawable.ic_pediatrics)
-                    "Physiotherapy" -> painterResource(id = com.example.ladycure.R.drawable.ic_physiotherapy)
-                    "Psychiatry" -> painterResource(id = com.example.ladycure.R.drawable.ic_psychology)
-                    "Radiology" -> painterResource(id = com.example.ladycure.R.drawable.ic_radiology)
-                    else -> painterResource(id = com.example.ladycure.R.drawable.ic_medical_services)
-                },
+                painter = painterResource(Specialization.fromDisplayName(service.specialization).icon),
                 contentDescription = "Service type",
                 tint = DefaultPrimary,
                 modifier = Modifier.size(20.dp)
@@ -809,7 +793,6 @@ fun DoctorCard(
     val name = doctor["name"] as? String ?: "Dr. Unknown"
     val surname = doctor["surname"] as? String ?: "Unknown"
     val address = doctor["address"] as? String ?: "Unknown"
-    val rating = (doctor["rating"] as? Double) ?: 4.5
     val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
     val bio = doctor["bio"] as? String ?: "Experienced medical professional"
     val languages = doctor["languages"] as? List<String> ?: listOf("English")
@@ -818,8 +801,18 @@ fun DoctorCard(
         is Int -> exp
         is Long -> exp.toInt()
         is Double -> exp.toInt()
+        is String -> exp.toIntOrNull() ?: 5
         else -> 5
     }
+
+    val rating = when (val rat = doctor["rating"]) {
+        is Int -> rat.toDouble()
+        is Long -> rat.toDouble()
+        is Double -> rat
+        is String -> rat.toDouble()
+        else -> 4.5
+    }
+
 
     Card(
         modifier = modifier,
