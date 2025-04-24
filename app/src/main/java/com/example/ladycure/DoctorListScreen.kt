@@ -863,43 +863,6 @@ private fun ExpandedDoctorInfoCard(
 
 }
 
-@Composable
-private fun RatingBar(
-    rating: Double,
-    modifier: Modifier = Modifier
-) {
-    val filledStars = floor(rating).toInt()
-    val halfStar = rating - filledStars >= 0.5
-    val emptyStars = 5 - filledStars - (if (halfStar) 1 else 0)
-
-    Row(modifier = modifier) {
-        repeat(filledStars) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = "Filled star",
-                tint = Color(0xFFFFA000),
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        if (halfStar) {
-            Icon(
-                imageVector = Icons.Default.StarHalf,
-                contentDescription = "Half star",
-                tint = Color(0xFFFFA000),
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        repeat(emptyStars) {
-            Icon(
-                imageVector = Icons.Default.StarOutline,
-                contentDescription = "Empty star",
-                tint = Color(0xFFFFA000),
-                modifier = Modifier.size(16.dp)
-            )
-        }
-    }
-}
-
 @Preview
 @Composable
 fun ExpendedDoctorInfoCardPreview() {

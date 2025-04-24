@@ -159,6 +159,14 @@ fun BookAppointmentDirectlyScreen(
                 }
             )
 
+            DoctorInfoHeader(
+                doctor = doctor,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                onClick = {
+                    navController.popBackStack("doctors/${selectedSpecialization.displayName}",false) // go back to doctor list
+                }
+            )
+
             LaunchedEffect(errorMessage.value) {
                 errorMessage.value?.let {
                     snackbarController.showSnackbar(it)
@@ -168,7 +176,6 @@ fun BookAppointmentDirectlyScreen(
             when {
                 isLoading.value -> LoadingView()
                 !isLoading.value -> DateAndTimeSelectionView(
-                    selectedSpecialization = selectedSpecialization,
                     selectedService = selectedService,
                     availableDates = availableDates,
                     selectedDate = selectedDate.value,
@@ -222,7 +229,6 @@ private fun AppointmentHeader(
 
 @Composable
 private fun DateAndTimeSelectionView(
-    selectedSpecialization: Specialization,
     selectedService: AppointmentType,
     availableDates: List<String>,
     selectedDate: String?,
@@ -279,75 +285,130 @@ private fun DateAndTimeSelectionView(
 }
 
 @Composable
-private fun ServiceInfoChip(
-    service: AppointmentType,
-    modifier: Modifier = Modifier
+private fun DoctorInfoHeader(
+    doctor: Map<String, Any>?,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
-    Surface(
-        modifier = modifier,
+    val name = doctor?.get("name") as? String ?: "Dr. Unknown"
+    val surname = doctor?.get("surname") as? String ?: ""
+    val specialization = doctor?.get("specification") as? String ?: "Specialist"
+    val imageUrl = doctor?.get("profilePictureUrl") as? String ?: ""
+    val experience = when (val exp = doctor?.get("experience")) {
+        is Int -> exp
+        is Long -> exp.toInt()
+        is Double -> exp.toInt()
+        is String -> exp.toIntOrNull() ?: 5
+        else -> 5
+    }
+
+    val rating = when (val rat = doctor?.get("rating")) {
+        is Int -> rat.toDouble()
+        is Long -> rat.toDouble()
+        is Double -> rat
+        is String -> rat.toDouble()
+        else -> 4.5
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.5f),
+            contentColor = DefaultOnPrimary
+        ),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.3f),
-        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Doctor Image
+            if (imageUrl.isEmpty()) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Doctor $name",
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    tint = DefaultPrimary
+                )
+            } else {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = "Doctor $name",
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
-            Icon(
-                painter = painterResource(Specialization.fromDisplayName(service.specialization).icon),
-                contentDescription = "Service type",
-                tint = DefaultPrimary,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = service.displayName,
-                style = MaterialTheme.typography.labelLarge,
-                color = DefaultPrimary,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = "• ${service.durationInMinutes} min",
-                style = MaterialTheme.typography.labelMedium,
-                color = DefaultPrimary.copy(alpha = 0.8f)
-            )
-        }
-    }
-}
+            Spacer(modifier = Modifier.width(16.dp))
 
-@Composable
-private fun LocationSpecialtyRow(
-    city: String,
-    specialization: Specialization
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.LocationOn,
-            contentDescription = "Location",
-            tint = DefaultOnPrimary.copy(alpha = 0.8f),
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = city,
-            style = MaterialTheme.typography.bodyMedium,
-            color = DefaultOnPrimary.copy(alpha = 0.8f),
-            modifier = Modifier.padding(end = 12.dp))
+            // Doctor Details
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "Dr. $name $surname",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = DefaultOnPrimary
+                )
 
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = DefaultPrimary.copy(alpha = 0.1f)
-        ) {
-            Text(
-                text = specialization.displayName,
-                style = MaterialTheme.typography.labelMedium,
-                color = DefaultPrimary,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                Text(
+                    text = specialization,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DefaultPrimary,
+                    modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+                )
+
+                // Rating and Experience
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RatingBar(
+                        rating = rating,
+                        modifier = Modifier.width(80.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(${"%.1f".format(rating)})",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFFFFA000)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(
+                        imageVector = Icons.Default.Work,
+                        contentDescription = "Experience",
+                        tint = DefaultPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "$experience yrs",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            IconButton(
+                onClick = onClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Change doctor",
+                    tint = DefaultPrimary
+                )
+            }
         }
     }
 }
@@ -364,7 +425,7 @@ private fun DateSelector(
     Column(modifier = modifier) {
         if (availableDates.isEmpty()) {
             Text(
-                text = "We are sorry, there's no available dates for this doctor",
+                text = "We are sorry, there's no available dates for this specialization",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.9f),
                 modifier = Modifier.padding(vertical = 16.dp))
@@ -388,198 +449,6 @@ private fun DateSelector(
     }
 }
 
-@Composable
-private fun DateCard(
-    date: String,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val formattedDate = formatDateForDisplay(date)
-    val dayOfWeek = try {
-        LocalDate.parse(date).dayOfWeek.toString().take(3)
-    } catch (e: Exception) { "error" }
-    val dayOfMonth = try {
-        LocalDate.parse(date).dayOfMonth.toString()
-    } catch (e: Exception) { "error" }
-
-    Card(
-        onClick = onSelect,
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) DefaultPrimary else Color.White,
-            contentColor = if (isSelected) Color.White else DefaultOnPrimary
-        ),
-        elevation = CardDefaults.cardElevation(if (isSelected) 4.dp else 2.dp),
-        border = if (!isSelected) BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)) else null
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = dayOfWeek,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Normal,
-                color = if (isSelected) Color.White.copy(alpha = 0.9f) else DefaultOnPrimary.copy(alpha = 0.7f)
-            )
-            Text(
-                text = dayOfMonth,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White.copy(alpha = 0.9f) else DefaultOnPrimary.copy(alpha = 0.7f)
-            )
-            Text(
-                text = formattedDate,
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isSelected) Color.White.copy(alpha = 0.8f) else DefaultOnPrimary.copy(alpha = 0.5f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun TimeSlotGrid(
-    timeSlots: List<String>,
-    selectedTimeSlot: String?,
-    onTimeSlotSelected: (String) -> Unit
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = Modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(timeSlots.size) { index ->
-            val slot = timeSlots[index]
-            TimeSlotCard(
-                time = slot,
-                isSelected = slot == selectedTimeSlot,
-                onSelect = { onTimeSlotSelected(slot) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun TimeSlotCard(
-    time: String,
-    isSelected: Boolean,
-    onSelect: () -> Unit
-) {
-    Card(
-        onClick = onSelect,
-        modifier = Modifier.height(60.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) DefaultPrimary else Color.White,
-            contentColor = if (isSelected) Color.White else DefaultOnPrimary
-        ),
-        elevation = CardDefaults.cardElevation(if (isSelected) 4.dp else 2.dp),
-        border = if (!isSelected) BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)) else null
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Text(
-                text = time,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) Color.White else DefaultOnPrimary,
-            )
-        }
-    }
-}
-
-@Composable
-private fun EmptyTimeSlotsView() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.Schedule,
-            contentDescription = "No slots",
-            tint = DefaultOnPrimary.copy(alpha = 0.4f),
-            modifier = Modifier.size(48.dp))
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "No available time slots",
-            style = MaterialTheme.typography.bodyMedium,
-            color = DefaultOnPrimary.copy(alpha = 0.6f))
-        Text(
-            text = "Please try another date",
-            style = MaterialTheme.typography.bodySmall,
-            color = DefaultOnPrimary.copy(alpha = 0.4f))
-    }
-}
-
-@Composable
-private fun PromptToSelectDate() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.CalendarToday,
-            contentDescription = "Select date",
-            tint = DefaultOnPrimary.copy(alpha = 0.6f),
-            modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "Select a date to see available time slots",
-            style = MaterialTheme.typography.bodyMedium,
-            color = DefaultOnPrimary.copy(alpha = 0.6f))
-    }
-}
-
-// Helper function for date formatting
-private fun formatDateForDisplay(dateString: String): String {
-    return try {
-        val date = LocalDate.parse(dateString)
-        when (date) {
-            LocalDate.now() -> "Today"
-            LocalDate.now().plusDays(1) -> "Tomorrow"
-            else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
-        }
-    } catch (e: Exception) {
-        dateString
-    }
-}
-
-@Composable
-private fun rememberRippleIndication(): Indication {
-    return LocalIndication.current
-}
-
-// Helper functions
-private fun generateTimeSlotsForDate(date: String, availabilities: List<DoctorAvailability>): List<String> {
-    val slots = mutableSetOf<LocalTime>()
-
-    val dateAvailabilities = availabilities.filter { it.date == date }
-
-    dateAvailabilities.forEach { availability ->
-        val startTime = LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
-        val endTime = LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
-
-        // Generate 30-minute slots between start and end time
-        var currentTime = startTime
-        while (currentTime.isBefore(endTime)) {
-            slots.add(currentTime)
-            currentTime = currentTime.plus(30, ChronoUnit.MINUTES)
-        }
-    }
-
-    // Sort by LocalTime (chronological) and then format to string
-    return slots.sorted().map { it.format(DateTimeFormatter.ofPattern("h:mm a",java.util.Locale.US)) }
-}
-
 
 @Composable
 private fun LoadingView() {
@@ -592,5 +461,16 @@ private fun LoadingView() {
         Spacer(modifier = Modifier.height(16.dp))
         Text("Loading appointment data...", color = DefaultOnPrimary)
     }
+}
+
+@Preview
+@Composable
+fun BookAppointmentDirectlyScreenPreview() {
+    val navController = rememberNavController()
+    BookAppointmentDirectlyScreen(
+        navController = navController,
+        doctorId = "12345",
+        selectedService = AppointmentType.CANCER_SCREENING
+    )
 }
 

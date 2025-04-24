@@ -327,7 +327,7 @@ private fun DateAndTimeSelectionView(
 }
 
 @Composable
-private fun ServiceInfoChip(
+ fun ServiceInfoChip(
     service: AppointmentType,
     modifier: Modifier = Modifier
 ) {
@@ -437,7 +437,7 @@ private fun DateSelector(
 }
 
 @Composable
-private fun DateCard(
+fun DateCard(
     date: String,
     isSelected: Boolean,
     onSelect: () -> Unit,
@@ -488,7 +488,7 @@ private fun DateCard(
 }
 
 @Composable
-private fun TimeSlotGrid(
+ fun TimeSlotGrid(
     timeSlots: List<String>,
     selectedTimeSlot: String?,
     onTimeSlotSelected: (String) -> Unit
@@ -511,7 +511,7 @@ private fun TimeSlotGrid(
 }
 
 @Composable
-private fun TimeSlotCard(
+ fun TimeSlotCard(
     time: String,
     isSelected: Boolean,
     onSelect: () -> Unit
@@ -542,7 +542,7 @@ private fun TimeSlotCard(
 }
 
 @Composable
-private fun EmptyTimeSlotsView() {
+ fun EmptyTimeSlotsView() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -567,7 +567,7 @@ private fun EmptyTimeSlotsView() {
 }
 
 @Composable
-private fun PromptToSelectDate() {
+ fun PromptToSelectDate() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -588,7 +588,7 @@ private fun PromptToSelectDate() {
 }
 
 // Helper function for date formatting
-private fun formatDateForDisplay(dateString: String): String {
+ fun formatDateForDisplay(dateString: String): String {
     return try {
         val date = LocalDate.parse(dateString)
         when (date) {
@@ -786,7 +786,7 @@ private fun EmptyDoctorsView() {
 
 
 @Composable
-fun DoctorCard(
+private fun DoctorCard(
     doctor: Map<String, Any>,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
@@ -1032,7 +1032,7 @@ fun DoctorCard(
 }
 
 @Composable
-private fun RatingBar(
+ fun RatingBar(
     rating: Double,
     modifier: Modifier = Modifier
 ) {
@@ -1091,7 +1091,7 @@ fun DoctorCardPreview() {
 }
 
 // Helper functions
-private fun generateTimeSlotsForDate(date: String, availabilities: List<DoctorAvailability>): List<String> {
+ fun generateTimeSlotsForDate(date: String, availabilities: List<DoctorAvailability>): List<String> {
     val slots = mutableSetOf<LocalTime>()
 
     val dateAvailabilities = availabilities.filter { it.date == date }
