@@ -31,97 +31,151 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Specialization
+import com.example.ladycure.repository.AuthRepository
 
 @Composable
 fun SelectServiceScreen(
     navController: NavController,
-    city: String,
-    specialization: Specialization
+    doctorId: String?,
+    city: String?,
+    specialization: Specialization?
 ) {
-    // Filter services by specialization
-    val services = remember(specialization) {
-        AppointmentType.values().filter {
-            it.specialization == specialization.displayName
+    var doctor by remember { mutableStateOf<Map<String, Any>?>(null) }
+    var specialization by remember { mutableStateOf<Specialization?>(specialization) }
+    val authRepo = AuthRepository()
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    if (doctorId != null) {
+        LaunchedEffect(doctorId) {
+            val result = authRepo.getDoctorById(doctorId)
+            if (result.isSuccess) {
+                doctor = result.getOrNull()
+                specialization =
+                    Specialization.fromDisplayName(doctor?.get("specification") as String)
+            } else {
+                errorMessage = result.exceptionOrNull()?.message
+            }
         }
     }
-
-    var showReferralDialog by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DefaultBackground)
-    ) {
-        // Header with back button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.size(48.dp)
+    if (specialization == null){
+        BaseScaffold { snackbarController ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Go back",
-                    tint = DefaultOnPrimary,
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp),
+                    color = DefaultPrimary
+                )
+                Text(
+                    text = "Loading...",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = DefaultOnPrimary,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = specialization.displayName,
-                style = MaterialTheme.typography.titleLarge,
-                color = DefaultOnPrimary,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f))
+        }
+    } else {
+        // Filter services by specialization
+        val services = remember(specialization) {
+            AppointmentType.values().filter {
+                it.specialization == specialization!!.displayName
+            }
         }
 
-        // Introduction text
-        Text(
-            text = "Available Services",
-            style = MaterialTheme.typography.titleMedium,
-            color = DefaultOnPrimary,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+        var showReferralDialog by remember { mutableStateOf(false) }
+        BaseScaffold { snackbarController ->
+            if (errorMessage != null) {
+                snackbarController.showSnackbar(
+                    message = errorMessage ?: "An error occurred",
+                    actionLabel = "OK"
+                )
+            }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(DefaultBackground)
+                ) {
+                    // Header with back button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back",
+                                tint = DefaultOnPrimary,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = specialization!!.displayName,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = DefaultOnPrimary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
-        Text(
-            text = "Select a service to book an appointment",
-            style = MaterialTheme.typography.bodyMedium,
-            color = DefaultOnPrimary.copy(alpha = 0.7f),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                    // Introduction text
+                    Text(
+                        text = "Available Services",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = DefaultOnPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
 
-        // Services list
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            items(services) { service ->
-                ServiceCard(
-                    service = service,
-                    onClick = {
-                        if (service.needsReferral) {
-                            showReferralDialog = true
-                        } else {
-                            navController.navigate("book_appointment/$city/${service.displayName}")
+                    Text(
+                        text = "Select a service to book an appointment",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+
+                    // Services list
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        items(services) { service ->
+                            ServiceCard(
+                                service = service,
+                                onClick = {
+                                    if (service.needsReferral) {
+                                        showReferralDialog = true
+                                    } else if (city != null && doctorId == null) {
+                                        navController.navigate("book_appointment/$city/${service.displayName}")
+                                    } else {
+                                        navController.navigate("book_appointment_dir/${doctorId}/${service.displayName}")
+                                    }
+                                }
+                            )
                         }
                     }
-                )
-            }
-        }
-    }
+                }
 
-    if (showReferralDialog) {
-        ReferralRequiredDialog(
-            service = services.first { it.needsReferral },
-            onDismiss = { showReferralDialog = false },
-            onUploadReferral = {
-                // Handle referral upload
-                showReferralDialog = false
+                if (showReferralDialog) {
+                    ReferralRequiredDialog(
+                        service = services.first { it.needsReferral },
+                        onDismiss = { showReferralDialog = false },
+                        onUploadReferral = {
+                            // Handle referral upload
+                            showReferralDialog = false
+                        }
+                    )
+                }
             }
-        )
     }
 }
 
@@ -311,6 +365,7 @@ fun SpecializationServicesScreenPreview() {
     SelectServiceScreen(
         navController = navController,
         specialization = Specialization.CARDIOLOGY,
+        doctorId = "doctorId",
         city = "Wroclaw"
     )
 }

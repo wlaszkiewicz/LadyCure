@@ -229,10 +229,7 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                                     onSwipeLeft = {
                                         swipeableDoctors = emptyList()
                                         selectedDoctor.value = doctor
-
-                                        showSelectedDialog = true
-
-//                                        navController.navigate("services/${selectedDoctor.value?.get("id")}")
+                                        navController.navigate("services/${selectedDoctor.value?.get("id")}")
 
                                     },
                                     onSwipeRight = {
@@ -273,69 +270,14 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
             } else {
                 items(doctors.value) { doctor ->
                     DoctorInfoCard(doctor, onSelect = {
-                        // Handle doctor selection
+                        selectedDoctor.value = doctor
+                        navController.navigate("services/${selectedDoctor.value?.get("id")}")
                     }, modifier = Modifier.padding(bottom = 16.dp))
                 }
             }
         }
     }
 
-    if (showSelectedDialog) {
-        SelectedDialog(
-            doctor = selectedDoctor.value,
-            onDismiss = { showSelectedDialog = false },
-            onSelect = {
-                // Handle doctor selection
-                showSelectedDialog = false
-            }
-        )
-    }
-}
-
-@Composable
-fun SelectedDialog(
-    doctor: Map<String, Any>?,
-    onDismiss: () -> Unit,
-    onSelect: () -> Unit
-) {
-    val name = doctor?.get("surname") as? String ?: ""
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White,
-                contentColor = Color.Black
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "Doctor $name Selected",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = DefaultOnPrimary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = onSelect,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary,
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Oki")
-                }
-            }
-        }
-    }
 }
 
 @Composable
