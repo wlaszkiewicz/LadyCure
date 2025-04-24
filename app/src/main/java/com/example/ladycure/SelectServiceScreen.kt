@@ -21,14 +21,17 @@ import coil.compose.AsyncImage
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.window.Dialog
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Specialization
 import com.example.ladycure.repository.AuthRepository
@@ -44,6 +47,7 @@ fun SelectServiceScreen(
     var specialization by remember { mutableStateOf<Specialization?>(specialization) }
     val authRepo = AuthRepository()
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var selectedService by remember { mutableStateOf<AppointmentType?>(null) }
 
     if (doctorId != null) {
         LaunchedEffect(doctorId) {
@@ -152,6 +156,7 @@ fun SelectServiceScreen(
                             ServiceCard(
                                 service = service,
                                 onClick = {
+                                    selectedService = service
                                     if (service.needsReferral) {
                                         showReferralDialog = true
                                     } else if (city != null && doctorId == null) {
@@ -167,12 +172,26 @@ fun SelectServiceScreen(
 
                 if (showReferralDialog) {
                     ReferralRequiredDialog(
-                        service = services.first { it.needsReferral },
+                        service = selectedService,
                         onDismiss = { showReferralDialog = false },
                         onUploadReferral = {
                             showReferralDialog = false
+                            // Handle referral upload
+//                            uploadReferral(
+//                                navController = navController,
+//                                doctorId = doctorId,
+//                                service = selectedService
+//                            )
 
-                        }
+                        },
+                        onBringLater = {
+                            showReferralDialog = false
+                            if (city != null && doctorId == null) {
+                                navController.navigate("book_appointment/$city/${selectedService!!.displayName}")
+                            } else {
+                                navController.navigate("book_appointment_dir/${doctorId}/${selectedService!!.displayName}")
+                            }
+                        },
                     )
                 }
             }
@@ -313,49 +332,99 @@ fun ServiceCard(
 
 @Composable
 fun ReferralRequiredDialog(
-    service: AppointmentType,
+    service: AppointmentType?,
     onDismiss: () -> Unit,
     onUploadReferral: () -> Unit,
+    onBringLater: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Referral Required",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold)
-        },
-        text = {
-            Column {
-                Text(
-                    text = "The ${service.displayName} requires a referral from your primary care physician.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 8.dp))
-
-                Text(
-                    text = "Please upload your referral document to proceed with booking.",
-                    style = MaterialTheme.typography.bodyMedium)
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onUploadReferral,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DefaultPrimary,
-                    contentColor = Color.White
-                )
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            modifier = modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
             ) {
-                Text("Upload Referral")
+                // Header with icon
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MedicalInformation,
+                        contentDescription = null,
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(28.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Referral Required",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = DefaultPrimary)
+                }
+
+                // Content
+                Column(
+                    modifier = Modifier.padding(bottom = 24.dp)
+                ) {
+                    Text(
+                        text = "The ${service?.displayName ?: "selected service"} requires a referral from your primary care physician.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(bottom = 8.dp))
+
+                    Text(
+                        text = "Please upload your referral document to proceed with booking.",
+                        style = MaterialTheme.typography.bodyLarge)
+                }
+
+                // Action buttons
+                Column {
+                    Button(
+                        onClick = onUploadReferral,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultPrimary,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Text("Upload Referral Now")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = onBringLater,
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, DefaultPrimary),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = DefaultPrimary
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Text("I'll Bring It In Person")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Text("Cancel", color = DefaultOnPrimary.copy(alpha = 0.7f))
+                    }
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = DefaultPrimary)
-            }
-        },
-        modifier = modifier.padding(16.dp),
-    )
+        }
+    }
 }
 
 @Preview
@@ -385,6 +454,7 @@ fun ReferralRequiredDialogPreview() {
     ReferralRequiredDialog(
         service = AppointmentType.ECHOCARDIOGRAM,
         onDismiss = {},
-        onUploadReferral = {}
+        onUploadReferral = {},
+        onBringLater = {}
     )
 }
