@@ -83,8 +83,6 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
     var showSwipingScreen by remember {mutableStateOf(false)}
     var isLoading by remember { mutableStateOf(true) }
     var swipeableDoctors by remember { mutableStateOf(doctors.value) }
-    var showSelectedDialog by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(specification) {
         val result = repository.getDoctorsBySpecification(specification)
@@ -99,183 +97,197 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
     Scaffold(
         bottomBar = { BottomNavBar(navController = navController) }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(DefaultBackground)
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back",
-                            tint = DefaultOnPrimary,
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = "Doctors in ${specification}",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = DefaultOnPrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+        if (isLoading) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(color = DefaultPrimary)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Loading doctors...", color = DefaultOnPrimary)
             }
-
-            if (doctors.value.isEmpty() && !isLoading) {
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DefaultBackground)
+                    .padding(innerPadding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 item {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "We are sorry, no doctors found in this category.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = DefaultOnPrimary
-                        )
-                    }
-                }
-            } else if (isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = DefaultPrimary,
-                            strokeWidth = 3.dp
-                        )
-                    }
-                    Text(
-                        text = "Loading doctors...",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = DefaultOnPrimary
-                    )
-                }
-            } else{
-                item {
-                    TextButton(
-                        onClick = { showSwipingScreen = !showSwipingScreen; swipeableDoctors = doctors.value.shuffled() },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                        colors = ButtonDefaults.textButtonColors(
-                            containerColor = DefaultPrimary.copy(alpha = 0.1f) // Example background color
-                        )
-                    ) {
-                        Text(
-                            text = if(!showSwipingScreen) {"Try a Swiping Function!"} else {"Go back to the list."},
-                            style = MaterialTheme.typography.labelLarge,
-                            color = DefaultPrimary
-                        )
-                    }
-                }
-
-            }
-
-            if (showSwipingScreen) {
-                item {
-                    Text(
-                        text = "Swipe to select a doctor",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = DefaultOnPrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-
-                item {
-                    if (swipeableDoctors.isNotEmpty()) {
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 20.dp, end = 20.dp, bottom = 16.dp, top = 0.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Don't like",
-                                tint = DefaultPrimary,
-                                modifier = Modifier.size(30.dp)
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back",
+                                tint = DefaultOnPrimary,
                             )
-
-                            Icon(
-                                imageVector = Icons.Default.Favorite,
-                                contentDescription = "Like",
-                                tint = DefaultPrimary,
-                                modifier = Modifier.size(30.dp)
-                            )
-
                         }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Doctors in ${specification}",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = DefaultOnPrimary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
 
-                item {
-                    Box {
-                        for (doctor in swipeableDoctors) {
-                            if (swipeableDoctors.isNotEmpty()) {
-                                SwipeCard(
-                                    onSwipeLeft = {
-                                        swipeableDoctors = emptyList()
-                                        selectedDoctor.value = doctor
-                                        navController.navigate("services/${selectedDoctor.value?.get("id")}")
+                if (doctors.value.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "We are sorry, no doctors found in this category.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = DefaultOnPrimary
+                            )
+                        }
+                    }
+                } else {
+                    item {
+                        TextButton(
+                            onClick = {
+                                showSwipingScreen = !showSwipingScreen; swipeableDoctors =
+                                doctors.value.shuffled()
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                containerColor = DefaultPrimary.copy(alpha = 0.1f) // Example background color
+                            )
+                        ) {
+                            Text(
+                                text = if (!showSwipingScreen) {
+                                    "Try a Swiping Function!"
+                                } else {
+                                    "Go back to the list."
+                                },
+                                style = MaterialTheme.typography.labelLarge,
+                                color = DefaultPrimary
+                            )
+                        }
+                    }
 
-                                    },
-                                    onSwipeRight = {
-                                        swipeableDoctors =
-                                            swipeableDoctors.filter { it != doctor }
+                }
 
-                                    },
-                                ) {
-                                    ExpandedDoctorInfoCard(doctor)
+                if (showSwipingScreen) {
+                    item {
+                        Text(
+                            text = "Swipe to select a doctor",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = DefaultOnPrimary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
+
+                    item {
+                        if (swipeableDoctors.isNotEmpty()) {
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        bottom = 16.dp,
+                                        top = 0.dp
+                                    ),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Don't like",
+                                    tint = DefaultPrimary,
+                                    modifier = Modifier.size(30.dp)
+                                )
+
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = "Like",
+                                    tint = DefaultPrimary,
+                                    modifier = Modifier.size(30.dp)
+                                )
+
+                            }
+                        }
+                    }
+
+                    item {
+                        Box {
+                            for (doctor in swipeableDoctors) {
+                                if (swipeableDoctors.isNotEmpty()) {
+                                    SwipeCard(
+                                        onSwipeLeft = {
+                                            swipeableDoctors = emptyList()
+                                            selectedDoctor.value = doctor
+                                            navController.navigate(
+                                                "services/${
+                                                    selectedDoctor.value?.get(
+                                                        "id"
+                                                    )
+                                                }"
+                                            )
+
+                                        },
+                                        onSwipeRight = {
+                                            swipeableDoctors =
+                                                swipeableDoctors.filter { it != doctor }
+
+                                        },
+                                    ) {
+                                        ExpandedDoctorInfoCard(doctor)
+                                    }
                                 }
                             }
                         }
                     }
-                }
                     item {
                         if (swipeableDoctors.isEmpty() && selectedDoctor.value == null) {
-                                Text(
-                                    text = "Looks like you’ve seen all the doctors. Didn’t find the one yet? Would you like to start again?",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = DefaultOnPrimary,
-                                )
-                                Button(
-                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                    onClick = {
-                                        swipeableDoctors = doctors.value.shuffled()
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = DefaultPrimary.copy(alpha = 0.7f),
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Text("Start again")
-                                }
+                            Text(
+                                text = "Looks like you’ve seen all the doctors. Didn’t find the one yet? Would you like to start again?",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = DefaultOnPrimary,
+                            )
+                            Button(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                onClick = {
+                                    swipeableDoctors = doctors.value.shuffled()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = DefaultPrimary.copy(alpha = 0.7f),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Start again")
+                            }
                         }
                     }
 
-            } else {
-                items(doctors.value) { doctor ->
-                    DoctorInfoCard(doctor, onSelect = {
-                        selectedDoctor.value = doctor
-                        navController.navigate("services/${selectedDoctor.value?.get("id")}")
-                    }, modifier = Modifier.padding(bottom = 16.dp))
+                } else {
+                    items(doctors.value) { doctor ->
+                        DoctorInfoCard(doctor, onSelect = {
+                            selectedDoctor.value = doctor
+                            navController.navigate("services/${selectedDoctor.value?.get("id")}")
+                        }, modifier = Modifier.padding(bottom = 16.dp))
+                    }
                 }
             }
         }
+
     }
 
 }
@@ -344,7 +356,7 @@ fun DoctorInfoCard(
                         model = imageUrl,
                         contentDescription = "Doctor $name",
                         loading = {
-                            Box(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
                                     color = DefaultPrimary,
@@ -628,7 +640,8 @@ private fun ExpandedDoctorInfoCard(
                     model = imageUrl,
                     contentDescription = "Doctor $name",
                     loading = {
-                        Box(modifier = Modifier.size(200.dp)) {
+                        Box(modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center
+                            ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 color = DefaultPrimary,
@@ -848,43 +861,6 @@ private fun ExpandedDoctorInfoCard(
         }
     }
 
-}
-
-@Composable
-private fun RatingBar(
-    rating: Double,
-    modifier: Modifier = Modifier
-) {
-    val filledStars = floor(rating).toInt()
-    val halfStar = rating - filledStars >= 0.5
-    val emptyStars = 5 - filledStars - (if (halfStar) 1 else 0)
-
-    Row(modifier = modifier) {
-        repeat(filledStars) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = "Filled star",
-                tint = Color(0xFFFFA000),
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        if (halfStar) {
-            Icon(
-                imageVector = Icons.Default.StarHalf,
-                contentDescription = "Half star",
-                tint = Color(0xFFFFA000),
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        repeat(emptyStars) {
-            Icon(
-                imageVector = Icons.Default.StarOutline,
-                contentDescription = "Empty star",
-                tint = Color(0xFFFFA000),
-                modifier = Modifier.size(16.dp)
-            )
-        }
-    }
 }
 
 @Preview

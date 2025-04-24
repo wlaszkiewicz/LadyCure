@@ -63,23 +63,14 @@ fun SelectServiceScreen(
     }
     if (specialization == null){
         BaseScaffold { snackbarController ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(48.dp),
-                    color = DefaultPrimary
-                )
-                Text(
-                    text = "Loading...",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = DefaultOnPrimary,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+                CircularProgressIndicator(color = DefaultPrimary)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Loading services...", color = DefaultOnPrimary)
             }
         }
     } else {

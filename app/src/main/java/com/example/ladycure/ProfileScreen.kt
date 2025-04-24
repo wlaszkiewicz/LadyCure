@@ -75,10 +75,11 @@ fun ProfileScreen(navController: NavHostController) {
     val context = LocalContext.current
     val repository = AuthRepository()
     val imageUploader = remember { ImageUploader(context) }
-    val userData = remember { mutableStateOf<Map<String, String>?>(null) }
+    val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var currentImageUrl by remember { mutableStateOf(userData.value?.get("profilePictureUrl") ?: "") }
 
     var imageUri: Uri? by remember { mutableStateOf(null) }
     val imagePickerLauncher = rememberImagePickerLauncher { uri ->
@@ -89,8 +90,9 @@ fun ProfileScreen(navController: NavHostController) {
                 imageUploader.uploadImage(uri, userId).fold(
                     onSuccess = { downloadUrl ->
                         repository.updateProfilePicture(downloadUrl)
+                        currentImageUrl = downloadUrl
                         userData.value = repository.getCurrentUser()
-                        errorMessage = "" // Clear any previous errors
+                        errorMessage = ""
                     },
                     onFailure = { e ->
                         errorMessage = "Failed to update profile picture: ${e.message}"
@@ -105,6 +107,7 @@ fun ProfileScreen(navController: NavHostController) {
     LaunchedEffect(Unit) {
         userData.value = repository.getCurrentUser()
     }
+
 
     Scaffold(
         bottomBar = { BottomNavBar(navController = navController) }
@@ -123,94 +126,47 @@ fun ProfileScreen(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
                 Box(
                     modifier = Modifier
                         .size(150.dp)
                         .clip(CircleShape)
-                        .border(
-                            width = 4.dp,
-                            color = DefaultPrimary,
-                            shape = CircleShape
-                        )
-                        .background(DefaultPrimary.copy(alpha = 0.2f)),
+                        .border(4.dp, DefaultPrimary, CircleShape)
+                        .background(DefaultPrimary.copy(alpha = 0.2f))
+                        .clickable { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
-                    val currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
-
                     when {
                         userData.value == null -> {
-                            CircularProgressIndicator(
-                                color = DefaultPrimary,
-                                modifier = Modifier.size(48.dp)
-                            )
+                            CircularProgressIndicator(color = DefaultPrimary)
                         }
-                        currentImageUrl.isNotEmpty() -> {
-                            Image(
-                                painter = rememberAsyncImagePainter(
-                                    model = currentImageUrl,
-                                    onLoading = { }
-                                ),
-                                contentDescription = "Profile Picture",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .clickable { imagePickerLauncher.launch("image/*") }
-                            )
+
+                        currentImageUrl != "" -> {
                             SubcomposeAsyncImage(
                                 model = currentImageUrl,
                                 contentDescription = "Profile Picture",
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .clickable { imagePickerLauncher.launch("image/*")},
+                                modifier = Modifier.fillMaxSize(),
                                 loading = {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(24.dp),
-                                            color = DefaultPrimary
-                                        )
-                                    }
+                                    CircularProgressIndicator(color = DefaultPrimary)
                                 },
                                 error = {
-                                    Icon(
-                                        imageVector = Icons.Default.Error,
-                                        contentDescription = "Error fetching image",
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                        tint = Color.Gray
+                                    Image(
+                                        painter = painterResource(R.drawable.profile_pic),
+                                        contentDescription = "Error loading image"
                                     )
                                 }
                             )
                         }
+
                         else -> {
                             Image(
                                 painter = painterResource(R.drawable.profile_pic),
-                                contentDescription = "Default Profile Picture",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .clickable { imagePickerLauncher.launch("image/*") }
+                                contentDescription = "Default Profile Picture"
                             )
                         }
                     }
 
-                    // If there's a temporary image URI (from image picker), show it
-                    imageUri?.let { uri ->
-                        Image(
-                            painter = rememberAsyncImagePainter(uri),
-                            contentDescription = "Selected Profile Picture",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                        )
-                    }
                 }
             }
 
@@ -287,9 +243,9 @@ fun ProfileScreen(navController: NavHostController) {
                 CoroutineScope(Dispatchers.IO).launch {
                     val result = repository.updateUserData(updatedData)
                     if (result.isSuccess) {
-                        userData.value = updatedData
+                        userData.value = result.getOrNull() ?: emptyMap()
                     } else {
-
+                        errorMessage = "Failed to update user data: ${result.exceptionOrNull()?.message}"
                     }
                     showAccountSettingsDialog = false
                 }
@@ -382,13 +338,13 @@ fun ProfileOption(
 
 @Composable
 fun AccountSettingsDialog(
-    userData: Map<String, String>?,
+    userData: Map<String, Any>?,
     onDismiss: () -> Unit,
     onSave: (Map<String, String>) -> Unit
 ) {
-    var name by remember { mutableStateOf(TextFieldValue(userData?.get("name") ?: "")) }
-    var surname by remember { mutableStateOf(TextFieldValue(userData?.get("surname") ?: "")) }
-    var dob by remember { mutableStateOf(TextFieldValue(userData?.get("dob") ?: "")) }
+    var name by remember { mutableStateOf(TextFieldValue((userData?.get("name") as? String) ?: "")) }
+    var surname by remember { mutableStateOf(TextFieldValue((userData?.get("surname") as? String) ?: "")) }
+    var dob by remember { mutableStateOf(TextFieldValue((userData?.get("dob") as? String) ?: "")) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -463,33 +419,5 @@ fun logOut(navController: NavHostController) {
         }
     }
 }
-
-// DEPRECATED ANO DOESNT WORK ANYMORE :((( :
-//     private fun updateEmail() {
-//        // [START update_email]
-//        val user = Firebase.auth.currentUser
-//
-//        user!!.updateEmail("user@example.com")
-//            .addOnCompleteListener { task ->
-//                if (task.isSuccessful) {
-//                    Log.d(TAG, "User email address updated.")
-//                }
-//            }
-//        // [END update_email]
-//    }
-//
-//    private fun updatePassword() {
-//        // [START update_password]
-//        val user = Firebase.auth.currentUser
-//        val newPassword = "SOME-SECURE-PASSWORD"
-//
-//        user!!.updatePassword(newPassword)
-//            .addOnCompleteListener { task ->
-//                if (task.isSuccessful) {
-//                    Log.d(TAG, "User password updated.")
-//                }
-//            }
-//        // [END update_password]
-//    }
 
 
