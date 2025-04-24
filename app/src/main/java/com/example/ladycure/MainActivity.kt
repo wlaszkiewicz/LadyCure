@@ -81,17 +81,18 @@ fun AppNavigation() {
         composable("services/{city}/{specialization}") { backStackEntry ->
             val city = backStackEntry.arguments?.getString("city") ?: ""
             val specialization = backStackEntry.arguments?.getString("specialization")
-            SelectServiceScreen(navController, city, Specialization.fromDisplayName(specialization!!)) }
+            SelectServiceScreen(navController, null, city, Specialization.fromDisplayName(specialization!!)) }
 
-//        composable("services/{doctor}") { backStackEntry ->
-//            val doctor = backStackEntry.arguments?.getString("doctorId") ?: ""
-//            SelectServiceScreen(navController, doctor, null, null)
-//        }
-//        composable("book_appointment/{doctor}/{service}") { backStackEntry ->
-//            val doctor = backStackEntry.arguments?.getString("doctor") ?: ""
-//            val service = backStackEntry.arguments?.getString("service") ?: ""
-//            BookAppointmentScreen(navController, doctor, AppointmentType.fromDisplayName(service))
-//        }
+        composable("services/{doctor}") { backStackEntry ->
+            val doctor = backStackEntry.arguments?.getString("doctor") ?: ""
+            SelectServiceScreen(navController, doctor, null, null)
+        }
+
+        composable("book_appointment_dir/{doctor}/{service}") { backStackEntry ->
+            val doctor = backStackEntry.arguments?.getString("doctor") ?: ""
+            val service = backStackEntry.arguments?.getString("service") ?: ""
+            BookAppointmentDirectlyScreen(navController, doctor, AppointmentType.fromDisplayName(service))
+        }
 
     }
 }

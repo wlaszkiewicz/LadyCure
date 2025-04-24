@@ -172,15 +172,21 @@ class AuthRepository {
     }
 
 
-    suspend fun getDoctorAvailability(doctorId: String): Result<List<Map<String, Any>>> {
+    suspend fun getDoctorAvailability(doctorId: String): Result<List<DoctorAvailability>> {
+        val doctor = firestore.collection("users").document(doctorId).get().await()
         return try {
-            val availabilities = Firebase.firestore.collection("users")
-                .document(doctorId)
-                .collection("availability")
+            val availabilities = doctor.reference.collection("availability")
                 .get()
                 .await()
                 .documents
-                .map { doc -> doc.data ?: emptyMap() }
+                .map { doc ->
+                    DoctorAvailability(
+                        doctorId = doctor.id,
+                        date = doc.id,
+                        startTime = doc.getString("startTime") ?: "",
+                        endTime = doc.getString("endTime") ?: "",
+                    )
+                }
             Result.success(availabilities)
         } catch (e: Exception) {
             Result.failure(e)
