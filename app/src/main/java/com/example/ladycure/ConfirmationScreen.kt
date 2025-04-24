@@ -692,7 +692,7 @@ private fun formatConfirmationDate(dateString: String): String {
 private fun formatConfirmationTime(timeString: String): String {
     return try {
         val time = LocalTime.parse(timeString)
-        time.format(DateTimeFormatter.ofPattern("h:mm a"))
+        time.format(DateTimeFormatter.ofPattern("h:mm a",java.util.Locale.US))
     } catch (e: Exception) {
         timeString
     }

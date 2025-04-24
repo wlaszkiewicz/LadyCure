@@ -80,6 +80,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -1096,8 +1097,8 @@ private fun generateTimeSlotsForDate(date: String, availabilities: List<DoctorAv
     val dateAvailabilities = availabilities.filter { it.date == date }
 
     dateAvailabilities.forEach { availability ->
-        val startTime = LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a"))
-        val endTime = LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a"))
+        val startTime = LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+        val endTime = LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
 
         // Generate 30-minute slots between start and end time
         var currentTime = startTime
@@ -1108,7 +1109,7 @@ private fun generateTimeSlotsForDate(date: String, availabilities: List<DoctorAv
     }
 
     // Sort by LocalTime (chronological) and then format to string
-    return slots.sorted().map { it.format(DateTimeFormatter.ofPattern("h:mm a")) }
+    return slots.sorted().map { it.format(DateTimeFormatter.ofPattern("h:mm a",java.util.Locale.US)) }
 }
 
 private fun filterAvailableDoctors(
@@ -1117,14 +1118,14 @@ private fun filterAvailableDoctors(
     timeSlot: String,
     availabilities: List<DoctorAvailability>
 ): List<Map<String, Any>> {
-    val slotTime = LocalTime.parse(timeSlot, DateTimeFormatter.ofPattern("h:mm a"))
+    val slotTime = LocalTime.parse(timeSlot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
 
     val availableDoctorIds = availabilities
         .filter { availability ->
             availability.date == date &&
-                    LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a")).isBefore(slotTime) ||
-                    LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a")).equals(slotTime) &&
-                    LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a")).isAfter(slotTime)
+                    LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)).isBefore(slotTime) ||
+                    LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)).equals(slotTime) &&
+                    LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)).isAfter(slotTime)
         }
         .map { it.doctorId }
         .toSet()
