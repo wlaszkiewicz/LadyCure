@@ -20,8 +20,8 @@ import kotlin.math.roundToInt
 fun SwipeCard(
     onSwipeLeft: () -> Unit = {},
     onSwipeRight: () -> Unit = {},
-    swipeThreshold: Float = 400f,
-    sensitivityFactor: Float = 3f,
+    swipeThreshold: Float = 450f,
+    sensitivityFactor: Float = 2.5f,
     content: @Composable () -> Unit
 ) {
     var offset by remember { mutableStateOf(0f) }
