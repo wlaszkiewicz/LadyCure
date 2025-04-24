@@ -150,7 +150,7 @@ enum class AppointmentType(
 
     // Psychiatry
     PSYCHIATRY_CONSULTATION("Psychiatry Consultation", "Psychiatry", 150.0, 30, true, "Mental health assessment and treatment planning.", "Bring a list of medications and any previous mental health records."),
-    ANXIETY_DEPRESSION_SCREENING("Anxiety/Depression Screening", "Psychiatry", 130.0, 40, false, "Mental health assessment.", "List current symptoms and mental health history."),
+    ANXIETY_DEPRESSION_SCREENING("Anxiety and Depression Screening", "Psychiatry", 130.0, 40, false, "Mental health assessment.", "List current symptoms and mental health history."),
     COUNSELING_SESSION("Counseling Session", "Psychiatry", 150.0, 50, false, "Talk therapy session with a licensed counselor.", "Be ready to discuss personal and emotional issues."),
     ADHD_EVALUATION("ADHD Evaluation", "Psychiatry", 200.0, 60, true, "In-depth behavioral and cognitive assessment.", "Bring academic history and previous evaluations."),
     SLEEP_DISORDER_CONSULTATION("Sleep Disorder Consultation", "Psychiatry", 140.0, 45, false, "Evaluation of sleep-related problems.", "Log sleep patterns for the past week."),

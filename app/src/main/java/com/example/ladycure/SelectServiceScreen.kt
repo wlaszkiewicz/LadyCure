@@ -170,8 +170,12 @@ fun SelectServiceScreen(
                         service = services.first { it.needsReferral },
                         onDismiss = { showReferralDialog = false },
                         onUploadReferral = {
-                            // Handle referral upload
                             showReferralDialog = false
+                             if (city != null && doctorId == null) {
+                            navController.navigate("book_appointment/$city/${services.first { it.needsReferral }}")
+                             } else {
+                                 navController.navigate("book_appointment_dir/${doctorId}/${services.first { it.needsReferral }}")
+                             }
                         }
                     )
                 }
