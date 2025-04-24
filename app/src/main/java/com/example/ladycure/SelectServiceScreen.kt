@@ -56,7 +56,7 @@ fun SelectServiceScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 50.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+                .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
@@ -103,7 +103,7 @@ fun SelectServiceScreen(
                     service = service,
                     onClick = {
                         if (service.needsReferral) {
-                           showReferralDialog = true
+                            showReferralDialog = true
                         } else {
                             navController.navigate("book_appointment/$city/${service.displayName}")
                         }

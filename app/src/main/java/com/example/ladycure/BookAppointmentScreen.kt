@@ -235,7 +235,7 @@ private fun AppointmentHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 50.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+            .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -793,7 +793,6 @@ fun DoctorCard(
     val name = doctor["name"] as? String ?: "Dr. Unknown"
     val surname = doctor["surname"] as? String ?: "Unknown"
     val address = doctor["address"] as? String ?: "Unknown"
-    val rating = (doctor["rating"] as? Double) ?: 4.5
     val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
     val bio = doctor["bio"] as? String ?: "Experienced medical professional"
     val languages = doctor["languages"] as? List<String> ?: listOf("English")
@@ -802,8 +801,18 @@ fun DoctorCard(
         is Int -> exp
         is Long -> exp.toInt()
         is Double -> exp.toInt()
+        is String -> exp.toIntOrNull() ?: 5
         else -> 5
     }
+
+    val rating = when (val rat = doctor["rating"]) {
+        is Int -> rat.toDouble()
+        is Long -> rat.toDouble()
+        is Double -> rat
+        is String -> rat.toDouble()
+        else -> 4.5
+    }
+
 
     Card(
         modifier = modifier,

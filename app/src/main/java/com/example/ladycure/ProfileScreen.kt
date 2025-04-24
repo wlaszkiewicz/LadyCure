@@ -115,7 +115,7 @@ fun ProfileScreen(navController: NavHostController) {
                 .background(DefaultBackground)
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(top = 40.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Profile header
@@ -262,7 +262,7 @@ fun ProfileScreen(navController: NavHostController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DefaultPrimary,
+                    containerColor = DefaultPrimary.copy(alpha = 0.5f),
                     contentColor = DefaultOnPrimary
                 ),
                 shape = RoundedCornerShape(12.dp)

@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.shadow
 
 
 @Composable
@@ -191,39 +192,37 @@ fun SpecializationCard(
     )
 
     val cardColor = specializationColors[specialization.ordinal % specializationColors.size]
-
-    Card(
-        modifier = Modifier
-            .width(150.dp)
-            .height(140.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardColor.copy(alpha = 0.9f) // Slightly transparent
-        ),
-        onClick = { onSpecializationSelected(specialization) },
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 8.dp
-        )
+    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp)) // Apply shadow here
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp).fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Card(
+            modifier = Modifier
+                .width(150.dp)
+                .height(140.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = cardColor.copy(alpha = 0.9f) // Slightly transparent
+            ),
+            onClick = { onSpecializationSelected(specialization) }
         ) {
-            Icon(
-                painter = painterResource(specialization.icon),
-                contentDescription = specialization.displayName,
-                modifier = Modifier.size(32.dp),
-                tint = DefaultPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = specialization.displayName,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
-                color = DefaultOnPrimary,
-                textAlign = TextAlign.Center
-            )
+            Column(
+                modifier = Modifier.padding(12.dp).fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(specialization.icon),
+                    contentDescription = specialization.displayName,
+                    modifier = Modifier.size(32.dp),
+                    tint = DefaultPrimary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = specialization.displayName,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
+                    color = DefaultOnPrimary,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

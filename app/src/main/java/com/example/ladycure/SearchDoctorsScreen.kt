@@ -57,7 +57,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.data.doctor.Specialization
 import com.example.ladycure.presentation.home.components.BottomNavBar
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.shadow
 
 @Composable
 fun SearchDoctorsScreen(navController: NavHostController) {
@@ -78,7 +80,7 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(bottom = 8.dp, top = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
@@ -126,22 +128,26 @@ fun SearchDoctorsScreen(navController: NavHostController) {
 
             items(Specialization.entries.chunked(2)) { rowItems ->
                 Row(
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                 ) {
-                    rowItems.forEachIndexed { index, spec ->
+                    rowItems.forEach { spec ->
                         DoctorSpecializationCard(
                             specialization = spec,
                             navController = navController,
-                            modifier = Modifier
-                                .weight(1f)
-                                .then(if ((index == 0) && (rowItems.size == 2)) Modifier.padding(end = 12.dp) else Modifier)
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+//                    // If there's only 1 item in this row, add an empty box to balance
+//                    if (rowItems.size == 1) {
+//                        Spacer(modifier = Modifier.weight(1f))
+//                    }
                 }
             }
+
         }
     }
 }
@@ -200,14 +206,14 @@ private fun SearchBar(
 private fun PopularCategories(navController: NavHostController) {
 
     Column(
-        modifier = Modifier.padding(horizontal = 8.dp)
+        modifier = Modifier
     ) {
         Text(
             text = "Popular Categories",
             style = MaterialTheme.typography.titleLarge,
             color = DefaultPrimary,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp))
+            modifier = Modifier.padding(bottom = 12.dp, start = 16.dp))
 
 
         val specializationColors = listOf(Color(0xFFFFF0F5),
@@ -244,45 +250,49 @@ private fun PopularCategoryCard(
     category: Specialization,
     onClick: () -> Unit
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .width(140.dp)
-            .height(80.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = cardColor.copy(alpha = 0.9f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.2f))
+    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp)) // Apply shadow here
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Card(
+            onClick = onClick,
+            modifier = Modifier
+                .width(140.dp)
+                .height(80.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = cardColor.copy(alpha = 0.9f)
+            ),
+            border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.2f))
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(id = category.icon),
-                    contentDescription = category.displayName,
-                    tint = DefaultPrimary,
-                    modifier = Modifier.size(28.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = category.icon),
+                        contentDescription = category.displayName,
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(28.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = category.displayName,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = DefaultOnPrimary,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    Text(
+                        text = category.displayName,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = DefaultOnPrimary,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
+
 }
 
 @Composable
@@ -291,58 +301,61 @@ private fun DoctorSpecializationCard(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        onClick = {
-            navController.navigate("doctors/${specialization.displayName}")
-        },
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White,
-            contentColor = DefaultOnPrimary
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
+    Surface(modifier = modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp))
     ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Card(
+            onClick = {
+                navController.navigate("doctors/${specialization.displayName}")
+            },
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.9f),
+                contentColor = DefaultOnPrimary
+            ),
+            border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
         ) {
-            Box(
+            Row(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(DefaultPrimary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
+                    .padding(12.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DefaultPrimary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = specialization.icon),
+                        contentDescription = specialization.displayName,
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = specialization.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
                 Icon(
-                    painter = painterResource(id = specialization.icon),
-                    contentDescription = specialization.displayName,
-                    tint = DefaultPrimary,
-                    modifier = Modifier.size(24.dp)
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "View",
+                    tint = DefaultPrimary.copy(alpha = 0.5f)
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                text = specialization.displayName,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Spacer(modifier = Modifier.weight(1f)) // THIS makes the magic happen, baby
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "View",
-                tint = DefaultPrimary.copy(alpha = 0.5f)
-            )
         }
-
     }
+
 }
 
 @Preview
