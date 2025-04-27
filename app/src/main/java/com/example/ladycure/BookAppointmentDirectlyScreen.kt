@@ -3,70 +3,34 @@ package com.example.ladycure
 import DefaultOnPrimary
 import DefaultPrimary
 import DefaultBackground
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Indication
-import androidx.compose.foundation.LocalIndication
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import com.example.ladycure.data.doctor.Specialization
+import com.example.ladycure.data.doctor.Speciality
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -78,10 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -90,23 +51,21 @@ import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material3.Text
 import com.example.ladycure.data.AppointmentType
 import coil.compose.AsyncImage
-import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import kotlin.math.floor
 
 @Composable
 fun BookAppointmentDirectlyScreen(
     navController: NavController,
+    snackbarController: SnackbarController?,
     doctorId: String,
     selectedService: AppointmentType,
     authRepo: AuthRepository = AuthRepository()
 ) {
-    val selectedSpecialization = Specialization.fromDisplayName(selectedService.specialization)
+    val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
     // State variables
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
@@ -146,8 +105,7 @@ fun BookAppointmentDirectlyScreen(
         }
     }
 
-    BaseScaffold { snackbarController ->
-        Column(
+  Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
@@ -163,13 +121,13 @@ fun BookAppointmentDirectlyScreen(
                 doctor = doctor,
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onClick = {
-                    navController.popBackStack("doctors/${selectedSpecialization.displayName}",false) // go back to doctor list
+                    navController.popBackStack("doctors/${selectedSpeciality.displayName}",false) // go back to doctor list
                 }
             )
 
             LaunchedEffect(errorMessage.value) {
                 errorMessage.value?.let {
-                    snackbarController.showSnackbar(it)
+                    snackbarController?.showMessage(it)
                 }
             }
 
@@ -190,7 +148,6 @@ fun BookAppointmentDirectlyScreen(
             }
         }
     }
-}
 
 @Composable
 private fun AppointmentHeader(
@@ -292,7 +249,7 @@ private fun DoctorInfoHeader(
 ) {
     val name = doctor?.get("name") as? String ?: "Dr. Unknown"
     val surname = doctor?.get("surname") as? String ?: ""
-    val specialization = doctor?.get("specification") as? String ?: "Specialist"
+    val speciality = doctor?.get("specification") as? String ?: "Specialist"
     val imageUrl = doctor?.get("profilePictureUrl") as? String ?: ""
     val experience = when (val exp = doctor?.get("experience")) {
         is Int -> exp
@@ -364,7 +321,7 @@ private fun DoctorInfoHeader(
                 )
 
                 Text(
-                    text = specialization,
+                    text = speciality,
                     style = MaterialTheme.typography.bodyMedium,
                     color = DefaultPrimary,
                     modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
@@ -425,7 +382,7 @@ private fun DateSelector(
     Column(modifier = modifier) {
         if (availableDates.isEmpty()) {
             Text(
-                text = "We are sorry, there's no available dates for this specialization",
+                text = "We are sorry, there's no available dates for this speciality",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.9f),
                 modifier = Modifier.padding(vertical = 16.dp))
@@ -470,7 +427,8 @@ fun BookAppointmentDirectlyScreenPreview() {
     BookAppointmentDirectlyScreen(
         navController = navController,
         doctorId = "12345",
-        selectedService = AppointmentType.CANCER_SCREENING
+        selectedService = AppointmentType.CANCER_SCREENING,
+        snackbarController = null
     )
 }
 

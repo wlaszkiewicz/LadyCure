@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AlertDialog
@@ -60,7 +59,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
-import coil.compose.rememberAsyncImagePainter
 import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.ImageUploader
@@ -91,7 +89,7 @@ fun ProfileScreen(navController: NavHostController) {
                     onSuccess = { downloadUrl ->
                         repository.updateProfilePicture(downloadUrl)
                         currentImageUrl = downloadUrl
-                        userData.value = repository.getCurrentUser()
+                        userData.value = repository.getCurrentUserData().getOrNull()
                         errorMessage = ""
                     },
                     onFailure = { e ->
@@ -105,19 +103,19 @@ fun ProfileScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(Unit) {
-        userData.value = repository.getCurrentUser()
+        val result = repository.getCurrentUserData()
+        if (result.isFailure) {
+            errorMessage = "Failed to load user data: ${result.exceptionOrNull()?.message}"
+        } else {
+            userData.value = result.getOrNull()
+        }
     }
 
-
-    Scaffold(
-        bottomBar = { BottomNavBar(navController = navController) }
-    ) { innerPadding ->
-        Column(
+    Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
                 .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
                 .padding(top = 40.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
@@ -233,7 +231,6 @@ fun ProfileScreen(navController: NavHostController) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-    }
 
     if (showAccountSettingsDialog) {
         AccountSettingsDialog(
@@ -412,12 +409,9 @@ fun AccountSettingsDialog(
 
 fun logOut(navController: NavHostController) {
     val authRepo = AuthRepository()
-    CoroutineScope(Dispatchers.IO).launch {
-        authRepo.signOut()
-        CoroutineScope(Dispatchers.Main).launch {
-            navController.navigate("welcome")
-        }
-    }
+    authRepo.signOut()
+    navController.navigate("welcome") { popUpTo(0) } // Clear the back stack
+
 }
 
 

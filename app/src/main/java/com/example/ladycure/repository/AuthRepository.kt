@@ -1,13 +1,12 @@
 package com.example.ladycure.repository
 
 import android.util.Log
+import androidx.navigation.NavController
 import com.example.ladycure.data.doctor.DoctorAvailability
-import com.example.ladycure.data.doctor.Specialization
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository {
@@ -23,6 +22,64 @@ class AuthRepository {
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    suspend fun getUserRole(): Result<String?> = try {
+        val user = auth.currentUser
+        if (user != null) {
+            val document = firestore.collection("users").document(user.uid).get().await()
+            if (document.exists()) {
+                Result.success(document.getString("role"))
+            } else {
+                Result.failure(Exception("User document does not exist"))
+            }
+        } else {
+            Result.failure(Exception("User not logged in"))
+        }
+    } catch (e: Exception) {
+        Result.failure(Exception("Failed to fetch user data: ${e.message}"))
+    }
+
+    fun authenticate(
+        email: String,
+        password: String,
+        navController: NavController
+    ): Result<Unit> {
+        var result: Result<Unit> = Result.success(Unit)
+
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    user?.let {
+                        firestore.collection("users").document(it.uid).get()
+                            .addOnSuccessListener { document ->
+                                if (document.exists()) {
+                                    val role = document.getString("role")
+                                    if (role == "admin") {
+                                        navController.navigate("admin")
+                                    } else if (role == "doctor") {
+                                        navController.navigate("doctor_main")
+                                    } else {
+                                        navController.navigate("home")
+                                    }
+                                } else {
+                                    result = Result.failure(Exception("User document does not exist"))
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                result = Result.failure(Exception("Failed to fetch user data: ${e.message}"))
+                            }
+                    }
+                } else {
+                    result = Result.failure(Exception("Authentication failed"))
+                }
+            }
+            .addOnFailureListener { e ->
+                result = Result.failure(Exception("Authentication failed: ${e.message}"))
+            }
+        return result
+    }
+
 
     fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
@@ -72,26 +129,36 @@ class AuthRepository {
     }
 
 
-    suspend fun getCurrentUser(): Map<String, String>? {
+    suspend fun getCurrentUserData(): Result<Map<String, Any>?> {
         val user = auth.currentUser
-        return user?.let {
+        user?.let {
             try {
-                val document = firestore.collection("users").document(it.uid).get().await()
-                if (document.exists()) {
-                    mapOf(
-                        "name" to (document.getString("name") ?: ""),
-                        "surname" to (document.getString("surname") ?: ""),
-                        "email" to (document.getString("email") ?: ""),
-                        "dob" to (document.getString("dob") ?: ""),
-                        "profilePictureUrl" to (document.getString("profilePictureUrl") ?: "")
-                    )
+                val documentSnapshot = firestore.collection("users").document(it.uid).get().await()
+                val data = documentSnapshot.data
+                if (data != null) {
+                    return Result.success(data)
                 } else {
-                    null
+                    return Result.failure(Exception("User document does not exist"))
                 }
             } catch (e: Exception) {
-                null
+                return Result.failure(Exception("Failed to fetch user data: ${e.message}"))
             }
+        } ?: return Result.failure(Exception("User not logged in"))
+    }
+
+    suspend fun getCurrentUser(): Result<Map<String, Any>?> {
+        return try {
+            val user = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
+            val document = firestore.collection("users").document(user.uid).get().await()
+            if (document.exists()) {
+                Result.success(document.data)
+            } else {
+                Result.failure(Exception("User document does not exist"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
+
     }
 
 
@@ -141,7 +208,7 @@ class AuthRepository {
         }
     }
 
-    suspend fun signOut() {
+     fun signOut() {
         Firebase.auth.signOut()
     }
 
@@ -157,11 +224,11 @@ class AuthRepository {
     }
 
 
-    suspend fun getAllDoctorAvailabilitiesBySpecialization(specialization: String, city: String): List<DoctorAvailability> {
+    suspend fun getAllDoctorAvailabilitiesBySpeciality(speciality: String, city: String): List<DoctorAvailability> {
         val doctors = firestore.collection("users")
             .whereEqualTo("role", "doctor")
             .whereEqualTo("city", city)
-            .whereEqualTo("specification", specialization)
+            .whereEqualTo("specification", speciality)
             .get()
             .await()
             .documents

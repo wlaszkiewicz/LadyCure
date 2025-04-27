@@ -11,8 +11,8 @@ data class Appointment(
     val price: Double,
     val address: String = "",
     val doctorName: String = "",
+    val patientName: String = "",
     val comments: String = "",
-
 )
 {
     companion object {
@@ -35,7 +35,7 @@ enum class Status(val value: String) {
 }
 enum class AppointmentType(
     val displayName: String,
-    val specialization: String,
+    val speciality: String,
     val price: Double,
     val durationInMinutes: Int,
     val needsReferral: Boolean,
@@ -45,23 +45,22 @@ enum class AppointmentType(
 
     // Family Medicine
     CONSULTATION_FAMILY("Family Doctor Consultation", "Family Medicine", 100.0, 30, false, "General health checkup.", "Bring any previous medical records, medications, and a list of questions. For a child don't forget to bring their vaccination book."),
-    PHYSICAL_EXAM("Physical Examination", "Family Medicine", 80.0, 20, false, "Routine physical checkup.", "Wear comfortable clothing and bring a list of medications."),
+    PHYSICAL_EXAM("Physical Examination", "Family Medicine", 80.0, 15, false, "Routine physical checkup.", "Wear comfortable clothing and bring a list of medications."),
     BLOOD_PRESSURE_CHECK("Blood Pressure Check", "Family Medicine", 50.0, 15, false, "Monitoring blood pressure levels.", "No special preparation needed."),
     BLOOD_TEST_FAMILY("Blood Test", "Family Medicine", 70.0, 15, false, "Routine blood analysis.", "Fasting may be required; drink water before the test."),
-    VACCINATION_FAMILY("Vaccination", "Family Medicine", 80.0, 20, false, "Immunization against diseases.", "Bring vaccination records and ensure the child is not ill."),
+    VACCINATION_FAMILY("Vaccination", "Family Medicine", 80.0, 15, false, "Immunization against diseases.", "Bring vaccination records and ensure the child is not ill."),
     HEALTH_SCREENING("Health Screening", "Family Medicine", 120.0, 30, false, "Comprehensive health assessment.", "Bring a list of medications and any concerns."),
-
 
     // Cardiology
     CONSULTATION_CARDIOLOGY("Cardiology Consultation", "Cardiology", 150.0, 30, true, "Heart health assessment.", "Bring previous test results and a list of medications."),
     HEART_CHECKUP("Heart Checkup", "Cardiology", 120.0, 30, true, "Initial assessment for heart health.", "Avoid caffeine and tobacco before the test."),
     ECG_TEST("ECG Test", "Cardiology", 60.0, 15, false, "Electrocardiogram to measure heart activity.", "Wear loose clothing; avoid lotions on chest."),
     STRESS_TEST("Cardiac Stress Test", "Cardiology", 180.0, 45, true, "Assesses heart under physical stress.", "Wear comfortable shoes and clothing; avoid eating 2 hours before."),
-    ECHOCARDIOGRAM("Echocardiogram", "Cardiology", 200.0, 40, true, "Ultrasound of heart.", "No special prep needed."),
+    ECHOCARDIOGRAM("Echocardiogram", "Cardiology", 200.0, 45, true, "Ultrasound of heart.", "No special prep needed."),
 
     // Dentistry
     DENTAL_CLEANING("Dental Cleaning", "Dentistry", 100.0, 30, false, "Routine teeth cleaning.", "Brush and floss before the appointment."),
-    DENTAL_CHECKUP("Dental Checkup", "Dentistry", 80.0, 20, false, "Routine dental evaluation.", "Brush teeth before the visit."),
+    DENTAL_CHECKUP("Dental Checkup", "Dentistry", 80.0, 15, false, "Routine dental evaluation.", "Brush teeth before the visit."),
     TEETH_WHITENING("Teeth Whitening", "Dentistry", 250.0, 60, false, "Cosmetic whitening.", "Avoid staining foods 24 hours before."),
     ROOT_CANAL("Root Canal", "Dentistry", 500.0, 90, false, "Treatment for infected tooth pulp.", "Eat before the procedure; avoid alcohol."),
     ORTHODONTIC_CONSULTATION("Orthodontic Consultation", "Dentistry", 100.0, 30, false, "Evaluation for braces.", "Brush and floss before visit."),
@@ -69,7 +68,7 @@ enum class AppointmentType(
 
     // Dermatology
     DERMATOLOGY_CONSULTATION("Dermatology Consultation", "Dermatology", 120.0, 30, false, "Skin condition assessment.", "Bring a list of current medications and skin products."),
-    SKIN_CHECK("Skin Examination", "Dermatology", 90.0, 25, false, "Full-body skin screening.", "Avoid makeup or lotions before the appointment."),
+    SKIN_CHECK("Skin Examination", "Dermatology", 90.0, 30, false, "Full-body skin screening.", "Avoid makeup or lotions before the appointment."),
     ACNE_TREATMENT("Acne Treatment", "Dermatology", 100.0, 30, false, "Evaluation and treatment of acne.", "Come with clean, makeup-free skin."),
     MOLE_REMOVAL("Mole Removal", "Dermatology", 150.0, 30, false, "Surgical or laser mole removal.", "Avoid blood-thinning medications."),
     PSORIASIS_TREATMENT("Psoriasis Treatment", "Dermatology", 130.0, 30, false, "Management of chronic psoriasis.", "Document recent flare-ups and treatments."),
@@ -81,7 +80,7 @@ enum class AppointmentType(
     THYROID_CHECK("Thyroid Function Test", "Endocrinology", 70.0, 15, false, "Blood test for thyroid hormones.", "No fasting required unless told otherwise."),
     HORMONE_THERAPY("Hormone Therapy", "Endocrinology", 140.0, 30, true, "Hormonal imbalance treatment.", "Bring previous hormone level test results."),
     PCOS_MANAGEMENT("PCOS Management", "Endocrinology", 130.0, 30, true, "Polycystic ovary syndrome treatment.", "Document symptoms and menstrual history."),
-    OSTEOPOROSIS_SCREENING("Osteoporosis Screening", "Endocrinology", 160.0, 20, true, "Bone density check.", "Avoid calcium supplements 24 hours prior."),
+    OSTEOPOROSIS_SCREENING("Osteoporosis Screening", "Endocrinology", 160.0, 15, true, "Bone density check.", "Avoid calcium supplements 24 hours prior."),
 
     // Gastroenterology
     GASTRO_CONSULTATION("Gastroenterology Consultation", "Gastroenterology", 140.0, 30, true, "Digestive health assessment.", "Bring a list of medications and symptoms."),
@@ -89,23 +88,23 @@ enum class AppointmentType(
     ENDOSCOPY("Endoscopy", "Gastroenterology", 450.0, 60, true, "Upper GI tract exam.", "No food 6–8 hours before test."),
     IBS_CONSULTATION("IBS Consultation", "Gastroenterology", 120.0, 30, false, "Assessment of IBS symptoms.", "Track symptoms and diet prior to appointment."),
     LIVER_FUNCTION_TEST("Liver Function Test", "Gastroenterology", 65.0, 15, false, "Blood test for liver enzymes.", "Fasting may be required."),
-    H_PYLORI_TEST("H. Pylori Test", "Gastroenterology", 80.0, 20, false, "Detects H. pylori bacteria.", "Avoid antibiotics and antacids beforehand."),
+    H_PYLORI_TEST("H. Pylori Test", "Gastroenterology", 80.0, 15, false, "Detects H. pylori bacteria.", "Avoid antibiotics and antacids beforehand."),
 
     // Gynecology
     GYNECOLOGY_CONSULTATION("Gynecology Consultation", "Gynecology", 130.0, 30, false, "Routine gynecological checkup.", "Bring a list of medications and any concerns. Don't forget to bring your menstrual history."),
-    TEEN_FIRST_VISIT("Teen First Visit", "Gynecology", 100.0, 30, false, "First gynecological visit for teens.", "Discuss any concerns with the doctor. Bring a parent is optional. Don't forget to bring the date of your first period and cycle length."),
-    PAP_SMEAR("Pap Smear", "Gynecology", 90.0, 20, false, "Cervical cancer screening.", "Avoid intercourse and vaginal products 48h before."),
+    TEEN_FIRST_VISIT("Teen First Visit", "Gynecology", 100.0, 30, false, "First gynecological visit for teens.", "Bringing a parent is optional. The doctor will ask for the date of the last period, cycle length, and any concerning symptoms. There may be a physical exam of the abdomen and breasts, and a pelvic exam may be performed if necessary. Don't worry, nothing will be done without your consent. If you're uncomfortable with any part of the exam, just let the doctor know."),
+    PAP_SMEAR("Pap Smear", "Gynecology", 90.0, 15, false, "Cervical cancer screening.", "Avoid intercourse and vaginal products 48h before."),
     MAMMOGRAM("Mammogram", "Gynecology", 110.0, 30, false, "Breast cancer screening.", "Avoid deodorants or powders on exam day."),
     PRENATAL_CHECKUP("Prenatal Checkup", "Gynecology", 100.0, 30, false, "Routine pregnancy checkup.", "Bring list of medications and questions."),
     MENOPAUSE_CONSULTATION("Menopause Consultation", "Gynecology", 120.0, 30, false, "Support for menopausal symptoms.", "Track symptoms and menstrual history."),
-    IUD_INSERTION("IUD Insertion/Removal", "Gynecology", 250.0, 40, false, "Contraceptive device management.", "Take pain reliever before; avoid intercourse before."),
+    IUD_INSERTION("IUD Insertion/Removal", "Gynecology", 250.0, 45, false, "Contraceptive device management.", "Take pain reliever before; avoid intercourse before."),
 
     // Neurology
     NEUROLOGY_CONSULTATION("Neurology Consultation", "Neurology", 140.0, 30, true, "Brain and nervous system assessment.", "Bring previous imaging and test results."),
     MIGRAINE_CONSULTATION("Migraine Consultation", "Neurology", 130.0, 30, true, "Evaluation for chronic migraines.", "Keep headache diary and symptom log."),
     EEG_TEST("EEG Test", "Neurology", 160.0, 60, true, "Brainwave recording.", "Avoid caffeine; wash hair before test."),
-    EMG_TEST("EMG/Nerve Test", "Neurology", 220.0, 60, true, "Nerve and muscle test.", "Avoid lotions; wear loose clothes."),
-    STROKE_CONSULTATION("Stroke Consultation", "Neurology", 140.0, 40, true, "Post-stroke care and prevention.", "Bring previous imaging and test results."),
+    EMG_TEST("EMG and Nerve Test", "Neurology", 220.0, 60, true, "Nerve and muscle test.", "Avoid lotions; wear loose clothes."),
+    STROKE_CONSULTATION("Stroke Consultation", "Neurology", 140.0, 45, true, "Post-stroke care and prevention.", "Bring previous imaging and test results."),
     EPILEPSY_MANAGEMENT("Epilepsy Management", "Neurology", 150.0, 30, true, "Treatment and monitoring of epilepsy.", "List seizure frequency and medications."),
 
     // Oncology
@@ -113,29 +112,28 @@ enum class AppointmentType(
     CANCER_SCREENING("Cancer Screening", "Oncology", 300.0, 60, true, "Routine cancer tests.", "Follow specific prep instructions if provided."),
     CHEMOTHERAPY("Chemotherapy", "Oncology", 1000.0, 120, true, "Cancer drug treatment.", "Blood tests and hydration beforehand recommended."),
     RADIATION_CONSULTATION("Radiation Consultation", "Oncology", 200.0, 45, true, "Radiation therapy planning.", "Bring any prior imaging scans."),
-    TUMOR_MARKER_TEST("Tumor Marker Test", "Oncology", 150.0, 20, true, "Blood test for cancer markers.", "No special prep needed unless advised."),
+    TUMOR_MARKER_TEST("Tumor Marker Test", "Oncology", 150.0, 15, true, "Blood test for cancer markers.", "No special prep needed unless advised."),
     HEMATOLOGY_CONSULTATION("Hematology Consultation", "Oncology", 160.0, 30, true, "Blood disorder evaluation.", "Bring complete blood count reports."),
 
     // Ophthalmology
     OPHTHALMOLOGY_CONSULTATION("Ophthalmology Consultation", "Ophthalmology", 130.0, 30, false, "Eye health assessment.", "Bring glasses or contacts."),
     EYE_TEST("Comprehensive Eye Exam", "Ophthalmology", 90.0, 30, false, "Vision and eye health check.", "Bring glasses or contacts."),
     CATARACT_CONSULTATION("Cataract Consultation", "Ophthalmology", 120.0, 30, false, "Assessment for cataracts.", "List vision issues and medical history."),
-    GLAUCOMA_TEST("Glaucoma Test", "Ophthalmology", 100.0, 20, false, "Eye pressure check.", "Avoid caffeine before test."),
+    GLAUCOMA_TEST("Glaucoma Test", "Ophthalmology", 100.0, 15, false, "Eye pressure check.", "Avoid caffeine before test."),
     LASIK_CONSULTATION("LASIK Consultation", "Ophthalmology", 200.0, 45, false, "Evaluation for laser eye surgery.", "Stop wearing contacts for a few days."),
     RETINAL_EXAM("Retinal Exam", "Ophthalmology", 130.0, 30, false, "Detailed view of retina.", "May cause temporary blurred vision."),
 
     // Orthopedics
     ORTHOPEDIC_CONSULTATION("Orthopedic Consultation", "Orthopedics", 150.0, 30, true, "Bone and joint health assessment.", "Bring previous imaging and test results."),
     JOINT_PAIN_CONSULTATION("Joint Pain Consultation", "Orthopedics", 110.0, 30, false, "Assessment of chronic joint pain.", "Wear loose-fitting clothing."),
-    FRACTURE_CHECKUP("Fracture Follow-up", "Orthopedics", 100.0, 20, false, "Follow-up for healing fractures.", "Bring prior X-rays or cast details."),
+    FRACTURE_CHECKUP("Fracture Follow-up", "Orthopedics", 100.0, 15, false, "Follow-up for healing fractures.", "Bring prior X-rays or cast details."),
     ARTHRITIS_MANAGEMENT("Arthritis Management", "Orthopedics", 120.0, 30, false, "Ongoing care for arthritis.", "Note pain frequency and severity."),
     SPINE_CONSULTATION("Spine Consultation", "Orthopedics", 130.0, 30, true, "Back and spinal issues consultation.", "Bring MRI or CT results if available."),
     SPORTS_INJURY("Sports Injury Evaluation", "Orthopedics", 140.0, 30, false, "Evaluation of sports-related injuries.", "Wear sportswear if physical exam needed."),
 
-
     // Pediatrics
     CHILD_CHECKUP("Child Wellness Checkup", "Pediatrics", 110.0, 30, false, "Routine health screening for children.", "Bring child's vaccination and health history records."),
-    VACCINATION("Child Vaccination", "Pediatrics", 80.0, 20, false, "Scheduled immunization for children.", "Ensure the child is not ill and bring immunization records."),
+    VACCINATION("Child Vaccination", "Pediatrics", 80.0, 15, false, "Scheduled immunization for children.", "Ensure the child is not ill and bring immunization records."),
     DEVELOPMENTAL_SCREENING("Developmental Screening", "Pediatrics", 130.0, 30, false, "Evaluation of child’s physical and mental development.", "Bring past developmental records or concerns."),
     BREASTFEEDING_CONSULTATION("Breastfeeding Consultation", "Pediatrics", 100.0, 30, false, "Support and advice for breastfeeding parents.", "Wear comfortable clothing for nursing and bring baby."),
     PEDIATRIC_URGENT_CARE("Pediatric Urgent Care", "Pediatrics", 150.0, 30, false, "Immediate care for non-life-threatening conditions.", "Bring current medications and health records."),
@@ -172,7 +170,7 @@ enum class AppointmentType(
 
     companion object {
         fun getTypesBySpecialization(specialization: String): List<AppointmentType> {
-            return AppointmentType.entries.filter { it.specialization == specialization }
+            return AppointmentType.entries.filter { it.speciality == specialization }
         }
 
         fun fromDisplayName(displayName: String): AppointmentType {

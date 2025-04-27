@@ -25,7 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import com.example.ladycure.data.doctor.Specialization
+import com.example.ladycure.data.doctor.Speciality
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,9 +37,9 @@ import androidx.compose.ui.draw.shadow
 @Composable
 fun BookAppointmentSection(
     navController: NavHostController,
-    specializations: List<Specialization>,
+    specialities: List<Speciality>,
     onCitySelected: (String) -> Unit = {},
-    onSpecializationSelected: (Specialization) -> Unit
+    onSpecializationSelected: (Speciality) -> Unit
 ) {
     var showLocationDropdown by remember { mutableStateOf(false) }
     var selectedLocation by remember { mutableStateOf("Detecting your location...") }
@@ -156,8 +156,8 @@ fun BookAppointmentSection(
                 .horizontalScroll(scrollState),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            specializations.forEach { specialization ->
-                SpecializationCard(specialization, onSpecializationSelected)
+            specialities.forEach { specialization ->
+                SpecialityCard(specialization, onSpecializationSelected)
             }
         }
     }
@@ -179,9 +179,9 @@ fun detectNearestPolishCity(onCityDetected: (String?) -> Unit) {
 
 
 @Composable
-fun SpecializationCard(
-    specialization: Specialization,
-    onSpecializationSelected: (Specialization) -> Unit
+fun SpecialityCard(
+    speciality: Speciality,
+    onSpecialitySelected: (Speciality) -> Unit
 ) {
 
     val specializationColors = listOf(Color(0xFFFFF0F5),
@@ -191,7 +191,7 @@ fun SpecializationCard(
         Color(0xFFE2DCFA)
     )
 
-    val cardColor = specializationColors[specialization.ordinal % specializationColors.size]
+    val cardColor = specializationColors[speciality.ordinal % specializationColors.size]
     Surface(modifier = Modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp)) // Apply shadow here
     ) {
         Card(
@@ -202,7 +202,7 @@ fun SpecializationCard(
             colors = CardDefaults.cardColors(
                 containerColor = cardColor.copy(alpha = 0.9f) // Slightly transparent
             ),
-            onClick = { onSpecializationSelected(specialization) }
+            onClick = { onSpecialitySelected(speciality) }
         ) {
             Column(
                 modifier = Modifier.padding(12.dp).fillMaxSize(),
@@ -210,14 +210,14 @@ fun SpecializationCard(
                 verticalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    painter = painterResource(specialization.icon),
-                    contentDescription = specialization.displayName,
+                    painter = painterResource(speciality.icon),
+                    contentDescription = speciality.displayName,
                     modifier = Modifier.size(32.dp),
                     tint = DefaultPrimary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = specialization.displayName,
+                    text = speciality.displayName,
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
                     color = DefaultOnPrimary,
                     textAlign = TextAlign.Center
@@ -232,12 +232,12 @@ fun SpecializationCard(
 fun PreviewBookAppointmentSection() {
     BookAppointmentSection(
         navController = rememberNavController(),
-        specializations = listOf(
-            Specialization.CARDIOLOGY,
-            Specialization.DERMATOLOGY,
-            Specialization.GYNECOLOGY,
-            Specialization.PEDIATRICS,
-            Specialization.PSYCHIATRY,
+        specialities = listOf(
+            Speciality.CARDIOLOGY,
+            Speciality.DERMATOLOGY,
+            Speciality.GYNECOLOGY,
+            Speciality.PEDIATRICS,
+            Speciality.PSYCHIATRY,
         ),
         onSpecializationSelected = {}
     )

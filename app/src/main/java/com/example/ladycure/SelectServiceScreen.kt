@@ -2,7 +2,6 @@ package com.example.ladycure
 
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,11 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
@@ -33,18 +30,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import com.example.ladycure.data.AppointmentType
-import com.example.ladycure.data.doctor.Specialization
+import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
 
 @Composable
 fun SelectServiceScreen(
     navController: NavController,
+    snackbarController: SnackbarController?,
     doctorId: String?,
     city: String?,
-    specialization: Specialization?
+    speciality: Speciality?
 ) {
     var doctor by remember { mutableStateOf<Map<String, Any>?>(null) }
-    var specialization by remember { mutableStateOf<Specialization?>(specialization) }
+    var speciality by remember { mutableStateOf<Speciality?>(speciality) }
     val authRepo = AuthRepository()
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedService by remember { mutableStateOf<AppointmentType?>(null) }
@@ -54,16 +53,15 @@ fun SelectServiceScreen(
             val result = authRepo.getDoctorById(doctorId)
             if (result.isSuccess) {
                 doctor = result.getOrNull()
-                specialization =
-                    Specialization.fromDisplayName(doctor?.get("specification") as String)
+                speciality =
+                    Speciality.fromDisplayName(doctor?.get("specification") as String)
             } else {
                 errorMessage = result.exceptionOrNull()?.message
             }
         }
     }
-    if (specialization == null){
-        BaseScaffold { snackbarController ->
-            Column(
+    if (speciality == null){
+      Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -72,21 +70,19 @@ fun SelectServiceScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Loading services...", color = DefaultOnPrimary)
             }
-        }
     } else {
         // Filter services by specialization
-        val services = remember(specialization) {
+        val services = remember(speciality) {
             AppointmentType.values().filter {
-                it.specialization == specialization!!.displayName
+                it.speciality == speciality!!.displayName
             }
         }
 
         var showReferralDialog by remember { mutableStateOf(false) }
-        BaseScaffold { snackbarController ->
+
             if (errorMessage != null) {
-                snackbarController.showSnackbar(
-                    message = errorMessage ?: "An error occurred",
-                    actionLabel = "OK"
+                snackbarController?.showMessage(
+                    message = errorMessage ?: "An error occurred"
                 )
             }
                 Column(
@@ -113,7 +109,7 @@ fun SelectServiceScreen(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
-                            text = specialization!!.displayName,
+                            text = speciality!!.displayName,
                             style = MaterialTheme.typography.titleLarge,
                             color = DefaultOnPrimary,
                             fontWeight = FontWeight.Bold,
@@ -185,7 +181,6 @@ fun SelectServiceScreen(
                         },
                     )
                 }
-            }
     }
 }
 
@@ -424,7 +419,8 @@ fun SpecializationServicesScreenPreview() {
     val navController = rememberNavController()
     SelectServiceScreen(
         navController = navController,
-        specialization = Specialization.CARDIOLOGY,
+        null,
+        speciality = Speciality.CARDIOLOGY,
         doctorId = "doctorId",
         city = "Wroclaw"
     )

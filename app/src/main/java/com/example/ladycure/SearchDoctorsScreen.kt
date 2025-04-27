@@ -5,14 +5,11 @@ import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import  androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,12 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -37,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -54,9 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.ladycure.data.doctor.Specialization
-import com.example.ladycure.presentation.home.components.BottomNavBar
-import androidx.compose.material.icons.filled.ChevronRight
+import com.example.ladycure.data.doctor.Speciality
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
@@ -65,86 +55,68 @@ import androidx.compose.ui.draw.shadow
 fun SearchDoctorsScreen(navController: NavHostController) {
     val searchQuery = remember { mutableStateOf("") }
 
-    Scaffold(
-        bottomBar = { BottomNavBar(navController = navController) }
-    ) { innerPadding ->
-        LazyColumn(
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp) ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = DefaultBackground,
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+            ) {
+                Text(
+                    text = "Doctors",
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = DefaultPrimary
+                    )
+                )
+                Text(
+                    text = "Find the best doctors for you",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DefaultOnPrimary.copy(alpha = 0.8f)
+                )
+            }
+        }
+
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(DefaultBackground)
-                .padding(innerPadding)
-                .scrollable(enabled = false, state = rememberScrollState(), orientation = Orientation.Vertical),
+                .background(DefaultBackground),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp, top = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back",
-                            tint = DefaultOnPrimary,
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = "Find your specialist",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = DefaultOnPrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            item {
                 SearchBar(
                     value = searchQuery.value,
                     onValueChange = { searchQuery.value = it },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
-            }
 
-            item {
                 PopularCategories(navController)
-            }
 
-            item {
                 Text(
-                    text = "All Specializations",
+                    text = "All Specialities",
                     style = MaterialTheme.typography.titleLarge,
                     color = DefaultPrimary,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
-            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-            items(Specialization.entries.chunked(2)) { rowItems ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    rowItems.forEach { spec ->
-                        DoctorSpecializationCard(
-                            specialization = spec,
-                            navController = navController,
-                            modifier = Modifier.weight(1f)
-                        )
+                items(Speciality.entries.chunked(2)) { rowItems ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        rowItems.forEach { spec ->
+                            DoctorSpecialityCard(
+                                speciality = spec,
+                                navController = navController,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
                     }
-
-//                    // If there's only 1 item in this row, add an empty box to balance
-//                    if (rowItems.size == 1) {
-//                        Spacer(modifier = Modifier.weight(1f))
-//                    }
                 }
             }
 
@@ -223,7 +195,7 @@ private fun PopularCategories(navController: NavHostController) {
             Color(0xFFE2DCFA)
         )
 
-        val categories = Specialization.popularCategories
+        val categories = Speciality.popularCategories
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -247,10 +219,14 @@ private fun PopularCategories(navController: NavHostController) {
 @Composable
 private fun PopularCategoryCard(
     cardColor: Color,
-    category: Specialization,
+    category: Speciality,
     onClick: () -> Unit
 ) {
-    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp)) // Apply shadow here
+    Surface(
+        modifier = Modifier.shadow(
+            elevation = 2.dp,
+            shape = RoundedCornerShape(20.dp)
+        ) // Apply shadow here
     ) {
         Card(
             onClick = onClick,
@@ -292,12 +268,11 @@ private fun PopularCategoryCard(
             }
         }
     }
-
 }
 
 @Composable
-private fun DoctorSpecializationCard(
-    specialization: Specialization,
+private fun DoctorSpecialityCard(
+    speciality: Speciality,
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
@@ -305,7 +280,7 @@ private fun DoctorSpecializationCard(
     ) {
         Card(
             onClick = {
-                navController.navigate("doctors/${specialization.displayName}")
+                navController.navigate("doctors/${speciality.displayName}")
             },
             modifier = modifier,
             shape = RoundedCornerShape(16.dp),
@@ -329,8 +304,8 @@ private fun DoctorSpecializationCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter = painterResource(id = specialization.icon),
-                        contentDescription = specialization.displayName,
+                        painter = painterResource(id = speciality.icon),
+                        contentDescription = speciality.displayName,
                         tint = DefaultPrimary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -339,7 +314,7 @@ private fun DoctorSpecializationCard(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
-                    text = specialization.displayName,
+                    text = speciality.displayName,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
