@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -18,6 +18,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -25,22 +28,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.ladycure.repository.AuthRepository
 
-sealed class Screen(val route: String, val icon: ImageVector, val label: String) {
+sealed class Screen(
+    val route: String,
+    val icon: ImageVector,
+    val label: String,
+    val allowedRoles: List<String> = listOf("user", "doctor")
+) {
     object Home : Screen("home", Icons.Default.Home, "Home")
-    object Doctors : Screen("doctor", Icons.Default.Face, "Doctors")
+    object Doctors : Screen("doctor", Icons.Default.Face, "Doctors", listOf("user"))
     object Chat : Screen("chat", Icons.Default.Call, "Chat")
     object Profile : Screen("profile", Icons.Default.AccountCircle, "Profile")
+
+    companion object {
+        val allScreens = listOf(Home, Doctors, Chat, Profile)
+
+        fun getRouteForRole(route: String, role: String?): String {
+            return if (route == "home" && role == "doctor") "doctor_main" else route
+        }
+    }
 }
 
 @Composable
 fun BottomNavBar(navController: NavHostController) {
-    val items = listOf(
-        Screen.Home,
-        Screen.Doctors,
-        Screen.Chat,
-        Screen.Profile
-    )
+    val authRepo = AuthRepository()
+    val userRole = remember { mutableStateOf<String?>(null) }
+
+    // Fetch user role
+    LaunchedEffect(Unit) {
+        val result = authRepo.getUserRole()
+        if (result.isSuccess) {
+            userRole.value = result.getOrNull()
+        }
+    }
+
+    // Filter screens based on allowed roles
+    val visibleItems = remember(userRole.value) {
+        Screen.allScreens.filter { screen ->
+            screen.allowedRoles.contains(userRole.value)
+        }
+    }
 
     NavigationBar(
         modifier = Modifier
@@ -53,7 +81,7 @@ fun BottomNavBar(navController: NavHostController) {
         val navBackStackEntry = navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry.value?.destination?.route
 
-        items.forEach { screen ->
+        visibleItems.forEach { screen ->
             NavigationBarItem(
                 icon = {
                     Icon(
@@ -69,11 +97,16 @@ fun BottomNavBar(navController: NavHostController) {
                         fontWeight = FontWeight.Medium
                     )
                 },
-                selected = currentRoute == screen.route,
+                selected = currentRoute == screen.route ||
+                        (screen == Screen.Home && currentRoute == "doctor_main"),
                 onClick = {
-                    navController.navigate(screen.route) {
-                        popUpTo(navController.graph.startDestinationId)
+                    val targetRoute = Screen.getRouteForRole(screen.route, userRole.value)
+                    navController.navigate(targetRoute) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
                         launchSingleTop = true
+                        restoreState = true
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(

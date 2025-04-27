@@ -4,8 +4,6 @@ import LadyCureTheme
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -27,16 +25,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore  
+import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, snackbarHostState: SnackbarController?) {
+    val authRepo = AuthRepository()
     LadyCureTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize()
-                .verticalScroll(rememberScrollState()),  // Add scrolling if content is long
-        ) {
             Column(modifier = Modifier.fillMaxSize().background(
                 color = MaterialTheme.colorScheme.background))  {
                 Box(
@@ -111,8 +106,18 @@ fun LoginScreen(navController: NavController) {
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            if (validInput(emailState.value, passwordState.value)) {
-                                authenticate(emailState.value, passwordState.value, navController)
+                            val message = validInput(emailState.value, passwordState.value)
+                            if (message == "") {
+                                val result = authRepo.authenticate(emailState.value, passwordState.value, navController)
+                                if (result.isFailure) {
+                                    snackbarHostState?.showMessage(
+                                        message = result.exceptionOrNull()?.message ?: "Authentication failed"
+                                    )
+                                }
+                            } else {
+                                snackbarHostState?.showMessage(
+                                    message = message
+                                )
                             }
                         }),
                         colors = TextFieldDefaults.colors(
@@ -122,8 +127,18 @@ fun LoginScreen(navController: NavController) {
                     )
                     Button(
                         onClick = {
-                            if (validInput(emailState.value, passwordState.value)) {
-                                authenticate(emailState.value, passwordState.value, navController)
+                            val message = validInput(emailState.value, passwordState.value)
+                            if (message == "") {
+                                val result = authRepo.authenticate(emailState.value, passwordState.value, navController)
+                                if (result.isFailure) {
+                                    snackbarHostState?.showMessage(
+                                        message = result.exceptionOrNull()?.message ?: "Authentication failed"
+                                    )
+                                }
+                            } else {
+                                snackbarHostState?.showMessage(
+                                    message = message
+                                )
                             }
                         },
                         modifier = Modifier.padding(top = 20.dp)
@@ -142,87 +157,36 @@ fun LoginScreen(navController: NavController) {
                         Text("Don't have an account?\nRegister",
                             fontSize = 14.sp,
                             style = TextStyle(
-                                // fontFamily = FontFamily.Serif, // Change this to your desired font family
-                                //fontWeight = FontWeight.Bold,  // Change this to your desired font weight
-                                fontSize = 16.sp              // Change this to your desired font size
+                                fontSize = 16.sp
                             ),
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.secondary)
                     }
 
-
-
-//                    Image(
-//                        painter = painterResource(id = R.drawable.bottom_kapi2),
-//                        contentDescription = "App Logo",
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(horizontal = 20.dp)
-//                            .padding(top = 30.dp)
-//                            .padding(bottom = 32.dp),
-//                        contentScale = ContentScale.Crop
-//                    )
                 }
             }
         }
     }
-}
 
-fun validInput(email: String, password: String): Boolean {
+fun validInput(email: String, password: String): String {
     return when {
         email.isEmpty() -> {
-            // Show snackbar or toast: "Email is empty"
-            false
+            "Please enter a valid email"
         }
         password.isEmpty() -> {
-            // Show snackbar or toast: "Password is empty"
-            false
+            "Please enter a valid password"
         }
-        else -> true
+        else -> ""
     }
 }
 
-fun authenticate(
-    email: String,
-    password: String,
-    navController: NavController
-) {
-    val auth = FirebaseAuth.getInstance()
-    val firestore = FirebaseFirestore.getInstance("telecure")
 
-    auth.signInWithEmailAndPassword(email, password)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val user = auth.currentUser
-                user?.let {
-                    firestore.collection("users").document(it.uid).get()
-                        .addOnSuccessListener { document ->
-                            if (document.exists()) {
-                                val role = document.getString("role")
-                                if (role == "admin") {
-                                    navController.navigate("admin")
-                                } else {
-                                    navController.navigate("home")
-                                }
-                            } else {
-                                // Show error message: User data not found
-                            }
-                        }
-                        .addOnFailureListener {
-                            // Show error message: Failed to retrieve user data
-                        }
-                }
-            } else {
-                // Show error message: Authentication failed
-            }
-        }
-}
 
 @Preview
 @Composable
 fun LoginScreenPreview() {
     val navController = rememberNavController()
     LadyCureTheme {
-        LoginScreen(navController)
+        LoginScreen(navController, null)
     }
 }

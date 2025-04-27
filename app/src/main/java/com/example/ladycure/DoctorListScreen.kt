@@ -21,7 +21,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -57,22 +55,16 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.window.Dialog
 import coil.compose.SubcomposeAsyncImage
-import kotlin.math.floor
 
 @Composable
 fun DoctorsListScreen(navController: NavHostController, specification: String) {
@@ -93,11 +85,7 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
         }
     }
 
-
-    Scaffold(
-        bottomBar = { BottomNavBar(navController = navController) }
-    ) { innerPadding ->
-        if (isLoading) {
+    if (isLoading) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
@@ -108,15 +96,13 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                 Text("Loading doctors...", color = DefaultOnPrimary)
             }
         } else {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(DefaultBackground)
-                    .padding(innerPadding)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -141,10 +127,8 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                             modifier = Modifier.weight(1f)
                         )
                     }
-                }
 
                 if (doctors.value.isEmpty()) {
-                    item {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -155,9 +139,7 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                                 color = DefaultOnPrimary
                             )
                         }
-                    }
                 } else {
-                    item {
                         TextButton(
                             onClick = {
                                 showSwipingScreen = !showSwipingScreen; swipeableDoctors =
@@ -178,12 +160,10 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                                 color = DefaultPrimary
                             )
                         }
-                    }
 
                 }
 
                 if (showSwipingScreen) {
-                    item {
                         Text(
                             text = "Swipe to select a doctor",
                             style = MaterialTheme.typography.titleLarge,
@@ -191,41 +171,7 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
-                    }
 
-                    item {
-                        if (swipeableDoctors.isNotEmpty()) {
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        start = 20.dp,
-                                        end = 20.dp,
-                                        bottom = 16.dp,
-                                        top = 0.dp
-                                    ),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Don't like",
-                                    tint = DefaultPrimary,
-                                    modifier = Modifier.size(30.dp)
-                                )
-
-                                Icon(
-                                    imageVector = Icons.Default.Favorite,
-                                    contentDescription = "Like",
-                                    tint = DefaultPrimary,
-                                    modifier = Modifier.size(30.dp)
-                                )
-
-                            }
-                        }
-                    }
-
-                    item {
                         Box {
                             for (doctor in swipeableDoctors) {
                                 if (swipeableDoctors.isNotEmpty()) {
@@ -253,8 +199,37 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                                 }
                             }
                         }
-                    }
-                    item {
+
+                        if (swipeableDoctors.isNotEmpty()) {
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        bottom = 16.dp,
+                                        top = 0.dp
+                                    ),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Don't like",
+                                    tint = DefaultOnPrimary,
+                                    modifier = Modifier.size(36.dp)
+                                )
+
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = "Like",
+                                    tint = DefaultPrimary,
+                                    modifier = Modifier.size(36.dp)
+                                )
+
+                            }
+                        }
+
                         if (swipeableDoctors.isEmpty() && selectedDoctor.value == null) {
                             Text(
                                 text = "Looks like you’ve seen all the doctors. Didn’t find the one yet? Would you like to start again?",
@@ -275,14 +250,16 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
                                 Text("Start again")
                             }
                         }
-                    }
 
                 } else {
-                    items(doctors.value) { doctor ->
-                        DoctorInfoCard(doctor, onSelect = {
-                            selectedDoctor.value = doctor
-                            navController.navigate("services/${selectedDoctor.value?.get("id")}")
-                        }, modifier = Modifier.padding(bottom = 16.dp))
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(doctors.value) { doctor ->
+                            DoctorInfoCard(doctor, onSelect = {
+                                selectedDoctor.value = doctor
+                                navController.navigate("services/${selectedDoctor.value?.get("id")}")
+                            }, modifier = Modifier.padding(bottom = 16.dp))
+                        }
                     }
                 }
             }
@@ -290,7 +267,6 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
 
     }
 
-}
 
 @Composable
 fun DoctorInfoCard(
@@ -300,7 +276,7 @@ fun DoctorInfoCard(
 ) {
     val name = doctor["name"] as? String ?: "Dr. Unknown"
     val surname = doctor["surname"] as? String ?: "Unknown"
-    val specialization = doctor["specification"] as? String ?: "Specialist"
+    val speciality = doctor["specification"] as? String ?: "Specialist"
     val address = doctor["address"] as? String ?: "Unknown"
     val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
     val bio = doctor["bio"] as? String ?: "Experienced medical professional"
@@ -388,7 +364,7 @@ fun DoctorInfoCard(
                     )
 
                     Text(
-                        text = specialization,
+                        text = speciality,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultPrimary,
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
@@ -588,7 +564,7 @@ private fun ExpandedDoctorInfoCard(
 ) {
     val name = doctor["name"] as? String ?: "Dr. Unknown"
     val surname = doctor["surname"] as? String ?: "Unknown"
-    val specialization = doctor["specification"] as? String ?: "Specialist"
+    val speciality = doctor["specification"] as? String ?: "Specialist"
     val address = doctor["address"] as? String ?: "Unknown"
     val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
     val bio = doctor["bio"] as? String ?: "Experienced medical professional"
@@ -679,7 +655,7 @@ private fun ExpandedDoctorInfoCard(
                     )
 
                     Text(
-                        text = specialization,
+                        text = speciality,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultPrimary,
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)

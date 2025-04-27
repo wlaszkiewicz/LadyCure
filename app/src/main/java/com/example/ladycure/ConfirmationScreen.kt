@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.AppointmentType
+import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -48,6 +49,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ConfirmationScreen(
     navController: NavController,
+    snackbarController: SnackbarController?,
     doctorId: String,
     date: String,
     time: String,
@@ -90,7 +92,6 @@ fun ConfirmationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .verticalScroll(rememberScrollState())
                 .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
 
             ) {
@@ -120,115 +121,121 @@ fun ConfirmationScreen(
             }
 
             when {
-                errorMessage.value != null -> ErrorView(errorMessage.value!!)
-                doctorInfo.value == null -> ErrorView("Doctor information not available")
+                errorMessage.value != null -> snackbarController?.showMessage(
+                    message = errorMessage.value ?: "Unknown error"
+                )
+                doctorInfo.value == null -> snackbarController?.showMessage(
+                    message = "Doctor info is unaviable" )
                 else -> {
-
-
-                    // Appointment confirmation card
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White,
-                            contentColor = DefaultPrimary
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    Column(modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
+                        // Appointment confirmation card
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White,
+                                contentColor = DefaultPrimary
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Text(
-                                text = "Appointment Scheduled",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier.padding(16.dp)
                             ) {
-                                Text("Date:", style = MaterialTheme.typography.bodyMedium)
                                 Text(
-                                    text = formatConfirmationDate(date),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = DefaultOnPrimary,
-                                    fontWeight = FontWeight.SemiBold
+                                    text = "Appointment Scheduled",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 8.dp)
                                 )
-                            }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Date:", style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        text = formatConfirmationDate(date),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = DefaultOnPrimary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Time:", style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = formatConfirmationTime(time),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = DefaultOnPrimary,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Time:", style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        text = formatConfirmationTime(time),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = DefaultOnPrimary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    AppointmentTypeCard(
-                        appointmentType = appointmentType,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                        AppointmentTypeCard(
+                            appointmentType = appointmentType,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
 
 
-                    // Doctor information card
-                    DoctorConfirmationCard(
-                        doctor = doctorInfo.value!!,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                        // Doctor information card
+                        DoctorConfirmationCard(
+                            doctor = doctorInfo.value!!,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
 
-                    LocationCard(
-                        doctor = doctorInfo.value!!,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                        LocationCard(
+                            doctor = doctorInfo.value!!,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
 
-                    // Payment information card (optional)
-                    PaymentCard(
-                        modifier = Modifier.padding(bottom = 24.dp),
-                        appointmentType = appointmentType
-                    )
+                        // Payment information card (optional)
+                        PaymentCard(
+                            modifier = Modifier.padding(bottom = 24.dp),
+                            appointmentType = appointmentType
+                        )
 
-                    // Action buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Button(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.LightGray,
-                                contentColor = DefaultOnPrimary
-                            ),
-                            shape = RoundedCornerShape(12.dp)
+                        // Action buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text("Cancel")
-                        }
+                            Button(
+                                onClick = { navController.popBackStack() },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.LightGray,
+                                    contentColor = DefaultOnPrimary
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Cancel")
+                            }
 
-                        Button(
-                            onClick = {
-                                // Handle confirmation logic
-                                //  navController.navigate("booking-success")
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DefaultPrimary,
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Confirm Booking")
+                            Button(
+                                onClick = {
+                                    // Handle confirmation logic
+                                    //  navController.navigate("booking-success")
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = DefaultPrimary,
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Confirm Booking")
+                            }
                         }
                     }
                 }
@@ -711,27 +718,6 @@ private fun LoadingView() {
     }
 }
 
-@Composable
-private fun ErrorView(message: String) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = "Error",
-            tint = Color.Red,
-            modifier = Modifier.size(48.dp))
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = DefaultOnPrimary,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp))
-    }
-}
 
 @Preview
 @Composable
@@ -739,6 +725,7 @@ fun ConfirmationScreenPreview() {
     val navController = rememberNavController()
     ConfirmationScreen(
         navController = navController,
+        snackbarController = null,
         doctorId = "123",
         date = "2023-12-25",
         time = "4:30 PM",

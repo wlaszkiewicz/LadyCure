@@ -29,7 +29,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import com.example.ladycure.data.doctor.Specialization
+import com.example.ladycure.data.doctor.Speciality
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
@@ -41,11 +41,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
@@ -56,7 +54,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -80,7 +77,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -89,10 +85,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material3.Text
 import com.example.ladycure.data.AppointmentType
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -102,11 +98,12 @@ import kotlin.math.floor
 @Composable
 fun BookAppointmentScreen(
     navController: NavController,
+    snackbarController: SnackbarController?,
     city: String,
     selectedService: AppointmentType,
     authRepo: AuthRepository = AuthRepository()
 ) {
-    val selectedSpecialization = Specialization.fromDisplayName(selectedService.specialization)
+    val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
     // State variables
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
@@ -119,11 +116,11 @@ fun BookAppointmentScreen(
     val showDoctorsForSlot = remember { mutableStateOf(false) }
 
     // Fetch doctors by specialization
-    LaunchedEffect(selectedSpecialization) {
+    LaunchedEffect(selectedSpeciality) {
         isLoading.value = true
         try {
             // Get doctors first
-            val doctorsResult = authRepo.getDoctorsBySpecification(selectedSpecialization.displayName)
+            val doctorsResult = authRepo.getDoctorsBySpecification(selectedSpeciality.displayName)
             if (doctorsResult.isSuccess) {
                 doctors.value = doctorsResult.getOrNull() ?: emptyList()
 
@@ -135,8 +132,8 @@ fun BookAppointmentScreen(
                 }
 
                 // Then get their availabilities
-                val availabilities = authRepo.getAllDoctorAvailabilitiesBySpecialization(
-                    selectedSpecialization.displayName, city)
+                val availabilities = authRepo.getAllDoctorAvailabilitiesBySpeciality(
+                    selectedSpeciality.displayName, city)
 
                 doctorAvailabilities.value = availabilities
             }
@@ -174,8 +171,7 @@ fun BookAppointmentScreen(
         }
     }
 
-    BaseScaffold { snackbarController ->
-        Column(
+   Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
@@ -194,7 +190,7 @@ fun BookAppointmentScreen(
 
             LaunchedEffect(errorMessage.value) {
                 errorMessage.value?.let {
-                    snackbarController.showSnackbar(it)
+                    snackbarController?.showMessage(it)
                 }
             }
 
@@ -202,7 +198,7 @@ fun BookAppointmentScreen(
                 isLoading.value -> LoadingView()
                 !showDoctorsForSlot.value -> DateAndTimeSelectionView(
                     city = city,
-                    selectedSpecialization = selectedSpecialization,
+                    selectedSpeciality = selectedSpeciality,
                     selectedService = selectedService,
                     availableDates = availableDates,
                     selectedDate = selectedDate.value,
@@ -226,7 +222,6 @@ fun BookAppointmentScreen(
             }
         }
     }
-}
 
 @Composable
 private fun AppointmentHeader(
@@ -267,7 +262,7 @@ private fun AppointmentHeader(
 @Composable
 private fun DateAndTimeSelectionView(
     city: String,
-    selectedSpecialization: Specialization,
+    selectedSpeciality: Speciality,
     selectedService: AppointmentType,
     availableDates: List<String>,
     selectedDate: String?,
@@ -279,13 +274,13 @@ private fun DateAndTimeSelectionView(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         // Service info chip
         ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = 16.dp))
 
         // Location and specialty
-        LocationSpecialtyRow(city, selectedSpecialization)
+        LocationSpecialtyRow(city, selectedSpeciality)
 
         // Date selection
         Text(
@@ -343,7 +338,7 @@ private fun DateAndTimeSelectionView(
         ) {
 
             Icon(
-                painter = painterResource(Specialization.fromDisplayName(service.specialization).icon),
+                painter = painterResource(Speciality.fromDisplayName(service.speciality).icon),
                 contentDescription = "Service type",
                 tint = DefaultPrimary,
                 modifier = Modifier.size(20.dp)
@@ -368,7 +363,7 @@ private fun DateAndTimeSelectionView(
 @Composable
 private fun LocationSpecialtyRow(
     city: String,
-    specialization: Specialization
+    speciality: Speciality
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -392,7 +387,7 @@ private fun LocationSpecialtyRow(
             color = DefaultPrimary.copy(alpha = 0.1f)
         ) {
             Text(
-                text = specialization.displayName,
+                text = speciality.displayName,
                 style = MaterialTheme.typography.labelMedium,
                 color = DefaultPrimary,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
@@ -412,7 +407,7 @@ private fun DateSelector(
     Column(modifier = modifier) {
         if (availableDates.isEmpty()) {
             Text(
-                text = "We are sorry, there's no available dates for this specialization",
+                text = "We are sorry, there's no available dates for this speciality",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.9f),
                 modifier = Modifier.padding(vertical = 16.dp))
@@ -495,7 +490,7 @@ fun DateCard(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
-        modifier = Modifier.fillMaxHeight(),
+        modifier = Modifier.fillMaxHeight().padding(bottom = 30.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -1100,11 +1095,11 @@ fun DoctorCardPreview() {
         val startTime = LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
         val endTime = LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
 
-        // Generate 30-minute slots between start and end time
+        // Generate 15-minute slots between start and end time
         var currentTime = startTime
         while (currentTime.isBefore(endTime)) {
             slots.add(currentTime)
-            currentTime = currentTime.plus(30, ChronoUnit.MINUTES)
+            currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
         }
     }
 
@@ -1203,6 +1198,7 @@ fun TimeSlotChip(time: String, isSelected: Boolean, onSelect: () -> Unit, modifi
 fun BookAppointmentScreenPreview() {
     BookAppointmentScreen(
         navController = rememberNavController(),
+        null,
         city = "Wrocław",
         selectedService = AppointmentType.DENTAL_IMPLANT
     )

@@ -5,8 +5,8 @@ import com.example.ladycure.data.Role
 import com.example.ladycure.data.User
 
 data class Doctor(
-    val specialization: Specialization,
-    val availability: List<Availability>,
+    val speciality: Speciality,
+    val availability: List<DoctorAvailability>,
     val reviews: List<Review>,
     val address: String,
     val consultationPrice: String,
@@ -33,7 +33,7 @@ data class Doctor(
 )
 
 
-enum class Specialization(val displayName: String, val icon: Int, val doctorCount: Int? = 2 ) {
+enum class Speciality(val displayName: String, val icon: Int, val doctorCount: Int? = 2 ) {
     FAMILY_MEDICINE("Family Medicine", icon = (R.drawable.ic_family_medicine)),
     DERMATOLOGY("Dermatology", icon = (R.drawable.ic_dermatology)),
     CARDIOLOGY("Cardiology", icon = (R.drawable.ic_cardiology)),
@@ -51,11 +51,11 @@ enum class Specialization(val displayName: String, val icon: Int, val doctorCoun
     OTHER("Other", icon = (R.drawable.ic_medical_services));
 
     companion object {
-        fun fromDisplayName(displayName: String): Specialization {
+        fun fromDisplayName(displayName: String): Speciality {
             return values().firstOrNull { it.displayName == displayName } ?: OTHER
         }
 
-        val popularCategories: List<Specialization>
+        val popularCategories: List<Speciality>
             get() = listOf(FAMILY_MEDICINE, GYNECOLOGY, DERMATOLOGY, DENTISTRY, PSYCHIATRY)
 
     }

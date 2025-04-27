@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import DefaultOnPrimary
 import DefaultPrimary
-import android.app.Dialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,7 +35,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.example.ladycure.R
 import com.example.ladycure.data.AppointmentType
-import com.example.ladycure.repository.AuthRepository
 
 
 @Composable
@@ -70,7 +67,7 @@ fun AppointmentsSection(appointments: List<Appointment>) {
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 appointments.forEach { appointment ->
-                    ModernAppointmentCard(appointment)
+                    PatientAppointmentCard(appointment)
                 }
             }
         }
@@ -78,7 +75,7 @@ fun AppointmentsSection(appointments: List<Appointment>) {
 }
 
 @Composable
-fun ModernAppointmentCard(appointment: Appointment) {
+fun PatientAppointmentCard(appointment: Appointment) {
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
@@ -116,7 +113,7 @@ fun ModernAppointmentCard(appointment: Appointment) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = when (appointment.type.specialization) {
+                            painter = when (appointment.type.speciality) {
                                 "Family Medicine" -> painterResource(id = R.drawable.ic_family_medicine)
                                 "Cardiology" -> painterResource(id = R.drawable.ic_cardiology)
                                 "Dentistry" -> painterResource(id = R.drawable.ic_dentistry)
@@ -134,7 +131,7 @@ fun ModernAppointmentCard(appointment: Appointment) {
                                 "Radiology" -> painterResource(id = R.drawable.ic_radiology)
                                 else -> painterResource(id = R.drawable.ic_medical_services)
                             },
-                            contentDescription = appointment.type.specialization
+                            contentDescription = appointment.type.speciality
                                 ?: "Medical Appointment",
                             tint = DefaultPrimary,
                             modifier = Modifier.size(28.dp)
@@ -262,7 +259,7 @@ fun ModernAppointmentCard(appointment: Appointment) {
 @Preview
 @Composable
 fun PreviewAppointmentCard() {
-     ModernAppointmentCard(
+     PatientAppointmentCard(
             appointment = Appointment(
                 appointmentId = "1",
                 doctorId = "Smith",
@@ -335,7 +332,7 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = when (appointment.type.specialization) {
+                            painter = when (appointment.type.speciality) {
                                 "Cardiology" -> painterResource(id = R.drawable.ic_cardiology)
                                 "Dentistry" -> painterResource(id = com.example.ladycure.R.drawable.ic_dentistry)
                                 "Dermatology" -> painterResource(id = com.example.ladycure.R.drawable.ic_dermatology)

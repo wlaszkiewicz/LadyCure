@@ -1,5 +1,6 @@
 package com.example.ladycure
 
+import DefaultPrimary
 import LadyCureTheme
 import android.app.Activity
 import android.content.Context
@@ -33,6 +34,7 @@ fun WelcomeScreen(navController: NavController) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     var isLoggedIn by remember { mutableStateOf(false) }
+    val authRepo = AuthRepository()
 
     LaunchedEffect(Unit) {
         // Check auth state asynchronously
@@ -46,9 +48,23 @@ fun WelcomeScreen(navController: NavController) {
 
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
-            navController.navigate("home") {
-                popUpTo(navController.graph.startDestinationId) {
-                    inclusive = true
+            val result = try {
+                authRepo.getUserRole()
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+
+            when {
+                result.isSuccess -> {
+                    val role = result.getOrNull()
+                    when (role) {
+                        "admin" -> navController.navigate("admin") { popUpTo(navController.graph.startDestinationId) { inclusive = true } }
+                        "doctor" -> navController.navigate("doctor_main") { popUpTo(navController.graph.startDestinationId) { inclusive = true } }
+                        else -> navController.navigate("home") { popUpTo(navController.graph.startDestinationId) { inclusive = true } }
+                    }
+                }
+                else -> {
+                    Toast.makeText(context, result.exceptionOrNull()?.message ?: "Error fetching user role", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -112,7 +128,10 @@ fun WelcomeContent(navController: NavController) {
                 ) {
                     Button(
                         onClick = { showDialog = false },
-                        modifier = Modifier.width(150.dp)
+                        modifier = Modifier.width(150.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultPrimary
+                        )
                     ) {
                         Text("Female")
                     }
@@ -123,7 +142,10 @@ fun WelcomeContent(navController: NavController) {
                             showDialog = false
                             ITSAMAN = true
                         },
-                        modifier = Modifier.width(150.dp)
+                        modifier = Modifier.width(150.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultPrimary
+                        )
                     ) {
                         Text("Male")
                     }
