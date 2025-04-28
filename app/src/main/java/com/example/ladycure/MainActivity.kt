@@ -107,6 +107,8 @@ class MainActivity : ComponentActivity() {
                     composable("doctor_main") { DoctorHomeScreen(navController) }
                     composable("set_availability") { SetAvailabilityScreen(navController, snackbarController) }
 
+                    composable("availabilityList") { AvailabilityListScreen(navController, snackbarController) }
+
                     composable("doctors/{speciality}") { backStackEntry ->
                         val speciality = backStackEntry.arguments?.getString("speciality") ?: ""
                         DoctorsListScreen(navController, speciality)
@@ -145,5 +147,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 
 

@@ -35,6 +35,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Schedule
@@ -44,6 +46,7 @@ import androidx.compose.material3.TimePickerDialog
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
@@ -100,140 +103,165 @@ fun SetAvailabilityScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DefaultBackground)
+            .background(DefaultBackground),
     ) {
         // Header with navigation
+        // Replace the current header Row with this:
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp)
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.ArrowBack, "Back", tint = DefaultPrimary)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Default.ArrowBack, "Back", tint = DefaultPrimary)
+                }
+                Text(
+                    "Set Availability",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = DefaultPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
             }
-            Text(
-                "Set Availability",
-                style = MaterialTheme.typography.titleLarge.copy(color = DefaultPrimary)
-            )
+
+            // New button style
+            OutlinedButton(
+                onClick = { navController.navigate("availabilityList") },
+                border = BorderStroke(1.dp, DefaultPrimary),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = DefaultPrimary
+                ),
+                modifier = Modifier.height(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = "View",
+                    tint = DefaultPrimary
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("View", style = MaterialTheme.typography.labelMedium)
+            }
         }
+
+        AvailabilityLegend(
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         // Main content with scroll
         LazyColumn(
             modifier = Modifier
-                .padding(horizontal = 16.dp)
+                .padding(16.dp)
                 .weight(1f)
         ) {
-            // Legend for availability types
-           item {
-                AvailabilityLegend(
+
+            // Month selection row
+            item{
+                CalendarHeader(
+                    currentMonth = currentMonth.value,
+                    minMonth = minMonth,
+                    onMonthChange = { currentMonth.value = it },
+                    onShowMonthPicker = { showMonthPicker.value = true },
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
+            // Calendar grid
+            item{
+                CalendarView(
+                    currentMonth = currentMonth.value,
+                    selectedDates = selectedDates.value,
+                    existingAvailabilities = existingAvailabilities.value,
+                    today = today,
+                    onDateSelected = { date ->
+                        selectedDates.value = if (selectedDates.value.contains(date)) {
+                            selectedDates.value - date
+                        } else {
+                            selectedDates.value + date
+                        }
+                    },
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
 
-            // Month selection row
-           item{
-               CalendarHeader(
-                   currentMonth = currentMonth.value,
-                   minMonth = minMonth,
-                   onMonthChange = { currentMonth.value = it },
-                   onShowMonthPicker = { showMonthPicker.value = true },
-                   modifier = Modifier.padding(bottom = 8.dp)
-               )
-           }
-
-            // Calendar grid
-           item{
-               CalendarView(
-                   currentMonth = currentMonth.value,
-                   selectedDates = selectedDates.value,
-                   existingAvailabilities = existingAvailabilities.value,
-                   today = today,
-                   onDateSelected = { date ->
-                       selectedDates.value = if (selectedDates.value.contains(date)) {
-                           selectedDates.value - date
-                       } else {
-                           selectedDates.value + date
-                       }
-                   },
-                   modifier = Modifier.padding(bottom = 16.dp)
-               )
-           }
-
             // Time range selection
-           item{
-               TimeRangePicker(
-                   startTime = startTime.value,
-                   endTime = endTime.value,
-                   onStartTimeClick = {
-                       isStartTimePicker.value = true
-                       showTimePicker.value = true
-                   },
-                   onEndTimeClick = {
-                       isStartTimePicker.value = false
-                       showTimePicker.value = true
-                   },
-                   modifier = Modifier.padding(bottom = 16.dp)
-               )
-           }
+            item{
+                TimeRangePicker(
+                    startTime = startTime.value,
+                    endTime = endTime.value,
+                    onStartTimeClick = {
+                        isStartTimePicker.value = true
+                        showTimePicker.value = true
+                    },
+                    onEndTimeClick = {
+                        isStartTimePicker.value = false
+                        showTimePicker.value = true
+                    },
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
 
             // Quick selection buttons
-           item{
-               QuickSelectionButtons(
-                   currentMonth = currentMonth.value,
-                   selectedDates = selectedDates,
-                   modifier = Modifier.padding(bottom = 16.dp)
-               )
-           }
+            item{
+                QuickSelectionButtons(
+                    currentMonth = currentMonth.value,
+                    selectedDates = selectedDates,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
 
             // Recurring pattern button
-           item{
-               Button(
-                   onClick = { showRecurringOptions.value = true },
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .padding(vertical = 8.dp),
-                   colors = ButtonDefaults.buttonColors(
-                       containerColor = Color.White,
-                       contentColor = DefaultPrimary
-                   ),
-                   border = BorderStroke(1.dp, DefaultPrimary)
-               ) {
-                   Icon(Icons.Default.ContentCopy, contentDescription = "Recurring")
-                   Spacer(Modifier.width(8.dp))
-                   Text("Set Recurring Pattern")
-               }
-           }
+            item{
+                Button(
+                    onClick = { showRecurringOptions.value = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = DefaultPrimary
+                    ),
+                    border = BorderStroke(1.dp, DefaultPrimary)
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Recurring")
+                    Spacer(Modifier.width(8.dp))
+                    Text("Set Recurring Pattern")
+                }
+            }
 
             // Copy to other months button
-           item{
-               Button(
-                   onClick = {
-                       // Copy selected days/time to next 3 months
-                       val datesToAdd = mutableSetOf<LocalDate>()
-                       val timeRange = startTime.value..endTime.value
+            item{
+                Button(
+                    onClick = {
+                        // Copy selected days/time to next 3 months
+                        val datesToAdd = mutableSetOf<LocalDate>()
+                        val timeRange = startTime.value..endTime.value
 
-                       selectedDates.value.forEach { date ->
-                           for (i in 1..3) {
-                               val newDate = date.plusMonths(i.toLong())
-                               datesToAdd.add(newDate)
-                           }
-                       }
+                        selectedDates.value.forEach { date ->
+                            for (i in 1..3) {
+                                val newDate = date.plusMonths(i.toLong())
+                                datesToAdd.add(newDate)
+                            }
+                        }
 
-                       selectedDates.value = selectedDates.value + datesToAdd
-                   },
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .padding(vertical = 8.dp),
-                   colors = ButtonDefaults.buttonColors(
-                       containerColor = Color.White,
-                       contentColor = DefaultPrimary
-                   ),
-                   border = BorderStroke(1.dp, DefaultPrimary)
-               ) {
-                   Icon(Icons.Default.Schedule, contentDescription = "Copy")
-                   Spacer(Modifier.width(8.dp))
-                   Text("Copy to Next 3 Months")
-               }
-           }
+                        selectedDates.value = selectedDates.value + datesToAdd
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = DefaultPrimary
+                    ),
+                    border = BorderStroke(1.dp, DefaultPrimary)
+                ) {
+                    Icon(Icons.Default.Schedule, contentDescription = "Copy")
+                    Spacer(Modifier.width(8.dp))
+                    Text("Copy to Next 3 Months")
+                }
+            }
 
         }
         // Save button at bottom
@@ -250,7 +278,10 @@ fun SetAvailabilityScreen(
                             endTime = endTime.value
                         )
                         snackbarController.showMessage("Availability saved successfully!")
-                        navController.popBackStack()
+                        // refresh the screen
+                        coroutineScope.launch {
+                            existingAvailabilities.value = authRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString()).getOrThrow()
+                        }
                     } catch (e: Exception) {
                         snackbarController.showMessage("Error saving availability: ${e.message}")
                     } finally {
@@ -429,7 +460,7 @@ private fun CalendarView(
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
-        modifier = modifier.height(300.dp)
+        modifier = modifier.height(280.dp)
     ) {
         items(offset) { Spacer(Modifier) } // Empty cells for alignment
 
@@ -499,151 +530,6 @@ private fun CalendarView(
     }
 }
 
-@Composable
-private fun ExistingAvailabilityDayItem(
-    date: LocalDate?,
-    availabilities: List<DoctorAvailability>,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = DefaultPrimary.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f)),
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            // Date header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    date!!.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()) +
-                            ", " + date.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()) +
-                            " " + date.dayOfMonth,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Icon(
-                    Icons.Default.Schedule,
-                    contentDescription = "Availability",
-                    tint = DefaultPrimary.copy(alpha = 0.7f)
-                )
-            }
-
-            // Time slots visualization
-            availabilities.forEach { availability ->
-                val startTime = availability.startTime
-                val endTime = availability.endTime
-                val availableSlots = availability.availableSlots ?: emptyList()
-
-                if (startTime != null && endTime != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Available: ${startTime.format(DateTimeFormatter.ofPattern("h:mm a"))} - " +
-                                endTime.format(DateTimeFormatter.ofPattern("h:mm a")),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-
-                    // Visual timeline of slots
-                    Spacer(Modifier.height(4.dp))
-                    TimeSlotsVisualization(
-                        startTime = startTime,
-                        endTime = endTime,
-                        availableSlots = availableSlots,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(24.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimeSlotsVisualization(
-    startTime: LocalTime,
-    endTime: LocalTime,
-    availableSlots: List<LocalTime>,
-    modifier: Modifier = Modifier
-) {
-    val totalDuration = ChronoUnit.MINUTES.between(startTime, endTime)
-    val slotDuration = 15 // minutes
-    val totalSlots = (totalDuration / slotDuration).toInt()
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(Color.LightGray.copy(alpha = 0.2f))
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            for (i in 0 until totalSlots) {
-                val slotTime = startTime.plusMinutes((i * slotDuration).toLong())
-                val isAvailable = availableSlots.contains(slotTime)
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(
-                            if (isAvailable) DefaultPrimary.copy(alpha = 0.7f)
-                            else Color.Red.copy(alpha = 0.5f)
-                        )
-                        .border(1.dp, Color.White)
-                )
-            }
-        }
-    }
-}
-@Composable
-private fun ExistingAvailabilityItem(
-    date: LocalDate?,
-    startTime: LocalTime?,
-    endTime: LocalTime?,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = DefaultPrimary.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f)),
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    date!!.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()) +
-                            ", " + date.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()) +
-                            " " + date.dayOfMonth,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Text(
-                    "${startTime!!.format(DateTimeFormatter.ofPattern("h:mm a"))} - " +
-                            endTime!!.format(DateTimeFormatter.ofPattern("h:mm a")),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Icon(
-                Icons.Default.Schedule,
-                contentDescription = "Availability",
-                tint = DefaultPrimary.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
 
 @Composable
 private fun QuickSelectionButtons(
@@ -884,7 +770,7 @@ fun TimeRangePicker(
 ) {
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Available Hours", style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 8.dp))
+            textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -932,9 +818,9 @@ fun TimePickerChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Row(modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = MaterialTheme.typography.labelMedium)
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.width(10.dp))
         Surface(
             shape = RoundedCornerShape(8.dp),
             color = Color.White,
