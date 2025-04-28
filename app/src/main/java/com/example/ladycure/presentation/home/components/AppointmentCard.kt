@@ -4,7 +4,6 @@ package com.example.ladycure.presentation.home.components
 import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.Composable
 import com.example.ladycure.data.Appointment
-import com.example.ladycure.data.Status
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,8 +32,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import com.example.ladycure.R
+import com.example.ladycure.data.Appointment.Status
 import com.example.ladycure.data.AppointmentType
+import com.example.ladycure.data.doctor.Speciality
+import java.time.LocalDate
+import java.time.LocalTime
 
 
 @Composable
@@ -113,26 +115,8 @@ fun PatientAppointmentCard(appointment: Appointment) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = when (appointment.type.speciality) {
-                                "Family Medicine" -> painterResource(id = R.drawable.ic_family_medicine)
-                                "Cardiology" -> painterResource(id = R.drawable.ic_cardiology)
-                                "Dentistry" -> painterResource(id = R.drawable.ic_dentistry)
-                                "Dermatology" -> painterResource(id = R.drawable.ic_dermatology)
-                                "Gynecology" -> painterResource(id = R.drawable.ic_gynecology)
-                                "Endocrinology" -> painterResource(id = R.drawable.ic_endocrinology)
-                                "Gastroenterology" -> painterResource(id = R.drawable.ic_gastroenterology)
-                                "Neurology" -> painterResource(id = R.drawable.ic_neurology)
-                                "Oncology" -> painterResource(id = R.drawable.ic_oncology)
-                                "Ophthalmology" -> painterResource(id = R.drawable.ic_ophthalmology)
-                                "Orthopedics" -> painterResource(id = R.drawable.ic_orthopedics)
-                                "Pediatrics" -> painterResource(id = R.drawable.ic_pediatrics)
-                                "Physiotherapy" -> painterResource(id = R.drawable.ic_physiotherapy)
-                                "Psychiatry" -> painterResource(id = R.drawable.ic_psychology)
-                                "Radiology" -> painterResource(id = R.drawable.ic_radiology)
-                                else -> painterResource(id = R.drawable.ic_medical_services)
-                            },
-                            contentDescription = appointment.type.speciality
-                                ?: "Medical Appointment",
+                            painter = painterResource(Speciality.fromDisplayName(appointment.type.speciality).icon),
+                            contentDescription = appointment.type.speciality,
                             tint = DefaultPrimary,
                             modifier = Modifier.size(28.dp)
                         )
@@ -168,7 +152,7 @@ fun PatientAppointmentCard(appointment: Appointment) {
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.date, style = MaterialTheme.typography.bodyMedium)
+                        Text(appointment.date.toString(), style = MaterialTheme.typography.bodyMedium)
                     }
 
                     Column(
@@ -179,7 +163,7 @@ fun PatientAppointmentCard(appointment: Appointment) {
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.time, style = MaterialTheme.typography.bodyMedium)
+                        Text(appointment.time.toString(), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
@@ -264,8 +248,8 @@ fun PreviewAppointmentCard() {
                 appointmentId = "1",
                 doctorId = "Smith",
                 patientId = "Patient123",
-                date = "2023-10-01",
-                time = "10:00 AM",
+                date =LocalDate.now(),
+                time = LocalTime.now(),
                 status = Status.CONFIRMED,
                 type = AppointmentType.ANXIETY_DEPRESSION_SCREENING,
                 price = 150.0,
@@ -284,8 +268,8 @@ fun PreviewAppointmentDetailsDialog() {
             appointmentId = "1",
             doctorId = "Smith",
             patientId = "Patient123",
-            date = "2023-10-01",
-            time = "10:00 AM",
+            date = LocalDate.now(),
+            time = LocalTime.now(),
             status = Status.CONFIRMED,
             type = AppointmentType.ANXIETY_DEPRESSION_SCREENING,
             price = 150.0,
@@ -332,23 +316,7 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = when (appointment.type.speciality) {
-                                "Cardiology" -> painterResource(id = R.drawable.ic_cardiology)
-                                "Dentistry" -> painterResource(id = com.example.ladycure.R.drawable.ic_dentistry)
-                                "Dermatology" -> painterResource(id = com.example.ladycure.R.drawable.ic_dermatology)
-                                "Gynecology" -> painterResource(id = com.example.ladycure.R.drawable.ic_gynecology)
-                                "Endocrinology" -> painterResource(id = com.example.ladycure.R.drawable.ic_endocrinology)
-                                "Gastroenterology" -> painterResource(id = com.example.ladycure.R.drawable.ic_gastroenterology)
-                                "Neurology" -> painterResource(id = com.example.ladycure.R.drawable.ic_neurology)
-                                "Oncology" -> painterResource(id = com.example.ladycure.R.drawable.ic_oncology)
-                                "Ophthalmology" -> painterResource(id = com.example.ladycure.R.drawable.ic_ophthalmology)
-                                "Orthopedics" -> painterResource(id = com.example.ladycure.R.drawable.ic_orthopedics)
-                                "Pediatrics" -> painterResource(id = com.example.ladycure.R.drawable.ic_pediatrics)
-                                "Physiotherapy" -> painterResource(id = com.example.ladycure.R.drawable.ic_physiotherapy)
-                                "Psychiatry" -> painterResource(id = com.example.ladycure.R.drawable.ic_psychology)
-                                "Radiology" -> painterResource(id = com.example.ladycure.R.drawable.ic_radiology)
-                                else -> painterResource(id = com.example.ladycure.R.drawable.ic_medical_services)
-                            },
+                            painter = painterResource(Speciality.fromDisplayName(appointment.type.speciality).icon),
                             contentDescription = "Appointment Type",
                             tint = DefaultPrimary,
                             modifier = Modifier.size(28.dp)
@@ -383,7 +351,7 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.CalendarToday,
                         title = "Date",
-                        value = appointment.date
+                        value = appointment.date.toString()
                     )
 
                     // Time
@@ -391,7 +359,7 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                         modifier = Modifier.weight(1f),
                         icon = Icons.Default.Schedule,
                         title = "Time",
-                        value = appointment.time
+                        value = appointment.time.toString()
                     )
                 }
 

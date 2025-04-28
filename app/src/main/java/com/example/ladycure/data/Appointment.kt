@@ -1,11 +1,16 @@
 package com.example.ladycure.data
 
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
 data class Appointment(
     val appointmentId: String,
     val doctorId: String,
     val patientId: String,
-    val date: String,
-    val time: String,
+    val date: LocalDate,
+    val time: LocalTime,
     val status: Status,
     val type: AppointmentType,
     val price: Double,
@@ -15,24 +20,56 @@ data class Appointment(
     val comments: String = "",
 )
 {
-    companion object {
-        const val STATUS_PENDING = "Pending"
-        const val STATUS_CONFIRMED = "Confirmed"
-        const val STATUS_CANCELLED = "Cancelled"
+    fun toMap(appointment: Appointment): Map<String, Any> {
+        return mapOf(
+            "appointmentId" to appointment.appointmentId,
+            "doctorId" to appointment.doctorId,
+            "patientId" to appointment.patientId,
+            "date" to appointment.date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+            "time" to appointment.time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+            "status" to appointment.status.value,
+            "type" to appointment.type.displayName,
+            "price" to appointment.price,
+            "address" to appointment.address,
+            "doctorName" to appointment.doctorName,
+            "patientName" to appointment.patientName,
+            "comments" to appointment.comments
+        )
     }
-}
-
-enum class Status(val value: String) {
-    PENDING(Appointment.STATUS_PENDING),
-    CONFIRMED(Appointment.STATUS_CONFIRMED),
-    CANCELLED(Appointment.STATUS_CANCELLED);
 
     companion object {
-        fun fromValue(value: String): Status {
-            return values().firstOrNull { it.value == value } ?: PENDING
+        fun fromMap(map: Map<String, Any>): Appointment {
+            return Appointment(
+                appointmentId = map["appointmentId"] as String,
+                doctorId = map["doctorId"] as String,
+                patientId = map["patientId"] as String,
+                date = LocalDate.parse(map["date"] as String?, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                time = LocalTime.parse(map["time"] as String?, DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+                status = Status.fromValue(map["status"] as String),
+                type = AppointmentType.fromDisplayName(map["type"] as String),
+                price = map["price"] as Double,
+                address = map["address"] as String,
+                doctorName = map["doctorName"] as String,
+                patientName = map["patientName"] as String,
+                comments = map["comments"] as String
+            )
+        }
+    }
+
+    enum class Status(val value: String) {
+        PENDING("Pending"),
+        CONFIRMED("Confirmed"),
+        CANCELLED("Cancelled");
+
+        companion object {
+            fun fromValue(value: String): Status {
+                return values().firstOrNull { it.value == value } ?: PENDING
+            }
         }
     }
 }
+
+
 enum class AppointmentType(
     val displayName: String,
     val speciality: String,

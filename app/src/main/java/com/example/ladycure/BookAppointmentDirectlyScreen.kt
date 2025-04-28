@@ -57,6 +57,7 @@ import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun BookAppointmentDirectlyScreen(
@@ -137,14 +138,15 @@ fun BookAppointmentDirectlyScreen(
                 isLoading.value -> LoadingView()
                 !isLoading.value -> DateAndTimeSelectionView(
                     selectedService = selectedService,
-                    availableDates = availableDates.map { it.toString() },
-                    selectedDate = selectedDate.value?.toString(),
+                    availableDates = availableDates.map { it!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
+                    selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                     onDateSelected = { selectedDate.value = LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
                     timeSlots = timeSlotsForSelectedDate,
-                    selectedTimeSlot = selectedTimeSlot.value.toString(),
+                    selectedTimeSlot = selectedTimeSlot.value?.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
                     onTimeSlotSelected = {
-                        selectedTimeSlot.value = LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
-                        navController.navigate("confirmation/$doctorId/${selectedDate.value}/${selectedTimeSlot.value}/${selectedService.displayName}")
+                        selectedTimeSlot.value = LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", Locale.US))
+                        navController.navigate("confirmation/$doctorId/${selectedDate.value}/${selectedTimeSlot.value!!.format(
+                            DateTimeFormatter.ofPattern("h:mm a", Locale.US))}/${selectedService.displayName}")
                     })
 
             }

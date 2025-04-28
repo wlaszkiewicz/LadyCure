@@ -26,7 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -46,9 +45,7 @@ import com.example.ladycure.utility.HealthTips.getDailyTip
 import com.example.ladycure.utility.HealthTips.getRandomTip
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.data.Appointment
-import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
-import com.example.ladycure.data.Status
 import com.example.ladycure.presentation.home.components.AppointmentsSection
 import com.example.ladycure.presentation.home.components.BookAppointmentSection
 import com.example.ladycure.utility.SnackbarController
@@ -56,12 +53,13 @@ import com.example.ladycure.utility.SnackbarController
 
 @Composable
 fun HomeScreen(navController: NavHostController, snackbarController: SnackbarController? = null) {
-    var authRepo = AuthRepository()
+    val authRepo = remember { AuthRepository() }
 
     val selectedSpeciality = remember { mutableStateOf<Speciality?>(null) }
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     val selectedCity = remember { mutableStateOf("Wrocław") }
     var error = remember { mutableStateOf<String?>(null) }
+    val appointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         val result = authRepo.getCurrentUserData()
@@ -70,6 +68,16 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
         } else {
             error.value = result.exceptionOrNull()?.message
         }
+    }
+
+    LaunchedEffect(userData.value) {
+        val result = authRepo.getAppointments("user")
+        if (result.isFailure) {
+            error.value = result.exceptionOrNull()?.message
+        } else {
+            appointments.value = result.getOrNull() ?: emptyList()
+        }
+
     }
 
     if (userData.value == null) {
@@ -249,35 +257,7 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
                     )
 
                     AppointmentsSection(
-                        appointments = listOf(
-                            Appointment(
-                                appointmentId = "123",
-                                doctorId = "7PF99RFwlAc85r1760yyaMnvfo33",
-                                patientId = "P001",
-                                date = "30th Dec 2023",
-                                time = "10:00 AM",
-                                status = Status.CONFIRMED,
-                                type = AppointmentType.EYE_TEST,
-                                price = 50.0,
-                                address = "123 Main St, City",
-                                doctorName = "Ava Kum",
-                                patientName = "John Doe",
-                                comments = "Don't forget your glasses!"
-                            ),
-                            Appointment(
-                                appointmentId = "124",
-                                doctorId = "RE2CoEAtEmXbYdhQ7PotN1rFqMk1",
-                                patientId = "P002",
-                                date = "31st Dec 2023",
-                                time = "11:00 AM",
-                                status = Status.PENDING,
-                                type = AppointmentType.DENTAL_IMPLANT,
-                                price = 30.0,
-                                doctorName = "Artur Kot",
-                                patientName = "Jane Smith",
-                                comments = "Make sure to arrive 15 minutes early. Bring your ID.",
-                            )
-                        )
+                        appointments = appointments.value,
                     )
             }
     }

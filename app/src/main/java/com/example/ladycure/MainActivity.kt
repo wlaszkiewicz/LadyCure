@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.BottomNavBar
@@ -108,6 +109,10 @@ class MainActivity : ComponentActivity() {
                     composable("set_availability") { SetAvailabilityScreen(navController, snackbarController) }
 
                     composable("availabilityList") { AvailabilityListScreen(navController, snackbarController) }
+
+                    composable("booking_success/{appointmentId}") {  backStackEntry ->
+                        val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
+                        BookingSuccessScreen(navController, appointmentId, snackbarController) }
 
                     composable("doctors/{speciality}") { backStackEntry ->
                         val speciality = backStackEntry.arguments?.getString("speciality") ?: ""
