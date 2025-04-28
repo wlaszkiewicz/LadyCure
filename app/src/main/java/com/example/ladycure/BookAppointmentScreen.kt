@@ -214,7 +214,7 @@ fun BookAppointmentScreen(
                     doctors = availableDoctorsForSlot,
                     onBackClick = { showDoctorsForSlot.value = false },
                     onDoctorSelected = { doctorId ->
-                       navController.navigate("confirmation/$doctorId/${selectedDate.value}/${selectedTimeSlot.value}/${selectedService.displayName}")
+                       navController.navigate("confirmation/$doctorId/${selectedDate.value}/${selectedTimeSlot.value!!.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))}/${selectedService.displayName}")
                     }
                 )
             }

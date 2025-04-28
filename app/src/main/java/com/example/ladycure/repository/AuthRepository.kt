@@ -2,6 +2,7 @@ package com.example.ladycure.repository
 
 import android.util.Log
 import androidx.navigation.NavController
+import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -335,8 +336,79 @@ class AuthRepository {
             if (document.exists()) {
                 Result.success(document.data)
             } else {
-                Result.success(null)
+                Result.failure(Exception("Doctor not found"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun bookAppointment(
+        appointment: Appointment): Result<String> {
+        try {
+            val appointmentData = appointment.toMap(appointment).filterKeys { it != "appointmentId" }
+
+            val documentReference = firestore.collection("appointments").add(appointmentData).await()
+            val appointmentId = documentReference.id
+
+            // make the timeslot unavailable
+
+            val doctorId = appointment.doctorId
+            val date = appointment.date
+            val startTime = appointment.time
+            val endTime = startTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
+
+            // Fetch the current available slots
+            val docRef = firestore.collection("users")
+                .document(doctorId)
+                .collection("availability")
+                .document(date.toString())
+
+            val availabilitySnapshot = docRef.get().await()
+            if (availabilitySnapshot.exists()) {
+                val availableSlots = availabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                val updatedAvailableSlots = availableSlots.filterNot { slot ->
+                    val slotTime = LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                    (slotTime.isAfter(startTime) && slotTime.isBefore(endTime)) || slotTime == startTime
+                }
+                docRef.update("availableSlots", updatedAvailableSlots).await()
+            } else {
+                return Result.failure(Exception("Availability document does not exist"))
+            }
+
+            return Result.success(appointmentId)
+        } catch (e: Exception) {
+           return Result.failure(e)
+        }
+    }
+
+    suspend fun getAppointmentById(id: String): Result<Appointment> {
+        return try {
+            val document = firestore.collection("appointments").document(id).get().await()
+            if (document.exists()) {
+                val appointment = Appointment.fromMap(document.data?.plus("appointmentId" to id) ?: mapOf("appointmentId" to id))
+                Result.success(appointment)
+            } else {
+                Result.failure(Exception("Appointment not found"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getAppointments(role: String): Result<List<Appointment>> {
+        return try {
+            val id = if (role == "doctor") { "doctorId"} else {"patientId"}
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+            val querySnapshot = firestore.collection("appointments")
+                .whereEqualTo(id, userId)
+                .get()
+                .await()
+
+            val appointments = querySnapshot.documents.map { doc ->
+                Appointment.fromMap(doc.data?.plus("appointmentId" to doc.id) ?: mapOf("appointmentId" to doc.id))
+            }
+            Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
         }

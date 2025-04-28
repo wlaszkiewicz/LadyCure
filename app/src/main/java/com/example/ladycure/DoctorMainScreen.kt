@@ -10,10 +10,8 @@ import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +22,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -54,7 +51,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.LaunchedEffect
@@ -76,9 +72,9 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
-import com.example.ladycure.data.Status
 import com.example.ladycure.repository.AuthRepository
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Composable
 fun DoctorHomeScreen(
@@ -95,11 +91,11 @@ fun DoctorHomeScreen(
         val result = authRepo.getCurrentUserData()
         if (result.isSuccess) {
             doctorData.value = result.getOrNull()
-            // Fetch doctor's appointments
-//            val appointmentsResult = authRepo.getDoctorAppointments(doctorData.value?.get("id").toString())
-//            if (appointmentsResult.isSuccess) {
-//                upcomingAppointments.value = appointmentsResult.getOrNull() ?: emptyList()
-//            }
+
+            val appointmentsResult = authRepo.getAppointments("doctor")
+            if (appointmentsResult.isSuccess) {
+                upcomingAppointments.value = appointmentsResult.getOrNull() ?: emptyList()
+            }
             isLoading.value = false
         } else {
             errorMessage.value = result.exceptionOrNull()?.message
@@ -107,35 +103,6 @@ fun DoctorHomeScreen(
         }
     }
 
-    upcomingAppointments.value = listOf(
-        Appointment(
-            appointmentId = "123",
-            doctorId = "7PF99RFwlAc85r1760yyaMnvfo33",
-            patientId = "P001",
-            date = "30th Dec 2023",
-            time = "10:00 AM",
-            status = Status.CONFIRMED,
-            type = AppointmentType.EYE_TEST,
-            price = 50.0,
-            address = "123 Main St, City",
-            doctorName = "Ava Kum",
-            patientName = "John Doe",
-            comments = "Don't forget your glasses!"
-        ),
-        Appointment(
-            appointmentId = "124",
-            doctorId = "RE2CoEAtEmXbYdhQ7PotN1rFqMk1",
-            patientId = "P002",
-            date = "31st Dec 2023",
-            time = "11:00 AM",
-            status = Status.PENDING,
-            type = AppointmentType.DENTAL_IMPLANT,
-            price = 30.0,
-            doctorName = "Artur Kot",
-            patientName = "John Doe",
-            comments = "Make sure to arrive 15 minutes early. Bring your ID.",
-        )
-    )
 
     Column(
         modifier = Modifier
@@ -217,7 +184,7 @@ fun DoctorHomeScreen(
                 // Today's Appointments
                 StatCard(
                     icon = Icons.Default.CalendarToday,
-                    value = upcomingAppointments.value.count { it.date == LocalDate.now().toString() },
+                    value = upcomingAppointments.value.count { it.date == LocalDate.now() },
                     label = "Today",
                     modifier = Modifier.weight(1f)
                 )
@@ -494,8 +461,8 @@ private fun DoctorAppointmentCard(
                         .clip(RoundedCornerShape(8.dp))
                         .background(
                             when (appointment.status) {
-                                Status.CONFIRMED -> Color(0xFF4CAF50).copy(alpha = 0.1f)
-                                Status.PENDING -> Color(0xFFFFC107).copy(alpha = 0.1f)
+                                Appointment.Status.CONFIRMED -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                                Appointment.Status.PENDING -> Color(0xFFFFC107).copy(alpha = 0.1f)
                                 else -> Color(0xFFF44336).copy(alpha = 0.1f)
                             }
                         )
@@ -506,8 +473,8 @@ private fun DoctorAppointmentCard(
                         text = appointment.status.name.lowercase()
                             .replaceFirstChar { it.uppercase() },
                         color = when (appointment.status) {
-                            Status.CONFIRMED -> Color(0xFF4CAF50)
-                            Status.PENDING -> Color(0xFFFFC107)
+                            Appointment.Status.CONFIRMED -> Color(0xFF4CAF50)
+                            Appointment.Status.PENDING -> Color(0xFFFFC107)
                             else -> Color(0xFFF44336)
                         },
                         style = MaterialTheme.typography.labelMedium
@@ -836,9 +803,9 @@ fun DoctorAppointmentPreview(){
         appointmentId = "124",
         doctorId = "RE2CoEAtEmXbYdhQ7PotN1rFqMk1",
         patientId = "P002",
-        date = "31st Dec 2023",
-        time = "11:00 AM",
-        status = Status.PENDING,
+        date = LocalDate.now(),
+        time = LocalTime.now(),
+        status = Appointment.Status.PENDING,
         type = AppointmentType.DENTAL_IMPLANT,
         price = 30.0,
         doctorName = "Artur Kot",

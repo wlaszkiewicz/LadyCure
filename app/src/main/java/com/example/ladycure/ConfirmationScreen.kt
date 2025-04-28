@@ -1,7 +1,6 @@
 package com.example.ladycure
 
 import DefaultBackground
-import coil.compose.AsyncImage
 import androidx.compose.foundation.verticalScroll
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.draw.clip
@@ -25,11 +24,8 @@ import androidx.compose.material3.*
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.border
@@ -39,12 +35,20 @@ import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import coil.compose.SubcomposeAsyncImage
+import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.utility.SnackbarController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun ConfirmationScreen(
@@ -56,9 +60,33 @@ fun ConfirmationScreen(
     appointmentType: AppointmentType,
     authRepo: AuthRepository = AuthRepository()
 ) {
+
     val doctorInfo = remember { mutableStateOf<Map<String, Any>?>(null) }
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
+
+    var userName by remember { mutableStateOf("Patient unavaiable") }
+
+    LaunchedEffect(Unit) {
+       userName = authRepo.getUserField("name").getOrNull() + " " +
+                authRepo.getUserField("surname").getOrNull()
+    }
+    // Create an appointment object
+    val appointment = Appointment(
+        appointmentId = "",
+        doctorId = doctorId,
+        date = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+        time = LocalTime.parse(time, DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+        patientId = authRepo.getCurrentUserId().toString(),
+        status = Appointment.Status.PENDING,
+        type = appointmentType,
+        price = appointmentType.price,
+        address = doctorInfo.value?.get("address") as? String ?: "Address unavaiable",
+        doctorName = (doctorInfo.value?.get("name") as? String + " " +
+                doctorInfo.value?.get("surname") as? String),
+        patientName = userName,
+        comments = "",
+    )
 
     // Fetch doctor details
     LaunchedEffect(doctorId) {
@@ -207,7 +235,9 @@ fun ConfirmationScreen(
 
                         // Action buttons
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Button(
@@ -224,8 +254,19 @@ fun ConfirmationScreen(
 
                             Button(
                                 onClick = {
-                                    // Handle confirmation logic
-                                    //  navController.navigate("booking-success")
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        val result = authRepo.bookAppointment(appointment)
+                                        if (result.isSuccess) {
+                                            snackbarController?.showMessage(
+                                                message = "Appointment booked successfully"
+                                            )
+                                            navController.navigate("booking_success/${result.getOrNull()}")
+                                        } else {
+                                            snackbarController?.showMessage(
+                                                message = "Failed to book appointment: ${result.exceptionOrNull()?.message}"
+                                            )
+                                        }
+                                    }
                                 },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
@@ -595,7 +636,9 @@ private fun DoctorConfirmationCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth()
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
         ) {
             Text(
                 text = "Your Doctor",
@@ -687,7 +730,7 @@ private fun DoctorConfirmationCard(
 
 
 // Helper functions for date/time formatting
-private fun formatConfirmationDate(dateString: String): String {
+fun formatConfirmationDate(dateString: String): String {
     return try {
         val date = LocalDate.parse(dateString)
         date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d"))
@@ -696,10 +739,10 @@ private fun formatConfirmationDate(dateString: String): String {
     }
 }
 
-private fun formatConfirmationTime(timeString: String): String {
+ fun formatConfirmationTime(timeString: String): String {
     return try {
         val time = LocalTime.parse(timeString)
-        time.format(DateTimeFormatter.ofPattern("h:mm a",java.util.Locale.US))
+        time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US))
     } catch (e: Exception) {
         timeString
     }
