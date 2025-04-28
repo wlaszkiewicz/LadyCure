@@ -21,7 +21,7 @@ val DefaultOnPrimary = Neutral99
 
 //Snackbar Colors
 
-val SnackbarBackground = Color(0xFF8AC3E7)
+val SnackbarBackground = Color.White
 val SnackbarContentColorError = Color(0xFF75020D)
 val SnackbarContentColorSuccess = Color(0xFF91F17F)
 val SnackbarContentColor = Color(0xFF9C45A8)

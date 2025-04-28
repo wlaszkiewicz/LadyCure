@@ -9,6 +9,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -131,53 +132,40 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
                                 modifier = Modifier
                                     .size(56.dp)
                                     .clip(CircleShape)
-                                    .background(DefaultPrimary.copy(alpha = 0.2f)),
-                                contentAlignment = Alignment.Center,
-
-                                ) {
-                                IconButton(
-                                    onClick = { navController.navigate("profile") },
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    var userProfileUrl =
-                                        userData.value?.get("profilePictureUrl") as? String
-                                    if (userProfileUrl != null) {
-                                        SubcomposeAsyncImage(
-                                            model = userProfileUrl,
-                                            contentDescription = "Profile Picture",
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .clip(CircleShape),
-                                            contentScale = ContentScale.Crop,
-                                            loading = {
-                                                Box(
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    CircularProgressIndicator(
-                                                        modifier = Modifier.size(20.dp),
-                                                        color = DefaultPrimary
-                                                    )
-                                                }
-                                            },
-                                            error = {
-                                                Icon(
-                                                    imageVector = Icons.Default.Error,
-                                                    contentDescription = "Error loading image",
-                                                    modifier = Modifier
-                                                        .fillMaxSize(),
-                                                    tint = Color.Gray
-                                                )
-                                            }
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Default.AccountCircle,
-                                            contentDescription = "Profile",
-                                            tint = DefaultPrimary,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    }
+                                    .background(DefaultPrimary.copy(alpha = 0.2f))
+                                    .clickable { navController.navigate("profile") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val profileUrl =  userData.value?.get("profilePictureUrl") as? String
+                                if (profileUrl != null) {
+                                    SubcomposeAsyncImage(
+                                        model = profileUrl,
+                                        contentDescription = "Profile Picture",
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop,
+                                        loading = {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                color = DefaultPrimary
+                                            )
+                                        },
+                                        error = {
+                                            Icon(
+                                                imageVector = Icons.Default.AccountCircle,
+                                                contentDescription = "Profile",
+                                                tint = DefaultPrimary
+                                            )
+                                        }
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountCircle,
+                                        contentDescription = "Profile",
+                                        tint = DefaultPrimary,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
                                 }
                             }
 

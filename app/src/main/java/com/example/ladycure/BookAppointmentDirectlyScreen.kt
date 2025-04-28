@@ -55,6 +55,7 @@ import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -73,8 +74,8 @@ fun BookAppointmentDirectlyScreen(
     val doctorAvailability = remember { mutableStateOf<List<DoctorAvailability>>(emptyList())}
 
     // UI state
-    val selectedDate = remember { mutableStateOf<String?>(null) }
-    val selectedTimeSlot = remember { mutableStateOf<String?>(null) }
+    val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
+    val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
 
     LaunchedEffect(doctorId) {
         val result = authRepo.getDoctorById(doctorId)
@@ -96,12 +97,13 @@ fun BookAppointmentDirectlyScreen(
     val availableDates = doctorAvailability.value
         .map { it.date }
         .distinct()
-        .sortedBy { LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE) }
+        .sortedBy { it }
+
 
     // Generate time slots for selected date
     val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailability.value) {
         if (selectedDate.value == null) emptyList() else {
-            generateTimeSlotsForDate(selectedDate.value!!, doctorAvailability.value)
+            filerTimeSlotsForDate(selectedDate.value!!, doctorAvailability.value)
         }
     }
 
@@ -135,13 +137,13 @@ fun BookAppointmentDirectlyScreen(
                 isLoading.value -> LoadingView()
                 !isLoading.value -> DateAndTimeSelectionView(
                     selectedService = selectedService,
-                    availableDates = availableDates,
-                    selectedDate = selectedDate.value,
-                    onDateSelected = { selectedDate.value = it },
+                    availableDates = availableDates.map { it.toString() },
+                    selectedDate = selectedDate.value?.toString(),
+                    onDateSelected = { selectedDate.value = LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
                     timeSlots = timeSlotsForSelectedDate,
-                    selectedTimeSlot = selectedTimeSlot.value,
+                    selectedTimeSlot = selectedTimeSlot.value.toString(),
                     onTimeSlotSelected = {
-                        selectedTimeSlot.value = it
+                        selectedTimeSlot.value = LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
                         navController.navigate("confirmation/$doctorId/${selectedDate.value}/${selectedTimeSlot.value}/${selectedService.displayName}")
                     })
 
@@ -219,7 +221,7 @@ private fun DateAndTimeSelectionView(
         )
 
         // Time slots
-        if (selectedDate != null) {
+        if (selectedDate != null ) {
             Text(
                 text = "Available Time Slots",
                 style = MaterialTheme.typography.titleMedium,
@@ -228,7 +230,8 @@ private fun DateAndTimeSelectionView(
                 modifier = Modifier.padding(bottom = 12.dp))
 
             if (timeSlots.isEmpty()) {
-                EmptyTimeSlotsView()
+                PromptToSelectDate()
+              //  EmptyTimeSlotsView()
             } else {
                 TimeSlotGrid(
                     timeSlots = timeSlots,

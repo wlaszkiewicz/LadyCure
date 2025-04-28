@@ -8,6 +8,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -243,9 +247,12 @@ class AuthRepository {
                 .map { doc ->
                     DoctorAvailability(
                         doctorId = doctor.id,
-                        date = doc.id,
-                        startTime = doc.getString("startTime") ?: "",
-                        endTime = doc.getString("endTime") ?: "",
+                        date = LocalDate.parse(doc.id,DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                        startTime = LocalTime.parse(doc.getString("startTime"), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                        endTime = LocalTime.parse(doc.getString("endTime"), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                        availableSlots = (doc.get("availableSlots") as? List<String>)
+                            ?.map { slot -> LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                            ?.toMutableList() ?: mutableListOf()
                     )
                 }
             allAvailabilities.addAll(availabilities)
@@ -255,24 +262,71 @@ class AuthRepository {
 
 
     suspend fun getDoctorAvailability(doctorId: String): Result<List<DoctorAvailability>> {
-        val doctor = firestore.collection("users").document(doctorId).get().await()
         return try {
-            val availabilities = doctor.reference.collection("availability")
+            val snapshot = firestore.collection("users")
+                .document(doctorId)
+                .collection("availability")
                 .get()
                 .await()
-                .documents
-                .map { doc ->
+
+            val availabilities = snapshot.documents.mapNotNull { doc ->
+                try {
                     DoctorAvailability(
-                        doctorId = doctor.id,
-                        date = doc.id,
-                        startTime = doc.getString("startTime") ?: "",
-                        endTime = doc.getString("endTime") ?: "",
+                        doctorId = doctorId,
+                        date = LocalDate.parse(doc.id,DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                        startTime = doc.getString("startTime")?.let { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) },
+                        endTime = doc.getString("endTime")?.let { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) },
+                        availableSlots = (doc.get("availableSlots") as? List<String>)
+                            ?.map { slot -> LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                            ?.toMutableList() ?: mutableListOf()
                     )
+                } catch (e: Exception) {
+                    null
                 }
+            }
             Result.success(availabilities)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun updateAvailabilities(
+        dates: List<LocalDate>,
+        startTime: LocalTime,
+        endTime: LocalTime
+    ): Result<Unit> {
+        val batch = firestore.batch()
+        val doctorId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+
+        val availableSlots = mutableSetOf<LocalTime>()
+        var currentTime = startTime
+        while (currentTime.isBefore(endTime)) {
+            availableSlots.add(currentTime)
+            currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
+        }
+
+        dates.forEach { date ->
+            val docRef = firestore.collection("users")
+                .document(doctorId)
+                .collection("availability")
+                .document(date.toString())
+
+            val availabilityData = hashMapOf(
+                "doctorId" to doctorId,
+                "startTime" to startTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                "endTime" to endTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                "availableSlots" to availableSlots.map { it.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+            )
+
+            batch.set(docRef, availabilityData)
+        }
+
+        try {
+            batch.commit().await()
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
+        return Result.success(Unit)
     }
 
     suspend fun getDoctorById(doctorId: String): Result<Map<String, Any>?> {

@@ -321,7 +321,7 @@ fun DoctorHomeScreen(
                         icon = Icons.Default.Schedule,
                         label = "Set Availability",
                         modifier = Modifier.weight(1f),
-                        onClick = { showAvailabilityDialog.value = true }
+                        onClick = { navController.navigate("set_availability") }
                     )
 
                     ActionButton(
