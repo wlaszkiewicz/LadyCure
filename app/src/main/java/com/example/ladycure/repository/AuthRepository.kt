@@ -413,4 +413,24 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun updateAppointmentStatus(appointmentId: String, status: String): Result<Unit> {
+        return try {
+            val appointmentRef = firestore.collection("appointments").document(appointmentId)
+            appointmentRef.update("status", status).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateAppointmentComment(appointmentId: String, comment: String): Result<Unit> {
+        return try {
+            val appointmentRef = firestore.collection("appointments").document(appointmentId)
+            appointmentRef.update("comments", comment).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

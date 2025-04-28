@@ -11,7 +11,7 @@ data class Appointment(
     val patientId: String,
     val date: LocalDate,
     val time: LocalTime,
-    val status: Status,
+    var status: Status,
     val type: AppointmentType,
     val price: Double,
     val address: String = "",
@@ -27,7 +27,7 @@ data class Appointment(
             "patientId" to appointment.patientId,
             "date" to appointment.date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
             "time" to appointment.time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
-            "status" to appointment.status.value,
+            "status" to appointment.status.displayName,
             "type" to appointment.type.displayName,
             "price" to appointment.price,
             "address" to appointment.address,
@@ -45,7 +45,7 @@ data class Appointment(
                 patientId = map["patientId"] as String,
                 date = LocalDate.parse(map["date"] as String?, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                 time = LocalTime.parse(map["time"] as String?, DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
-                status = Status.fromValue(map["status"] as String),
+                status = Status.fromDisplayName(map["status"] as String),
                 type = AppointmentType.fromDisplayName(map["type"] as String),
                 price = map["price"] as Double,
                 address = map["address"] as String,
@@ -56,14 +56,14 @@ data class Appointment(
         }
     }
 
-    enum class Status(val value: String) {
+    enum class Status(val displayName: String) {
         PENDING("Pending"),
         CONFIRMED("Confirmed"),
         CANCELLED("Cancelled");
 
         companion object {
-            fun fromValue(value: String): Status {
-                return values().firstOrNull { it.value == value } ?: PENDING
+            fun fromDisplayName(value: String): Status {
+                return values().firstOrNull { it.displayName == value } ?: PENDING
             }
         }
     }

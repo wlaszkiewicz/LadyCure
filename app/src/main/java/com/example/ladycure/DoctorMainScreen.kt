@@ -73,6 +73,9 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.repository.AuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -86,6 +89,8 @@ fun DoctorHomeScreen(
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
     val showAvailabilityDialog = remember { mutableStateOf(false) }
+    var showEditStatusDialog by remember { mutableStateOf(false) }
+    val selectedAppointment = remember { mutableStateOf<Appointment?>(null) }
 
     LaunchedEffect(Unit) {
         val result = authRepo.getCurrentUserData()
@@ -258,7 +263,20 @@ fun DoctorHomeScreen(
                                 //    navController.navigate("patient/${appointment.patientId}")
                                 },
                                 onCommentUpdated = { newComment ->
-                                 //   updateAppointmentComment(appointment.appointmentId, newComment)
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        val result = authRepo.updateAppointmentComment(
+                                            appointment.appointmentId,
+                                            newComment)
+                                        if (result.isFailure) {
+                                            errorMessage.value = result.exceptionOrNull()?.message
+                                        }
+                                    }
+                                },
+                                onClickStatus = {
+                                    selectedAppointment.value = appointment
+                                    if (appointment.status == Appointment.Status.PENDING) {
+                                        showEditStatusDialog = true
+                                    }
                                 }
                             )
                         }
@@ -368,6 +386,46 @@ fun DoctorHomeScreen(
             }
         )
     }
+
+    if (showEditStatusDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditStatusDialog = false },
+            title = { Text("Confirm") },
+            text = { Text("Do you want to confirm the appointment?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val result = authRepo.updateAppointmentStatus(
+                                appointmentId = selectedAppointment.value!!.appointmentId ,
+                                status = Appointment.Status.CONFIRMED.displayName
+                            )
+                            if (result.isFailure) {
+                                errorMessage.value = result.exceptionOrNull()?.message
+                            } else {
+                                // Change the status of the appointment in the list
+                                upcomingAppointments.value = upcomingAppointments.value.map {
+                                    if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
+                                        it.copy(status = Appointment.Status.CONFIRMED)
+                                    } else {
+                                        it
+                                    }
+                                }
+                            }
+                        }
+                        showEditStatusDialog = false
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditStatusDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -416,7 +474,8 @@ private fun StatCard(
 private fun DoctorAppointmentCard(
     appointment: Appointment,
     onPatientClick: () -> Unit,
-    onCommentUpdated: (String) -> Unit = {}
+    onCommentUpdated: (String) -> Unit = {},
+    onClickStatus: () -> Unit = {}
 ) {
     var showEditComment by remember { mutableStateOf(false) }
     var editedComment by remember { mutableStateOf(appointment.comments) }
@@ -465,7 +524,7 @@ private fun DoctorAppointmentCard(
                                 Appointment.Status.PENDING -> Color(0xFFFFC107).copy(alpha = 0.1f)
                                 else -> Color(0xFFF44336).copy(alpha = 0.1f)
                             }
-                        )
+                        ).clickable(onClick = onClickStatus)
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
