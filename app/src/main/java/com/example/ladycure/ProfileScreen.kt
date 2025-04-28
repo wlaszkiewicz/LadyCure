@@ -112,6 +112,26 @@ fun ProfileScreen(navController: NavHostController) {
         }
     }
 
+    if (userData.value == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DefaultBackground)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column( modifier = Modifier
+                .fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                CircularProgressIndicator(color = DefaultPrimary)
+                Text(
+                    text = "Loading user data...",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = DefaultOnPrimary
+                )
+            }
+        }
+    } else {
+
     Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -120,16 +140,7 @@ fun ProfileScreen(navController: NavHostController) {
                 .padding(top = 40.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-        if (userData.value == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = DefaultPrimary)
-            }
-        } else {
+
             // Profile header
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

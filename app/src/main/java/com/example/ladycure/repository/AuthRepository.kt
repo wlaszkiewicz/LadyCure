@@ -47,10 +47,10 @@ class AuthRepository {
     fun authenticate(
         email: String,
         password: String,
-        navController: NavController
-    ): Result<Unit> {
-        var result: Result<Unit> = Result.success(Unit)
-
+        navController: NavController,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -60,29 +60,27 @@ class AuthRepository {
                             .addOnSuccessListener { document ->
                                 if (document.exists()) {
                                     val role = document.getString("role")
-                                    if (role == "admin") {
-                                        navController.navigate("admin")
-                                    } else if (role == "doctor") {
-                                        navController.navigate("doctor_main")
-                                    } else {
-                                        navController.navigate("home")
+                                    when (role) {
+                                        "admin" -> navController.navigate("admin")
+                                        "doctor" -> navController.navigate("doctor_main")
+                                        else -> navController.navigate("home")
                                     }
+                                    onSuccess()
                                 } else {
-                                    result = Result.failure(Exception("User document does not exist"))
+                                    onFailure(Exception("User document does not exist"))
                                 }
                             }
                             .addOnFailureListener { e ->
-                                result = Result.failure(Exception("Failed to fetch user data: ${e.message}"))
+                                onFailure(Exception("Failed to fetch user data: ${e.message}"))
                             }
                     }
                 } else {
-                    result = Result.failure(Exception("Authentication failed"))
+                    onFailure(Exception("Authentication failed: ${task.exception?.message}"))
                 }
             }
             .addOnFailureListener { e ->
-                result = Result.failure(Exception("Authentication failed: ${e.message}"))
+                onFailure(Exception("Authentication failed: ${e.message}"))
             }
-        return result
     }
 
 
@@ -409,6 +407,26 @@ class AuthRepository {
                 Appointment.fromMap(doc.data?.plus("appointmentId" to doc.id) ?: mapOf("appointmentId" to doc.id))
             }
             Result.success(appointments)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateAppointmentStatus(appointmentId: String, status: String): Result<Unit> {
+        return try {
+            val appointmentRef = firestore.collection("appointments").document(appointmentId)
+            appointmentRef.update("status", status).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateAppointmentComment(appointmentId: String, comment: String): Result<Unit> {
+        return try {
+            val appointmentRef = firestore.collection("appointments").document(appointmentId)
+            appointmentRef.update("comments", comment).await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

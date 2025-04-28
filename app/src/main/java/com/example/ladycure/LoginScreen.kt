@@ -29,7 +29,7 @@ import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
-fun LoginScreen(navController: NavController, snackbarHostState: SnackbarController?) {
+fun LoginScreen(navController: NavController, snackbarHostState: SnackbarController) {
     val authRepo = AuthRepository()
     LadyCureTheme {
             Column(modifier = Modifier.fillMaxSize().background(
@@ -108,12 +108,21 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         keyboardActions = KeyboardActions(onDone = {
                             val message = validInput(emailState.value, passwordState.value)
                             if (message == "") {
-                                val result = authRepo.authenticate(emailState.value, passwordState.value, navController)
-                                if (result.isFailure) {
-                                    snackbarHostState?.showMessage(
-                                        message = result.exceptionOrNull()?.message ?: "Authentication failed"
-                                    )
-                                }
+                                authRepo.authenticate(
+                                    email = emailState.value,
+                                    password = passwordState.value,
+                                    navController = navController,
+                                    onSuccess = {
+                                        snackbarHostState.showMessage(
+                                            message = "Login Successful"
+                                        )
+                                    },
+                                    onFailure = { exception ->
+                                        snackbarHostState.showMessage(
+                                            message = exception.message ?: "Authentication failed"
+                                        )
+                                    }
+                                )
                             } else {
                                 snackbarHostState?.showMessage(
                                     message = message
@@ -129,14 +138,23 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         onClick = {
                             val message = validInput(emailState.value, passwordState.value)
                             if (message == "") {
-                                val result = authRepo.authenticate(emailState.value, passwordState.value, navController)
-                                if (result.isFailure) {
-                                    snackbarHostState?.showMessage(
-                                        message = result.exceptionOrNull()?.message ?: "Authentication failed"
-                                    )
-                                }
+                                authRepo.authenticate(
+                                    email = emailState.value,
+                                    password = passwordState.value,
+                                    navController = navController,
+                                    onSuccess = {
+                                        snackbarHostState.showMessage(
+                                            message = "Login Successful"
+                                        )
+                                    },
+                                    onFailure = { exception ->
+                                        snackbarHostState.showMessage(
+                                            message = exception.message ?: "Authentication failed"
+                                        )
+                                    }
+                                )
                             } else {
-                                snackbarHostState?.showMessage(
+                                snackbarHostState.showMessage(
                                     message = message
                                 )
                             }
@@ -177,16 +195,5 @@ fun validInput(email: String, password: String): String {
             "Please enter a valid password"
         }
         else -> ""
-    }
-}
-
-
-
-@Preview
-@Composable
-fun LoginScreenPreview() {
-    val navController = rememberNavController()
-    LadyCureTheme {
-        LoginScreen(navController, null)
     }
 }
