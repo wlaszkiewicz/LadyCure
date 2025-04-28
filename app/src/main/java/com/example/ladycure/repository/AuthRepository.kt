@@ -11,6 +11,7 @@ import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -248,7 +249,10 @@ class AuthRepository {
                         doctorId = doctor.id,
                         date = LocalDate.parse(doc.id,DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                         startTime = LocalTime.parse(doc.getString("startTime"), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
-                        endTime = LocalTime.parse(doc.getString("endTime"), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                        endTime = LocalTime.parse(doc.getString("endTime"), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                        availableSlots = (doc.get("availableSlots") as? List<String>)
+                            ?.map { slot -> LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                            ?.toMutableList() ?: mutableListOf()
                     )
                 }
             allAvailabilities.addAll(availabilities)
@@ -271,7 +275,10 @@ class AuthRepository {
                         doctorId = doctorId,
                         date = LocalDate.parse(doc.id,DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                         startTime = doc.getString("startTime")?.let { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) },
-                        endTime = doc.getString("endTime")?.let { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                        endTime = doc.getString("endTime")?.let { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) },
+                        availableSlots = (doc.get("availableSlots") as? List<String>)
+                            ?.map { slot -> LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                            ?.toMutableList() ?: mutableListOf()
                     )
                 } catch (e: Exception) {
                     null
@@ -291,6 +298,13 @@ class AuthRepository {
         val batch = firestore.batch()
         val doctorId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
 
+        val availableSlots = mutableSetOf<LocalTime>()
+        var currentTime = startTime
+        while (currentTime.isBefore(endTime)) {
+            availableSlots.add(currentTime)
+            currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
+        }
+
         dates.forEach { date ->
             val docRef = firestore.collection("users")
                 .document(doctorId)
@@ -299,8 +313,9 @@ class AuthRepository {
 
             val availabilityData = hashMapOf(
                 "doctorId" to doctorId,
-                "startTime" to startTime.toString(),
-                "endTime" to endTime.toString()
+                "startTime" to startTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                "endTime" to endTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                "availableSlots" to availableSlots.map { it.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
             )
 
             batch.set(docRef, availabilityData)

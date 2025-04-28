@@ -67,5 +67,6 @@ data class DoctorAvailability(
     val doctorId: String,
     val date: LocalDate?,
     val startTime: LocalTime?,
-    val endTime: LocalTime?
+    val endTime: LocalTime?,
+    val availableSlots: MutableList<LocalTime>
 )

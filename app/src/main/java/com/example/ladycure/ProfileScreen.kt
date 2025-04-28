@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -119,6 +120,16 @@ fun ProfileScreen(navController: NavHostController) {
                 .padding(top = 40.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+        if (userData.value == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = DefaultPrimary)
+            }
+        } else {
             // Profile header
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -146,7 +157,7 @@ fun ProfileScreen(navController: NavHostController) {
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize(),
                                 loading = {
-                                    CircularProgressIndicator(color = DefaultPrimary)
+                                    CircularProgressIndicator(color = DefaultPrimary, modifier = Modifier.fillMaxSize(0.5f))
                                 },
                                 error = {
                                     Image(
@@ -160,7 +171,9 @@ fun ProfileScreen(navController: NavHostController) {
                         else -> {
                             Image(
                                 painter = painterResource(R.drawable.profile_pic),
-                                contentDescription = "Default Profile Picture"
+                                contentDescription = "Default Profile Picture",
+                                modifier = Modifier.graphicsLayer(alpha = 0.7f)
+
                             )
                         }
                     }
@@ -231,6 +244,7 @@ fun ProfileScreen(navController: NavHostController) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
+    }
 
     if (showAccountSettingsDialog) {
         AccountSettingsDialog(

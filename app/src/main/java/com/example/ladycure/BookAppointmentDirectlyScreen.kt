@@ -103,7 +103,7 @@ fun BookAppointmentDirectlyScreen(
     // Generate time slots for selected date
     val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailability.value) {
         if (selectedDate.value == null) emptyList() else {
-            generateTimeSlotsForDate(selectedDate.value!!, doctorAvailability.value)
+            filerTimeSlotsForDate(selectedDate.value!!, doctorAvailability.value)
         }
     }
 
