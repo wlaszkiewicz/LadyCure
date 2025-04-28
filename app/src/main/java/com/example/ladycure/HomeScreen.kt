@@ -49,6 +49,8 @@ import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.AppointmentsSection
 import com.example.ladycure.presentation.home.components.BookAppointmentSection
 import com.example.ladycure.utility.SnackbarController
+import java.time.LocalDate
+import java.time.LocalTime
 
 
 @Composable
@@ -76,6 +78,15 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
             error.value = result.exceptionOrNull()?.message
         } else {
             appointments.value = result.getOrNull() ?: emptyList()
+
+            appointments.value = appointments.value.filter {
+                it.date.isAfter(LocalDate.now()) || (it.date == LocalDate.now() && it.time >= LocalTime.now())
+            }
+
+            appointments.value = appointments.value.sortedWith(
+                compareBy({ it.date }, { it.time })
+            )
+
         }
 
     }

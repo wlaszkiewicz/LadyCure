@@ -100,6 +100,15 @@ fun DoctorHomeScreen(
             val appointmentsResult = authRepo.getAppointments("doctor")
             if (appointmentsResult.isSuccess) {
                 upcomingAppointments.value = appointmentsResult.getOrNull() ?: emptyList()
+
+                upcomingAppointments.value = upcomingAppointments.value.filter {
+                    it.date.isAfter(LocalDate.now()) || (it.date == LocalDate.now() && it.time >= LocalTime.now())
+                }
+
+                upcomingAppointments.value = upcomingAppointments.value.sortedWith(
+                    compareBy({ it.date }, { it.time })
+                )
+
             }
             isLoading.value = false
         } else {
@@ -109,14 +118,24 @@ fun DoctorHomeScreen(
     }
 
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DefaultBackground)
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
+    if (isLoading.value) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = DefaultPrimary)
+        }
+    } else {
+
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DefaultBackground)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
             // Header with greeting
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -189,7 +208,7 @@ fun DoctorHomeScreen(
                 // Today's Appointments
                 StatCard(
                     icon = Icons.Default.CalendarToday,
-                    value = upcomingAppointments.value.count { it.date == LocalDate.now() },
+                    value = upcomingAppointments.value.count { it.date == LocalDate.now() && it.time >= LocalTime.now() },
                     label = "Today",
                     modifier = Modifier.weight(1f)
                 )
@@ -213,77 +232,79 @@ fun DoctorHomeScreen(
             }
 
             // Upcoming Appointments Section
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Upcoming Appointments",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = DefaultPrimary
-                    )
-                )
-                TextButton(onClick = { /* View all */ }) {
-                    Text("View All", color = DefaultPrimary)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (upcomingAppointments.value.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "No upcoming appointments",
-                        color = DefaultOnPrimary.copy(alpha = 0.6f)
+                        text = "Upcoming Appointments",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = DefaultPrimary
+                        )
                     )
+                    TextButton(onClick = { /* View all */ }) {
+                        Text("View All", color = DefaultPrimary)
+                    }
                 }
-            } else {
-                val appointments = upcomingAppointments.value.take(3)
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(appointments) { appointment ->
-                        // Card width can be adjusted as needed
-                        Box(modifier = Modifier.width(300.dp)) {
-                            DoctorAppointmentCard(
-                                appointment = appointment,
-                                onPatientClick = {
-                                //    navController.navigate("patient/${appointment.patientId}")
-                                },
-                                onCommentUpdated = { newComment ->
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        val result = authRepo.updateAppointmentComment(
-                                            appointment.appointmentId,
-                                            newComment)
-                                        if (result.isFailure) {
-                                            errorMessage.value = result.exceptionOrNull()?.message
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (upcomingAppointments.value.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No upcoming appointments",
+                            color = DefaultOnPrimary.copy(alpha = 0.6f)
+                        )
+                    }
+                } else {
+                    val appointments = upcomingAppointments.value.take(3)
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(appointments) { appointment ->
+                            // Card width can be adjusted as needed
+                            Box(modifier = Modifier.width(300.dp)) {
+                                DoctorAppointmentCard(
+                                    appointment = appointment,
+                                    onPatientClick = {
+                                        //    navController.navigate("patient/${appointment.patientId}")
+                                    },
+                                    onCommentUpdated = { newComment ->
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            val result = authRepo.updateAppointmentComment(
+                                                appointment.appointmentId,
+                                                newComment
+                                            )
+                                            if (result.isFailure) {
+                                                errorMessage.value =
+                                                    result.exceptionOrNull()?.message
+                                            }
+                                        }
+                                    },
+                                    onClickStatus = {
+                                        selectedAppointment.value = appointment
+                                        if (appointment.status == Appointment.Status.PENDING) {
+                                            showEditStatusDialog = true
                                         }
                                     }
-                                },
-                                onClickStatus = {
-                                    selectedAppointment.value = appointment
-                                    if (appointment.status == Appointment.Status.PENDING) {
-                                        showEditStatusDialog = true
-                                    }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
             // Quick Actions
             Column(
@@ -376,55 +397,56 @@ fun DoctorHomeScreen(
             }
         }
 
-    // Availability Dialog
-    if (showAvailabilityDialog.value) {
-        SetAvailabilityDialog(
-            onDismiss = { showAvailabilityDialog.value = false },
-            onSave = { dates, times ->
-                // Save availability logic
-                showAvailabilityDialog.value = false
-            }
-        )
-    }
+        // Availability Dialog
+        if (showAvailabilityDialog.value) {
+            SetAvailabilityDialog(
+                onDismiss = { showAvailabilityDialog.value = false },
+                onSave = { dates, times ->
+                    // Save availability logic
+                    showAvailabilityDialog.value = false
+                }
+            )
+        }
 
-    if (showEditStatusDialog) {
-        AlertDialog(
-            onDismissRequest = { showEditStatusDialog = false },
-            title = { Text("Confirm") },
-            text = { Text("Do you want to confirm the appointment?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            val result = authRepo.updateAppointmentStatus(
-                                appointmentId = selectedAppointment.value!!.appointmentId ,
-                                status = Appointment.Status.CONFIRMED.displayName
-                            )
-                            if (result.isFailure) {
-                                errorMessage.value = result.exceptionOrNull()?.message
-                            } else {
-                                // Change the status of the appointment in the list
-                                upcomingAppointments.value = upcomingAppointments.value.map {
-                                    if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
-                                        it.copy(status = Appointment.Status.CONFIRMED)
-                                    } else {
-                                        it
+        if (showEditStatusDialog) {
+            AlertDialog(
+                onDismissRequest = { showEditStatusDialog = false },
+                title = { Text("Confirm") },
+                text = { Text("Do you want to confirm the appointment?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val result = authRepo.updateAppointmentStatus(
+                                    appointmentId = selectedAppointment.value!!.appointmentId,
+                                    status = Appointment.Status.CONFIRMED.displayName
+                                )
+                                if (result.isFailure) {
+                                    errorMessage.value = result.exceptionOrNull()?.message
+                                } else {
+                                    // Change the status of the appointment in the list
+                                    upcomingAppointments.value = upcomingAppointments.value.map {
+                                        if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
+                                            it.copy(status = Appointment.Status.CONFIRMED)
+                                        } else {
+                                            it
+                                        }
                                     }
                                 }
                             }
+                            showEditStatusDialog = false
                         }
-                        showEditStatusDialog = false
+                    ) {
+                        Text("Confirm")
                     }
-                ) {
-                    Text("Confirm")
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditStatusDialog = false }) {
+                        Text("Cancel")
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditStatusDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
+            )
+        }
     }
 }
 
