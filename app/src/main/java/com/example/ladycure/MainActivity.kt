@@ -105,6 +105,7 @@ class MainActivity : ComponentActivity() {
                     composable("register") { RegisterScreen(navController) }
 
                     composable("doctor_main") { DoctorHomeScreen(navController) }
+                    composable("set_availability") { SetAvailabilityScreen(navController, snackbarController) }
 
                     composable("doctors/{speciality}") { backStackEntry ->
                         val speciality = backStackEntry.arguments?.getString("speciality") ?: ""
@@ -139,6 +140,7 @@ class MainActivity : ComponentActivity() {
                         val service = backStackEntry.arguments?.getString("service") ?: ""
                         BookAppointmentDirectlyScreen(navController,snackbarController, doctor, AppointmentType.fromDisplayName(service))
                     }
+                    
                 }
             }
         }

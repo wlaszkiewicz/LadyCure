@@ -3,6 +3,8 @@ package com.example.ladycure.data.doctor
 import com.example.ladycure.R
 import com.example.ladycure.data.Role
 import com.example.ladycure.data.User
+import java.time.LocalDate
+import java.time.LocalTime
 
 data class Doctor(
     val speciality: Speciality,
@@ -63,7 +65,7 @@ enum class Speciality(val displayName: String, val icon: Int, val doctorCount: I
 
 data class DoctorAvailability(
     val doctorId: String,
-    val date: String,
-    val startTime: String,
-    val endTime: String
+    val date: LocalDate?,
+    val startTime: LocalTime?,
+    val endTime: LocalTime?
 )

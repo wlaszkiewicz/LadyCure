@@ -111,8 +111,8 @@ fun BookAppointmentScreen(
     val doctorAvailabilities = remember { mutableStateOf(emptyList<DoctorAvailability>()) }
 
     // UI state
-    val selectedDate = remember { mutableStateOf<String?>(null) }
-    val selectedTimeSlot = remember { mutableStateOf<String?>(null) }
+    val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
+    val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
     val showDoctorsForSlot = remember { mutableStateOf(false) }
 
     // Fetch doctors by specialization
@@ -144,13 +144,11 @@ fun BookAppointmentScreen(
         }
     }
 
-
-
     // Get unique available dates from filtered availabilities
     val availableDates = doctorAvailabilities.value
         .map { it.date }
         .distinct()
-        .sortedBy { LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE) }
+        .sortedBy {it}
 
     // Generate time slots for selected date
     val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailabilities.value) {
@@ -200,19 +198,19 @@ fun BookAppointmentScreen(
                     city = city,
                     selectedSpeciality = selectedSpeciality,
                     selectedService = selectedService,
-                    availableDates = availableDates,
-                    selectedDate = selectedDate.value,
-                    onDateSelected = { selectedDate.value = it },
+                    availableDates = availableDates.map { it.toString() },
+                    selectedDate = selectedDate.value?.toString(),
+                    onDateSelected = { selectedDate.value = LocalDate.parse(it,DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
                     timeSlots = timeSlotsForSelectedDate,
-                    selectedTimeSlot = selectedTimeSlot.value,
+                    selectedTimeSlot = selectedTimeSlot.value.toString(),
                     onTimeSlotSelected = {
-                        selectedTimeSlot.value = it
+                        selectedTimeSlot.value = LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
                         showDoctorsForSlot.value = true
                     })
 
                 else -> DoctorSelectionView(
-                    selectedDate = selectedDate.value!!,
-                    selectedTimeSlot = selectedTimeSlot.value!!,
+                    selectedDate = selectedDate.value!!.toString(),
+                    selectedTimeSlot = selectedTimeSlot.value!!.toString(),
                     doctors = availableDoctorsForSlot,
                     onBackClick = { showDoctorsForSlot.value = false },
                     onDoctorSelected = { doctorId ->
@@ -1086,18 +1084,18 @@ fun DoctorCardPreview() {
 }
 
 // Helper functions
- fun generateTimeSlotsForDate(date: String, availabilities: List<DoctorAvailability>): List<String> {
+ fun generateTimeSlotsForDate(date: LocalDate, availabilities: List<DoctorAvailability>): List<String> {
     val slots = mutableSetOf<LocalTime>()
 
     val dateAvailabilities = availabilities.filter { it.date == date }
 
     dateAvailabilities.forEach { availability ->
-        val startTime = LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
-        val endTime = LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+        val startTime = availability.startTime
+        val endTime = availability.endTime
 
         // Generate 15-minute slots between start and end time
         var currentTime = startTime
-        while (currentTime.isBefore(endTime)) {
+        while (currentTime!!.isBefore(endTime)) {
             slots.add(currentTime)
             currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
         }
@@ -1109,18 +1107,17 @@ fun DoctorCardPreview() {
 
 private fun filterAvailableDoctors(
     doctors: List<Map<String, Any>>,
-    date: String,
-    timeSlot: String,
+    date: LocalDate,
+    timeSlot: LocalTime,
     availabilities: List<DoctorAvailability>
 ): List<Map<String, Any>> {
-    val slotTime = LocalTime.parse(timeSlot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
 
     val availableDoctorIds = availabilities
         .filter { availability ->
             availability.date == date &&
-                    LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)).isBefore(slotTime) ||
-                    LocalTime.parse(availability.startTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)).equals(slotTime) &&
-                    LocalTime.parse(availability.endTime, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)).isAfter(slotTime)
+                    availability.startTime!!.isBefore(timeSlot) ||
+                    availability.startTime!! == timeSlot &&
+                    availability.endTime!!.isAfter(timeSlot)
         }
         .map { it.doctorId }
         .toSet()
