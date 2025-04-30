@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.ladycure.domain.RegisterUseCase
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.Calendar
 
 class RegisterViewModel(
@@ -38,11 +39,9 @@ class RegisterViewModel(
         uiState = uiState.copy(confirmPassword = confirmPassword)
     }
 
-    fun updateDateOfBirth(day: Int, month: Int, year: Int) {
+    fun updateDateOfBirth(date: LocalDate) {
         uiState = uiState.copy(
-            selectedDay = day,
-            selectedMonth = month,
-            selectedYear = year
+            selectedDate = date,
         )
     }
 
@@ -53,7 +52,7 @@ class RegisterViewModel(
                 uiState.email,
                 uiState.name,
                 uiState.surname,
-                uiState.dateOfBirth,
+                uiState.selectedDate.toString(),
                 uiState.password
             )
             uiState = uiState.copy(isLoading = false)
@@ -67,23 +66,23 @@ class RegisterViewModel(
             }
         }
     }
+
+    fun clearError() {
+        uiState = uiState.copy(errorMessage = null)
+    }
 }
 
 data class RegisterUiState(
     val email: String = "",
     val name: String = "",
     val surname: String = "",
-    val selectedDay: Int = 1,
-    val selectedMonth: Int = 1,
-    val selectedYear: Int = 2000,
+    val selectedDate: LocalDate = LocalDate.of(2000, 1, 1),
     val password: String = "",
     val confirmPassword: String = "",
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null
 ) {
-    val dateOfBirth: String
-        get() = "$selectedDay/$selectedMonth/$selectedYear"
 
     fun isValid(): Boolean {
         return email.isNotBlank() &&
@@ -92,24 +91,6 @@ data class RegisterUiState(
                 surname.isNotBlank() &&
                 password.isNotBlank() &&
                 password == confirmPassword &&
-                validAge(dateOfBirth)
-    }
-
-    private fun validAge(dateOfBirth: String): Boolean {
-        val parts = dateOfBirth.split("/")
-        val day = parts[0].toInt()
-        val month = parts[1].toInt() - 1
-        val year = parts[2].toInt()
-
-        val dob = Calendar.getInstance().apply {
-            set(year, month, day)
-        }
-        val today = Calendar.getInstance()
-
-        val age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR)
-        if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
-            return age > 18
-        }
-        return age >= 18
+                selectedDate.isAfter(LocalDate.now().minusYears(18))
     }
 }

@@ -158,6 +158,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                                     message = message
                                 )
                             }
+                            message == ""
                         },
                         modifier = Modifier.padding(top = 20.dp)
                     ) {

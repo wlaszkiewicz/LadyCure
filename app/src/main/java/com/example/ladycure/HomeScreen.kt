@@ -70,6 +70,7 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
         } else {
             error.value = result.exceptionOrNull()?.message
         }
+        error.value = null
     }
 
     LaunchedEffect(userData.value) {
@@ -88,7 +89,7 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
             )
 
         }
-
+        error.value = null
     }
 
     if (userData.value == null) {

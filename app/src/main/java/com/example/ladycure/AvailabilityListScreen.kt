@@ -164,8 +164,8 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
                         )
                     }
                     Text(
-                        currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) +
-                                " " + currentMonth.year,
+                        chosenMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) +
+                                " " + chosenMonth.year,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = DefaultPrimary
@@ -173,7 +173,8 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     IconButton(
-                        onClick = { chosenMonth = chosenMonth.plus(1, ChronoUnit.MONTHS) },
+                        onClick = { chosenMonth = chosenMonth.plus(1, ChronoUnit.MONTHS)
+                                  },
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
