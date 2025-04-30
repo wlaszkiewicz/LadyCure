@@ -49,8 +49,9 @@ fun RegisterForm(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Spacer(modifier = Modifier.height(16.dp))
         // Email Field
         OutlinedTextField(
             value = state.email,
@@ -166,7 +167,7 @@ fun RegisterForm(
             enabled = state.isValid() && !state.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
