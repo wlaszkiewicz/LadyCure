@@ -136,7 +136,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                 contentDescription = "Capybara background",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 50.dp)
+                    .height(200.dp)
                     .align(Alignment.TopCenter)
                     .zIndex(1f),
                 contentScale = ContentScale.Fit
@@ -148,7 +148,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 170.dp) // Adjust padding to position the form below the image
+                    .padding(top = 150.dp) // Adjust padding to position the form below the image
                     .zIndex(0f), // Ensure the form is below the image
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
