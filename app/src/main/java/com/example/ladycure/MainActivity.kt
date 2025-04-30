@@ -103,7 +103,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("welcome") { WelcomeScreen(navController) }
                     composable("login") { LoginScreen(navController, snackbarController ) }
-                    composable("register") { RegisterScreen(navController) }
+                    composable("register") { RegisterScreen(navController, snackbarController) }
 
                     composable("doctor_main") { DoctorHomeScreen(navController) }
                     composable("set_availability") { SetAvailabilityScreen(navController, snackbarController) }

@@ -1,48 +1,76 @@
 package com.example.ladycure
 
-import LadyCureTheme
+import DefaultBackground
+import DefaultOnPrimary
+import DefaultPrimary
 import android.content.Intent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.wear.compose.material3.TextButton
 import com.example.ladycure.domain.RegisterUseCase
 import com.example.ladycure.presentation.register.RegisterViewModel
 import com.example.ladycure.presentation.register.components.RegisterForm
 import com.example.ladycure.repository.AuthRepository
-import androidx.core.net.toUri
+import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
-import DefaultOnPrimary
-import DefaultPrimary
 
 @Composable
-
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(navController: NavController, snackbarController: SnackbarController) {
     val viewModel: RegisterViewModel = viewModel(factory = RegisterViewModelFactory())
     val uiState = viewModel.uiState
-    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var showContactUsDialog by remember { mutableStateOf(false) }
 
     // Show snackbar when error occurs
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
             coroutineScope.launch {
-                snackbarHostState.showSnackbar(
-                    message = error,
-                    duration = SnackbarDuration.Short
+                snackbarController.showMessage(
+                    message = error
                 )
                 // Clear error after showing
                 viewModel.clearError()
@@ -50,119 +78,154 @@ fun RegisterScreen(navController: NavController) {
         }
     }
 
-    LadyCureTheme {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            containerColor = MaterialTheme.colorScheme.background
-        ) { padding ->
-            Column(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 10.dp)
+            .verticalScroll(rememberScrollState())
+            .background(color = DefaultBackground),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Header Section
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 0.dp)
+        ) {
+            Text(
+                text = "Create Your Account",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+
+        }
+
+        TextButton(
+            onClick = { showContactUsDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 24.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .padding(4.dp)
             ) {
-                // Header Section
+                Text(
+                    "Are you a doctor?",
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
+                )
+                Icon(
+                    imageVector = Icons.Default.HealthAndSafety,
+                    contentDescription = "Contact Us",
+                    tint = Color.Gray,
+                )
+
+            }
+        }
+
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.sleeping_kapi),
+                contentDescription = "Capybara background",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .align(Alignment.TopCenter)
+                    .zIndex(1f),
+                contentScale = ContentScale.Fit
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Registration Form
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 140.dp) // Adjust padding to position the form below the image
+                    .zIndex(0f), // Ensure the form is below the image
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White,
+                    contentColor = DefaultOnPrimary
+                )
+            ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-//                    Icon(
-//                        painter = painterResource(id = R.drawable.logo), // Add your logo
-//                        contentDescription = "LadyCure Logo",
-//                        tint = MaterialTheme.colorScheme.primary,
-//                        modifier = Modifier.size(80.dp)
-//                    )
-//
-//                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Create Your Account",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Join our all female community made just for you",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Center
+                    RegisterForm(
+                        state = uiState,
+                        onEmailChange = viewModel::updateEmail,
+                        onNameChange = viewModel::updateName,
+                        onSurnameChange = viewModel::updateSurname,
+                        onDateSelected = { viewModel.updateDateOfBirth(it) },
+                        onPasswordChange = viewModel::updatePassword,
+                        onConfirmPasswordChange = viewModel::updateConfirmPassword,
+                        onRegisterClick = { viewModel.register(navController) },
                     )
                 }
+            }
+        }
 
-                Spacer(modifier = Modifier.height(8.dp))
+        // Footer Section
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(
+            onClick = { navController.navigate("login") },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Already have an account? \n Sign in",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = DefaultPrimary,
+                textAlign = TextAlign.Center,
+            )
+        }
 
-                TextButton(
+    }
+
+
+    if (showContactUsDialog) {
+        AlertDialog(
+            onDismissRequest = { showContactUsDialog = false },
+            title = { Text("Contact us!") },
+            text = { Text("If you're a doctor and wish to join our team, please send us an email :). We will get back to you as soon as possible!") },
+            confirmButton = {
+                Button(
                     onClick = {
+                        showContactUsDialog = false
                         val intent = Intent(Intent.ACTION_SENDTO).apply {
                             data = "mailto:ladycure_admin@gmail.com".toUri()
                         }
                         navController.context.startActivity(intent)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Are you a doctor? Contact us",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultOnPrimary.copy(alpha = 0.5f),
+                    }, colors = ButtonDefaults.buttonColors(
+                        containerColor = DefaultPrimary.copy(alpha = 0.8f),
                     )
+                ) {
+                    Text("Send Email", color = Color.White, fontWeight = FontWeight.Bold)
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Registration Form
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showContactUsDialog = false },
+                    colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
-                        contentColor = DefaultOnPrimary
                     )
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        RegisterForm(
-                            state = uiState,
-                            onEmailChange = viewModel::updateEmail,
-                            onNameChange = viewModel::updateName,
-                            onSurnameChange = viewModel::updateSurname,
-                            onDateSelected = { viewModel.updateDateOfBirth(it) },
-                            onPasswordChange = viewModel::updatePassword,
-                            onConfirmPasswordChange = viewModel::updateConfirmPassword,
-                            onRegisterClick = { viewModel.register(navController) }
-                        )
-                    }
+                    Text("Cancel", color = DefaultPrimary, fontWeight = FontWeight.Bold)
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Footer Links
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    TextButton(
-                        onClick = { navController.navigate("login") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "Already have an account? Sign in",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = DefaultPrimary,
-                        )
-                    }
-
-                }
-            }
-        }
+            },
+        )
     }
 }
 
