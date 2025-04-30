@@ -100,7 +100,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 240.dp)
-                    .padding(16.dp)
+                    .padding(vertical = 16.dp)
                     .zIndex(0f),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(4.dp),

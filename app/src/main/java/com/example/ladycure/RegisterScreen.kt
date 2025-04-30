@@ -175,6 +175,8 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
             }
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
         // Footer Section
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(
