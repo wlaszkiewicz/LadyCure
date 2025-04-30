@@ -199,7 +199,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
         AlertDialog(
             onDismissRequest = { showContactUsDialog = false },
             title = { Text("Contact us!") },
-            text = { Text("If you are a doctor and want to join our team, please send us an email :). We will get back to you as soon as possible!") },
+            text = { Text("If you're a doctor and wish to join our team, please send us an email :). We will get back to you as soon as possible!") },
             confirmButton = {
                 Button(
                     onClick = {
