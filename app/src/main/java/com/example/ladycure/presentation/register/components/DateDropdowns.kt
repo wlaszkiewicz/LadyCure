@@ -3,6 +3,7 @@ package com.example.ladycure.presentation.register.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -15,172 +16,61 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import java.util.Calendar
-import kotlin.collections.toList
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateDropdowns(
-    selectedDay: Int,
-    selectedMonth: Int,
-    selectedYear: Int,
-    onDaySelected: (Int) -> Unit,
-    onMonthSelected: (Int) -> Unit,
-    onYearSelected: (Int) -> Unit,
+fun DatePickerButton(
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+    val showDialog = remember { mutableStateOf(false) }
+    val now = LocalDate.now()
+
+    if (showDialog.value) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            yearRange = IntRange(now.year - 100, now.year - 18),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDialog.value = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            val instant = Instant.ofEpochMilli(it)
+                            val date = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+                            onDateSelected(date)
+                        }
+                        showDialog.value = false
+                    }
+                ) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialog.value = false }
+                ) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    OutlinedButton(
+        onClick = { showDialog.value = true },
+        modifier = modifier.fillMaxWidth()
     ) {
-        DayDropdown(
-            selectedDay = selectedDay,
-            onDaySelected = onDaySelected,
-            modifier = Modifier.weight(1f)
+        Text(
+            text = DateTimeFormatter.ofPattern("MMM dd, yyyy").format(selectedDate),
+            style = MaterialTheme.typography.bodyLarge
         )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        MonthDropdown(
-            selectedMonth = selectedMonth,
-            onMonthSelected = onMonthSelected,
-            modifier = Modifier.weight(1f)
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        YearDropdown(
-            selectedYear = selectedYear,
-            onYearSelected = onYearSelected,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-// Day Dropdown Component
-@Composable
-fun DayDropdown(
-    selectedDay: Int,
-    onDaySelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val days = (1..31).toList()
-
-    Box(modifier = modifier) {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
-
-        ) {
-            Text(selectedDay.toString())
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Day")
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            days.forEach { day ->
-                DropdownMenuItem(
-                    text = { Text(day.toString()) },
-                    onClick = {
-                        onDaySelected(day)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-// Month Dropdown Component
-@Composable
-fun MonthDropdown(
-    selectedMonth: Int,
-    onMonthSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val months = listOf(
-        "January", "February", "March", "April",
-        "May", "June", "July", "August",
-        "September", "October", "November", "December"
-    )
-
-    Box(modifier = modifier) {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
-        ) {
-            Text(months[selectedMonth - 1])
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Month")
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            months.forEachIndexed { index, month ->
-                DropdownMenuItem(
-                    text = { Text(month) },
-                    onClick = {
-                        onMonthSelected(index + 1)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-// Year Dropdown Component
-@Composable
-fun YearDropdown(
-    selectedYear: Int,
-    onYearSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    val years = (currentYear - 100..currentYear).toList().reversed()
-
-    Box(modifier = modifier) {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
-
-        ) {
-            Text(selectedYear.toString())
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Year")
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            years.forEach { year ->
-                DropdownMenuItem(
-                    text = { Text(year.toString()) },
-                    onClick = {
-                        onYearSelected(year)
-                        expanded = false
-                    }
-                )
-            }
-        }
     }
 }

@@ -221,10 +221,18 @@ fun DoctorHomeScreen(
                     modifier = Modifier.weight(1f)
                 )
 
+                val rating = when (val rat = doctorData.value?.get("rating")) {
+                    is Int -> rat.toDouble()
+                    is Long -> rat.toDouble()
+                    is Double -> rat
+                    is String -> rat.toDouble()
+                    else -> 4.5
+                }
+
                 // Rating
                 StatCard(
                     icon = Icons.Default.Star,
-                    value = (doctorData.value?.get("rating") as? Double ?: 0.0).toFloat(),
+                    value = rating,
                     label = "Rating",
                     isDecimal = true,
                     modifier = Modifier.weight(1f)

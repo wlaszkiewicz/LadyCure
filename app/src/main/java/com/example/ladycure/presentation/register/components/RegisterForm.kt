@@ -1,12 +1,15 @@
 package com.example.ladycure.presentation.register.components
-
+import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,10 +23,15 @@ import androidx.compose.ui.unit.sp
 import com.example.ladycure.presentation.register.RegisterUiState
 import androidx.compose.material3.*
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import java.time.LocalDate
+import java.util.Calendar
 
 @Composable
 fun RegisterForm(
@@ -31,9 +39,7 @@ fun RegisterForm(
     onEmailChange: (String) -> Unit,
     onNameChange: (String) -> Unit,
     onSurnameChange: (String) -> Unit,
-    onDaySelected: (Int) -> Unit,
-    onMonthSelected: (Int) -> Unit,
-    onYearSelected: (Int) -> Unit,
+    onDateSelected: (LocalDate) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
     onRegisterClick: () -> Unit,
@@ -43,122 +49,148 @@ fun RegisterForm(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        val textFieldColors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-        )
+        // Email Field
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmailChange,
-            label = { Text("📧 Email") },
-            colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+            label = { Text("Email address") },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+            isError = state.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(state.email).matches(),
+            supportingText = {
+                if (state.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(state.email).matches()) {
+                    Text("Please enter a valid email")
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+            modifier = Modifier.fillMaxWidth()
         )
 
-        OutlinedTextField(
-            value = state.name,
-            onValueChange = onNameChange,
-            label = { Text("🌸 Name") },
-            colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
-        )
+        // Name Fields Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = state.name,
+                onValueChange = onNameChange,
+                label = { Text("First name") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                modifier = Modifier.weight(1f)
+            )
 
-        OutlinedTextField(
-            value = state.surname,
-            onValueChange = onSurnameChange,
-            label = { Text("💖 Surname") },
-            colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
-        )
+            OutlinedTextField(
+                value = state.surname,
+                onValueChange = onSurnameChange,
+                label = { Text("Last name") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Surname") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                modifier = Modifier.weight(1f)
+            )
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
+        // Date of Birth Section
         Text(
-            text = "🎂 Date of Birth",
-            style =  MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 16.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth().padding(horizontal = 14.dp),
-            textAlign = TextAlign.Left
+            text = "Date of Birth",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            modifier = Modifier.padding(top = 4.dp)
         )
 
-        DateDropdowns(
-            selectedDay = state.selectedDay,
-            selectedMonth = state.selectedMonth,
-            selectedYear = state.selectedYear,
-            onDaySelected = onDaySelected,
-            onMonthSelected = onMonthSelected,
-            onYearSelected = onYearSelected
+        DatePickerButton(
+            selectedDate = state.selectedDate,
+            onDateSelected = { date ->
+                onDateSelected(date)
+            },
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // Error message for date of birth
+        if (state.selectedDate.isAfter(LocalDate.now().minusYears(18))) {
+            Text(
+                text =
+                    "We are sorry, you must be at least 18 years old",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
 
+
+        // Password Fields
         OutlinedTextField(
             value = state.password,
             onValueChange = onPasswordChange,
-            label = { Text("🔒 Password") },
-            colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            label = { Text("Password") },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+            isError = state.password.isNotBlank() && state.password.length < 8,
+            supportingText = {
+                if (state.password.isNotBlank() && state.password.length < 8) {
+                    Text("Password must be at least 8 characters")
+                }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = state.confirmPassword,
             onValueChange = onConfirmPasswordChange,
-            label = { Text("💜 Confirm Password") },
-            colors = textFieldColors,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            label = { Text("Confirm Password") },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password") },
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onRegisterClick() })
+            isError = state.confirmPassword.isNotBlank() && state.password != state.confirmPassword,
+            supportingText = {
+                if (state.confirmPassword.isNotBlank() && state.password != state.confirmPassword) {
+                    Text("Passwords don't match")
+                }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onRegisterClick() }),
+            modifier = Modifier.fillMaxWidth()
         )
 
+        // Register Button
         Button(
             onClick = onRegisterClick,
             enabled = state.isValid() && !state.isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFDA70D6),
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(50),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+            )
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator(
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp,
                     modifier = Modifier.size(24.dp)
                 )
-            } else if (state.isSuccess) {
-                Text("❤", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             } else {
-                Text("✨ Register Now! ✨", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Create Account",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
             }
-        }
-
-        state.errorMessage?.let {
-            Text(
-                text = "⚠️ Oopsie! ${it} Try again, cutie! 💕",
-                color = Color.Red,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 }
-
 
 
 @Composable
@@ -169,11 +201,10 @@ fun RegisterFormPreview() {
         onEmailChange = {},
         onNameChange = {},
         onSurnameChange = {},
-        onDaySelected = {},
-        onMonthSelected = {},
-        onYearSelected = {},
+        onDateSelected = {},
         onPasswordChange = {},
         onConfirmPasswordChange = {},
         onRegisterClick = {}
     )
 }
+
