@@ -148,7 +148,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 150.dp) // Adjust padding to position the form below the image
+                    .padding(top = 140.dp) // Adjust padding to position the form below the image
                     .zIndex(0f), // Ensure the form is below the image
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
