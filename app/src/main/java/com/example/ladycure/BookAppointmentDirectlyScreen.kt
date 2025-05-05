@@ -1,10 +1,9 @@
 package com.example.ladycure
 
+import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
-import DefaultBackground
 import androidx.compose.foundation.BorderStroke
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -13,11 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import com.example.ladycure.data.doctor.Speciality
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,16 +25,14 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,9 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material3.Text
-import com.example.ladycure.data.AppointmentType
 import coil.compose.AsyncImage
+import com.example.ladycure.data.AppointmentType
+import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
+import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
@@ -71,8 +69,8 @@ fun BookAppointmentDirectlyScreen(
     // State variables
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
-    var doctor by remember { mutableStateOf<Map<String, Any>?>(null) }
-    val doctorAvailability = remember { mutableStateOf<List<DoctorAvailability>>(emptyList())}
+    var doctor = remember { mutableStateOf<Doctor?>(null) }
+    val doctorAvailability = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
 
     // UI state
     val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
@@ -81,7 +79,7 @@ fun BookAppointmentDirectlyScreen(
     LaunchedEffect(doctorId) {
         val result = authRepo.getDoctorById(doctorId)
         if (result.isSuccess) {
-            doctor = result.getOrNull()
+            doctor.value = result.getOrNull()
             val aviabilityResult = authRepo.getDoctorAvailability(doctorId)
             if (aviabilityResult.isSuccess) {
                 doctorAvailability.value = aviabilityResult.getOrNull()!!
@@ -108,7 +106,20 @@ fun BookAppointmentDirectlyScreen(
         }
     }
 
-  Column(
+
+    if (doctor.value == null) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator(color = DefaultPrimary)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Loading doctor data...", color = DefaultOnPrimary)
+        }
+    } else {
+
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
@@ -116,15 +127,18 @@ fun BookAppointmentDirectlyScreen(
 
             AppointmentHeader(
                 onBackClick = {
-                        navController.popBackStack()
+                    navController.popBackStack()
                 }
             )
 
             DoctorInfoHeader(
-                doctor = doctor,
+                doctor = doctor.value!!,
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onClick = {
-                    navController.popBackStack("doctors/${selectedSpeciality.displayName}",false) // go back to doctor list
+                    navController.popBackStack(
+                        "doctors/${selectedSpeciality.displayName}",
+                        false
+                    ) // go back to doctor list
                 }
             )
 
@@ -140,18 +154,33 @@ fun BookAppointmentDirectlyScreen(
                     selectedService = selectedService,
                     availableDates = availableDates.map { it!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
                     selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                    onDateSelected = { selectedDate.value = LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
+                    onDateSelected = {
+                        selectedDate.value =
+                            LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    },
                     timeSlots = timeSlotsForSelectedDate,
-                    selectedTimeSlot = selectedTimeSlot.value?.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+                    selectedTimeSlot = selectedTimeSlot.value?.format(
+                        DateTimeFormatter.ofPattern(
+                            "h:mm a",
+                            Locale.US
+                        )
+                    ),
                     onTimeSlotSelected = {
-                        selectedTimeSlot.value = LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", Locale.US))
-                        navController.navigate("confirmation/$doctorId/${selectedDate.value}/${selectedTimeSlot.value!!.format(
-                            DateTimeFormatter.ofPattern("h:mm a", Locale.US))}/${selectedService.displayName}")
+                        selectedTimeSlot.value =
+                            LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", Locale.US))
+                        navController.navigate(
+                            "confirmation/$doctorId/${selectedDate.value}/${
+                                selectedTimeSlot.value!!.format(
+                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                )
+                            }/${selectedService.displayName}"
+                        )
                     })
 
             }
         }
     }
+}
 
 @Composable
 private fun AppointmentHeader(
@@ -182,7 +211,8 @@ private fun AppointmentHeader(
             style = MaterialTheme.typography.titleLarge,
             color = DefaultOnPrimary,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f))
+            modifier = Modifier.weight(1f)
+        )
 
         Spacer(modifier = Modifier.width(48.dp))
     }
@@ -212,7 +242,8 @@ private fun DateAndTimeSelectionView(
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp, top = 8.dp))
+            modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
+        )
 
         // Enhanced date selector
         DateSelector(
@@ -223,22 +254,24 @@ private fun DateAndTimeSelectionView(
         )
 
         // Time slots
-        if (selectedDate != null ) {
+        if (selectedDate != null) {
             Text(
                 text = "Available Time Slots",
                 style = MaterialTheme.typography.titleMedium,
                 color = DefaultOnPrimary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp))
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
 
             if (timeSlots.isEmpty()) {
                 PromptToSelectDate()
-              //  EmptyTimeSlotsView()
+                //  EmptyTimeSlotsView()
             } else {
                 TimeSlotGrid(
                     timeSlots = timeSlots,
                     selectedTimeSlot = selectedTimeSlot,
-                    onTimeSlotSelected = onTimeSlotSelected)
+                    onTimeSlotSelected = onTimeSlotSelected
+                )
             }
         } else if (availableDates.isNotEmpty()) {
             PromptToSelectDate()
@@ -248,29 +281,10 @@ private fun DateAndTimeSelectionView(
 
 @Composable
 private fun DoctorInfoHeader(
-    doctor: Map<String, Any>?,
+    doctor: Doctor,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
-    val name = doctor?.get("name") as? String ?: "Dr. Unknown"
-    val surname = doctor?.get("surname") as? String ?: ""
-    val speciality = doctor?.get("specification") as? String ?: "Specialist"
-    val imageUrl = doctor?.get("profilePictureUrl") as? String ?: ""
-    val experience = when (val exp = doctor?.get("experience")) {
-        is Int -> exp
-        is Long -> exp.toInt()
-        is Double -> exp.toInt()
-        is String -> exp.toIntOrNull() ?: 5
-        else -> 5
-    }
-
-    val rating = when (val rat = doctor?.get("rating")) {
-        is Int -> rat.toDouble()
-        is Long -> rat.toDouble()
-        is Double -> rat
-        is String -> rat.toDouble()
-        else -> 4.5
-    }
 
     Card(
         modifier = modifier
@@ -290,10 +304,10 @@ private fun DoctorInfoHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Doctor Image
-            if (imageUrl.isEmpty()) {
+            if (doctor.profilePictureUrl.isEmpty()) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Doctor $name",
+                    contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(8.dp)),
@@ -301,8 +315,8 @@ private fun DoctorInfoHeader(
                 )
             } else {
                 AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "Doctor $name",
+                    model = doctor.profilePictureUrl,
+                    contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(8.dp)),
@@ -317,7 +331,7 @@ private fun DoctorInfoHeader(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Dr. $name $surname",
+                    text = "Dr. ${doctor.name} ${doctor.surname}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -326,7 +340,7 @@ private fun DoctorInfoHeader(
                 )
 
                 Text(
-                    text = speciality,
+                    text = doctor.speciality.displayName,
                     style = MaterialTheme.typography.bodyMedium,
                     color = DefaultPrimary,
                     modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
@@ -337,12 +351,12 @@ private fun DoctorInfoHeader(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RatingBar(
-                        rating = rating,
+                        rating = doctor.rating,
                         modifier = Modifier.width(80.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "(${"%.1f".format(rating)})",
+                        text = "(${"%.1f".format(doctor.rating)})",
                         style = MaterialTheme.typography.labelMedium,
                         color = Color(0xFFFFA000)
                     )
@@ -355,7 +369,7 @@ private fun DoctorInfoHeader(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "$experience yrs",
+                        text = "${doctor.experience} yrs",
                         style = MaterialTheme.typography.labelMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.7f)
                     )
@@ -387,10 +401,11 @@ private fun DateSelector(
     Column(modifier = modifier) {
         if (availableDates.isEmpty()) {
             Text(
-                text = "We are sorry, there's no available dates for this speciality",
+                text = "We are sorry, there's no available dates for this doctor",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(vertical = 16.dp))
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
         } else {
             Row(
                 modifier = Modifier

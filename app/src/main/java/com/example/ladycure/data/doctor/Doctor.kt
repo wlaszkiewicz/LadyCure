@@ -83,9 +83,9 @@ data class Doctor(
             )
         }
 
-        fun toMap(doctor: Doctor): Map<String, Any?> {
+        fun toMap(doctor: Doctor): Map<String, Any> {
             return mapOf(
-                "specification" to doctor.speciality.displayName,
+                "speciality" to doctor.speciality.displayName,
                 "availability" to doctor.availability,
                 "reviews" to doctor.reviews,
                 "address" to doctor.address,
@@ -102,6 +102,7 @@ data class Doctor(
                 "dateOfBirth" to doctor.dateOfBirth,
                 "profilePictureUrl" to doctor.profilePictureUrl,
                 "role" to doctor.role.value,
+                "id" to doctor.id
             )
         }
     }

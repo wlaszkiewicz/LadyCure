@@ -1,49 +1,65 @@
 package com.example.ladycure
 
 import DefaultBackground
-import androidx.compose.foundation.verticalScroll
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.example.ladycure.repository.AuthRepository
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material3.*
-
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import DefaultOnPrimary
 import DefaultPrimary
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Directions
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
+import com.example.ladycure.data.doctor.Doctor
+import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -68,7 +84,7 @@ fun ConfirmationScreen(
     var userName by remember { mutableStateOf("Patient unavaiable") }
 
     LaunchedEffect(Unit) {
-       userName = authRepo.getUserField("name").getOrNull() + " " +
+        userName = authRepo.getUserField("name").getOrNull() + " " +
                 authRepo.getUserField("surname").getOrNull()
     }
     // Create an appointment object
@@ -93,7 +109,8 @@ fun ConfirmationScreen(
         try {
             val result = authRepo.getDoctorById(doctorId)
             if (result.isSuccess) {
-                doctorInfo.value = result.getOrNull()
+                val doctor = result.getOrNull()
+                doctorInfo.value = Doctor.toMap(doctor!!)
             } else {
                 errorMessage.value = "Failed to load doctor details"
             }
@@ -105,14 +122,14 @@ fun ConfirmationScreen(
     }
 
     if (isLoading.value) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DefaultBackground),
-                contentAlignment = Alignment.Center
-            ) {
-                LoadingView()
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DefaultBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            LoadingView()
+        }
 
     } else {
 
@@ -152,12 +169,16 @@ fun ConfirmationScreen(
                 errorMessage.value != null -> snackbarController?.showMessage(
                     message = errorMessage.value ?: "Unknown error"
                 )
+
                 doctorInfo.value == null -> snackbarController?.showMessage(
-                    message = "Doctor info is unaviable" )
+                    message = "Doctor info is unaviable"
+                )
+
                 else -> {
-                    Column(modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                     ) {
                         // Appointment confirmation card
                         Card(
@@ -400,7 +421,8 @@ private fun PaymentCard(
                 text = "Payment Information",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp))
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -409,11 +431,13 @@ private fun PaymentCard(
             ) {
                 Text(
                     text = "Service Fee",
-                    style = MaterialTheme.typography.bodyMedium)
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Text(
                     text = "$${"%.2f".format(appointmentType.price)}",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold)
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -425,10 +449,12 @@ private fun PaymentCard(
             ) {
                 Text(
                     text = "Tax (9%)",
-                    style = MaterialTheme.typography.bodyMedium)
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Text(
                     text = "$${"%.2f".format(taxAmount)}",
-                    style = MaterialTheme.typography.bodyMedium)
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
             Divider(
@@ -445,12 +471,14 @@ private fun PaymentCard(
                 Text(
                     text = "Total Amount",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold)
+                    fontWeight = FontWeight.SemiBold
+                )
                 Text(
                     text = "$${"%.2f".format(totalAmount)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = DefaultPrimary)
+                    color = DefaultPrimary
+                )
             }
         }
     }
@@ -644,7 +672,8 @@ private fun DoctorConfirmationCard(
                 text = "Your Doctor",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp))
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -686,11 +715,13 @@ private fun DoctorConfirmationCard(
                     Text(
                         text = "Dr. $name $surname",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold)
+                        fontWeight = FontWeight.Bold
+                    )
                     Text(
                         text = specialization,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultPrimary)
+                        color = DefaultPrimary
+                    )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
@@ -700,16 +731,19 @@ private fun DoctorConfirmationCard(
                         Text(
                             text = "⭐ $rating",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color(0xFFFFA000))
+                            color = Color(0xFFFFA000)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "•",
-                            color = Color.LightGray)
+                            color = Color.LightGray
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "$experience yrs exp",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color.Gray)
+                            color = Color.Gray
+                        )
                     }
                 }
             }
@@ -718,12 +752,14 @@ private fun DoctorConfirmationCard(
                 text = "About Dr. ${name.split(" ").last()}",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 4.dp))
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
 
             Text(
                 text = bio,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray)
+                color = Color.Gray
+            )
         }
     }
 }
@@ -739,7 +775,7 @@ fun formatConfirmationDate(dateString: String): String {
     }
 }
 
- fun formatConfirmationTime(timeString: String): String {
+fun formatConfirmationTime(timeString: String): String {
     return try {
         val time = LocalTime.parse(timeString)
         time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US))

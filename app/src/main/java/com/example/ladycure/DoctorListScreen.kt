@@ -673,7 +673,7 @@ private fun ExpandedDoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "$doctor.experience years experience",
+                        text = "${doctor.experience} years experience",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -744,7 +744,7 @@ private fun ExpandedDoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Consultation fee: $${"%.2f".format(doctor.consultationPrice)}",
+                        text = "Consultation fee: $${doctor.consultationPrice}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)

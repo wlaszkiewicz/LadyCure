@@ -383,11 +383,14 @@ class AuthRepository {
         return Result.success(Unit)
     }
 
-    suspend fun getDoctorById(doctorId: String): Result<Map<String, Any>?> {
+    suspend fun getDoctorById(doctorId: String): Result<Doctor> {
         return try {
             val document = firestore.collection("users").document(doctorId).get().await()
             if (document.exists()) {
-                Result.success(document.data)
+                val doctor = Doctor.fromMap(
+                    document.data?.plus("id" to doctorId) ?: mapOf("id" to doctorId)
+                )
+                Result.success(doctor)
             } else {
                 Result.failure(Exception("Doctor not found"))
             }
