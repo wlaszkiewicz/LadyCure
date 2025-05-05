@@ -29,6 +29,27 @@ class AuthRepository {
         Result.failure(e)
     }
 
+    suspend fun updateUser(userId: String, updatedData: HashMap<String, Any>): Result<Unit> {
+        return try {
+            firestore.collection("users").document(userId).update(updatedData).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error updating user data", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUsers(): Result<List<Map<String, Any>>> {
+        return try {
+            val querySnapshot = firestore.collection("users").get().await()
+            val users = querySnapshot.documents.map { it.data?.plus("id" to it.id) ?: emptyMap() }
+            Result.success(users)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error fetching users", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun getUserRole(): Result<String?> = try {
         val user = auth.currentUser
         if (user != null) {
@@ -222,7 +243,6 @@ class AuthRepository {
         Firebase.auth.signOut()
     }
 
-
     suspend fun getUserField(fieldName: String): Result<String?> {
         return try {
             val currentUser =
@@ -233,7 +253,6 @@ class AuthRepository {
             Result.failure(e)
         }
     }
-
 
     suspend fun getAllDoctorAvailabilitiesBySpeciality(
         speciality: String,
