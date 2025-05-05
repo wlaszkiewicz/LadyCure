@@ -1,8 +1,8 @@
 package com.example.ladycure
 
+import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
-import DefaultBackground
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -13,7 +13,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,11 +27,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import com.example.ladycure.data.doctor.Speciality
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -54,14 +52,14 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -84,15 +82,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material3.Text
-import com.example.ladycure.data.AppointmentType
 import coil.compose.SubcomposeAsyncImage
+import com.example.ladycure.data.AppointmentType
+import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
+import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import kotlin.math.floor
 
 @Composable
@@ -107,7 +106,7 @@ fun BookAppointmentScreen(
     // State variables
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
-    val doctors = remember { mutableStateOf(emptyList<Map<String, Any>>()) }
+    val doctors = remember { mutableStateOf(emptyList<Doctor>()) }
     val doctorAvailabilities = remember { mutableStateOf(emptyList<DoctorAvailability>()) }
 
     // UI state
@@ -127,13 +126,14 @@ fun BookAppointmentScreen(
                 // Filter doctors by city
 
                 doctors.value = doctors.value.filter { doctor ->
-                    val doctorCity = doctor["city"] as? String
+                    val doctorCity = doctor.city
                     doctorCity == city
                 }
 
                 // Then get their availabilities
                 val availabilities = authRepo.getAllDoctorAvailabilitiesBySpeciality(
-                    selectedSpeciality.displayName, city)
+                    selectedSpeciality.displayName, city
+                )
 
                 doctorAvailabilities.value = availabilities
             }
@@ -148,7 +148,7 @@ fun BookAppointmentScreen(
     val availableDates = doctorAvailabilities.value
         .map { it.date }
         .distinct()
-        .sortedBy {it}
+        .sortedBy { it }
 
     // Generate time slots for selected date
     val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailabilities.value) {
@@ -158,68 +158,91 @@ fun BookAppointmentScreen(
     }
 
     // Filter doctors for selected time slot
-    val availableDoctorsForSlot = remember(selectedTimeSlot.value, doctors.value, doctorAvailabilities.value) {
-        if (selectedTimeSlot.value == null) emptyList() else {
-            filterAvailableDoctors(
-                doctors.value,
-                selectedDate.value!!,
-                selectedTimeSlot.value!!,
-                doctorAvailabilities.value
-            )
-        }
-    }
-
-   Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(DefaultBackground)
-        ) {
-            // Header
-            AppointmentHeader(
-                showDoctorsForSlot = showDoctorsForSlot.value,
-                onBackClick = {
-                    if (showDoctorsForSlot.value) {
-                        showDoctorsForSlot.value = false
-                    } else {
-                        navController.popBackStack()
-                    }
-                }
-            )
-
-            LaunchedEffect(errorMessage.value) {
-                errorMessage.value?.let {
-                    snackbarController?.showMessage(it)
-                }
-            }
-
-            when {
-                isLoading.value -> LoadingView()
-                !showDoctorsForSlot.value -> DateAndTimeSelectionView(
-                    city = city,
-                    selectedSpeciality = selectedSpeciality,
-                    selectedService = selectedService,
-                    availableDates = availableDates.map { it!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
-                    selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                    onDateSelected = { selectedDate.value = LocalDate.parse(it,DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
-                    timeSlots = timeSlotsForSelectedDate,
-                    selectedTimeSlot = selectedTimeSlot.value?.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
-                    onTimeSlotSelected = {
-                        selectedTimeSlot.value = LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
-                        showDoctorsForSlot.value = true
-                    })
-
-                else -> DoctorSelectionView(
-                    selectedDate = selectedDate.value!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                    selectedTimeSlot = selectedTimeSlot.value!!.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
-                    doctors = availableDoctorsForSlot,
-                    onBackClick = { showDoctorsForSlot.value = false },
-                    onDoctorSelected = { doctorId ->
-                       navController.navigate("confirmation/$doctorId/${selectedDate.value}/${selectedTimeSlot.value!!.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))}/${selectedService.displayName}")
-                    }
+    val availableDoctorsForSlot =
+        remember(selectedTimeSlot.value, doctors.value, doctorAvailabilities.value) {
+            if (selectedTimeSlot.value == null) emptyList() else {
+                filterAvailableDoctors(
+                    doctors.value,
+                    selectedDate.value!!,
+                    selectedTimeSlot.value!!,
+                    doctorAvailabilities.value
                 )
             }
         }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DefaultBackground)
+    ) {
+        // Header
+        AppointmentHeader(
+            showDoctorsForSlot = showDoctorsForSlot.value,
+            onBackClick = {
+                if (showDoctorsForSlot.value) {
+                    showDoctorsForSlot.value = false
+                } else {
+                    navController.popBackStack()
+                }
+            }
+        )
+
+        LaunchedEffect(errorMessage.value) {
+            errorMessage.value?.let {
+                snackbarController?.showMessage(it)
+            }
+        }
+
+        when {
+            isLoading.value -> LoadingView()
+            !showDoctorsForSlot.value -> DateAndTimeSelectionView(
+                city = city,
+                selectedSpeciality = selectedSpeciality,
+                selectedService = selectedService,
+                availableDates = availableDates.map { it!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
+                selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                onDateSelected = {
+                    selectedDate.value =
+                        LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                },
+                timeSlots = timeSlotsForSelectedDate,
+                selectedTimeSlot = selectedTimeSlot.value?.format(
+                    DateTimeFormatter.ofPattern(
+                        "h:mm a",
+                        java.util.Locale.US
+                    )
+                ),
+                onTimeSlotSelected = {
+                    selectedTimeSlot.value = LocalTime.parse(
+                        it,
+                        DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                    )
+                    showDoctorsForSlot.value = true
+                })
+
+            else -> DoctorSelectionView(
+                selectedDate = selectedDate.value!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                selectedTimeSlot = selectedTimeSlot.value!!.format(
+                    DateTimeFormatter.ofPattern(
+                        "h:mm a",
+                        java.util.Locale.US
+                    )
+                ),
+                doctors = availableDoctorsForSlot,
+                onBackClick = { showDoctorsForSlot.value = false },
+                onDoctorSelected = { doctorId ->
+                    navController.navigate(
+                        "confirmation/$doctorId/${selectedDate.value}/${
+                            selectedTimeSlot.value!!.format(
+                                DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                            )
+                        }/${selectedService.displayName}"
+                    )
+                }
+            )
+        }
     }
+}
 
 @Composable
 private fun AppointmentHeader(
@@ -251,7 +274,8 @@ private fun AppointmentHeader(
             style = MaterialTheme.typography.titleLarge,
             color = DefaultOnPrimary,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f))
+            modifier = Modifier.weight(1f)
+        )
 
         Spacer(modifier = Modifier.width(48.dp))
     }
@@ -286,7 +310,8 @@ private fun DateAndTimeSelectionView(
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp, top = 8.dp))
+            modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
+        )
 
         // Enhanced date selector
         DateSelector(
@@ -303,7 +328,8 @@ private fun DateAndTimeSelectionView(
                 style = MaterialTheme.typography.titleMedium,
                 color = DefaultOnPrimary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp))
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
 
             if (timeSlots.isEmpty()) {
                 EmptyTimeSlotsView()
@@ -311,7 +337,8 @@ private fun DateAndTimeSelectionView(
                 TimeSlotGrid(
                     timeSlots = timeSlots,
                     selectedTimeSlot = selectedTimeSlot,
-                    onTimeSlotSelected = onTimeSlotSelected)
+                    onTimeSlotSelected = onTimeSlotSelected
+                )
             }
         } else if (availableDates.isNotEmpty()) {
             PromptToSelectDate()
@@ -320,7 +347,7 @@ private fun DateAndTimeSelectionView(
 }
 
 @Composable
- fun ServiceInfoChip(
+fun ServiceInfoChip(
     service: AppointmentType,
     modifier: Modifier = Modifier
 ) {
@@ -378,7 +405,8 @@ private fun LocationSpecialtyRow(
             text = city,
             style = MaterialTheme.typography.bodyMedium,
             color = DefaultOnPrimary.copy(alpha = 0.8f),
-            modifier = Modifier.padding(end = 12.dp))
+            modifier = Modifier.padding(end = 12.dp)
+        )
 
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -388,7 +416,8 @@ private fun LocationSpecialtyRow(
                 text = speciality.displayName,
                 style = MaterialTheme.typography.labelMedium,
                 color = DefaultPrimary,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+            )
         }
     }
 }
@@ -408,7 +437,8 @@ private fun DateSelector(
                 text = "We are sorry, there's no available dates for this speciality",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(vertical = 16.dp))
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
         } else {
             Row(
                 modifier = Modifier
@@ -439,10 +469,14 @@ fun DateCard(
     val formattedDate = formatDateForDisplay(date)
     val dayOfWeek = try {
         LocalDate.parse(date).dayOfWeek.toString().take(3)
-    } catch (e: Exception) { "error" }
+    } catch (e: Exception) {
+        "error"
+    }
     val dayOfMonth = try {
         LocalDate.parse(date).dayOfMonth.toString()
-    } catch (e: Exception) { "error" }
+    } catch (e: Exception) {
+        "error"
+    }
 
     Card(
         onClick = onSelect,
@@ -456,39 +490,49 @@ fun DateCard(
         border = if (!isSelected) BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)) else null
     ) {
         Column(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = dayOfWeek,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Normal,
-                color = if (isSelected) Color.White.copy(alpha = 0.9f) else DefaultOnPrimary.copy(alpha = 0.7f)
+                color = if (isSelected) Color.White.copy(alpha = 0.9f) else DefaultOnPrimary.copy(
+                    alpha = 0.7f
+                )
             )
             Text(
                 text = dayOfMonth,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White.copy(alpha = 0.9f) else DefaultOnPrimary.copy(alpha = 0.7f)
+                color = if (isSelected) Color.White.copy(alpha = 0.9f) else DefaultOnPrimary.copy(
+                    alpha = 0.7f
+                )
             )
             Text(
                 text = formattedDate,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (isSelected) Color.White.copy(alpha = 0.8f) else DefaultOnPrimary.copy(alpha = 0.5f)
+                color = if (isSelected) Color.White.copy(alpha = 0.8f) else DefaultOnPrimary.copy(
+                    alpha = 0.5f
+                )
             )
         }
     }
 }
 
 @Composable
- fun TimeSlotGrid(
+fun TimeSlotGrid(
     timeSlots: List<String>,
     selectedTimeSlot: String?,
     onTimeSlotSelected: (String) -> Unit
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
-        modifier = Modifier.fillMaxHeight().padding(bottom = 30.dp),
+        modifier = Modifier
+            .fillMaxHeight()
+            .padding(bottom = 30.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -504,7 +548,7 @@ fun DateCard(
 }
 
 @Composable
- fun TimeSlotCard(
+fun TimeSlotCard(
     time: String,
     isSelected: Boolean,
     onSelect: () -> Unit
@@ -535,7 +579,7 @@ fun DateCard(
 }
 
 @Composable
- fun EmptyTimeSlotsView() {
+fun EmptyTimeSlotsView() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -546,21 +590,24 @@ fun DateCard(
             imageVector = Icons.Default.Schedule,
             contentDescription = "No slots",
             tint = DefaultOnPrimary.copy(alpha = 0.4f),
-            modifier = Modifier.size(48.dp))
+            modifier = Modifier.size(48.dp)
+        )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "No available time slots",
             style = MaterialTheme.typography.bodyMedium,
-            color = DefaultOnPrimary.copy(alpha = 0.6f))
+            color = DefaultOnPrimary.copy(alpha = 0.6f)
+        )
         Text(
             text = "Please try another date",
             style = MaterialTheme.typography.bodySmall,
-            color = DefaultOnPrimary.copy(alpha = 0.4f))
+            color = DefaultOnPrimary.copy(alpha = 0.4f)
+        )
     }
 }
 
 @Composable
- fun PromptToSelectDate() {
+fun PromptToSelectDate() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -571,17 +618,19 @@ fun DateCard(
             imageVector = Icons.Default.CalendarToday,
             contentDescription = "Select date",
             tint = DefaultOnPrimary.copy(alpha = 0.6f),
-            modifier = Modifier.size(20.dp))
+            modifier = Modifier.size(20.dp)
+        )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = "Select a date to see available time slots",
             style = MaterialTheme.typography.bodyMedium,
-            color = DefaultOnPrimary.copy(alpha = 0.6f))
+            color = DefaultOnPrimary.copy(alpha = 0.6f)
+        )
     }
 }
 
 // Helper function for date formatting
- fun formatDateForDisplay(dateString: String): String {
+fun formatDateForDisplay(dateString: String): String {
     return try {
         val date = LocalDate.parse(dateString)
         when (date) {
@@ -598,7 +647,7 @@ fun DateCard(
 private fun DoctorSelectionView(
     selectedDate: String,
     selectedTimeSlot: String,
-    doctors: List<Map<String, Any>>,
+    doctors: List<Doctor>,
     onBackClick: () -> Unit,
     onDoctorSelected: (String) -> Unit
 ) {
@@ -622,7 +671,8 @@ private fun DoctorSelectionView(
                 style = MaterialTheme.typography.titleMedium,
                 color = DefaultOnPrimary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 8.dp))
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
             LazyColumn(
                 modifier = Modifier
@@ -631,8 +681,9 @@ private fun DoctorSelectionView(
                 items(doctors) { doctor ->
                     DoctorCard(
                         doctor = doctor,
-                        onSelect = { onDoctorSelected(doctor["id"].toString()) },
-                        modifier = Modifier.padding(bottom = 12.dp))
+                        onSelect = { onDoctorSelected(doctor.id.toString()) },
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                 }
             }
         }
@@ -767,47 +818,25 @@ private fun EmptyDoctorsView() {
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary.copy(alpha = 0.6f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(16.dp))
+            modifier = Modifier.padding(16.dp)
+        )
         Text(
             text = "No doctors available for the selected time slot",
             style = MaterialTheme.typography.bodyMedium,
             color = DefaultOnPrimary.copy(alpha = 0.4f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp))
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
     }
 }
 
 
 @Composable
 private fun DoctorCard(
-    doctor: Map<String, Any>,
+    doctor: Doctor,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val name = doctor["name"] as? String ?: "Dr. Unknown"
-    val surname = doctor["surname"] as? String ?: "Unknown"
-    val address = doctor["address"] as? String ?: "Unknown"
-    val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
-    val bio = doctor["bio"] as? String ?: "Experienced medical professional"
-    val languages = doctor["languages"] as? List<String> ?: listOf("English")
-
-    val experience = when (val exp = doctor["experience"]) {
-        is Int -> exp
-        is Long -> exp.toInt()
-        is Double -> exp.toInt()
-        is String -> exp.toIntOrNull() ?: 5
-        else -> 5
-    }
-
-    val rating = when (val rat = doctor["rating"]) {
-        is Int -> rat.toDouble()
-        is Long -> rat.toDouble()
-        is Double -> rat
-        is String -> rat.toDouble()
-        else -> 4.5
-    }
-
-
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
@@ -826,10 +855,10 @@ private fun DoctorCard(
                 verticalAlignment = Alignment.Top
             ) {
                 // Doctor image
-                if (imageUrl.isEmpty()) {
+                if (doctor.profilePictureUrl.isEmpty()) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Doctor $name",
+                        contentDescription = "Doctor ${doctor.name}",
                         modifier = Modifier
                             .size(80.dp)
                             .clip(RoundedCornerShape(8.dp)),
@@ -838,12 +867,14 @@ private fun DoctorCard(
                 } else {
 
                     SubcomposeAsyncImage(
-                        model = imageUrl,
-                        contentDescription = "Doctor $name",
+                        model = doctor.profilePictureUrl,
+                        contentDescription = "Doctor ${doctor.name}",
                         loading = {
                             Box(modifier = Modifier.fillMaxSize()) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp).align(Alignment.Center),
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .align(Alignment.Center),
                                     color = DefaultPrimary,
                                     strokeWidth = 3.dp,
                                 )
@@ -863,7 +894,7 @@ private fun DoctorCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Dr. $name $surname",
+                        text = "Dr. ${doctor.name} ${doctor.surname}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -883,7 +914,7 @@ private fun DoctorCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = " ${"%.1f".format(rating)}",
+                            text = " ${"%.1f".format(doctor.rating)}",
                             style = MaterialTheme.typography.labelMedium,
                             color = Color(0xFFFFA000),
                             modifier = Modifier.padding(end = 8.dp)
@@ -896,7 +927,7 @@ private fun DoctorCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = " $experience yrs",
+                            text = " ${doctor.experience} yrs",
                             style = MaterialTheme.typography.labelMedium,
                             color = DefaultOnPrimary.copy(alpha = 0.7f)
                         )
@@ -915,7 +946,7 @@ private fun DoctorCard(
                         )
                         Text(
                             text = " ${
-                                languages.joinToString()
+                                doctor.languages.joinToString()
                             }",
                             style = MaterialTheme.typography.labelSmall,
                             color = DefaultOnPrimary.copy(alpha = 0.7f),
@@ -938,7 +969,7 @@ private fun DoctorCard(
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = address,
+                    text = doctor.address,
                     style = MaterialTheme.typography.bodySmall,
                     color = DefaultOnPrimary.copy(alpha = 0.8f),
                     maxLines = 1,
@@ -952,57 +983,57 @@ private fun DoctorCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-                // Bio (collapsible)
-                var expanded by remember { mutableStateOf(false) }
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Bio",
-                            tint = DefaultPrimary.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "About Dr. ${surname}",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = DefaultOnPrimary.copy(alpha = 0.9f),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        visible = expanded,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        Text(
-                            text = bio,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = DefaultOnPrimary.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-
-                    TextButton(
-                        onClick = { expanded = !expanded },
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text(
-                            text = if (expanded) "Show less" else "Show more",
-                            color = DefaultPrimary
-                        )
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (expanded) "Collapse" else "Expand",
-                            tint = DefaultPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+            // Bio (collapsible)
+            var expanded by remember { mutableStateOf(false) }
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Bio",
+                        tint = DefaultPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "About Dr. ${doctor.surname}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = DefaultOnPrimary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
+
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Text(
+                        text = doctor.bio,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text(
+                        text = if (expanded) "Show less" else "Show more",
+                        color = DefaultPrimary
+                    )
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -1025,7 +1056,7 @@ private fun DoctorCard(
 }
 
 @Composable
- fun RatingBar(
+fun RatingBar(
     rating: Double,
     modifier: Modifier = Modifier
 ) {
@@ -1064,16 +1095,18 @@ private fun DoctorCard(
 @Preview
 @Composable
 fun DoctorCardPreview() {
-    val sampleDoctor = mapOf(
-        "name" to "Sarah",
-        "surname" to "Johnson",
-        "specification" to "Cardiologist",
-        "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
-        "rating" to 4.7,
-        "experience" to 12,
-        "profilePictureUrl" to "",
-        "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
-        "languages" to listOf("English", "Spanish", "French")
+    val sampleDoctor = Doctor.fromMap(
+        mapOf(
+            "name" to "Sarah",
+            "surname" to "Johnson",
+            "specification" to "Cardiologist",
+            "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
+            "rating" to 4.7,
+            "experience" to 12,
+            "profilePictureUrl" to "",
+            "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
+            "languages" to listOf("English", "Spanish", "French")
+        )
     )
 
     DoctorCard(
@@ -1094,11 +1127,11 @@ fun filerTimeSlotsForDate(date: LocalDate, availabilities: List<DoctorAvailabili
 }
 
 private fun filterAvailableDoctors(
-    doctors: List<Map<String, Any>>,
+    doctors: List<Doctor>,
     date: LocalDate,
     timeSlot: LocalTime,
     availabilities: List<DoctorAvailability>
-): List<Map<String, Any>> {
+): List<Doctor> {
 
     val availableDoctorIds = availabilities
         .filter { availability ->
@@ -1109,7 +1142,7 @@ private fun filterAvailableDoctors(
 
     // Return full doctor info for available doctors
     return doctors.filter { doctor ->
-        availableDoctorIds.contains(doctor["id"])
+        availableDoctorIds.contains(doctor.id)
     }
 }
 
@@ -1153,7 +1186,12 @@ fun DateChip(date: String, isSelected: Boolean, onSelect: () -> Unit) {
 }
 
 @Composable
-fun TimeSlotChip(time: String, isSelected: Boolean, onSelect: () -> Unit, modifier: Modifier = Modifier) {
+fun TimeSlotChip(
+    time: String,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Button(
         onClick = onSelect,
         colors = ButtonDefaults.buttonColors(

@@ -3,6 +3,7 @@ package com.example.ladycure.repository
 import android.util.Log
 import androidx.navigation.NavController
 import com.example.ladycure.data.Appointment
+import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -165,15 +166,21 @@ class AuthRepository {
     }
 
 
-    suspend fun getDoctorsBySpecification(specification: String): Result<List<Map<String, Any>>> {
+    suspend fun getDoctorsBySpecification(specification: String): Result<List<Doctor>> {
         return try {
             val querySnapshot = firestore.collection("users")
                 .whereEqualTo("role", "doctor")
                 .whereEqualTo("specification", specification)
                 .get()
                 .await()
-            val doctors =
-                querySnapshot.documents.map { it.data?.plus("id" to it.id) ?: mapOf("id" to it.id) }
+            val doctors = querySnapshot.documents.mapNotNull { doc ->
+                try {
+                    val doctor = Doctor.fromMap(doc.data!!.plus("id" to doc.id))
+                    doctor
+                } catch (e: Exception) {
+                    return Result.failure(e)
+                }
+            }
             Result.success(doctors)
         } catch (e: Exception) {
             Result.failure(e)
@@ -211,14 +218,15 @@ class AuthRepository {
         }
     }
 
-     fun signOut() {
+    fun signOut() {
         Firebase.auth.signOut()
     }
 
 
     suspend fun getUserField(fieldName: String): Result<String?> {
         return try {
-            val currentUser = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
+            val currentUser =
+                auth.currentUser ?: return Result.failure(Exception("User not logged in"))
             val document = firestore.collection("users").document(currentUser.uid).get().await()
             Result.success(document.getString(fieldName))
         } catch (e: Exception) {
@@ -227,7 +235,10 @@ class AuthRepository {
     }
 
 
-    suspend fun getAllDoctorAvailabilitiesBySpeciality(speciality: String, city: String): List<DoctorAvailability> {
+    suspend fun getAllDoctorAvailabilitiesBySpeciality(
+        speciality: String,
+        city: String
+    ): List<DoctorAvailability> {
         val doctors = firestore.collection("users")
             .whereEqualTo("role", "doctor")
             .whereEqualTo("city", city)
@@ -246,11 +257,22 @@ class AuthRepository {
                 .map { doc ->
                     DoctorAvailability(
                         doctorId = doctor.id,
-                        date = LocalDate.parse(doc.id,DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                        startTime = LocalTime.parse(doc.getString("startTime"), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
-                        endTime = LocalTime.parse(doc.getString("endTime"), DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
+                        date = LocalDate.parse(doc.id, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                        startTime = LocalTime.parse(
+                            doc.getString("startTime"),
+                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        ),
+                        endTime = LocalTime.parse(
+                            doc.getString("endTime"),
+                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        ),
                         availableSlots = (doc.get("availableSlots") as? List<String>)
-                            ?.map { slot -> LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                            ?.map { slot ->
+                                LocalTime.parse(
+                                    slot,
+                                    DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                                )
+                            }
                             ?.toMutableList() ?: mutableListOf()
                     )
                 }
@@ -272,11 +294,26 @@ class AuthRepository {
                 try {
                     DoctorAvailability(
                         doctorId = doctorId,
-                        date = LocalDate.parse(doc.id,DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                        startTime = doc.getString("startTime")?.let { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) },
-                        endTime = doc.getString("endTime")?.let { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) },
+                        date = LocalDate.parse(doc.id, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                        startTime = doc.getString("startTime")?.let {
+                            LocalTime.parse(
+                                it,
+                                DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                            )
+                        },
+                        endTime = doc.getString("endTime")?.let {
+                            LocalTime.parse(
+                                it,
+                                DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                            )
+                        },
                         availableSlots = (doc.get("availableSlots") as? List<String>)
-                            ?.map { slot -> LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                            ?.map { slot ->
+                                LocalTime.parse(
+                                    slot,
+                                    DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                                )
+                            }
                             ?.toMutableList() ?: mutableListOf()
                     )
                 } catch (e: Exception) {
@@ -295,7 +332,8 @@ class AuthRepository {
         endTime: LocalTime
     ): Result<Unit> {
         val batch = firestore.batch()
-        val doctorId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+        val doctorId =
+            auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
 
         val availableSlots = mutableSetOf<LocalTime>()
         var currentTime = startTime
@@ -312,9 +350,26 @@ class AuthRepository {
 
             val availabilityData = hashMapOf(
                 "doctorId" to doctorId,
-                "startTime" to startTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
-                "endTime" to endTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)),
-                "availableSlots" to availableSlots.map { it.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                "startTime" to startTime.format(
+                    DateTimeFormatter.ofPattern(
+                        "h:mm a",
+                        java.util.Locale.US
+                    )
+                ),
+                "endTime" to endTime.format(
+                    DateTimeFormatter.ofPattern(
+                        "h:mm a",
+                        java.util.Locale.US
+                    )
+                ),
+                "availableSlots" to availableSlots.map {
+                    it.format(
+                        DateTimeFormatter.ofPattern(
+                            "h:mm a",
+                            java.util.Locale.US
+                        )
+                    )
+                }
             )
 
             batch.set(docRef, availabilityData)
@@ -342,11 +397,14 @@ class AuthRepository {
     }
 
     suspend fun bookAppointment(
-        appointment: Appointment): Result<String> {
+        appointment: Appointment
+    ): Result<String> {
         try {
-            val appointmentData = appointment.toMap(appointment).filterKeys { it != "appointmentId" }
+            val appointmentData =
+                appointment.toMap(appointment).filterKeys { it != "appointmentId" }
 
-            val documentReference = firestore.collection("appointments").add(appointmentData).await()
+            val documentReference =
+                firestore.collection("appointments").add(appointmentData).await()
             val appointmentId = documentReference.id
 
             // make the timeslot unavailable
@@ -354,7 +412,8 @@ class AuthRepository {
             val doctorId = appointment.doctorId
             val date = appointment.date
             val startTime = appointment.time
-            val endTime = startTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
+            val endTime =
+                startTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
 
             // Fetch the current available slots
             val docRef = firestore.collection("users")
@@ -364,9 +423,13 @@ class AuthRepository {
 
             val availabilitySnapshot = docRef.get().await()
             if (availabilitySnapshot.exists()) {
-                val availableSlots = availabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                val availableSlots =
+                    availabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
                 val updatedAvailableSlots = availableSlots.filterNot { slot ->
-                    val slotTime = LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                    val slotTime = LocalTime.parse(
+                        slot,
+                        DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                    )
                     (slotTime.isAfter(startTime) && slotTime.isBefore(endTime)) || slotTime == startTime
                 }
                 docRef.update("availableSlots", updatedAvailableSlots).await()
@@ -376,7 +439,7 @@ class AuthRepository {
 
             return Result.success(appointmentId)
         } catch (e: Exception) {
-           return Result.failure(e)
+            return Result.failure(e)
         }
     }
 
@@ -384,7 +447,9 @@ class AuthRepository {
         return try {
             val document = firestore.collection("appointments").document(id).get().await()
             if (document.exists()) {
-                val appointment = Appointment.fromMap(document.data?.plus("appointmentId" to id) ?: mapOf("appointmentId" to id))
+                val appointment = Appointment.fromMap(
+                    document.data?.plus("appointmentId" to id) ?: mapOf("appointmentId" to id)
+                )
                 Result.success(appointment)
             } else {
                 Result.failure(Exception("Appointment not found"))
@@ -396,15 +461,22 @@ class AuthRepository {
 
     suspend fun getAppointments(role: String): Result<List<Appointment>> {
         return try {
-            val id = if (role == "doctor") { "doctorId"} else {"patientId"}
-            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+            val id = if (role == "doctor") {
+                "doctorId"
+            } else {
+                "patientId"
+            }
+            val userId =
+                auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
             val querySnapshot = firestore.collection("appointments")
                 .whereEqualTo(id, userId)
                 .get()
                 .await()
 
             val appointments = querySnapshot.documents.map { doc ->
-                Appointment.fromMap(doc.data?.plus("appointmentId" to doc.id) ?: mapOf("appointmentId" to doc.id))
+                Appointment.fromMap(
+                    doc.data?.plus("appointmentId" to doc.id) ?: mapOf("appointmentId" to doc.id)
+                )
             }
             Result.success(appointments)
         } catch (e: Exception) {
