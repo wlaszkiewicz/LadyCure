@@ -50,6 +50,17 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+import androidx.compose.ui.platform.LocalContext
+import android.location.Geocoder
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+
 @Composable
 fun ConfirmationScreen(
     navController: NavController,
@@ -461,9 +472,16 @@ private fun LocationCard(
     doctor: Map<String, Any>,
     modifier: Modifier = Modifier
 ) {
-    val address = doctor["address"] as? String ?: "Address unavaiable"
+    val address = doctor["address"] as? String ?: "Address unavailable"
     val city = doctor["city"] as? String ?: ""
-    val phone = doctor["phone"] as? String ?: "Phone unavaiable"
+    val fullAddress = "$address, $city"
+
+    val context = LocalContext.current
+    val geocoder = Geocoder(context, Locale.getDefault())
+    val location = remember(fullAddress) {
+        geocoder.getFromLocationName(fullAddress, 1)?.firstOrNull()
+    }
+    val latLng = location?.let { LatLng(it.latitude, it.longitude) }
 
     Card(
         modifier = modifier,
@@ -483,37 +501,40 @@ private fun LocationCard(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Mini Map Placeholder (would be replaced with real MapView in production)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.LightGray.copy(alpha = 0.3f))
-                    .border(
-                        width = 1.dp,
-                        color = Color.LightGray,
-                        shape = RoundedCornerShape(8.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = "Map pin",
-                    tint = DefaultPrimary,
-                    modifier = Modifier.size(40.dp)
-                )
-                Text(
-                    text = "Map View",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = DefaultPrimary,
-                    modifier = Modifier.padding(top = 60.dp)
-                )
+            // Google Map
+            if (latLng != null) {
+                GoogleMap(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    cameraPositionState = rememberCameraPositionState {
+                        position = CameraPosition.fromLatLngZoom(latLng, 15f)
+                    },
+                    properties = MapProperties(isBuildingEnabled = true),
+                    uiSettings = MapUiSettings(zoomControlsEnabled = false)
+                ) {
+                    Marker(
+                        state = MarkerState(position = latLng),
+                        title = "Clinic Location",
+                        snippet = fullAddress
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .background(Color.LightGray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Loading map...")
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Address details
+            // Contact details
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -542,7 +563,6 @@ private fun LocationCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Contact details
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -561,7 +581,7 @@ private fun LocationCard(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = phone,
+                        text = doctor["phone"] as? String ?: "Phone unavailable",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         modifier = Modifier.padding(top = 4.dp)
@@ -573,7 +593,16 @@ private fun LocationCard(
 
             // Directions button
             Button(
-                onClick = { /* Open maps with directions */ },
+                onClick = {
+                    val gmmIntentUri = if (latLng != null) {
+                        android.net.Uri.parse("geo:${latLng.latitude},${latLng.longitude}?q=${fullAddress}")
+                    } else {
+                        android.net.Uri.parse("geo:0,0?q=${fullAddress}")
+                    }
+                    val mapIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+                    mapIntent.setPackage("com.google.android.apps.maps")
+                    context.startActivity(mapIntent)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
