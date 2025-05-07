@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import DefaultOnPrimary
 import DefaultPrimary
+import android.content.Intent
+import android.provider.CalendarContract
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -38,8 +40,11 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.utility.SnackbarController
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun BookingSuccessScreen(
@@ -83,6 +88,36 @@ fun BookingSuccessScreen(
         snackbarController.showMessage(it)
     }
 
+
+    val context = LocalContext.current
+
+    fun parseDateTimeToMillis(dateStr: String, timeStr: String): Long {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val dateTimeStr = "$dateStr ${timeStr.substring(0, 5)}"
+        return dateFormat.parse(dateTimeStr)?.time ?: System.currentTimeMillis()
+    }
+    // Function to add event to calendar
+    fun addToCalendar() {
+        val appointment = appointment ?: return
+
+        try {
+            val intent = Intent(Intent.ACTION_INSERT)
+                .setData(CalendarContract.Events.CONTENT_URI)
+                .putExtra(CalendarContract.Events.TITLE, "Appointment with Dr. ${appointment.doctorName}")
+                .putExtra(CalendarContract.Events.DESCRIPTION,
+                    "Appointment for ${appointment.type.displayName} at LadyCure Clinic")
+                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                    parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString()))
+                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME,
+                    parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString()) + appointment.type.durationInMinutes * 60 * 1000)
+                .putExtra(CalendarContract.Events.EVENT_LOCATION, "LadyCure Clinic")
+                .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
+
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            snackbarController.showMessage("Failed to open calendar: ${e.message}")
+        }
+    }
 
     if (isLoading.value || appointment == null) {
         // Show loading indicator
@@ -340,7 +375,7 @@ fun BookingSuccessScreen(
 
                 TextButton(
                     onClick = {
-                        // Add to calendar logic would go here
+                        addToCalendar()
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
