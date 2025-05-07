@@ -110,7 +110,7 @@ fun BookingSuccessScreen(
                     parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString()))
                 .putExtra(CalendarContract.EXTRA_EVENT_END_TIME,
                     parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString()) + appointment.type.durationInMinutes * 60 * 1000)
-                .putExtra(CalendarContract.Events.EVENT_LOCATION, "LadyCure Clinic")
+                .putExtra(CalendarContract.Events.EVENT_LOCATION, appointment.address)
                 .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
 
             context.startActivity(intent)
