@@ -125,7 +125,6 @@ fun BookAppointmentScreen(
                 doctors.value = doctorsResult.getOrNull() ?: emptyList()
 
                 // Filter doctors by city
-
                 doctors.value = doctors.value.filter { doctor ->
                     val doctorCity = doctor.city
                     doctorCity == city
@@ -148,6 +147,7 @@ fun BookAppointmentScreen(
     // Get unique available dates from filtered availabilities
     val availableDates = doctorAvailabilities.value
         .map { it.date }
+        .filter { it?.isAfter(LocalDate.now()) == true }
         .distinct()
         .sortedBy { it }
 

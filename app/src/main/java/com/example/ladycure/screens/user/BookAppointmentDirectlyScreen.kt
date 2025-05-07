@@ -95,6 +95,7 @@ fun BookAppointmentDirectlyScreen(
     // Get unique available dates from filtered availabilities
     val availableDates = doctorAvailability.value
         .map { it.date }
+        .filter { it?.isAfter(LocalDate.now()) == true }
         .distinct()
         .sortedBy { it }
 

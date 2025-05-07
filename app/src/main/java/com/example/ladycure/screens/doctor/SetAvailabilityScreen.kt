@@ -82,9 +82,19 @@ fun SetAvailabilityScreen(
             val result = authRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
             if (result.isSuccess) {
                 val availabilities = result.getOrThrow()
-                existingAvailabilities.value = availabilities
-            }
-            else {
+                val today = LocalDate.now()
+
+                // Filter out past availabilities
+                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
+                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
+
+                // Delete past availabilities from Firestore
+                pastAvailabilities.forEach { pastAvailability ->
+                    authRepo.deleteDoctorAvailability(pastAvailability.doctorId, pastAvailability.date!!)
+                }
+
+                existingAvailabilities.value = futureAvailabilities
+            } else {
                 snackbarController.showMessage("Error loading existing availabilities")
             }
         } catch (e: Exception) {
@@ -93,6 +103,8 @@ fun SetAvailabilityScreen(
             isLoading.value = false
         }
     }
+
+
 
     Column(
         modifier = Modifier

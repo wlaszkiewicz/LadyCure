@@ -21,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.mutableStateOf
@@ -402,9 +403,9 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
 
                 // Comments (full width)
                 DetailRow(
-                    icon = Icons.Default.Comment,
-                    title = "Comments",
-                    value = appointment.comments.ifEmpty { "No comments" }
+                    icon = Icons.AutoMirrored.Filled.Comment,
+                    title = "Note",
+                    value = appointment.comments.ifEmpty { "No note" }
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))

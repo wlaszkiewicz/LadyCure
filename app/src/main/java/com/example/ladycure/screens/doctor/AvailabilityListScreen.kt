@@ -83,7 +83,9 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
 
     availabilitiesInMonth = existingAvailabilities.value.filter { availability ->
         val date = availability.date
-        date != null && date.year == chosenMonth.year && date.month == chosenMonth.month
+        val today = LocalDate.now()
+        date != null && date.isAfter(today.minusDays(1)) && // Exclude past dates
+                (date != today || availability.availableSlots.any { it.isAfter(LocalTime.now()) }) // Exclude past time slots for today
     }.groupBy { it.date }
 
     LaunchedEffect(Unit) {
@@ -102,6 +104,7 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
             isLoading.value = false
         }
     }
+
 
     Column(
         modifier = Modifier

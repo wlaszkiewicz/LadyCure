@@ -68,7 +68,6 @@ import java.util.Locale
 
 import androidx.compose.ui.platform.LocalContext
 import android.location.Geocoder
-import android.net.Uri
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -77,6 +76,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import androidx.core.net.toUri
 
 @Composable
 fun ConfirmationScreen(
@@ -624,9 +624,9 @@ private fun LocationCard(
             Button(
                 onClick = {
                     val gmmIntentUri = if (latLng != null) {
-                        Uri.parse("geo:${latLng.latitude},${latLng.longitude}?q=${fullAddress}")
+                        "geo:${latLng.latitude},${latLng.longitude}?q=${fullAddress}".toUri()
                     } else {
-                        Uri.parse("geo:0,0?q=${fullAddress}")
+                        "geo:0,0?q=${fullAddress}".toUri()
                     }
                     val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                     mapIntent.setPackage("com.google.android.apps.maps")
