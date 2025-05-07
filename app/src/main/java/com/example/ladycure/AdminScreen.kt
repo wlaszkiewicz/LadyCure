@@ -83,13 +83,6 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(navController: NavController, snackbarController: SnackbarController) {
-    val authRepo = AuthRepository()
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // State management
-    var selectedTab by remember { mutableStateOf("Users") }
-    var searchQuery by remember { mutableStateOf("") }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -105,28 +98,47 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
     var editedDoctor by remember { mutableStateOf<Doctor?>(null) }
     var newDoctor by remember { mutableStateOf(Doctor.empty()) }
 
-    var isLoading by remember { mutableStateOf(true) }
+    val authRepo = AuthRepository()
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // State management
+    var selectedTab by remember { mutableStateOf("Users") }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Separate loading states
+    var isLoadingUsers by remember { mutableStateOf(false) }
+    var isLoadingDoctors by remember { mutableStateOf(false) }
     var users by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
 
-    // Fetch data
-    LaunchedEffect(selectedTab) {
-        isLoading = true
-        val result = authRepo.getUsers()
-        if (result.isSuccess) {
-            users = result.getOrNull() ?: emptyList()
+    // Fetch all data on first load
+    LaunchedEffect(Unit) {
+        isLoadingUsers = true
+        isLoadingDoctors = true
+
+        val usersResult = authRepo.getUsers()
+        if (usersResult.isSuccess) {
+            users = usersResult.getOrNull() ?: emptyList()
         } else {
-            snackbarController.showMessage("Failed to load users: ${result.exceptionOrNull()?.message}")
+            snackbarController.showMessage("Failed to load users: ${usersResult.exceptionOrNull()?.message}")
         }
-        isLoading = false
+
+        isLoadingUsers = false
+        isLoadingDoctors = false
     }
 
-    val allDoctors = users.filter { it["role"] == Role.DOCTOR.value }
-        .map { Doctor.fromMap(it) }
+    // Filter data based on current tab
+    val allDoctors = remember(users) {
+        users.filter { it["role"] == Role.DOCTOR.value }
+            .map { Doctor.fromMap(it) }
+    }
 
-    val allUsers = users.filter { it["role"] != Role.DOCTOR.value }
-        .map { User.fromMap(it) }
+    val allUsers = remember(users) {
+        users.filter { it["role"] != Role.DOCTOR.value }
+            .map { User.fromMap(it) }
+    }
 
-    val filteredUsers = remember(allUsers, searchQuery, selectedTab) {
+    val filteredUsers = remember(allUsers, searchQuery) {
         if (searchQuery.isBlank()) allUsers else {
             allUsers.filter {
                 it.name.contains(searchQuery, true) ||
@@ -141,11 +153,13 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
             allDoctors.filter {
                 it.name.contains(searchQuery, true) ||
                         it.surname.contains(searchQuery, true) ||
-                        it.email.contains(searchQuery, true)
+                        it.email.contains(searchQuery, true) ||
+                        it.speciality.displayName.contains(searchQuery, true) ||
+                        it.address.contains(searchQuery, true) ||
+                        it.city.contains(searchQuery, true)
             }
         }
     }
-
     Scaffold(
         topBar = {
             AdminTopBar(
@@ -183,17 +197,15 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         when {
-            isLoading -> LoadingView()
+            isLoadingUsers && selectedTab == "Users" -> LoadingView()
+            isLoadingDoctors && selectedTab == "Doctors" -> LoadingView()
             filteredUsers.isEmpty() && selectedTab == "Users" -> EmptyView(selectedTab)
             filteredDoctors.isEmpty() && selectedTab == "Doctors" -> EmptyView(selectedTab)
             selectedTab == "Users" -> UserList(
                 users = filteredUsers,
                 onEditClick = { user ->
                     selectedUser = user
-                    editedUser = when (user) {
-                        is Doctor -> user.copy()
-                        else -> user.copy()
-                    }
+                    editedUser = user
                     showEditUserDialog = true
                 },
                 onDeleteClick = { user ->
@@ -218,26 +230,31 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
             )
         }
 
-        // Dialogs
         if (showEditUserDialog && editedUser != null) {
             EditUserDialog(
                 user = editedUser!!,
                 onDismiss = { showEditUserDialog = false },
                 onSave = {
                     coroutineScope.launch {
-                        selectedUser?.let { user ->
+                        selectedUser?.let { originalUser ->
                             val updates = buildUpdateMap(editedUser!!)
-                            val result = authRepo.updateUser(user.id, updates)
+
+                            val result = authRepo.updateUser(originalUser.id, updates)
+
                             if (result.isSuccess) {
-                                snackbarController.showMessage("User updated successfully")
+                                snackbarController.showMessage(
+                                    if (editedUser!!.role == Role.DOCTOR)
+                                        "User converted to doctor successfully"
+                                    else
+                                        "User updated successfully"
+                                )
                                 showEditUserDialog = false
-                                // Refresh data
                                 val refreshResult = authRepo.getUsers()
                                 if (refreshResult.isSuccess) {
                                     users = refreshResult.getOrNull() ?: emptyList()
                                 }
                             } else {
-                                snackbarController.showMessage("Error updating user: ${result.exceptionOrNull()?.message}")
+                                snackbarController.showMessage("Error: ${result.exceptionOrNull()?.message}")
                             }
                         }
                     }
@@ -922,13 +939,15 @@ private fun AddUserDialog(
         }
     )
 }
-
 @Composable
 private fun UserForm(
     user: User,
     onUserChange: (User) -> Unit,
     isEditMode: Boolean
 ) {
+    // Track whether we're showing doctor fields
+    val showDoctorFields = user.role == Role.DOCTOR
+
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
@@ -959,25 +978,35 @@ private fun UserForm(
         OutlinedTextField(
             value = user.dateOfBirth,
             onValueChange = { onUserChange(user.copy(dateOfBirth = it)) },
-            label = { Text("Date of Birth (YYYY-MM-DD)") },
+            label = { Text("Date of Birth (DD/MM/YYYY)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Text("Role", style = MaterialTheme.typography.labelLarge)
         RoleSelection(
             selectedRole = user.role,
-            onRoleSelected = {
-                onUserChange(user.copy(role = it))
+            onRoleSelected = { newRole ->
+                if (newRole == Role.DOCTOR) {
+                    onUserChange(user.toDoctor())
+                } else {
+                    onUserChange(user.copy(role = newRole))
+                }
             }
         )
 
-        if (user.role == Role.DOCTOR) {
+        if (showDoctorFields) {
+            val doctor = user as? Doctor ?: user.toDoctor()
             DoctorDetailsDialogSection(
-                doctor = user.toDoctor(),
-                onDoctorChange = { onUserChange(it) }
+                doctor = doctor,
+                onDoctorChange = { newDoctor ->
+                    if (newDoctor.role != Role.DOCTOR) {
+                        onUserChange(newDoctor.toUser())
+                    } else {
+                        onUserChange(newDoctor)
+                    }
+                }
             )
         }
-
     }
 }
 

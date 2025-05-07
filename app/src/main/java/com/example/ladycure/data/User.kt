@@ -26,26 +26,34 @@ open class User(
         return User(id, email, name, surname, dateOfBirth, role, profilePictureUrl)
     }
 
-    fun toDoctor(): Doctor {
+    fun toDoctor(
+        speciality: Speciality = Speciality.OTHER,
+        address: String = "No address provided",
+        consultationPrice: Int = 100,
+        rating: Double = 4.5,
+        experience: Int = 5,
+        languages: List<String> = listOf("English"),
+        city: String = "Unknown",
+        phoneNumber: String = "Unknown",
+        bio: String = "No bio provided"
+    ): Doctor {
         return Doctor(
-            id = id,
-            email = email,
-            name = name,
-            surname = surname,
-            dateOfBirth = dateOfBirth,
+            id = this.id,
+            email = this.email,
+            name = this.name,
+            surname = this.surname,
+            dateOfBirth = this.dateOfBirth,
             role = Role.DOCTOR,
             profilePictureUrl = profilePictureUrl,
-            speciality = Speciality.OTHER,
-            availability = emptyList(),
-            reviews = emptyList(),
-            address = "No address provided",
-            consultationPrice = 100,
-            rating = 4.5,
-            experience = 5,
-            languages = listOf("English"),
-            city = "Unknown",
-            phoneNumber = "Unknown",
-            bio = "No bio provided"
+            speciality = speciality,
+            address = address,
+            consultationPrice = consultationPrice,
+            rating = rating,
+            experience = experience,
+            languages = languages,
+            city = city,
+            phoneNumber = phoneNumber,
+            bio = bio
         )
     }
 

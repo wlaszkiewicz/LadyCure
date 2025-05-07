@@ -35,6 +35,20 @@ data class Doctor(
     profilePictureUrl = profilePictureUrl
 ) {
 
+
+    // In Doctor class
+    fun toUser(): User {
+        return User(
+            id = this.id,
+            name = this.name,
+            surname = this.surname,
+            email = this.email,
+            dateOfBirth = this.dateOfBirth,
+            profilePictureUrl = this.profilePictureUrl,
+            role = Role.USER
+        )
+    }
+
     fun copyDoc(
         id: String = this.id,
         email: String = this.email,
@@ -149,39 +163,6 @@ data class Doctor(
             )
         }
 
-        fun fromUser(
-            user: User,
-            speciality: Speciality = Speciality.OTHER,
-            address: String = "",
-            consultationPrice: Int = 100,
-            rating: Double = 0.0,
-            experience: Int = 0,
-            languages: List<String> = listOf("English"),
-            city: String = "",
-            phoneNumber: String = "",
-            bio: String = "New doctor"
-
-        ): Doctor {
-            return Doctor(
-                id = user.id,
-                name = user.name,
-                surname = user.surname,
-                email = user.email,
-                dateOfBirth = user.dateOfBirth,
-                profilePictureUrl = user.profilePictureUrl,
-                role = Role.DOCTOR,
-                // Default doctor values
-                speciality = speciality,
-                address = address,
-                consultationPrice = consultationPrice,
-                rating = rating,
-                experience = experience,
-                languages = languages,
-                city = city,
-                phoneNumber = phoneNumber,
-                bio = bio,
-            )
-        }
 
         fun empty(): Doctor {
             return Doctor(
@@ -204,6 +185,8 @@ data class Doctor(
                 id = ""
             )
         }
+
+
     }
 }
 
