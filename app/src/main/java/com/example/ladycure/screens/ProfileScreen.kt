@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens
 
 import DefaultBackground
 import DefaultOnPrimary
@@ -37,7 +37,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,7 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
-import com.example.ladycure.presentation.home.components.BottomNavBar
+import com.example.ladycure.R
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.ImageUploader
 import com.example.ladycure.utility.rememberImagePickerLauncher

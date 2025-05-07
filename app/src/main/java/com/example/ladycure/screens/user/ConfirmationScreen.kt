@@ -1,10 +1,10 @@
-package com.example.ladycure
+package com.example.ladycure.screens.user
 
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import android.content.Intent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +68,7 @@ import java.util.Locale
 
 import androidx.compose.ui.platform.LocalContext
 import android.location.Geocoder
+import android.net.Uri
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -623,11 +624,11 @@ private fun LocationCard(
             Button(
                 onClick = {
                     val gmmIntentUri = if (latLng != null) {
-                        android.net.Uri.parse("geo:${latLng.latitude},${latLng.longitude}?q=${fullAddress}")
+                        Uri.parse("geo:${latLng.latitude},${latLng.longitude}?q=${fullAddress}")
                     } else {
-                        android.net.Uri.parse("geo:0,0?q=${fullAddress}")
+                        Uri.parse("geo:0,0?q=${fullAddress}")
                     }
-                    val mapIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                     mapIntent.setPackage("com.google.android.apps.maps")
                     context.startActivity(mapIntent)
                 },

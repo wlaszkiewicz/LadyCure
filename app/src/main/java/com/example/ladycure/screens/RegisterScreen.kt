@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens
 
 import DefaultBackground
 import DefaultOnPrimary
@@ -51,6 +51,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.TextButton
+import com.example.ladycure.R
 import com.example.ladycure.domain.RegisterUseCase
 import com.example.ladycure.presentation.register.RegisterViewModel
 import com.example.ladycure.presentation.register.components.RegisterForm

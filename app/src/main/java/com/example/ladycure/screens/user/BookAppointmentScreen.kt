@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens.user
 
 import DefaultBackground
 import DefaultOnPrimary
@@ -92,6 +92,7 @@ import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.floor
 
 @Composable
@@ -209,13 +210,13 @@ fun BookAppointmentScreen(
                 selectedTimeSlot = selectedTimeSlot.value?.format(
                     DateTimeFormatter.ofPattern(
                         "h:mm a",
-                        java.util.Locale.US
+                        Locale.US
                     )
                 ),
                 onTimeSlotSelected = {
                     selectedTimeSlot.value = LocalTime.parse(
                         it,
-                        DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
                     )
                     showDoctorsForSlot.value = true
                 })
@@ -225,7 +226,7 @@ fun BookAppointmentScreen(
                 selectedTimeSlot = selectedTimeSlot.value!!.format(
                     DateTimeFormatter.ofPattern(
                         "h:mm a",
-                        java.util.Locale.US
+                        Locale.US
                     )
                 ),
                 doctors = availableDoctorsForSlot,
@@ -234,7 +235,7 @@ fun BookAppointmentScreen(
                     navController.navigate(
                         "confirmation/$doctorId/${selectedDate.value}/${
                             selectedTimeSlot.value!!.format(
-                                DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                                DateTimeFormatter.ofPattern("h:mm a", Locale.US)
                             )
                         }/${selectedService.displayName}"
                     )
@@ -1123,7 +1124,7 @@ fun filerTimeSlotsForDate(date: LocalDate, availabilities: List<DoctorAvailabili
         .flatMap { it.availableSlots }
         .distinct()
         .sorted()
-        .map { it.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+        .map { it.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)) }
 }
 
 private fun filterAvailableDoctors(

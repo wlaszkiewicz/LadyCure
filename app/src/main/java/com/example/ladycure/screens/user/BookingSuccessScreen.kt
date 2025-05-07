@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens.user
 
 import DefaultBackground
 import androidx.compose.foundation.verticalScroll
