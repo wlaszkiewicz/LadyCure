@@ -34,6 +34,49 @@ data class Doctor(
     role = Role.DOCTOR,
     profilePictureUrl = profilePictureUrl
 ) {
+
+    fun copyDoc(
+        id: String = this.id,
+        email: String = this.email,
+        name: String = this.name,
+        surname: String = this.surname,
+        dateOfBirth: String = this.dateOfBirth,
+        role: Role = this.role,
+        profilePictureUrl: String = this.profilePictureUrl,
+        speciality: Speciality = this.speciality,
+        availability: List<DoctorAvailability> = this.availability,
+        reviews: List<Review> = this.reviews,
+        address: String = this.address,
+        consultationPrice: Int = this.consultationPrice,
+        rating: Double = this.rating,
+        experience: Int = this.experience,
+        languages: List<String> = this.languages,
+        city: String = this.city,
+        phoneNumber: String = this.phoneNumber,
+        bio: String = this.bio,
+    ): Doctor {
+        return Doctor(
+            speciality = speciality,
+            availability = availability,
+            reviews = reviews,
+            address = address,
+            consultationPrice = consultationPrice,
+            rating = rating,
+            experience = experience,
+            languages = languages,
+            city = city,
+            phoneNumber = phoneNumber,
+            bio = bio,
+            id = id,
+            email = email,
+            name = name,
+            surname = surname,
+            dateOfBirth = dateOfBirth,
+            profilePictureUrl = profilePictureUrl,
+            role = role
+        )
+    }
+
     companion object {
         fun fromMap(doctor: Map<String, Any>): Doctor {
             val rating = when (val rat = doctor["rating"]) {
@@ -103,6 +146,62 @@ data class Doctor(
                 "profilePictureUrl" to doctor.profilePictureUrl,
                 "role" to doctor.role.value,
                 "id" to doctor.id
+            )
+        }
+
+        fun fromUser(
+            user: User,
+            speciality: Speciality = Speciality.OTHER,
+            address: String = "",
+            consultationPrice: Int = 100,
+            rating: Double = 0.0,
+            experience: Int = 0,
+            languages: List<String> = listOf("English"),
+            city: String = "",
+            phoneNumber: String = "",
+            bio: String = "New doctor"
+
+        ): Doctor {
+            return Doctor(
+                id = user.id,
+                name = user.name,
+                surname = user.surname,
+                email = user.email,
+                dateOfBirth = user.dateOfBirth,
+                profilePictureUrl = user.profilePictureUrl,
+                role = Role.DOCTOR,
+                // Default doctor values
+                speciality = speciality,
+                address = address,
+                consultationPrice = consultationPrice,
+                rating = rating,
+                experience = experience,
+                languages = languages,
+                city = city,
+                phoneNumber = phoneNumber,
+                bio = bio,
+            )
+        }
+
+        fun empty(): Doctor {
+            return Doctor(
+                speciality = Speciality.OTHER,
+                address = "",
+                availability = emptyList(),
+                reviews = emptyList(),
+                consultationPrice = 100,
+                rating = 0.0,
+                experience = 0,
+                languages = listOf("English"),
+                city = "",
+                phoneNumber = "",
+                bio = "New doctor",
+                email = "",
+                name = "",
+                surname = "",
+                dateOfBirth = "",
+                profilePictureUrl = "",
+                id = ""
             )
         }
     }

@@ -10,6 +10,7 @@ open class User(
     open val profilePictureUrl: String,
 ) {
 
+
     fun copy(
         id: String = this.id,
         email: String = this.email,
@@ -34,6 +35,18 @@ open class User(
 
             return User(id, email, name, surname, dateOfBirth, role, profilePictureUrl)
         }
+
+        fun empty(): User {
+            return User(
+                id = "",
+                email = "",
+                name = "",
+                surname = "",
+                dateOfBirth = "",
+                role = Role.USER,
+                profilePictureUrl = ""
+            )
+        }
     }
 }
 
@@ -44,7 +57,7 @@ enum class Role(val value: String) {
 
     companion object {
         fun fromValue(value: String): Role {
-            return values().firstOrNull { it.value == value } ?: USER
+            return Role.entries.firstOrNull { it.value == value } ?: USER
         }
 
     }

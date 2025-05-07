@@ -29,7 +29,21 @@ class AuthRepository {
         Result.failure(e)
     }
 
-    suspend fun updateUser(userId: String, updatedData: HashMap<String, Any>): Result<Unit> {
+//    suspend fun deleteUser(userId: String): Result<Unit> {
+//        return try {
+//            firestore.collection("users").document(userId).delete().await()
+//            // delete from auth
+//            val user = auth.getUser(userId)
+//            user?.delete()?.await()
+//                ?: return Result.failure(Exception("User not logged in"))
+//            Result.success(Unit)
+//        } catch (e: Exception) {
+//            Log.e("AuthRepository", "Error deleting user", e)
+//            Result.failure(e)
+//        }
+//    }
+
+    suspend fun updateUser(userId: String, updatedData: Map<String, Any>): Result<Unit> {
         return try {
             firestore.collection("users").document(userId).update(updatedData).await()
             Result.success(Unit)
@@ -157,16 +171,16 @@ class AuthRepository {
     suspend fun getCurrentUserData(): Result<Map<String, Any>?> {
         val user = auth.currentUser
         user?.let {
-            try {
+            return try {
                 val documentSnapshot = firestore.collection("users").document(it.uid).get().await()
                 val data = documentSnapshot.data
                 if (data != null) {
-                    return Result.success(data)
+                    Result.success(data)
                 } else {
-                    return Result.failure(Exception("User document does not exist"))
+                    Result.failure(Exception("User document does not exist"))
                 }
             } catch (e: Exception) {
-                return Result.failure(Exception("Failed to fetch user data: ${e.message}"))
+                Result.failure(Exception("Failed to fetch user data: ${e.message}"))
             }
         } ?: return Result.failure(Exception("User not logged in"))
     }
