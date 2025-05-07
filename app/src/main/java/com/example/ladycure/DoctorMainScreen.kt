@@ -151,7 +151,7 @@ fun DoctorHomeScreen(
                         color = DefaultPrimary
                     )
                     Text(
-                        text = doctorData.value?.get("specification") as? String ?: "",
+                        text = doctorData.value?.get("speciality") as? String ?: "",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f)
                     )

@@ -663,7 +663,7 @@ private fun DoctorConfirmationCard(
 ) {
     val name = doctor["name"] as? String ?: "Dr. Unknown"
     val surname = doctor["surname"] as? String ?: "Unknown"
-    val specialization = doctor["specification"] as? String ?: "Specialist"
+    val specialization = doctor["speciality"] as? String ?: "Specialist"
     val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
     val bio = doctor["bio"] as? String ?: "Experienced medical professional"
 

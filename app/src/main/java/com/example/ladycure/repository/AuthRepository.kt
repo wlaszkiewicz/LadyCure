@@ -238,11 +238,11 @@ class AuthRepository {
     }
 
 
-    suspend fun getDoctorsBySpecification(specification: String): Result<List<Doctor>> {
+    suspend fun getDoctorsBySpeciality(speciality: String): Result<List<Doctor>> {
         return try {
             val querySnapshot = firestore.collection("users")
                 .whereEqualTo("role", "doctor")
-                .whereEqualTo("specification", specification)
+                .whereEqualTo("speciality", speciality)
                 .get()
                 .await()
             val doctors = querySnapshot.documents.mapNotNull { doc ->
@@ -312,7 +312,7 @@ class AuthRepository {
         val doctors = firestore.collection("users")
             .whereEqualTo("role", "doctor")
             .whereEqualTo("city", city)
-            .whereEqualTo("specification", speciality)
+            .whereEqualTo("speciality", speciality)
             .get()
             .await()
             .documents

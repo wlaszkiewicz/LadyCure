@@ -119,7 +119,7 @@ fun BookAppointmentScreen(
         isLoading.value = true
         try {
             // Get doctors first
-            val doctorsResult = authRepo.getDoctorsBySpecification(selectedSpeciality.displayName)
+            val doctorsResult = authRepo.getDoctorsBySpeciality(selectedSpeciality.displayName)
             if (doctorsResult.isSuccess) {
                 doctors.value = doctorsResult.getOrNull() ?: emptyList()
 
@@ -1099,7 +1099,7 @@ fun DoctorCardPreview() {
         mapOf(
             "name" to "Sarah",
             "surname" to "Johnson",
-            "specification" to "Cardiologist",
+            "speciality" to "Cardiologist",
             "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
             "rating" to 4.7,
             "experience" to 12,

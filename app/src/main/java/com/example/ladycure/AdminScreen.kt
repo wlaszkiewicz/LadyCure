@@ -89,6 +89,10 @@ import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1119,247 +1123,256 @@ private fun DoctorForm(
             OutlinedTextField(
                 value = doctor.dateOfBirth,
                 onValueChange = { onDoctorChange(doctor.copyDoc(dateOfBirth = it)) },
-                label = { Text("Date of Birth (YYYY-MM-DD)") },
+                label = { Text("Date of Birth (DD/MM/YYYY)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-        }
 
-        Divider()
-
-        // Professional Information Section
-        Text("Professional Information", style = MaterialTheme.typography.titleSmall)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Specialization Dropdown
-            var expanded by remember { mutableStateOf(false) }
-            Box {
-                OutlinedTextField(
-                    value = doctor.speciality.displayName,
-                    onValueChange = {},
-                    label = { Text("Specialization") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expanded = true },
-                    readOnly = true,
-                    trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.ExpandMore,
-                            contentDescription = "Expand"
-                        )
-                    }
-                )
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    Speciality.entries.forEach { speciality ->
-                        DropdownMenuItem(
-                            text = { Text(speciality.displayName) },
-                            onClick = {
-                                onDoctorChange(doctor.copyDoc(speciality = speciality))
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Location Information
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = doctor.city,
-                    onValueChange = { onDoctorChange(doctor.copyDoc(city = it)) },
-                    label = { Text("City") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = doctor.phoneNumber,
-                    onValueChange = { onDoctorChange(doctor.copyDoc(phoneNumber = it)) },
-                    label = { Text("Phone Number") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-            }
-
-            OutlinedTextField(
-                value = doctor.address,
-                onValueChange = { onDoctorChange(doctor.copyDoc(address = it)) },
-                label = { Text("Full Address") },
-                modifier = Modifier.fillMaxWidth()
+            Text("Role", style = MaterialTheme.typography.labelLarge)
+            RoleSelection(
+                selectedRole = doctor.role,
+                onRoleSelected = { onDoctorChange(doctor.copyDoc(role = it)) }
             )
         }
 
-        Divider()
+        if (doctor.role == Role.DOCTOR) {
 
-        // Professional Details Section
-        Text("Professional Details", style = MaterialTheme.typography.titleSmall)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Divider()
+
+            // Professional Information Section
+            Text("Professional Information", style = MaterialTheme.typography.titleSmall)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedTextField(
-                    value = doctor.consultationPrice.toString(),
-                    onValueChange = {
-                        if (it.isEmpty() || it.toIntOrNull() != null) {
-                            onDoctorChange(
-                                doctor.copyDoc(
-                                    consultationPrice = it.toIntOrNull() ?: 0
-                                )
+                // Specialization Dropdown
+                var expanded by remember { mutableStateOf(false) }
+                Box {
+                    OutlinedTextField(
+                        value = doctor.speciality.displayName,
+                        onValueChange = {},
+                        label = { Text("Specialization") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = true },
+                        readOnly = true,
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.ExpandMore,
+                                contentDescription = "Expand"
                             )
                         }
-                    },
-                    label = { Text("Consultation Fee") },
-                    modifier = Modifier.weight(1f),
-                    prefix = { Text("$") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-
-                OutlinedTextField(
-                    value = doctor.experience.toString(),
-                    onValueChange = {
-                        if (it.isEmpty() || it.toIntOrNull() != null) {
-                            onDoctorChange(
-                                doctor.copyDoc(
-                                    experience = it.toIntOrNull() ?: 0
-                                )
+                    )
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        Speciality.entries.forEach { speciality ->
+                            DropdownMenuItem(
+                                text = { Text(speciality.displayName) },
+                                onClick = {
+                                    onDoctorChange(doctor.copyDoc(speciality = speciality))
+                                    expanded = false
+                                }
                             )
                         }
-                    },
-                    label = { Text("Experience") },
-                    modifier = Modifier.weight(1f),
-                    suffix = { Text("years") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
+                    }
+                }
 
-            // Rating with visual indicator
-            Column {
-                Text("Rating", style = MaterialTheme.typography.labelMedium)
+                // Location Information
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    RatingBar(
-                        rating = doctor.rating,
-                        onRatingChange = { newRating ->
-                            val clampedRating = newRating.coerceIn(0.5, 5.0)
-                            onDoctorChange(doctor.copyDoc(rating = clampedRating))
-                        },
-                        modifier = Modifier.padding(vertical = 8.dp)
+                    OutlinedTextField(
+                        value = doctor.city,
+                        onValueChange = { onDoctorChange(doctor.copyDoc(city = it)) },
+                        label = { Text("City") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = doctor.phoneNumber,
+                        onValueChange = { onDoctorChange(doctor.copyDoc(phoneNumber = it)) },
+                        label = { Text("Phone Number") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
                     )
                 }
-            }
-        }
 
-        Divider()
-
-        // Languages Section
-        Text("Languages", style = MaterialTheme.typography.titleSmall)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            var newLanguage by remember { mutableStateOf("") }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
                 OutlinedTextField(
-                    value = newLanguage,
-                    onValueChange = { newLanguage = it },
-                    label = { Text("Add language") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
+                    value = doctor.address,
+                    onValueChange = { onDoctorChange(doctor.copyDoc(address = it)) },
+                    label = { Text("Full Address") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Button(
-                    onClick = {
-                        if (newLanguage.isNotBlank() && !doctor.languages.contains(newLanguage)) {
-                            onDoctorChange(doctor.copyDoc(languages = doctor.languages + newLanguage))
-                            newLanguage = ""
-                        }
-                    },
-                    enabled = newLanguage.isNotBlank()
-                ) {
-                    Text("Add")
-                }
             }
 
-            if (doctor.languages.isNotEmpty()) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            Divider()
+
+            // Professional Details Section
+            Text("Professional Details", style = MaterialTheme.typography.titleSmall)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    doctor.languages.forEach { language ->
-                        InputChip(
-                            selected = true,
-                            onClick = {},
-                            label = { Text(language) },
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = {
-                                        onDoctorChange(
-                                            doctor.copyDoc(
-                                                languages = doctor.languages - language
-                                            )
-                                        )
-                                    },
-                                    modifier = Modifier.size(20.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Remove",
-                                        modifier = Modifier.size(16.dp)
+                    OutlinedTextField(
+                        value = doctor.consultationPrice.toString(),
+                        onValueChange = {
+                            if (it.isEmpty() || it.toIntOrNull() != null) {
+                                onDoctorChange(
+                                    doctor.copyDoc(
+                                        consultationPrice = it.toIntOrNull() ?: 0
                                     )
-                                }
+                                )
+                            }
+                        },
+                        label = { Text("Consultation Fee") },
+                        modifier = Modifier.weight(1f),
+                        prefix = { Text("$") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    OutlinedTextField(
+                        value = doctor.experience.toString(),
+                        onValueChange = {
+                            if (it.isEmpty() || it.toIntOrNull() != null) {
+                                onDoctorChange(
+                                    doctor.copyDoc(
+                                        experience = it.toIntOrNull() ?: 0
+                                    )
+                                )
+                            }
+                        },
+                        label = { Text("Experience") },
+                        modifier = Modifier.weight(1f),
+                        suffix = { Text("years") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+
+                // Rating with visual indicator
+                Column {
+                    Text("Rating", style = MaterialTheme.typography.labelMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        RatingBar(
+                            rating = doctor.rating,
+                            onRatingChange = { newRating ->
+                                val clampedRating = newRating.coerceIn(0.5, 5.0)
+                                onDoctorChange(doctor.copyDoc(rating = clampedRating))
                             },
-                            colors = InputChipDefaults.inputChipColors(
-                                selectedContainerColor = DefaultPrimary.copy(alpha = 0.2f)
-                            )
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
                 }
-            } else {
-                Text(
-                    "No languages added",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
             }
+
+            Divider()
+
+            // Languages Section
+            Text("Languages", style = MaterialTheme.typography.titleSmall)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                var newLanguage by remember { mutableStateOf("") }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = newLanguage,
+                        onValueChange = { newLanguage = it },
+                        label = { Text("Add language") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    Button(
+                        onClick = {
+                            if (newLanguage.isNotBlank() && !doctor.languages.contains(newLanguage)) {
+                                onDoctorChange(doctor.copyDoc(languages = doctor.languages + newLanguage))
+                                newLanguage = ""
+                            }
+                        },
+                        enabled = newLanguage.isNotBlank()
+                    ) {
+                        Text("Add")
+                    }
+                }
+
+                if (doctor.languages.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        doctor.languages.forEach { language ->
+                            InputChip(
+                                selected = true,
+                                onClick = {},
+                                label = { Text(language) },
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            onDoctorChange(
+                                                doctor.copyDoc(
+                                                    languages = doctor.languages - language
+                                                )
+                                            )
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Remove",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                },
+                                colors = InputChipDefaults.inputChipColors(
+                                    selectedContainerColor = DefaultPrimary.copy(alpha = 0.2f)
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        "No languages added",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            Divider()
+
+            // Biography Section
+            Text("Biography", style = MaterialTheme.typography.titleSmall)
+            OutlinedTextField(
+                value = doctor.bio,
+                onValueChange = { onDoctorChange(doctor.copyDoc(bio = it)) },
+                label = { Text("Professional background") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                minLines = 3,
+                maxLines = 5
+            )
         }
-
-        Divider()
-
-        // Biography Section
-        Text("Biography", style = MaterialTheme.typography.titleSmall)
-        OutlinedTextField(
-            value = doctor.bio,
-            onValueChange = { onDoctorChange(doctor.copyDoc(bio = it)) },
-            label = { Text("Professional background") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            minLines = 3,
-            maxLines = 5
-        )
     }
 }
 
@@ -1664,7 +1677,7 @@ private fun RoleSelection(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Role.entries.forEach { role ->
             FilterChip(
