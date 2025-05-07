@@ -251,20 +251,40 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
                 doctor = editedDoctor!!,
                 onDismiss = { showEditDoctorDialog = false },
                 onSave = {
-                    coroutineScope.launch {
-                        selectedDoctor?.let { doctor ->
-                            val updates = buildUpdateMap(editedDoctor!!)
-                            val result = authRepo.updateUser(doctor.id, updates)
-                            if (result.isSuccess) {
-                                snackbarController.showMessage("User updated successfully")
-                                showEditDoctorDialog = false
-                                // Refresh data
-                                val refreshResult = authRepo.getUsers()
-                                if (refreshResult.isSuccess) {
-                                    users = refreshResult.getOrNull() ?: emptyList()
+                    if (editedDoctor?.role == Role.DOCTOR) {
+                        coroutineScope.launch {
+                            selectedDoctor?.let { doctor ->
+                                val updates = buildUpdateMap(editedDoctor!!)
+                                val result = authRepo.updateUser(doctor.id, updates)
+                                if (result.isSuccess) {
+                                    snackbarController.showMessage("User updated successfully")
+                                    showEditDoctorDialog = false
+                                    // Refresh data
+                                    val refreshResult = authRepo.getUsers()
+                                    if (refreshResult.isSuccess) {
+                                        users = refreshResult.getOrNull() ?: emptyList()
+                                    }
+                                } else {
+                                    snackbarController.showMessage("Error updating user: ${result.exceptionOrNull()?.message}")
                                 }
-                            } else {
-                                snackbarController.showMessage("Error updating user: ${result.exceptionOrNull()?.message}")
+                            }
+                        }
+                    } else if (editedDoctor?.role == Role.USER) {
+                        coroutineScope.launch {
+                            selectedDoctor?.let { doctor ->
+                                val updates = buildUpdateMap(editedDoctor!! as User)
+                                val result = authRepo.docToUserUpdate(doctor.id, updates)
+                                if (result.isSuccess) {
+                                    snackbarController.showMessage("User data updated successfully")
+                                    showEditDoctorDialog = false
+                                    // Refresh data
+                                    val refreshResult = authRepo.getUsers()
+                                    if (refreshResult.isSuccess) {
+                                        users = refreshResult.getOrNull() ?: emptyList()
+                                    }
+                                } else {
+                                    snackbarController.showMessage("Error updating user: ${result.exceptionOrNull()?.message}")
+                                }
                             }
                         }
                     }
@@ -946,8 +966,17 @@ private fun UserForm(
         Text("Role", style = MaterialTheme.typography.labelLarge)
         RoleSelection(
             selectedRole = user.role,
-            onRoleSelected = { onUserChange(user.copy(role = it)) }
+            onRoleSelected = {
+                onUserChange(user.copy(role = it))
+            }
         )
+
+        if (user.role == Role.DOCTOR) {
+            DoctorDetailsDialogSection(
+                doctor = user.toDoctor(),
+                onDoctorChange = { onUserChange(it) }
+            )
+        }
 
     }
 }
@@ -998,138 +1027,156 @@ private fun DoctorForm(
             onRoleSelected = { onDoctorChange(doctor.copyDoc(role = it)) }
         )
 
-        Text("Doctor Details", style = MaterialTheme.typography.labelLarge)
+        if (doctor.role == Role.DOCTOR) {
 
-        var expanded by remember { mutableStateOf(false) }
-        Box {
-            OutlinedTextField(
-                value = doctor.speciality.displayName,
-                onValueChange = {},
-                label = { Text("Specialization") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true },
-                readOnly = true,
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ExpandMore,
-                        contentDescription = "Expand"
-                    )
-                }
+            DoctorDetailsDialogSection(
+                doctor = doctor,
+                onDoctorChange = onDoctorChange
             )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                Speciality.entries.forEach { speciality ->
-                    DropdownMenuItem(
-                        text = { Text(speciality.displayName) },
-                        onClick = {
-                            onDoctorChange(doctor.copyDoc(speciality = speciality))
-                            expanded = false
-                        }
-                    )
-                }
+        }
+    }
+}
+
+@Composable
+fun DoctorDetailsDialogSection(
+    doctor: Doctor,
+    onDoctorChange: (Doctor) -> Unit
+) {
+    Text("Doctor Details", style = MaterialTheme.typography.labelLarge)
+
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedTextField(
+            value = doctor.speciality.displayName,
+            onValueChange = {},
+            label = { Text("Specialization") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true },
+            readOnly = true,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription = "Expand"
+                )
+            }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            Speciality.entries.forEach { speciality ->
+                DropdownMenuItem(
+                    text = { Text(speciality.displayName) },
+                    onClick = {
+                        onDoctorChange(doctor.copyDoc(speciality = speciality))
+                        expanded = false
+                    }
+                )
             }
         }
+    }
 
-        OutlinedTextField(
-            value = doctor.address,
-            onValueChange = { onDoctorChange(doctor.copyDoc(address = it)) },
-            label = { Text("Address") },
-            modifier = Modifier.fillMaxWidth()
-        )
+    OutlinedTextField(
+        value = doctor.address,
+        onValueChange = { onDoctorChange(doctor.copyDoc(address = it)) },
+        label = { Text("Address") },
+        modifier = Modifier.fillMaxWidth()
+    )
 
-        OutlinedTextField(
-            value = doctor.consultationPrice.toString(),
-            onValueChange = {
-                onDoctorChange(
-                    doctor.copyDoc(
-                        consultationPrice = it.toIntOrNull() ?: doctor.consultationPrice
-                    )
+    OutlinedTextField(
+        value = doctor.consultationPrice.toString(),
+        onValueChange = {
+            onDoctorChange(
+                doctor.copyDoc(
+                    consultationPrice = it.toIntOrNull() ?: doctor.consultationPrice
                 )
-            },
-            label = { Text("Consultation Fee ($)") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            )
+        },
+        label = { Text("Consultation Fee ($)") },
+        modifier = Modifier.fillMaxWidth()
+    )
 
-        OutlinedTextField(
-            value = doctor.rating.toString(),
-            onValueChange = {
-                onDoctorChange(doctor.copyDoc(rating = it.toDoubleOrNull() ?: doctor.rating))
-            },
-            label = { Text("Rating (1-5)") },
-            modifier = Modifier.fillMaxWidth()
-        )
+    OutlinedTextField(
+        value = doctor.rating.toString(),
+        onValueChange = {
+            onDoctorChange(doctor.copyDoc(rating = it.toDoubleOrNull() ?: doctor.rating))
+        },
+        label = { Text("Rating (1-5)") },
+        modifier = Modifier.fillMaxWidth()
+    )
 
-        OutlinedTextField(
-            value = doctor.experience.toString(),
-            onValueChange = {
-                onDoctorChange(doctor.copyDoc(experience = it.toIntOrNull() ?: doctor.experience))
-            },
-            label = { Text("Experience (years)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Languages chips
-        var newLanguage by remember { mutableStateOf("") }
-        Column {
-            Text("Languages", style = MaterialTheme.typography.labelMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = newLanguage,
-                    onValueChange = { newLanguage = it },
-                    label = { Text("Add language") },
-                    modifier = Modifier.weight(1f)
+    OutlinedTextField(
+        value = doctor.experience.toString(),
+        onValueChange = {
+            onDoctorChange(
+                doctor.copyDoc(
+                    experience = it.toIntOrNull() ?: doctor.experience
                 )
-                Button(
-                    onClick = {
-                        if (newLanguage.isNotBlank()) {
-                            onDoctorChange(doctor.copyDoc(languages = doctor.languages + newLanguage))
-                            newLanguage = ""
-                        }
+            )
+        },
+        label = { Text("Experience (years)") },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    // Languages chips
+    var newLanguage by remember { mutableStateOf("") }
+    Column {
+        Text("Languages", style = MaterialTheme.typography.labelMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = newLanguage,
+                onValueChange = { newLanguage = it },
+                label = { Text("Add language") },
+                modifier = Modifier.weight(1f)
+            )
+            Button(
+                onClick = {
+                    if (newLanguage.isNotBlank()) {
+                        onDoctorChange(doctor.copyDoc(languages = doctor.languages + newLanguage))
+                        newLanguage = ""
                     }
-                ) {
-                    Text("Add")
                 }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                doctor.languages.forEach { language ->
-                    InputChip(
-                        selected = true,
-                        onClick = {},
-                        label = { Text(language) },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = {
-                                    onDoctorChange(
-                                        doctor.copyDoc(
-                                            languages = doctor.languages - language
-                                        )
+                Text("Add")
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            doctor.languages.forEach { language ->
+                InputChip(
+                    selected = true,
+                    onClick = {},
+                    label = { Text(language) },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                onDoctorChange(
+                                    doctor.copyDoc(
+                                        languages = doctor.languages - language
                                     )
-                                },
-                                modifier = Modifier.size(20.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = "Remove",
-                                    modifier = Modifier.size(16.dp)
                                 )
-                            }
-                        },
-                        colors = InputChipDefaults.inputChipColors(
-                            selectedContainerColor = DefaultPrimary.copy(alpha = 0.2f)
-                        )
+                            },
+                            modifier = Modifier.size(20.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Remove",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    },
+                    colors = InputChipDefaults.inputChipColors(
+                        selectedContainerColor = DefaultPrimary.copy(alpha = 0.2f)
                     )
-                }
+                )
             }
         }
     }
@@ -1219,7 +1266,7 @@ private fun buildUpdateMap(user: User): Map<String, Any> {
         put("dob", user.dateOfBirth)
         put("profilePictureUrl", user.profilePictureUrl)
 
-        if (user is Doctor) {
+        if (user is Doctor && user.role == Role.DOCTOR) {
             put("speciality", user.speciality.displayName)
             put("address", user.address)
             put("consultationPrice", user.consultationPrice)

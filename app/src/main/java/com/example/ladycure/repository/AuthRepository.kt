@@ -8,6 +8,7 @@ import com.example.ladycure.data.doctor.DoctorAvailability
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
@@ -46,6 +47,42 @@ class AuthRepository {
     suspend fun updateUser(userId: String, updatedData: Map<String, Any>): Result<Unit> {
         return try {
             firestore.collection("users").document(userId).update(updatedData).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error updating user data", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun docToUserUpdate(
+        userId: String,
+        updatedData: Map<String, Any>
+    ): Result<Unit> {
+        return try {
+
+            val documentRef = firestore.collection("users").document(userId)
+
+            val fieldsToDelete = hashMapOf<String, Any>(
+                "address" to FieldValue.delete(),
+                "consultationPrice" to FieldValue.delete(),
+                "experience" to FieldValue.delete(),
+                "languages" to FieldValue.delete(),
+                "phoneNumber" to FieldValue.delete(),
+                "speciality" to FieldValue.delete(),
+                "city" to FieldValue.delete(),
+                "bio" to FieldValue.delete(),
+                "rating" to FieldValue.delete(),
+                "speciality" to FieldValue.delete(),
+            )
+
+            firestore.runTransaction { transaction ->
+                val documentSnapshot = transaction.get(documentRef)
+
+                transaction.update(documentRef, fieldsToDelete)
+
+                transaction.update(documentRef, updatedData)
+            }.await()
+
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("AuthRepository", "Error updating user data", e)
