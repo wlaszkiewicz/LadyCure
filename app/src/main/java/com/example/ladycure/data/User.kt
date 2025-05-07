@@ -86,7 +86,7 @@ open class User(
 
 enum class Role(val value: String) {
     DOCTOR("doctor"),
-    USER("patient"),
+    USER("user"),
     ADMIN("admin");
 
     companion object {
