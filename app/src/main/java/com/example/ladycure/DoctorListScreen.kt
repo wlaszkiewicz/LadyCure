@@ -4,46 +4,27 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import SwipeCard
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import com.example.ladycure.repository.AuthRepository
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
@@ -56,23 +37,48 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
+import com.example.ladycure.data.doctor.Doctor
+import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
 
 @Composable
-fun DoctorsListScreen(navController: NavHostController, specification: String) {
+fun DoctorsListScreen(
+    navController: NavHostController,
+    specification: String,
+    snackbarController: SnackbarController
+) {
     val repository = AuthRepository()
-    val doctors = remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
-    var selectedDoctor = remember { mutableStateOf<Map<String, Any>?>(null) }
+    val doctors = remember { mutableStateOf<List<Doctor>>(emptyList()) }
+    var selectedDoctor = remember { mutableStateOf<Doctor?>(null) }
 
-    var showSwipingScreen by remember {mutableStateOf(false)}
+    var showSwipingScreen by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
     var swipeableDoctors by remember { mutableStateOf(doctors.value) }
 
@@ -82,223 +88,206 @@ fun DoctorsListScreen(navController: NavHostController, specification: String) {
             doctors.value = result.getOrDefault(emptyList())
             isLoading = false
             swipeableDoctors = doctors.value.shuffled()
+        } else {
+            isLoading = false
+            snackbarController.showMessage(
+                message = "Failed to load doctors: ${result.exceptionOrNull()?.message}",
+            )
         }
     }
 
     if (isLoading) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator(color = DefaultPrimary)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Loading doctors...", color = DefaultOnPrimary)
-            }
-        } else {
-            Column(
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator(color = DefaultPrimary)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Loading doctors...", color = DefaultOnPrimary)
+        }
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DefaultBackground)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(DefaultBackground)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Go back",
-                                tint = DefaultOnPrimary,
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = "Doctors in ${specification}",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = DefaultOnPrimary,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Go back",
+                        tint = DefaultOnPrimary,
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = "Doctors in ${specification}",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = DefaultOnPrimary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
-                if (doctors.value.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "We are sorry, no doctors found in this category.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = DefaultOnPrimary
-                            )
-                        }
-                } else {
-                        TextButton(
-                            onClick = {
-                                showSwipingScreen = !showSwipingScreen; swipeableDoctors =
-                                doctors.value.shuffled()
-                            },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                            colors = ButtonDefaults.textButtonColors(
-                                containerColor = DefaultPrimary.copy(alpha = 0.1f) // Example background color
-                            )
-                        ) {
-                            Text(
-                                text = if (!showSwipingScreen) {
-                                    "Try a Swiping Function!"
-                                } else {
-                                    "Go back to the list."
-                                },
-                                style = MaterialTheme.typography.labelLarge,
-                                color = DefaultPrimary
-                            )
-                        }
-
+            if (doctors.value.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "We are sorry, no doctors found in this category.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = DefaultOnPrimary
+                    )
+                }
+            } else {
+                TextButton(
+                    onClick = {
+                        showSwipingScreen = !showSwipingScreen; swipeableDoctors =
+                        doctors.value.shuffled()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    colors = ButtonDefaults.textButtonColors(
+                        containerColor = DefaultPrimary.copy(alpha = 0.1f) // Example background color
+                    )
+                ) {
+                    Text(
+                        text = if (!showSwipingScreen) {
+                            "Try a Swiping Function!"
+                        } else {
+                            "Go back to the list."
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = DefaultPrimary
+                    )
                 }
 
-                if (showSwipingScreen) {
-                        Text(
-                            text = "Swipe to select a doctor",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = DefaultOnPrimary,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 16.dp)
+            }
+
+            if (showSwipingScreen) {
+                Text(
+                    text = "Swipe to select a doctor",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = DefaultOnPrimary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Box {
+                    for (doctor in swipeableDoctors) {
+                        if (swipeableDoctors.isNotEmpty()) {
+                            SwipeCard(
+                                onSwipeLeft = {
+                                    swipeableDoctors = emptyList()
+                                    selectedDoctor.value = doctor
+                                    navController.navigate(
+                                        "services/${
+                                            selectedDoctor.value?.id
+                                        }"
+                                    )
+
+                                },
+                                onSwipeRight = {
+                                    swipeableDoctors =
+                                        swipeableDoctors.filter { it != doctor }
+
+                                },
+                            ) {
+                                ExpandedDoctorInfoCard(doctor)
+                            }
+                        }
+                    }
+                }
+
+                if (swipeableDoctors.isNotEmpty()) {
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                bottom = 16.dp,
+                                top = 0.dp
+                            ),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Don't like",
+                            tint = DefaultOnPrimary,
+                            modifier = Modifier.size(36.dp)
                         )
 
-                        Box {
-                            for (doctor in swipeableDoctors) {
-                                if (swipeableDoctors.isNotEmpty()) {
-                                    SwipeCard(
-                                        onSwipeLeft = {
-                                            swipeableDoctors = emptyList()
-                                            selectedDoctor.value = doctor
-                                            navController.navigate(
-                                                "services/${
-                                                    selectedDoctor.value?.get(
-                                                        "id"
-                                                    )
-                                                }"
-                                            )
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Like",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(36.dp)
+                        )
 
-                                        },
-                                        onSwipeRight = {
-                                            swipeableDoctors =
-                                                swipeableDoctors.filter { it != doctor }
+                    }
+                }
 
-                                        },
-                                    ) {
-                                        ExpandedDoctorInfoCard(doctor)
-                                    }
-                                }
-                            }
-                        }
-
-                        if (swipeableDoctors.isNotEmpty()) {
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        start = 20.dp,
-                                        end = 20.dp,
-                                        bottom = 16.dp,
-                                        top = 0.dp
-                                    ),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Don't like",
-                                    tint = DefaultOnPrimary,
-                                    modifier = Modifier.size(36.dp)
-                                )
-
-                                Icon(
-                                    imageVector = Icons.Default.Favorite,
-                                    contentDescription = "Like",
-                                    tint = DefaultPrimary,
-                                    modifier = Modifier.size(36.dp)
-                                )
-
-                            }
-                        }
-
-                        if (swipeableDoctors.isEmpty() && selectedDoctor.value == null) {
-                            Text(
-                                text = "Looks like you’ve seen all the doctors. Didn’t find the one yet? Would you like to start again?",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = DefaultOnPrimary,
-                            )
-                            Button(
-                                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                onClick = {
-                                    swipeableDoctors = doctors.value.shuffled()
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = DefaultPrimary.copy(alpha = 0.7f),
-                                    contentColor = Color.White
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Start again")
-                            }
-                        }
-
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)
+                if (swipeableDoctors.isEmpty() && selectedDoctor.value == null) {
+                    Text(
+                        text = "Looks like you’ve seen all the doctors. Didn’t find the one yet? Would you like to start again?",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = DefaultOnPrimary,
+                    )
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        onClick = {
+                            swipeableDoctors = doctors.value.shuffled()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultPrimary.copy(alpha = 0.7f),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        items(doctors.value) { doctor ->
-                            DoctorInfoCard(doctor, onSelect = {
-                                selectedDoctor.value = doctor
-                                navController.navigate("services/${selectedDoctor.value?.get("id")}")
-                            }, modifier = Modifier.padding(bottom = 16.dp))
-                        }
+                        Text("Start again")
+                    }
+                }
+
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(doctors.value) { doctor ->
+                        DoctorInfoCard(doctor, onSelect = {
+                            selectedDoctor.value = doctor
+                            navController.navigate("services/${selectedDoctor.value?.id}")
+                        }, modifier = Modifier.padding(bottom = 16.dp))
                     }
                 }
             }
         }
-
     }
+
+}
 
 
 @Composable
 fun DoctorInfoCard(
-    doctor: Map<String, Any>,
+    doctor: Doctor,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val name = doctor["name"] as? String ?: "Dr. Unknown"
-    val surname = doctor["surname"] as? String ?: "Unknown"
-    val speciality = doctor["specification"] as? String ?: "Specialist"
-    val address = doctor["address"] as? String ?: "Unknown"
-    val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
-    val bio = doctor["bio"] as? String ?: "Experienced medical professional"
-    val languages = doctor["languages"] as? List<String> ?: listOf("English")
-    val consultationFee = (doctor["consultationFee"] as? Double) ?: 100.0
-
-    val experience = when (val exp = doctor["experience"]) {
-        is Int -> exp
-        is Long -> exp.toInt()
-        is Double -> exp.toInt()
-        is String -> exp.toIntOrNull() ?: 5
-        else -> 5
-    }
-
-    val rating = when (val rat = doctor["rating"]) {
-        is Int -> rat.toDouble()
-        is Long -> rat.toDouble()
-        is Double -> rat
-        is String -> rat.toDouble()
-        else -> 4.5
-    }
-
 
     Card(
         modifier = modifier,
@@ -318,10 +307,10 @@ fun DoctorInfoCard(
                 verticalAlignment = Alignment.Top
             ) {
                 // Doctor image
-                if (imageUrl.isEmpty()) {
+                if (doctor.profilePictureUrl.isEmpty()) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Doctor $name",
+                        contentDescription = "Doctor ${doctor.name}",
                         modifier = Modifier
                             .size(80.dp)
                             .clip(RoundedCornerShape(8.dp)),
@@ -329,10 +318,13 @@ fun DoctorInfoCard(
                     )
                 } else {
                     SubcomposeAsyncImage(
-                        model = imageUrl,
-                        contentDescription = "Doctor $name",
+                        model = doctor.profilePictureUrl,
+                        contentDescription = "Doctor ${doctor.name}",
                         loading = {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
                                     color = DefaultPrimary,
@@ -355,7 +347,7 @@ fun DoctorInfoCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Dr. $name $surname",
+                        text = "Dr. ${doctor.name} ${doctor.surname}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -364,7 +356,7 @@ fun DoctorInfoCard(
                     )
 
                     Text(
-                        text = speciality,
+                        text = doctor.speciality.displayName,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultPrimary,
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
@@ -376,13 +368,14 @@ fun DoctorInfoCard(
                         modifier = Modifier.padding(bottom = 4.dp)
                     ) {
                         RatingBar(
-                            rating = rating,
-                            modifier = Modifier.width(80.dp))
+                            rating = doctor.rating,
+                            modifier = Modifier.width(80.dp)
+                        )
 
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = "(${"%.1f".format(rating)})",
+                            text = "(${"%.1f".format(doctor.rating)})",
                             style = MaterialTheme.typography.labelMedium,
                             color = Color(0xFFFFA000)
                         )
@@ -410,7 +403,7 @@ fun DoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "$experience years experience",
+                        text = "${doctor.experience} years experience",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -434,7 +427,7 @@ fun DoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = address,
+                        text = doctor.address,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -458,7 +451,7 @@ fun DoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Speaks: ${languages.joinToString(", ")}",
+                        text = "Speaks: ${doctor.languages.joinToString(", ")}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -468,57 +461,57 @@ fun DoctorInfoCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-                // Bio (collapsible)
-                var expanded by remember { mutableStateOf(false) }
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Bio",
-                            tint = DefaultPrimary.copy(alpha = 0.7f),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "About Dr. ${surname}",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = DefaultOnPrimary.copy(alpha = 0.9f),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        visible = expanded,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        Text(
-                            text = bio,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = DefaultOnPrimary.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-
-                    TextButton(
-                        onClick = { expanded = !expanded },
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text(
-                            text = if (expanded) "Show less" else "Show more",
-                            color = DefaultPrimary
-                        )
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (expanded) "Collapse" else "Expand",
-                            tint = DefaultPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+            // Bio (collapsible)
+            var expanded by remember { mutableStateOf(false) }
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Bio",
+                        tint = DefaultPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "About Dr. ${doctor.surname}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = DefaultOnPrimary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
+
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Text(
+                        text = doctor.bio,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text(
+                        text = if (expanded) "Show less" else "Show more",
+                        color = DefaultPrimary
+                    )
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -534,7 +527,7 @@ fun DoctorInfoCard(
                         color = DefaultOnPrimary.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = "$${"%.2f".format(consultationFee)}",
+                        text = "$${doctor.consultationPrice}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = DefaultPrimary
@@ -559,34 +552,9 @@ fun DoctorInfoCard(
 
 @Composable
 private fun ExpandedDoctorInfoCard(
-    doctor: Map<String, Any>,
+    doctor: Doctor,
     modifier: Modifier = Modifier
 ) {
-    val name = doctor["name"] as? String ?: "Dr. Unknown"
-    val surname = doctor["surname"] as? String ?: "Unknown"
-    val speciality = doctor["specification"] as? String ?: "Specialist"
-    val address = doctor["address"] as? String ?: "Unknown"
-    val imageUrl = doctor["profilePictureUrl"] as? String ?: ""
-    val bio = doctor["bio"] as? String ?: "Experienced medical professional"
-    val languages = doctor["languages"] as? List<String> ?: listOf("English")
-    val consultationFee = (doctor["consultationFee"] as? Double) ?: 100.0
-
-    val experience = when (val exp = doctor["experience"]) {
-        is Int -> exp
-        is Long -> exp.toInt()
-        is Double -> exp.toInt()
-        is String -> exp.toIntOrNull() ?: 5
-        else -> 5
-    }
-
-    val rating = when (val rat = doctor["rating"]) {
-        is Int -> rat.toDouble()
-        is Long -> rat.toDouble()
-        is Double -> rat
-        is String -> rat.toDouble()
-        else -> 4.5
-    }
-
 
     Card(
         modifier = modifier,
@@ -598,14 +566,16 @@ private fun ExpandedDoctorInfoCard(
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Doctor image
-            if (imageUrl.isEmpty()) {
+            if (doctor.profilePictureUrl.isEmpty()) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Doctor $name",
+                    contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
                         .size(200.dp)
                         .clip(RoundedCornerShape(8.dp)),
@@ -613,11 +583,12 @@ private fun ExpandedDoctorInfoCard(
                 )
             } else {
                 SubcomposeAsyncImage(
-                    model = imageUrl,
-                    contentDescription = "Doctor $name",
+                    model = doctor.profilePictureUrl,
+                    contentDescription = "Doctor ${doctor.name}",
                     loading = {
-                        Box(modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center
-                            ) {
+                        Box(
+                            modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center
+                        ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 color = DefaultPrimary,
@@ -646,7 +617,7 @@ private fun ExpandedDoctorInfoCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Dr. $name $surname",
+                        text = "Dr. ${doctor.name} ${doctor.surname}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -655,7 +626,7 @@ private fun ExpandedDoctorInfoCard(
                     )
 
                     Text(
-                        text = speciality,
+                        text = doctor.speciality.displayName,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultPrimary,
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
@@ -667,14 +638,14 @@ private fun ExpandedDoctorInfoCard(
                         modifier = Modifier.padding(bottom = 4.dp)
                     ) {
                         RatingBar(
-                            rating = rating,
+                            rating = doctor.rating,
                             modifier = Modifier.width(80.dp)
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = "(${"%.1f".format(rating)})",
+                            text = "(${"%.1f".format(doctor.rating)})",
                             style = MaterialTheme.typography.labelMedium,
                             color = Color(0xFFFFA000)
                         )
@@ -702,7 +673,7 @@ private fun ExpandedDoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "$experience years experience",
+                        text = "${doctor.experience} years experience",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -726,7 +697,7 @@ private fun ExpandedDoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = address,
+                        text = doctor.address,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -750,7 +721,7 @@ private fun ExpandedDoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Speaks: ${languages.joinToString(", ")}",
+                        text = "Speaks: ${doctor.languages.joinToString(", ")}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -758,7 +729,7 @@ private fun ExpandedDoctorInfoCard(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -773,7 +744,7 @@ private fun ExpandedDoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Consultation fee: $${"%.2f".format(consultationFee)}",
+                        text = "Consultation fee: $${doctor.consultationPrice}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
@@ -798,7 +769,7 @@ private fun ExpandedDoctorInfoCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "About Dr. $surname",
+                        text = "About Dr. ${doctor.surname}",
                         style = MaterialTheme.typography.labelLarge,
                         color = DefaultOnPrimary.copy(alpha = 0.9f),
                         fontWeight = FontWeight.SemiBold
@@ -811,7 +782,7 @@ private fun ExpandedDoctorInfoCard(
                     exit = fadeOut() + shrinkVertically()
                 ) {
                     Text(
-                        text = bio,
+                        text = doctor.bio,
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.7f),
                         modifier = Modifier.padding(top = 8.dp)
@@ -842,17 +813,19 @@ private fun ExpandedDoctorInfoCard(
 @Preview
 @Composable
 fun ExpendedDoctorInfoCardPreview() {
-    val sampleDoctor = mapOf(
-        "name" to "Sarah",
-        "surname" to "Johnson",
-        "specification" to "Cardiologist",
-        "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
-        "rating" to 4.7,
-        "experience" to 12,
-        "profilePictureUrl" to "",
-        "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
-        "languages" to listOf("English", "Spanish", "French"),
-        "consultationFee" to 150.0
+    val sampleDoctor = Doctor.fromMap(
+        mapOf(
+            "name" to "Sarah",
+            "surname" to "Johnson",
+            "specification" to "Cardiologist",
+            "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
+            "rating" to 4.7,
+            "experience" to 12,
+            "profilePictureUrl" to "",
+            "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
+            "languages" to listOf("English", "Spanish", "French"),
+            "consultationFee" to 150.0
+        )
     )
 
     ExpandedDoctorInfoCard(
@@ -864,17 +837,19 @@ fun ExpendedDoctorInfoCardPreview() {
 @Preview
 @Composable
 fun DoctorInfoCardPreview() {
-    val sampleDoctor = mapOf(
-        "name" to "Sarah",
-        "surname" to "Johnson",
-        "specification" to "Cardiologist",
-        "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
-        "rating" to 4.7,
-        "experience" to 12,
-        "profilePictureUrl" to "",
-        "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
-        "languages" to listOf("English", "Spanish", "French"),
-        "consultationFee" to 150.0
+    val sampleDoctor = Doctor.fromMap(
+        mapOf(
+            "name" to "Sarah",
+            "surname" to "Johnson",
+            "specification" to "Cardiologist",
+            "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
+            "rating" to 4.7,
+            "experience" to 12,
+            "profilePictureUrl" to "",
+            "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
+            "languages" to listOf("English", "Spanish", "French"),
+            "consultationFee" to 150.0
+        )
     )
 
     DoctorInfoCard(

@@ -1,297 +1,579 @@
 package com.example.ladycure
 
-import DefaultBackground
-import DefaultOnPrimary
 import DefaultPrimary
-import DefaultPrimaryVariant
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.google.firebase.firestore.FirebaseFirestore
-
-data class User(
-    val id: String = "",
-    val name: String = "",
-    val surname: String = "",
-    val email: String = "",
-    val role: String = "",
-    val dob: String = "",
-    // Doctor-specific fields
-    val specification: String = "",
-    val address: String = "",
-    val consultationPrice: String = "",
-    val availability: String = "",
-    val rating: Double? = null,
-    val reviews: String = ""
-)
+import coil.compose.AsyncImage
+import com.example.ladycure.data.Role
+import com.example.ladycure.data.User
+import com.example.ladycure.data.doctor.Doctor
+import com.example.ladycure.data.doctor.Speciality
+import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminScreen(navController: NavController) {
-    // State management
-    var selectedTab by remember { mutableStateOf("Users") } // "Users" or "Doctors"
-    var searchQuery by remember { mutableStateOf("") }
-    var showEditDialog by remember { mutableStateOf(false) }
+fun AdminScreen(navController: NavController, snackbarController: SnackbarController) {
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    var showEditUserDialog by remember { mutableStateOf(false) }
     var selectedUser by remember { mutableStateOf<User?>(null) }
-    var editedUser by remember { mutableStateOf(User("", "", "", "", "", "")) }
+    var editedUser by remember { mutableStateOf<User?>(null) }
+    var newUser by remember { mutableStateOf(User.empty()) }
 
-    // Firestore
-    val db = FirebaseFirestore.getInstance("telecure")
-    var allUsers by remember { mutableStateOf<List<User>>(emptyList()) }
+    var showEditDoctorDialog by remember { mutableStateOf(false) }
+    var selectedDoctor by remember { mutableStateOf<Doctor?>(null) }
+    var editedDoctor by remember { mutableStateOf<Doctor?>(null) }
+    var newDoctor by remember { mutableStateOf(Doctor.empty()) }
 
-    // Fetch users from Firestore
-    LaunchedEffect(selectedTab) {
-        db.collection("users")
-            .whereEqualTo("role", if (selectedTab == "Doctors") "doctor" else "user")
-            .addSnapshotListener { snapshot, _ ->
-                allUsers = snapshot?.documents?.mapNotNull { doc ->
-                    User(
-                        id = doc.id,
-                        name = doc.getString("name") ?: "",
-                        surname = doc.getString("surname") ?: "",
-                        email = doc.getString("email") ?: "",
-                        role = doc.getString("role") ?: "user",
-                        dob = doc.getString("dob") ?: "",
-                        specification = doc.getString("specification") ?: "",
-                        address = doc.getString("address") ?: "",
-                        consultationPrice = doc.getString("consultationPrice") ?: "",
-                        availability = doc.getString("availability") ?: "",
-                        rating = doc.getDouble("rating"),
-                        reviews = doc.getString("reviews") ?: ""
-                    )
-                } ?: emptyList()
-            }
+    val authRepo = AuthRepository()
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // State management
+    var selectedTab by remember { mutableStateOf("Users") }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Separate loading states
+    var isLoadingUsers by remember { mutableStateOf(false) }
+    var isLoadingDoctors by remember { mutableStateOf(false) }
+    var users by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+
+    // Fetch all data on first load
+    LaunchedEffect(Unit) {
+        isLoadingUsers = true
+        isLoadingDoctors = true
+
+        val usersResult = authRepo.getUsers()
+        if (usersResult.isSuccess) {
+            users = usersResult.getOrNull() ?: emptyList()
+        } else {
+            snackbarController.showMessage("Failed to load users: ${usersResult.exceptionOrNull()?.message}")
+        }
+
+        isLoadingUsers = false
+        isLoadingDoctors = false
     }
 
-    // Filter users based on search query
+    // Filter data based on current tab
+    val allDoctors = remember(users) {
+        users.filter { it["role"] == Role.DOCTOR.value }
+            .map { Doctor.fromMap(it) }
+    }
+
+    val allUsers = remember(users) {
+        users.filter { it["role"] != Role.DOCTOR.value }
+            .map { User.fromMap(it) }
+    }
+
     val filteredUsers = remember(allUsers, searchQuery) {
-        if (searchQuery.isBlank()) {
-            allUsers
-        } else {
-            allUsers.filter { user ->
-                user.name.contains(searchQuery, ignoreCase = true) ||
-                        user.surname.contains(searchQuery, ignoreCase = true) ||
-                        user.email.contains(searchQuery, ignoreCase = true)
+        if (searchQuery.isBlank()) allUsers else {
+            allUsers.filter {
+                it.name.contains(searchQuery, true) ||
+                        it.surname.contains(searchQuery, true) ||
+                        it.email.contains(searchQuery, true)
             }
         }
     }
 
-    // Edit Dialog
-    if (showEditDialog && selectedUser != null) {
-
-        EditUserDialog(
-            user = editedUser,
-            onDismiss = { showEditDialog = false },
-            onSave = {
-                selectedUser?.let { user ->
-                    val updates = hashMapOf<String, Any>(
-                        "name" to editedUser.name,
-                        "surname" to editedUser.surname,
-                        "email" to editedUser.email,
-                        "role" to editedUser.role,
-                        "dob" to editedUser.dob
-                    )
-
-                    if (editedUser.role == "doctor") {
-                        updates["specification"] = editedUser.specification
-                        updates["address"] = editedUser.address
-                        updates["consultationPrice"] = editedUser.consultationPrice
-                        updates["availability"] = editedUser.availability
-                        editedUser.rating?.let { updates["rating"] = it }
-                    }
-
-                    db.collection("users").document(user.id)
-                        .update(updates)
-                        .addOnSuccessListener {
-                            showEditDialog = false
-
-                            val currentTab = selectedTab
-                            selectedTab = ""
-                            selectedTab = currentTab
-                        }
-                        .addOnFailureListener { e ->
-                            println("Error updating user: ${e.message}")
-                        }
-                }
-            },
-            onUserChange = { editedUser = it }
-        )
+    val filteredDoctors = remember(allDoctors, searchQuery) {
+        if (searchQuery.isBlank()) allDoctors else {
+            allDoctors.filter {
+                it.name.contains(searchQuery, true) ||
+                        it.surname.contains(searchQuery, true) ||
+                        it.email.contains(searchQuery, true) ||
+                        it.speciality.displayName.contains(searchQuery, true) ||
+                        it.address.contains(searchQuery, true) ||
+                        it.city.contains(searchQuery, true)
+            }
+        }
     }
     Scaffold(
         topBar = {
-            Column {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            "Admin Dashboard",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = DefaultPrimary
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = DefaultPrimary
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = DefaultBackground,
-                        titleContentColor = DefaultPrimary,
-                        navigationIconContentColor = DefaultPrimary
-                    )
-                )
-
-                // Search bar
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = DefaultBackground,
-                        unfocusedContainerColor = DefaultBackground,
-                        focusedIndicatorColor = DefaultPrimary,
-                        unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                    ),
-                    placeholder = {
-                        Text("Search ${selectedTab.lowercase()}...", color = DefaultOnPrimary.copy(alpha = 0.5f))
-                    }
-                )
-
-                // Tab selection
-                TabRow(
-                    selectedTabIndex = if (selectedTab == "Users") 0 else 1,
-                    containerColor = DefaultBackground,
-                    contentColor = DefaultPrimary,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[if (selectedTab == "Users") 0 else 1]),
-                            color = DefaultPrimary,
-                            height = 2.dp
-                        )
-                    }
-                ) {
-                    Tab(
-                        selected = selectedTab == "Users",
-                        onClick = { selectedTab = "Users" },
-                        text = {
-                            Text(
-                                "Users",
-                                color = if (selectedTab == "Users") DefaultPrimary else DefaultOnPrimary.copy(alpha = 0.6f)
-                            )
-                        }
-                    )
-                    Tab(
-                        selected = selectedTab == "Doctors",
-                        onClick = { selectedTab = "Doctors" },
-                        text = {
-                            Text(
-                                "Doctors",
-                                color = if (selectedTab == "Doctors") DefaultPrimary else DefaultOnPrimary.copy(alpha = 0.6f)
-                            )
-                        }
-                    )
+            AdminTopBar(
+                navController = navController,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
+                onLogout = {
+                    showLogoutDialog = true
                 }
+            )
+        },
+        floatingActionButton = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        newUser = User.empty()
+                        newDoctor = Doctor.empty()
+                        showAddDialog = true
+                    },
+                    containerColor = DefaultPrimary,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add user")
+                }
+
             }
         },
-        containerColor = DefaultBackground
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         when {
-            filteredUsers.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (allUsers.isEmpty()) {
-                        CircularProgressIndicator(color = DefaultPrimary)
-                    } else {
-                        Text(
-                            "No ${selectedTab.lowercase()} found",
-                            color = DefaultOnPrimary.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(filteredUsers) { user ->
-                        UserCard(
-                            user = user,
-                            onEditClick = {
-                                selectedUser = user
-                                editedUser = user.copy()
-                                showEditDialog = true
+            isLoadingUsers && selectedTab == "Users" -> LoadingView()
+            isLoadingDoctors && selectedTab == "Doctors" -> LoadingView()
+            filteredUsers.isEmpty() && selectedTab == "Users" -> EmptyView(selectedTab)
+            filteredDoctors.isEmpty() && selectedTab == "Doctors" -> EmptyView(selectedTab)
+            selectedTab == "Users" -> UserList(
+                users = filteredUsers,
+                onEditClick = { user ->
+                    selectedUser = user
+                    editedUser = user
+                    showEditUserDialog = true
+                },
+                onDeleteClick = { user ->
+                    selectedUser = user
+                    showDeleteDialog = true
+                },
+                modifier = Modifier.padding(padding)
+            )
+
+            else -> DoctorList(
+                doctors = filteredDoctors,
+                onEditClick = { doctor ->
+                    selectedDoctor = doctor
+                    editedDoctor = doctor.copyDoc()
+                    showEditDoctorDialog = true
+                },
+                onDeleteClick = { doctor ->
+                    selectedDoctor = doctor
+                    showDeleteDialog = true
+                },
+                modifier = Modifier.padding(padding)
+            )
+        }
+
+        if (showEditUserDialog && editedUser != null) {
+            EditUserDialog(
+                user = editedUser!!,
+                onDismiss = { showEditUserDialog = false },
+                onSave = {
+                    coroutineScope.launch {
+                        selectedUser?.let { originalUser ->
+                            val updates = buildUpdateMap(editedUser!!)
+
+                            val result = authRepo.updateUser(originalUser.id, updates)
+
+                            if (result.isSuccess) {
+                                snackbarController.showMessage(
+                                    if (editedUser!!.role == Role.DOCTOR)
+                                        "User converted to doctor successfully"
+                                    else
+                                        "User updated successfully"
+                                )
+                                showEditUserDialog = false
+                                val refreshResult = authRepo.getUsers()
+                                if (refreshResult.isSuccess) {
+                                    users = refreshResult.getOrNull() ?: emptyList()
+                                }
+                            } else {
+                                snackbarController.showMessage("Error: ${result.exceptionOrNull()?.message}")
                             }
-                        )
+                        }
+                    }
+                },
+                onUserChange = { editedUser = it }
+            )
+        }
+
+        if (showEditDoctorDialog && editedDoctor != null) {
+            EditDoctorDialog(
+                doctor = editedDoctor!!,
+                onDismiss = { showEditDoctorDialog = false },
+                onSave = {
+                    if (editedDoctor?.role == Role.DOCTOR) {
+                        coroutineScope.launch {
+                            selectedDoctor?.let { doctor ->
+                                val updates = buildUpdateMap(editedDoctor!!)
+                                val result = authRepo.updateUser(doctor.id, updates)
+                                if (result.isSuccess) {
+                                    snackbarController.showMessage("User updated successfully")
+                                    showEditDoctorDialog = false
+                                    // Refresh data
+                                    val refreshResult = authRepo.getUsers()
+                                    if (refreshResult.isSuccess) {
+                                        users = refreshResult.getOrNull() ?: emptyList()
+                                    }
+                                } else {
+                                    snackbarController.showMessage("Error updating user: ${result.exceptionOrNull()?.message}")
+                                }
+                            }
+                        }
+                    } else if (editedDoctor?.role == Role.USER) {
+                        coroutineScope.launch {
+                            selectedDoctor?.let { doctor ->
+                                val updates = buildUpdateMap(editedDoctor!! as User)
+                                val result = authRepo.docToUserUpdate(doctor.id, updates)
+                                if (result.isSuccess) {
+                                    snackbarController.showMessage("User data updated successfully")
+                                    showEditDoctorDialog = false
+                                    // Refresh data
+                                    val refreshResult = authRepo.getUsers()
+                                    if (refreshResult.isSuccess) {
+                                        users = refreshResult.getOrNull() ?: emptyList()
+                                    }
+                                } else {
+                                    snackbarController.showMessage("Error updating user: ${result.exceptionOrNull()?.message}")
+                                }
+                            }
+                        }
+                    }
+                },
+                onDoctorChange = { editedDoctor = it }
+            )
+        }
+
+        if (showDeleteDialog && selectedUser != null) {
+            DeleteConfirmationDialog(
+                user = selectedUser!!,
+                onDismiss = { showDeleteDialog = false },
+                onConfirm = {
+//                    coroutineScope.launch {
+//                        val result = authRepo.deleteUser(selectedUser!!.id)
+//                        if (result.isSuccess) {
+//                            snackbarController.showMessage("User deleted successfully")
+//                            showDeleteDialog = false
+//                            // Refresh data
+//                            val refreshResult = authRepo.getUsers()
+//                            if (refreshResult.isSuccess) {
+//                                users = refreshResult.getOrNull() ?: emptyList()
+//                            }
+//                        } else {
+//                            snackbarController.showMessage("Error deleting user: ${result.exceptionOrNull()?.message}")
+//                        }
+//                    }
+                    snackbarController.showMessage("User deleted successfully. NOT REALLY XDDD NOT IMPLEMENTED")
+                }
+            )
+        }
+
+        if (showAddDialog) {
+            AddUserDialog(
+                user = newUser,
+                onDismiss = { showAddDialog = false },
+                onSave = {
+//                        coroutineScope.launch {
+//                            val result = authRepo.createUser(newUser.toMap())
+//                            if (result.isSuccess) {
+//                                snackbarController.showMessage("User created successfully")
+//                                showAddDialog = false
+//                                // Refresh data
+//                                val refreshResult = authRepo.getUsers()
+//                                if (refreshResult.isSuccess) {
+//                                    users = refreshResult.getOrNull() ?: emptyList()
+//                                }
+//                            } else {
+//                                snackbarController.showMessage("Error creating user: ${result.exceptionOrNull()?.message}")
+//                            }
+//                        }
+                    snackbarController.showMessage("User created successfully. NOT REALLY XDDD NOT IMPLEMENTED")
+                },
+                onUserChange = { newUser = it }
+            )
+        }
+
+        if (showLogoutDialog) {
+            AlertDialog(
+                onDismissRequest = { showLogoutDialog = false },
+                title = { Text("Log out") },
+                text = { Text("Are you sure you want to log out?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                authRepo.signOut()
+                                navController.navigate("login") {
+                                    popUpTo("admin") { inclusive = true }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Log out")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showLogoutDialog = false }) {
+                        Text("Cancel")
                     }
                 }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AdminTopBar(
+    navController: NavController,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    selectedTab: String,
+    onTabSelected: (String) -> Unit,
+    onLogout: () -> Unit
+) {
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 40.dp, vertical = 16.dp)
+        ) {
+            Text(
+                "Admin Dashboard",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            IconButton(
+                onClick = onLogout,
+                modifier = Modifier
+                    .size(30.dp)
+                    .background(
+                        DefaultPrimary.copy(alpha = 0.8f),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Default.Logout,
+                    contentDescription = "Logout",
+                    tint = Color.White
+                )
+            }
+
+        }
+
+        AdminSearchBar(
+            searchQuery = searchQuery,
+            onSearchQueryChange = onSearchQueryChange
+        )
+
+        // Tab selection
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            FilterChip(
+                selected = selectedTab == "Users",
+                onClick = { onTabSelected("Users") },
+                label = { Text("Users") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = DefaultPrimary,
+                    selectedLabelColor = Color.White
+                )
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            FilterChip(
+                selected = selectedTab == "Doctors",
+                onClick = { onTabSelected("Doctors") },
+                label = { Text("Doctors") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = DefaultPrimary,
+                    selectedLabelColor = Color.White
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun UserList(
+    users: List<User>,
+    onEditClick: (User) -> Unit,
+    onDeleteClick: (User) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier.padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(users) { user ->
+            UserCard(
+                user = user,
+                onEditClick = { onEditClick(user) },
+                onDeleteClick = { onDeleteClick(user) }
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun DoctorList(
+    doctors: List<Doctor>,
+    onEditClick: (Doctor) -> Unit,
+    onDeleteClick: (Doctor) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier.padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(doctors) { doctor ->
+            DoctorCard(
+                doctor = doctor,
+                onEditClick = { onEditClick(doctor) },
+                onDeleteClick = { onDeleteClick(doctor) }
+            )
+        }
+    }
+}
+
+@Composable
+fun AdminSearchBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.9f))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.Search,
+            contentDescription = "Search",
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier
+                .weight(1f)
+                .height(50.dp),
+            textStyle = MaterialTheme.typography.bodyMedium,
+            placeholder = {
+                Text(
+                    "Search...",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                )
+            },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
+            ),
+            singleLine = true,
+            maxLines = 1
+        )
+
+        if (searchQuery.isNotEmpty()) {
+            IconButton(
+                onClick = { onSearchQueryChange("") },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Clear search",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
             }
         }
     }
@@ -300,130 +582,268 @@ fun AdminScreen(navController: NavController) {
 @Composable
 private fun UserCard(
     user: User,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DefaultPrimary.copy(alpha = 0.1f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "${user.name} ${user.surname}",
-                        color = DefaultPrimaryVariant,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AsyncImage(
+                        model = user.profilePictureUrl,
+                        contentDescription = "Profile picture",
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(8.dp)),
                     )
-
-                    Text(
-                        text = user.email,
-                        color = DefaultOnPrimary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
                         Text(
-                            text = "DOB: ${user.dob}",
-                            color = DefaultOnPrimary.copy(alpha = 0.6f),
-                            fontSize = 13.sp
+                            text = "${user.name} ${user.surname}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-
-                        RoleBadge(role = user.role)
+                        Text(
+                            text = user.email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
                 }
 
-                IconButton(
-                    onClick = onEditClick,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Edit user",
-                        tint = DefaultPrimary
-                    )
+                Row {
+                    IconButton(onClick = onEditClick) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                    IconButton(onClick = onDeleteClick) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    }
                 }
             }
 
-            // Additional doctor information
-            if (user.role == "doctor") {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "Specialization: ${user.specification}",
-                        color = DefaultOnPrimary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
-                    )
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
                     Text(
-                        text = "Address: ${user.address}",
-                        color = DefaultOnPrimary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
+                        "Date of Birth",
+                        style = MaterialTheme.typography.labelSmall
                     )
-
                     Text(
-                        text = "Consultation price: ${user.consultationPrice} PLN",
-                        color = DefaultOnPrimary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
-                    )
-
-                    Text(
-                        text = "Availability: ${user.availability.ifEmpty { "Not specified" }}",
-                        color = DefaultOnPrimary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
-                    )
-
-                    Text(
-                        text = "Rating: ${user.rating?.toString() ?: "No ratings"}",
-                        color = DefaultOnPrimary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
+                        user.dateOfBirth,
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
+
+                RoleBadge(role = user.role)
             }
+
         }
     }
 }
 
 @Composable
-private fun RoleBadge(role: String) {
-    val (backgroundColor, roleTextColor) = when (role) {
-        "admin" -> DefaultPrimary.copy(alpha = 0.2f) to DefaultPrimary
-        "doctor" -> Color(0xFFCB52C8).copy(alpha = 0.2f) to Color(0xFFCB52C8)
-        else -> Color(0xFFEF55DB).copy(alpha = 0.2f) to Color(0xFFEF55DB)
+private fun DoctorCard(
+    doctor: Doctor,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AsyncImage(
+                        model = doctor.profilePictureUrl,
+                        contentDescription = "Profile picture",
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "${doctor.name} ${doctor.surname}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = doctor.email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
+                Row {
+                    IconButton(onClick = onEditClick) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                    IconButton(onClick = onDeleteClick) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    }
+                }
+            }
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        "Date of Birth",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Text(
+                        doctor.dateOfBirth,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                RoleBadge(role = doctor.role)
+            }
+            DoctorDetailsSection(doctor = doctor)
+        }
+    }
+}
+
+@Composable
+private fun DoctorDetailsSection(doctor: Doctor) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+    ) {
+        Divider(modifier = Modifier.padding(bottom = 8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Specialization",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
+                    doctor.speciality.displayName,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Consultation Fee",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
+                    "${doctor.consultationPrice} PLN",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Rating",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = "Rating",
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "${doctor.rating}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Experience",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
+                    "${doctor.experience} years",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            "Address",
+            style = MaterialTheme.typography.labelSmall
+        )
+        Text(
+            doctor.address,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun RoleBadge(role: Role) {
+    val backgroundColor = when (role) {
+        Role.ADMIN -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+        Role.DOCTOR -> Color(0xFF5FB9C9).copy(alpha = 0.2f)
+        else -> Color(0xFF9E9E9E).copy(alpha = 0.2f)
+    }
+    val textColor = when (role) {
+        Role.ADMIN -> MaterialTheme.colorScheme.primary
+        Role.DOCTOR -> Color(0xFF5FB9C9)
+        else -> Color(0xFF9E9E9E)
     }
 
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(backgroundColor)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
     ) {
         Text(
-            text = when (role) {
-                "admin" -> "Admin"
-                "doctor" -> "Doctor"
-                else -> "User"
-            },
-            color = roleTextColor,
+            text = role.value,
+            color = textColor,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
         )
@@ -439,224 +859,452 @@ private fun EditUserDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 50.dp),
-        title = {
-            Text(
-                "Edit User",
-                color = DefaultPrimary,
-                fontWeight = FontWeight.SemiBold
+        title = { Text("Edit User", fontWeight = FontWeight.Bold) },
+        text = {
+            UserForm(
+                user = user,
+                onUserChange = onUserChange,
+                isEditMode = true
             )
         },
-        text = {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Basic user info
-                OutlinedTextField(
-                    value = user.name,
-                    onValueChange = { onUserChange(user.copy(name = it)) },
-                    label = { Text("First Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = DefaultBackground,
-                        unfocusedContainerColor = DefaultBackground,
-                        focusedIndicatorColor = DefaultPrimary,
-                        unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                    )
-                )
-
-                OutlinedTextField(
-                    value = user.surname,
-                    onValueChange = { onUserChange(user.copy(surname = it)) },
-                    label = { Text("Last Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = DefaultBackground,
-                        unfocusedContainerColor = DefaultBackground,
-                        focusedIndicatorColor = DefaultPrimary,
-                        unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                    )
-                )
-
-                OutlinedTextField(
-                    value = user.email,
-                    onValueChange = { onUserChange(user.copy(email = it)) },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = DefaultBackground,
-                        unfocusedContainerColor = DefaultBackground,
-                        focusedIndicatorColor = DefaultPrimary,
-                        unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                    )
-                )
-
-                OutlinedTextField(
-                    value = user.dob,
-                    onValueChange = { onUserChange(user.copy(dob = it)) },
-                    label = { Text("Date of Birth") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = DefaultBackground,
-                        unfocusedContainerColor = DefaultBackground,
-                        focusedIndicatorColor = DefaultPrimary,
-                        unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                    )
-                )
-
-                Text("Role", style = MaterialTheme.typography.labelLarge, color = DefaultPrimary)
-                RoleSelection(
-                    selectedRole = user.role,
-                    onRoleSelected = { onUserChange(user.copy(role = it)) }
-                )
-
-                // Doctor-specific fields (shown only when role is doctor)
-                if (user.role == "doctor") {
-                    Text("Doctor Details", style = MaterialTheme.typography.labelLarge, color = DefaultPrimary)
-
-                    OutlinedTextField(
-                        value = user.specification,
-                        onValueChange = { onUserChange(user.copy(specification = it)) },
-                        label = { Text("Specialization") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedIndicatorColor = DefaultPrimary,
-                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = user.address,
-                        onValueChange = { onUserChange(user.copy(address = it)) },
-                        label = { Text("Address") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedIndicatorColor = DefaultPrimary,
-                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = user.consultationPrice,
-                        onValueChange = { onUserChange(user.copy(consultationPrice = it)) },
-                        label = { Text("Consultation Price (PLN)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedIndicatorColor = DefaultPrimary,
-                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = user.availability,
-                        onValueChange = { onUserChange(user.copy(availability = it)) },
-                        label = { Text("Availability") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedIndicatorColor = DefaultPrimary,
-                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = user.rating?.toString() ?: "",
-                        onValueChange = {
-                            val newRating = it.toDoubleOrNull()
-                            onUserChange(user.copy(rating = newRating))
-                        },
-                        label = { Text("Rating") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DefaultBackground,
-                            unfocusedContainerColor = DefaultBackground,
-                            focusedIndicatorColor = DefaultPrimary,
-                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f)
-                        )
-                    )
-                }
-            }
-        },
         confirmButton = {
-            Button(
-                onClick = onSave,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DefaultPrimary,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
+            Button(onClick = onSave) {
                 Text("Save Changes")
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    "Cancel",
-                    color = DefaultPrimary
-                )
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
+@Composable
+private fun EditDoctorDialog(
+    doctor: Doctor,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+    onDoctorChange: (Doctor) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Doctor", fontWeight = FontWeight.Bold) },
+        text = {
+            DoctorForm(
+                doctor = doctor,
+                onDoctorChange = onDoctorChange,
+            )
+        },
+        confirmButton = {
+            Button(onClick = onSave) {
+                Text("Save Changes")
             }
         },
-        shape = RoundedCornerShape(16.dp),
-        containerColor = DefaultBackground
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
     )
 }
 
 @Composable
-private fun RoleSelection(
-    selectedRole: String,
-    onRoleSelected: (String) -> Unit
+private fun AddUserDialog(
+    user: User,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+    onUserChange: (User) -> Unit
 ) {
-    val roles = listOf("user", "doctor", "admin")
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add New User", fontWeight = FontWeight.Bold) },
+        text = {
+            UserForm(
+                user = user,
+                onUserChange = onUserChange,
+                isEditMode = false
+            )
+        },
+        confirmButton = {
+            Button(onClick = onSave) {
+                Text("Create User")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+@Composable
+private fun UserForm(
+    user: User,
+    onUserChange: (User) -> Unit,
+    isEditMode: Boolean
+) {
+    // Track whether we're showing doctor fields
+    val showDoctorFields = user.role == Role.DOCTOR
 
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedTextField(
+            value = user.name,
+            onValueChange = { onUserChange(user.copy(name = it)) },
+            label = { Text("First Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = user.surname,
+            onValueChange = { onUserChange(user.copy(surname = it)) },
+            label = { Text("Last Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = user.email,
+            onValueChange = { onUserChange(user.copy(email = it)) },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = user.dateOfBirth,
+            onValueChange = { onUserChange(user.copy(dateOfBirth = it)) },
+            label = { Text("Date of Birth (DD/MM/YYYY)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Text("Role", style = MaterialTheme.typography.labelLarge)
+        RoleSelection(
+            selectedRole = user.role,
+            onRoleSelected = { newRole ->
+                if (newRole == Role.DOCTOR) {
+                    onUserChange(user.toDoctor())
+                } else {
+                    onUserChange(user.copy(role = newRole))
+                }
+            }
+        )
+
+        if (showDoctorFields) {
+            val doctor = user as? Doctor ?: user.toDoctor()
+            DoctorDetailsDialogSection(
+                doctor = doctor,
+                onDoctorChange = { newDoctor ->
+                    if (newDoctor.role != Role.DOCTOR) {
+                        onUserChange(newDoctor.toUser())
+                    } else {
+                        onUserChange(newDoctor)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DoctorForm(
+    doctor: Doctor,
+    onDoctorChange: (Doctor) -> Unit
+) {
+
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OutlinedTextField(
+            value = doctor.name,
+            onValueChange = { onDoctorChange(doctor.copyDoc(name = it)) },
+            label = { Text("First Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = doctor.surname,
+            onValueChange = { onDoctorChange(doctor.copyDoc(surname = it)) },
+            label = { Text("Last Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = doctor.email,
+            onValueChange = { onDoctorChange(doctor.copyDoc(email = it)) },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = doctor.dateOfBirth,
+            onValueChange = { onDoctorChange(doctor.copyDoc(dateOfBirth = it)) },
+            label = { Text("Date of Birth (YYYY-MM-DD)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Text("Role", style = MaterialTheme.typography.labelLarge)
+        RoleSelection(
+            selectedRole = doctor.role,
+            onRoleSelected = { onDoctorChange(doctor.copyDoc(role = it)) }
+        )
+
+        if (doctor.role == Role.DOCTOR) {
+
+            DoctorDetailsDialogSection(
+                doctor = doctor,
+                onDoctorChange = onDoctorChange
+            )
+        }
+    }
+}
+
+@Composable
+fun DoctorDetailsDialogSection(
+    doctor: Doctor,
+    onDoctorChange: (Doctor) -> Unit
+) {
+    Text("Doctor Details", style = MaterialTheme.typography.labelLarge)
+
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedTextField(
+            value = doctor.speciality.displayName,
+            onValueChange = {},
+            label = { Text("Specialization") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true },
+            readOnly = true,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription = "Expand"
+                )
+            }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            Speciality.entries.forEach { speciality ->
+                DropdownMenuItem(
+                    text = { Text(speciality.displayName) },
+                    onClick = {
+                        onDoctorChange(doctor.copyDoc(speciality = speciality))
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+
+    OutlinedTextField(
+        value = doctor.address,
+        onValueChange = { onDoctorChange(doctor.copyDoc(address = it)) },
+        label = { Text("Address") },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    OutlinedTextField(
+        value = doctor.consultationPrice.toString(),
+        onValueChange = {
+            onDoctorChange(
+                doctor.copyDoc(
+                    consultationPrice = it.toIntOrNull() ?: doctor.consultationPrice
+                )
+            )
+        },
+        label = { Text("Consultation Fee ($)") },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    OutlinedTextField(
+        value = doctor.rating.toString(),
+        onValueChange = {
+            onDoctorChange(doctor.copyDoc(rating = it.toDoubleOrNull() ?: doctor.rating))
+        },
+        label = { Text("Rating (1-5)") },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    OutlinedTextField(
+        value = doctor.experience.toString(),
+        onValueChange = {
+            onDoctorChange(
+                doctor.copyDoc(
+                    experience = it.toIntOrNull() ?: doctor.experience
+                )
+            )
+        },
+        label = { Text("Experience (years)") },
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    // Languages chips
+    var newLanguage by remember { mutableStateOf("") }
+    Column {
+        Text("Languages", style = MaterialTheme.typography.labelMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = newLanguage,
+                onValueChange = { newLanguage = it },
+                label = { Text("Add language") },
+                modifier = Modifier.weight(1f)
+            )
+            Button(
+                onClick = {
+                    if (newLanguage.isNotBlank()) {
+                        onDoctorChange(doctor.copyDoc(languages = doctor.languages + newLanguage))
+                        newLanguage = ""
+                    }
+                }
+            ) {
+                Text("Add")
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            doctor.languages.forEach { language ->
+                InputChip(
+                    selected = true,
+                    onClick = {},
+                    label = { Text(language) },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                onDoctorChange(
+                                    doctor.copyDoc(
+                                        languages = doctor.languages - language
+                                    )
+                                )
+                            },
+                            modifier = Modifier.size(20.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Remove",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    },
+                    colors = InputChipDefaults.inputChipColors(
+                        selectedContainerColor = DefaultPrimary.copy(alpha = 0.2f)
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoleSelection(
+    selectedRole: Role,
+    onRoleSelected: (Role) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        roles.forEach { role ->
+        Role.entries.forEach { role ->
             FilterChip(
                 selected = selectedRole == role,
                 onClick = { onRoleSelected(role) },
-                label = {
-                    Text(
-                        role.capitalize(),
-                        color = if (selectedRole == role) Color.White else DefaultPrimary
-                    )
-                },
-                modifier = Modifier.weight(1f),
+                label = { Text(role.value) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = DefaultPrimary,
-                    selectedLabelColor = Color.White,
-                    containerColor = Color.Transparent,
-                    labelColor = DefaultPrimary
-                ),
-                shape = RoundedCornerShape(8.dp)
+                    selectedLabelColor = Color.White
+                )
             )
+        }
+    }
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    user: User,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Delete") },
+        text = { Text("Are you sure you want to delete ${user.name} ${user.surname}?") },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun LoadingView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(color = DefaultPrimary)
+    }
+}
+
+@Composable
+private fun EmptyView(selectedTab: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "No ${selectedTab.lowercase()} found",
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+    }
+}
+
+private fun buildUpdateMap(user: User): Map<String, Any> {
+    return mutableMapOf<String, Any>().apply {
+        put("name", user.name)
+        put("surname", user.surname)
+        put("email", user.email)
+        put("role", user.role.value)
+        put("dob", user.dateOfBirth)
+        put("profilePictureUrl", user.profilePictureUrl)
+
+        if (user is Doctor && user.role == Role.DOCTOR) {
+            put("speciality", user.speciality.displayName)
+            put("address", user.address)
+            put("consultationPrice", user.consultationPrice)
+            put("rating", user.rating)
+            put("experience", user.experience)
+            put("languages", user.languages)
+            put("city", user.city)
+            put("phoneNumber", user.phoneNumber)
+            put("bio", user.bio)
         }
     }
 }
