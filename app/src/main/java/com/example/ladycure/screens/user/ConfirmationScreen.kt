@@ -93,7 +93,7 @@ fun ConfirmationScreen(
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
 
-    var userName by remember { mutableStateOf("Patient unavaiable") }
+    var userName by remember { mutableStateOf("Patient unavailable") }
 
     LaunchedEffect(Unit) {
         userName = authRepo.getUserField("name").getOrNull() + " " +
@@ -109,7 +109,7 @@ fun ConfirmationScreen(
         status = Appointment.Status.PENDING,
         type = appointmentType,
         price = appointmentType.price,
-        address = doctorInfo.value?.get("address") as? String ?: "Address unavaiable",
+        address = doctorInfo.value?.get("address") as? String ?: "Address unavailable",
         doctorName = (doctorInfo.value?.get("name") as? String + " " +
                 doctorInfo.value?.get("surname") as? String),
         patientName = userName,
@@ -183,7 +183,7 @@ fun ConfirmationScreen(
                 )
 
                 doctorInfo.value == null -> snackbarController?.showMessage(
-                    message = "Doctor info is unaviable"
+                    message = "Doctor info is unavailable"
                 )
 
                 else -> {

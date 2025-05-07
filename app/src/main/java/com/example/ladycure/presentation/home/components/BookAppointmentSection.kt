@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -24,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.data.doctor.Speciality
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
@@ -36,7 +34,6 @@ import androidx.compose.ui.draw.shadow
 
 @Composable
 fun BookAppointmentSection(
-    navController: NavHostController,
     specialities: List<Speciality>,
     onCitySelected: (String) -> Unit = {},
     onSpecializationSelected: (Speciality) -> Unit
@@ -231,7 +228,6 @@ fun SpecialityCard(
 @Composable
 fun PreviewBookAppointmentSection() {
     BookAppointmentSection(
-        navController = rememberNavController(),
         specialities = listOf(
             Speciality.CARDIOLOGY,
             Speciality.DERMATOLOGY,

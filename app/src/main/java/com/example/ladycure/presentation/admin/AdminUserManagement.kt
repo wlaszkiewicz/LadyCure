@@ -142,8 +142,7 @@ fun EditUserDialog(
         text = {
             UserForm(
                 user = user,
-                onUserChange = onUserChange,
-                isEditMode = true
+                onUserChange = onUserChange
             )
         },
         confirmButton = {
@@ -172,8 +171,7 @@ fun AddUserDialog(
         text = {
             UserForm(
                 user = user,
-                onUserChange = onUserChange,
-                isEditMode = false
+                onUserChange = onUserChange
             )
         },
         confirmButton = {
@@ -193,8 +191,7 @@ fun AddUserDialog(
 @Composable
 private fun UserForm(
     user: User,
-    onUserChange: (User) -> Unit,
-    isEditMode: Boolean
+    onUserChange: (User) -> Unit
 ) {
     // Track whether we're showing doctor fields
     val showDoctorFields = user.role == Role.DOCTOR

@@ -257,7 +257,6 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
                     }
 
                     BookAppointmentSection(
-                        navController = navController,
                         specialities = Speciality.entries,
                         onCitySelected = { city ->
                             selectedCity.value = city
