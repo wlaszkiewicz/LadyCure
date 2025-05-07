@@ -80,12 +80,12 @@ fun BookAppointmentDirectlyScreen(
         val result = authRepo.getDoctorById(doctorId)
         if (result.isSuccess) {
             doctor.value = result.getOrNull()
-            val aviabilityResult = authRepo.getDoctorAvailability(doctorId)
-            if (aviabilityResult.isSuccess) {
-                doctorAvailability.value = aviabilityResult.getOrNull()!!
+            val availabilityResult = authRepo.getDoctorAvailability(doctorId)
+            if (availabilityResult.isSuccess) {
+                doctorAvailability.value = availabilityResult.getOrNull()!!
                 isLoading.value = false
             } else {
-                errorMessage.value = aviabilityResult.exceptionOrNull()?.message
+                errorMessage.value = availabilityResult.exceptionOrNull()?.message
             }
         } else {
             errorMessage.value = result.exceptionOrNull()?.message
@@ -95,6 +95,7 @@ fun BookAppointmentDirectlyScreen(
     // Get unique available dates from filtered availabilities
     val availableDates = doctorAvailability.value
         .map { it.date }
+        .filter { it?.isAfter(LocalDate.now()) == true }
         .distinct()
         .sortedBy { it }
 

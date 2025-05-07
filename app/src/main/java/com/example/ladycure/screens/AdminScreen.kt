@@ -121,7 +121,6 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
     Scaffold(
         topBar = {
             AdminTopBar(
-                navController = navController,
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
                 selectedTab = selectedTab,

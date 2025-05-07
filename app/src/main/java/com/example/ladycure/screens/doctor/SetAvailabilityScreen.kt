@@ -19,10 +19,10 @@ import DefaultBackground
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
@@ -82,17 +82,29 @@ fun SetAvailabilityScreen(
             val result = authRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
             if (result.isSuccess) {
                 val availabilities = result.getOrThrow()
-                existingAvailabilities.value = availabilities
-            }
-            else {
+                val today = LocalDate.now()
+
+                // Filter out past availabilities
+                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
+                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
+
+                // Delete past availabilities from Firestore
+                pastAvailabilities.forEach { pastAvailability ->
+                    authRepo.deleteDoctorAvailability(pastAvailability.doctorId, pastAvailability.date!!)
+                }
+
+                existingAvailabilities.value = futureAvailabilities
+            } else {
                 snackbarController.showMessage("Error loading existing availabilities")
             }
         } catch (e: Exception) {
-            snackbarController.showMessage("Error loading existing availabilities")
+            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
         } finally {
             isLoading.value = false
         }
     }
+
+
 
     Column(
         modifier = Modifier
@@ -110,7 +122,7 @@ fun SetAvailabilityScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Default.ArrowBack, "Back", tint = DefaultPrimary)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DefaultPrimary)
                 }
                 Text(
                     "Set Availability",
@@ -231,7 +243,6 @@ fun SetAvailabilityScreen(
                     onClick = {
                         // Copy selected days/time to next 3 months
                         val datesToAdd = mutableSetOf<LocalDate>()
-                        val timeRange = startTime.value..endTime.value
 
                         selectedDates.value.forEach { date ->
                             for (i in 1..3) {
@@ -324,8 +335,6 @@ fun SetAvailabilityScreen(
                 applyRecurringPattern(
                     days,
                     weeks,
-                    startTime.value,
-                    endTime.value,
                     selectedDates
                 )
                 showRecurringOptions.value = false
@@ -451,8 +460,6 @@ fun MonthYearPickerDialog(
 fun applyRecurringPattern(
     selectedDays: Set<DayOfWeek>,
     durationWeeks: Int,
-    startTime: LocalTime,
-    endTime: LocalTime,
     selectedDates: MutableState<Set<LocalDate>>
 ) {
     if (selectedDays.isEmpty()) return

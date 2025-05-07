@@ -68,7 +68,6 @@ import java.util.Locale
 
 import androidx.compose.ui.platform.LocalContext
 import android.location.Geocoder
-import android.net.Uri
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -77,6 +76,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import androidx.core.net.toUri
 
 @Composable
 fun ConfirmationScreen(
@@ -93,7 +93,7 @@ fun ConfirmationScreen(
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
 
-    var userName by remember { mutableStateOf("Patient unavaiable") }
+    var userName by remember { mutableStateOf("Patient unavailable") }
 
     LaunchedEffect(Unit) {
         userName = authRepo.getUserField("name").getOrNull() + " " +
@@ -109,7 +109,7 @@ fun ConfirmationScreen(
         status = Appointment.Status.PENDING,
         type = appointmentType,
         price = appointmentType.price,
-        address = doctorInfo.value?.get("address") as? String ?: "Address unavaiable",
+        address = doctorInfo.value?.get("address") as? String ?: "Address unavailable",
         doctorName = (doctorInfo.value?.get("name") as? String + " " +
                 doctorInfo.value?.get("surname") as? String),
         patientName = userName,
@@ -183,7 +183,7 @@ fun ConfirmationScreen(
                 )
 
                 doctorInfo.value == null -> snackbarController?.showMessage(
-                    message = "Doctor info is unaviable"
+                    message = "Doctor info is unavailable"
                 )
 
                 else -> {
@@ -624,9 +624,9 @@ private fun LocationCard(
             Button(
                 onClick = {
                     val gmmIntentUri = if (latLng != null) {
-                        Uri.parse("geo:${latLng.latitude},${latLng.longitude}?q=${fullAddress}")
+                        "geo:${latLng.latitude},${latLng.longitude}?q=${fullAddress}".toUri()
                     } else {
-                        Uri.parse("geo:0,0?q=${fullAddress}")
+                        "geo:0,0?q=${fullAddress}".toUri()
                     }
                     val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                     mapIntent.setPackage("com.google.android.apps.maps")

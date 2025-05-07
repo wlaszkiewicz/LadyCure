@@ -76,7 +76,7 @@ class AuthRepository {
             )
 
             firestore.runTransaction { transaction ->
-                val documentSnapshot = transaction.get(documentRef)
+                transaction.get(documentRef)
 
                 transaction.update(documentRef, fieldsToDelete)
 
@@ -571,6 +571,23 @@ class AuthRepository {
         return try {
             val appointmentRef = firestore.collection("appointments").document(appointmentId)
             appointmentRef.update("comments", comment).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteDoctorAvailability(
+        doctorId: String,
+        date: LocalDate
+    ): Result<Unit> {
+        return try {
+            val docRef = firestore.collection("users")
+                .document(doctorId)
+                .collection("availability")
+                .document(date.toString())
+
+            docRef.delete().await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
