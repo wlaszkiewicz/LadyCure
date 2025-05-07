@@ -1,8 +1,7 @@
-package com.example.ladycure
+package com.example.ladycure.screens
 
 import DefaultPrimary
 import LadyCureTheme
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -15,16 +14,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.text.style.TextAlign
+import com.example.ladycure.R
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth

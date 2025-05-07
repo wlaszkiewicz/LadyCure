@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens.user
 
 import DefaultBackground
 import DefaultOnPrimary
@@ -71,7 +71,7 @@ import com.example.ladycure.utility.SnackbarController
 @Composable
 fun DoctorsListScreen(
     navController: NavHostController,
-    specification: String,
+    speciality: String,
     snackbarController: SnackbarController
 ) {
     val repository = AuthRepository()
@@ -82,8 +82,8 @@ fun DoctorsListScreen(
     var isLoading by remember { mutableStateOf(true) }
     var swipeableDoctors by remember { mutableStateOf(doctors.value) }
 
-    LaunchedEffect(specification) {
-        val result = repository.getDoctorsBySpecification(specification)
+    LaunchedEffect(speciality) {
+        val result = repository.getDoctorsBySpeciality(speciality)
         if (result.isSuccess) {
             doctors.value = result.getOrDefault(emptyList())
             isLoading = false
@@ -131,7 +131,7 @@ fun DoctorsListScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Doctors in ${specification}",
+                    text = "Doctors in ${speciality}",
                     style = MaterialTheme.typography.titleLarge,
                     color = DefaultOnPrimary,
                     fontWeight = FontWeight.Bold,
@@ -817,7 +817,7 @@ fun ExpendedDoctorInfoCardPreview() {
         mapOf(
             "name" to "Sarah",
             "surname" to "Johnson",
-            "specification" to "Cardiologist",
+            "speciality" to "Cardiologist",
             "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
             "rating" to 4.7,
             "experience" to 12,
@@ -841,7 +841,7 @@ fun DoctorInfoCardPreview() {
         mapOf(
             "name" to "Sarah",
             "surname" to "Johnson",
-            "specification" to "Cardiologist",
+            "speciality" to "Cardiologist",
             "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
             "rating" to 4.7,
             "experience" to 12,

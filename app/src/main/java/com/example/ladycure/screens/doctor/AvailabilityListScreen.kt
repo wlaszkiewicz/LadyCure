@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens.doctor
 
 import DefaultBackground
 import DefaultPrimary
@@ -10,7 +10,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,15 +38,14 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,7 +58,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.utility.SnackbarController
@@ -275,7 +272,7 @@ private fun ExistingAvailabilityDayItem(
             .fillMaxWidth()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = androidx.compose.material3.ripple(),
+                indication = ripple(),
                 onClick = { /* Handle click if needed */ }
             )
     ) {

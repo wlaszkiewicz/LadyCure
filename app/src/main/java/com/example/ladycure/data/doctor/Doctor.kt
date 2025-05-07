@@ -119,7 +119,7 @@ data class Doctor(
 
             return Doctor(
                 speciality = Speciality.fromDisplayName(
-                    doctor["specification"] as? String ?: "Other"
+                    doctor["speciality"] as? String ?: "Other"
                 ),
                 address = doctor["address"] as? String ?: "No address provided",
                 availability = doctor["availability"] as? List<DoctorAvailability> ?: emptyList(),

@@ -28,6 +28,23 @@ import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.screens.AdminScreen
+import com.example.ladycure.screens.ChatScreen
+import com.example.ladycure.screens.LoginScreen
+import com.example.ladycure.screens.ProfileScreen
+import com.example.ladycure.screens.RegisterScreen
+import com.example.ladycure.screens.WelcomeScreen
+import com.example.ladycure.screens.doctor.AvailabilityListScreen
+import com.example.ladycure.screens.doctor.DoctorHomeScreen
+import com.example.ladycure.screens.doctor.SetAvailabilityScreen
+import com.example.ladycure.screens.user.BookAppointmentDirectlyScreen
+import com.example.ladycure.screens.user.BookAppointmentScreen
+import com.example.ladycure.screens.user.BookingSuccessScreen
+import com.example.ladycure.screens.user.ConfirmationScreen
+import com.example.ladycure.screens.user.DoctorsListScreen
+import com.example.ladycure.screens.user.HomeScreen
+import com.example.ladycure.screens.user.SearchDoctorsScreen
+import com.example.ladycure.screens.user.SelectServiceScreen
 import com.example.ladycure.utility.SnackbarController
 import com.google.firebase.FirebaseApp
 

@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens
 
 import DefaultBackground
 import DefaultOnPrimary
@@ -23,7 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +40,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.presentation.home.components.Screen
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController

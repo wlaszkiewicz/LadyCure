@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens.doctor
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -10,29 +10,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.style.TextAlign
 import com.example.ladycure.repository.AuthRepository
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import DefaultPrimary
-import DefaultOnPrimary
 import DefaultBackground
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
@@ -43,7 +33,6 @@ import androidx.compose.material3.TimePickerDialog
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
@@ -51,7 +40,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.TextStyle
-import java.time.temporal.ChronoUnit
 
 import com.example.ladycure.presentation.availability.CalendarView
 import com.example.ladycure.presentation.availability.CalendarHeader

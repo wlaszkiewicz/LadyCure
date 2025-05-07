@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens
 
 import DefaultOnPrimary
 import DefaultPrimary
@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import com.example.ladycure.R
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 

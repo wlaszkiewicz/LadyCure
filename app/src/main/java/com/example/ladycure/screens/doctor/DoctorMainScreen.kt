@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.screens.doctor
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
@@ -151,7 +151,7 @@ fun DoctorHomeScreen(
                         color = DefaultPrimary
                     )
                     Text(
-                        text = doctorData.value?.get("specification") as? String ?: "",
+                        text = doctorData.value?.get("speciality") as? String ?: "",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.8f)
                     )
