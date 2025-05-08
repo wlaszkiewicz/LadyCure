@@ -597,12 +597,60 @@ class AuthRepository {
 
     suspend fun cancelAppointment(appointmentId: String): Result<Unit> {
         return try {
-            val appointmentRef = firestore.collection("appointments").document(appointmentId)
-            appointmentRef.delete().await()
+            firestore.runTransaction { transaction ->
+                val appointmentRef = firestore.collection("appointments").document(appointmentId)
+                val appointmentSnapshot = transaction.get(appointmentRef)
+
+                if (!appointmentSnapshot.exists()) {
+                    throw Exception("Appointment not found")
+                }
+
+                val appointment = Appointment.fromMap(
+                    appointmentSnapshot.data?.plus("appointmentId" to appointmentId)
+                        ?: throw Exception("Invalid appointment data")
+                )
+
+                val doctorId = appointment.doctorId
+                val date = appointment.date
+                val startTime = appointment.time
+                val endTime =
+                    startTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
+
+                val availableSlots = mutableSetOf<LocalTime>()
+                var currentTime = startTime
+                while (currentTime.isBefore(endTime)) {
+                    availableSlots.add(currentTime)
+                    currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
+                }
+
+                val docRef = firestore.collection("users")
+                    .document(doctorId)
+                    .collection("availability")
+                    .document(date.toString())
+
+                val availabilitySnapshot = transaction.get(docRef)
+                if (availabilitySnapshot.exists()) {
+                    val currentAvailableSlots =
+                        availabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                    val updatedAvailableSlots = (currentAvailableSlots + availableSlots.map {
+                        it.format(
+                            DateTimeFormatter.ofPattern(
+                                "h:mm a",
+                                java.util.Locale.US
+                            )
+                        )
+                    }).distinct().sortedBy { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                    transaction.update(docRef, "availableSlots", updatedAvailableSlots)
+                } else {
+                    throw Exception("Availability document does not exist")
+                }
+
+                transaction.delete(appointmentRef)
+            }.await()
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
-
     }
 }
