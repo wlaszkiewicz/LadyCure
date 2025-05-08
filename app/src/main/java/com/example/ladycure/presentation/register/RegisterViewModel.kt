@@ -10,7 +10,6 @@ import androidx.navigation.NavController
 import com.example.ladycure.domain.RegisterUseCase
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.util.Calendar
 
 class RegisterViewModel(
     private val registerUseCase: RegisterUseCase
