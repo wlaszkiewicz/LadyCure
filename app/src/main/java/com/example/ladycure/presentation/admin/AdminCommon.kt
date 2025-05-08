@@ -327,7 +327,7 @@ fun buildUpdateMap(user: User): Map<String, Any> {
             put("experience", user.experience)
             put("languages", user.languages)
             put("city", user.city)
-            put("phoneNumber", user.phoneNumber)
+            put("phone", user.phone)
             put("bio", user.bio)
         }
     }
