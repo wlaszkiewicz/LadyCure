@@ -4,6 +4,7 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -22,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
@@ -45,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,6 +55,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
+import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import com.example.ladycure.R
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
@@ -182,6 +188,7 @@ fun RescheduleScreen(
 
             // Doctor info
             AppointmentInfoHeader(
+                doctor = doctor.value!!,
                 appointment = appointment!!,
                 modifier = Modifier.padding(horizontal = 0.dp)
             )
@@ -310,6 +317,7 @@ private fun DateSelector(
 
 @Composable
 private fun AppointmentInfoHeader(
+    doctor: Doctor,
     appointment: Appointment,
     modifier: Modifier = Modifier
 ) {
@@ -335,18 +343,39 @@ private fun AppointmentInfoHeader(
                 // Doctor avatar
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(50.dp)
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f))
                         .padding(6.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Doctor",
-                        tint = DefaultPrimary,
-                        modifier = Modifier.size(18.dp)
+                    if (doctor.profilePictureUrl.isNotEmpty()){
+                        SubcomposeAsyncImage(
+                            model = doctor.profilePictureUrl,
+                            contentDescription = "Profile Picture",
+                            contentScale = ContentScale.Crop,
+                            loading = {
+                                CircularProgressIndicator(color = DefaultPrimary, modifier = Modifier.fillMaxSize(0.5f))
+                            },
+                            error = {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Doctor",
+                                    tint = DefaultPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            modifier = Modifier.fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp)),
                     )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Doctor",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -441,24 +470,4 @@ private fun AppointmentInfoHeader(
             }
         }
     }
-}
-@Preview
-@Composable
-fun AppointmentInfoHeaderPreview() {
-    AppointmentInfoHeader(
-        appointment = Appointment(
-            appointmentId = "124",
-            doctorId = "RE2CoEAtEmXbYdhQ7PotN1rFqMk1",
-            patientId = "P002",
-            date = LocalDate.now(),
-            time = LocalTime.now(),
-            status = Appointment.Status.PENDING,
-            type = AppointmentType.DENTAL_IMPLANT,
-            price = 30.0,
-            doctorName = "Artur Kot",
-            patientName = "John Doe",
-            comments = "Make sure to arrive 15 minutes early. Bring your ID.",
-        ),
-        modifier = Modifier.padding(16.dp)
-    )
 }
