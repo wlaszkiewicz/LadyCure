@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -402,55 +403,90 @@ class AuthRepository {
         endTime: LocalTime
     ): Result<Unit> {
         val batch = firestore.batch()
-        val doctorId =
-            auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+        val doctorId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
 
-        val availableSlots = mutableSetOf<LocalTime>()
+        // Generate all possible slots for the new time range
+        val newSlots = mutableSetOf<LocalTime>()
         var currentTime = startTime
         while (currentTime.isBefore(endTime)) {
-            availableSlots.add(currentTime)
+            newSlots.add(currentTime)
             currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
         }
 
-        dates.forEach { date ->
-            val docRef = firestore.collection("users")
-                .document(doctorId)
-                .collection("availability")
-                .document(date.toString())
+        val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
 
-            val availabilityData = hashMapOf(
-                "doctorId" to doctorId,
-                "startTime" to startTime.format(
-                    DateTimeFormatter.ofPattern(
-                        "h:mm a",
-                        java.util.Locale.US
+        return try {
+            dates.forEach { date ->
+                val docRef = firestore.collection("users")
+                    .document(doctorId)
+                    .collection("availability")
+                    .document(date.toString())
+
+                // Get existing document
+                val existingDoc = docRef.get().await()
+
+                if (existingDoc.exists()) {
+                    // Get existing available slots
+                    val existingAvailableSlots = (existingDoc.get("availableSlots") as? List<String>)
+                        ?.mapNotNull { timeString ->
+                            try {
+                                LocalTime.parse(timeString, timeFormatter)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }?.toSet() ?: emptySet()
+
+                    // Get existing time range
+                    val existingStartTime = (existingDoc.getString("startTime")?.let {
+                        LocalTime.parse(it, timeFormatter)
+                    }) ?: LocalTime.MIN
+
+                    val existingEndTime = (existingDoc.getString("endTime")?.let {
+                        LocalTime.parse(it, timeFormatter)
+                    }) ?: LocalTime.MAX
+
+                    // Generate all possible slots from existing time range
+                    val allExistingSlots = mutableSetOf<LocalTime>()
+                    var existingCurrentTime = existingStartTime
+                    while (existingCurrentTime.isBefore(existingEndTime)) {
+                        allExistingSlots.add(existingCurrentTime)
+                        existingCurrentTime = existingCurrentTime.plus(15, ChronoUnit.MINUTES)
+                    }
+
+                    // Calculate booked slots (slots that were in the full range but not available)
+                    val bookedSlots = allExistingSlots - existingAvailableSlots
+
+                    // Merge slots: new slots + existing available slots, minus any that overlap with booked slots
+                    val mergedSlots = (newSlots + existingAvailableSlots).toMutableSet()
+                    mergedSlots.removeAll(bookedSlots)
+
+                    // Update the document
+                    val availabilityData = hashMapOf(
+                        "doctorId" to doctorId,
+                        "startTime" to startTime.format(timeFormatter),
+                        "endTime" to endTime.format(timeFormatter),
+                        "availableSlots" to mergedSlots.map { it.format(timeFormatter) }
                     )
-                ),
-                "endTime" to endTime.format(
-                    DateTimeFormatter.ofPattern(
-                        "h:mm a",
-                        java.util.Locale.US
+
+                    batch.set(docRef, availabilityData, SetOptions.merge())
+                } else {
+                    // No existing document - just create new availability
+                    val availabilityData = hashMapOf(
+                        "doctorId" to doctorId,
+                        "startTime" to startTime.format(timeFormatter),
+                        "endTime" to endTime.format(timeFormatter),
+                        "availableSlots" to newSlots.map { it.format(timeFormatter) }
                     )
-                ),
-                "availableSlots" to availableSlots.map {
-                    it.format(
-                        DateTimeFormatter.ofPattern(
-                            "h:mm a",
-                            java.util.Locale.US
-                        )
-                    )
+
+                    batch.set(docRef, availabilityData)
                 }
-            )
+            }
 
-            batch.set(docRef, availabilityData)
-        }
-
-        try {
             batch.commit().await()
+            Result.success(Unit)
         } catch (e: Exception) {
-            return Result.failure(e)
+            Result.failure(e)
         }
-        return Result.success(Unit)
     }
 
     suspend fun getDoctorById(doctorId: String): Result<Doctor> {
