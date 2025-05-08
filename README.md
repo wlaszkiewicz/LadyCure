@@ -6,24 +6,24 @@ The application should support multiple user roles, each with specific functiona
 ### User Roles:
 
 - **Administrator**:  
-  Responsible for managing the entire system, including adding and removing doctors, modifying doctor profiles, updating their availability schedules, and managing patient/user data.
+  Responsible for managing the entire system, 	~~including adding and removing doctors, modifying doctor profiles,~~ **updating their availability schedules**, ~~and managing patient/user data.~~
 
 - **Doctor**:  
-  A medical professional who can update their profile information, set their availability for appointments, view scheduled consultations, and interact with patients via chat during e-consultations.
+ ~~A medical professional who can update their profile information, set their availability for appointments, view scheduled consultations,~~ and interact with patients via chat during e-consultations.
 
 - **Patient/User**:  
-  A general user who can register for an account, browse available doctors, book appointments, attend e-consultations via chat, view past consultations in their medical history, and upload/download medical documents such as prescriptions.
+  ~~A general user who can register for an account, browse available doctors, book appointments,~~ **attend e-consultations via chat, view past consultations in their medical history, and upload/download medical documents such as prescriptions**.
 
 ---
 
 ### Key Features:
 
-1. **Authentication & Authorization**:
-    - Implement Firebase Authentication to manage user accounts and roles.
+~~1. **Authentication & Authorization**:
+    - Implement Firebase Authentication to manage user accounts and roles.~~
 
-2. **Appointment Scheduling**:
+~~2. **Appointment Scheduling**:
     - Users should be able to view doctors' availability and book appointments.
-    - Doctors should be able to modify their schedules.
+    - Doctors should be able to modify their schedules.~~
 
 3. **E-Consultation via Chat**:
     - Real-time chat functionality for online consultations.
@@ -50,7 +50,7 @@ The application should support multiple user roles, each with specific functiona
 
 ### Project Requirements:
 
-- The application must have a clean and user-friendly interface.
+~~- The application must have a clean and user-friendly interface.~~
 - Implement proper validation for user inputs.
 - Ensure data security and user authentication.
 - Maintain proper documentation of the code and application functionality.
