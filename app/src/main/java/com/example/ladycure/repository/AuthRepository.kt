@@ -403,7 +403,8 @@ class AuthRepository {
         endTime: LocalTime
     ): Result<Unit> {
         val batch = firestore.batch()
-        val doctorId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+        val doctorId =
+            auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
 
         // Generate all possible slots for the new time range
         val newSlots = mutableSetOf<LocalTime>()
@@ -427,14 +428,15 @@ class AuthRepository {
 
                 if (existingDoc.exists()) {
                     // Get existing available slots
-                    val existingAvailableSlots = (existingDoc.get("availableSlots") as? List<String>)
-                        ?.mapNotNull { timeString ->
-                            try {
-                                LocalTime.parse(timeString, timeFormatter)
-                            } catch (e: Exception) {
-                                null
-                            }
-                        }?.toSet() ?: emptySet()
+                    val existingAvailableSlots =
+                        (existingDoc.get("availableSlots") as? List<String>)
+                            ?.mapNotNull { timeString ->
+                                try {
+                                    LocalTime.parse(timeString, timeFormatter)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }?.toSet() ?: emptySet()
 
                     // Get existing time range
                     val existingStartTime = (existingDoc.getString("startTime")?.let {
@@ -675,13 +677,136 @@ class AuthRepository {
                                 java.util.Locale.US
                             )
                         )
-                    }).distinct().sortedBy { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                    }).distinct().sortedBy {
+                        LocalTime.parse(
+                            it,
+                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        )
+                    }
                     transaction.update(docRef, "availableSlots", updatedAvailableSlots)
                 } else {
                     throw Exception("Availability document does not exist")
                 }
 
                 transaction.delete(appointmentRef)
+            }.await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun rescheduleAppointment(
+        appointmentId: String,
+        newTime: LocalTime,
+        newDate: LocalDate
+    ): Result<Unit> {
+        return try {
+            val appointmentRef = firestore.collection("appointments").document(appointmentId)
+            val appointmentSnapshot = appointmentRef.get().await()
+
+            if (!appointmentSnapshot.exists()) {
+                return Result.failure(Exception("Appointment not found"))
+            }
+
+            val appointment = Appointment.fromMap(
+                appointmentSnapshot.data?.plus("appointmentId" to appointmentId)
+                    ?: throw Exception("Invalid appointment data")
+            )
+
+            val doctorId = appointment.doctorId
+            val oldDate = appointment.date
+            val oldStartTime = appointment.time
+            val oldEndTime =
+                oldStartTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
+
+            val newEndTime =
+                newTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
+
+            // Update the appointment with the new date and time
+            val updatedAppointmentData = mapOf(
+                "date" to newDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd", java.util.Locale.US)),
+                "time" to newTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+            )
+
+            appointmentRef.update(updatedAppointmentData).await()
+
+            // get 15 minute slots that we can add back to the doctor's availability
+            val againAvailableSlots = mutableSetOf<LocalTime>()
+            var currentTime = oldStartTime
+            while (currentTime.isBefore(oldEndTime)) {
+                againAvailableSlots.add(currentTime)
+                currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
+            }
+
+            firestore.runTransaction { transaction ->
+                // Add the old time slot back to the doctor's availability
+                val docRef = firestore.collection("users")
+                    .document(doctorId)
+                    .collection("availability")
+                    .document(oldDate.toString())
+
+                val newDocRef = firestore.collection("users")
+                    .document(doctorId)
+                    .collection("availability")
+                    .document(newDate.toString())
+
+                // Read all required documents first
+                val availabilitySnapshot = transaction.get(docRef)
+                val newAvailabilitySnapshot = transaction.get(newDocRef)
+
+                // Process the old availability
+                if (availabilitySnapshot.exists()) {
+                    val doctorStartTime =
+                        availabilitySnapshot.getString("startTime")?.let {
+                            LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                        } ?: LocalTime.MIN
+                    val doctorEndTime =
+                        availabilitySnapshot.getString("endTime")?.let {
+                            LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                        } ?: LocalTime.MAX
+
+                    // Check if the old time is within the doctor's availability (could have been changed)
+                    val filteredSlots = againAvailableSlots.filter { slot ->
+                        (slot.isAfter(doctorStartTime) && slot.isBefore(doctorEndTime)) || slot == doctorStartTime
+                    }
+
+                    val currentAvailableSlots =
+                        availabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                    val updatedAvailableSlots = (currentAvailableSlots + filteredSlots.map {
+                        it.format(
+                            DateTimeFormatter.ofPattern(
+                                "h:mm a",
+                                java.util.Locale.US
+                            )
+                        )
+                    }).distinct().sortedBy {
+                        LocalTime.parse(
+                            it,
+                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        )
+                    }
+                    transaction.update(docRef, "availableSlots", updatedAvailableSlots)
+                } else {
+                    throw Exception("Availability document does not exist")
+                }
+
+                // Process the new availability
+                if (newAvailabilitySnapshot.exists()) {
+                    val newAvailableSlots =
+                        newAvailabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                    val updatedNewAvailableSlots = newAvailableSlots.filterNot { slot ->
+                        val slotTime = LocalTime.parse(
+                            slot,
+                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        )
+                        (slotTime.isAfter(newTime) && slotTime.isBefore(newEndTime)) || slotTime == newTime
+                    }
+                    transaction.update(newDocRef, "availableSlots", updatedNewAvailableSlots)
+                } else {
+                    throw Exception("Availability document does not exist")
+                }
             }.await()
 
             Result.success(Unit)

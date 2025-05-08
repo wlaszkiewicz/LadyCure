@@ -27,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.BottomNavBar
+import com.example.ladycure.screens.user.RescheduleScreen
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.screens.AdminScreen
 import com.example.ladycure.screens.ChatScreen
@@ -69,7 +70,7 @@ fun MainScreen(navController: NavHostController) {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // List of screens where BottomNavBar should be hidden
+    // List of screens where BottomNavBar should be shown
     val showBottomNavRoutes = listOf(
         "home",
         "doctor",
@@ -199,6 +200,14 @@ fun MainScreen(navController: NavHostController) {
                         doctor,
                         AppointmentType.fromDisplayName(service)
                     )
+                }
+
+                composable("reschedule/{appointmentId}") {backStackEntry ->
+                    val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
+                    RescheduleScreen(
+                        appointmentId,
+                        navController,
+                        snackbarController)
                 }
 
             }

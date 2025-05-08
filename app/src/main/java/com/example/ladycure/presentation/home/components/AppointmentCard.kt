@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import DefaultOnPrimary
 import DefaultPrimary
+import LadyCureTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -32,49 +33,55 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.wear.compose.material3.Text
 import com.example.ladycure.data.Appointment.Status
-import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalTime
-
 
 @Composable
-fun AppointmentsSection(appointments: List<Appointment>, snackbarController: SnackbarController) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
-        Text(
-            text = "Upcoming Appointments",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
-                color = DefaultPrimary
-            ),
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
+fun AppointmentsSection(appointments: List<Appointment>, snackbarController: SnackbarController, navController: NavController) {
+    LadyCureTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = "Upcoming Appointments",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = DefaultPrimary
+                ),
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
 
-        if (appointments.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No upcoming appointments",
-                    color = DefaultOnPrimary.copy(alpha = 0.6f)
-                )
-            }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                appointments.forEach { appointment ->
-                    PatientAppointmentCard(appointment, snackbarController = snackbarController)
+            if (appointments.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No upcoming appointments",
+                        color = DefaultOnPrimary.copy(alpha = 0.6f)
+                    )
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                ) {
+                    appointments.forEach { appointment ->
+                        PatientAppointmentCard(
+                            appointment,
+                            snackbarController = snackbarController,
+                            navController = navController
+                        )
+                    }
                 }
             }
         }
@@ -82,7 +89,7 @@ fun AppointmentsSection(appointments: List<Appointment>, snackbarController: Sna
 }
 
 @Composable
-fun PatientAppointmentCard(appointment: Appointment, snackbarController: SnackbarController) {
+fun PatientAppointmentCard(appointment: Appointment, snackbarController: SnackbarController, navController: NavController) {
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
@@ -132,7 +139,8 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
                             text = appointment.type.displayName,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold
-                            )
+                            ),
+                            color = DefaultOnPrimary
                         )
                         Text(
                             text = "Dr. ${appointment.doctorName}",
@@ -157,7 +165,7 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.date.toString(), style = MaterialTheme.typography.bodyMedium)
+                        Text(appointment.date.toString(), style = MaterialTheme.typography.bodyMedium, color = DefaultOnPrimary)
                     }
 
                     Column(
@@ -168,7 +176,7 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.time.toString(), style = MaterialTheme.typography.bodyMedium)
+                        Text(appointment.time.toString(), style = MaterialTheme.typography.bodyMedium, color = DefaultOnPrimary)
                     }
                 }
 
@@ -208,8 +216,9 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
 
     if (showDetailsDialog.value) {
         ShowDetailsDialog(appointment = appointment,
-            onDismiss = { showDetailsDialog.value = false
-            },snackbarController = snackbarController
+            onDismiss = { showDetailsDialog.value = false },
+            onReschedule =  {navController.navigate("reschedule/${appointment.appointmentId}")},
+            snackbarController = snackbarController
         )
     }
 }
@@ -247,9 +256,12 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
     }
 
 
-
 @Composable
-fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarController: SnackbarController) {
+fun ShowDetailsDialog(
+    appointment: Appointment,
+    onDismiss: () -> Unit,
+    onReschedule: () -> Unit,
+    snackbarController: SnackbarController) {
     val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Color(0xFF4CAF50)
@@ -298,7 +310,8 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarC
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 19.sp
-                            )
+                            ),
+                            color = DefaultOnPrimary
                         )
                         Text(
                             text = "Dr. ${appointment.doctorName}",
@@ -370,44 +383,48 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarC
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Comments (full width)
-                DetailRow(
-                    icon = Icons.AutoMirrored.Filled.Comment,
-                    title = "Note",
-                    value = appointment.comments.ifEmpty { "No note" }
-                )
+                    DetailRow(
+                        icon = Icons.Default.Comment,
+                        title = "Comments",
+                        value = appointment.comments.ifEmpty { "No comments" }
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                Spacer(modifier = Modifier.height(32.dp))
 
                 // Actions
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = { showCancelConfirmation.value = true }, // Changed from onDismiss
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color.Red),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = Color.Red.copy(alpha = 0.5f)
-                        ),
-                        contentPadding = PaddingValues(12.dp)
+                if (appointment.status != Status.CANCELLED) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Cancel", color = Color.Red.copy(alpha = 0.8f))
-                    }
+                        Button(
+                            onClick = {
+                                showCancelConfirmation.value = true
+                            }, // Changed from onDismiss
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFFF44336)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = Color(0xFFF44336)
+                            ),
+                            contentPadding = PaddingValues(12.dp)
+                        ) {
+                            Text("Cancel", color = Color.Red.copy(alpha = 0.8f))
+                        }
 
-                    Button(
-                        onClick = { /* Handle reschedule */ },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DefaultPrimary.copy(alpha = 0.8f),
-                        )
-                    ) {
-                        Text("Reschedule", color = Color.White)
+                        Button(
+                            onClick = onReschedule,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary.copy(alpha = 0.8f),
+                            )
+                        ) {
+                            Text("Reschedule", color = Color.White)
+                        }
                     }
                 }
             }
@@ -470,9 +487,8 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarC
             )
         }
     }
-
-
 }
+
 
 @Composable
 private fun DetailRow(

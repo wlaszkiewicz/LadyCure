@@ -34,7 +34,7 @@ open class User(
         experience: Int = 5,
         languages: List<String> = listOf("English"),
         city: String = "Unknown",
-        phoneNumber: String = "Unknown",
+        phone: String = "Unknown",
         bio: String = "No bio provided"
     ): Doctor {
         return Doctor(
@@ -52,7 +52,7 @@ open class User(
             experience = experience,
             languages = languages,
             city = city,
-            phoneNumber = phoneNumber,
+            phone = phone,
             bio = bio
         )
     }

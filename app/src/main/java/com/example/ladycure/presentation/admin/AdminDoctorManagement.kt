@@ -124,7 +124,7 @@ fun DoctorDetailsDialogSection(
             )
 
             OutlinedTextField(
-                value = doctor.phoneNumber,
+                value = doctor.phone,
                 onValueChange = { onDoctorChange(doctor.copyDoc(phoneNumber = it)) },
                 label = { Text("Phone Number") },
                 modifier = Modifier.weight(1f),

@@ -268,7 +268,7 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
                     )
 
                     AppointmentsSection(
-                        appointments = appointments.value, snackbarController!!
+                        appointments = appointments.value, snackbarController!!, navController
                     )
             }
     }
