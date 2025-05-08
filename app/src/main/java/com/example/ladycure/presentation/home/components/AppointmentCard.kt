@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -36,12 +37,15 @@ import androidx.compose.ui.unit.sp
 import com.example.ladycure.data.Appointment.Status
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
+import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
 
 @Composable
-fun AppointmentsSection(appointments: List<Appointment>) {
+fun AppointmentsSection(appointments: List<Appointment>, snackbarController: SnackbarController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -70,7 +74,7 @@ fun AppointmentsSection(appointments: List<Appointment>) {
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 appointments.forEach { appointment ->
-                    PatientAppointmentCard(appointment)
+                    PatientAppointmentCard(appointment, snackbarController = snackbarController)
                 }
             }
         }
@@ -78,7 +82,7 @@ fun AppointmentsSection(appointments: List<Appointment>) {
 }
 
 @Composable
-fun PatientAppointmentCard(appointment: Appointment) {
+fun PatientAppointmentCard(appointment: Appointment, snackbarController: SnackbarController) {
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
@@ -204,7 +208,8 @@ fun PatientAppointmentCard(appointment: Appointment) {
 
     if (showDetailsDialog.value) {
         ShowDetailsDialog(appointment = appointment,
-            onDismiss = { showDetailsDialog.value = false }
+            onDismiss = { showDetailsDialog.value = false
+            },snackbarController = snackbarController
         )
     }
 }
@@ -241,56 +246,19 @@ fun PatientAppointmentCard(appointment: Appointment) {
         }
     }
 
-@Preview
-@Composable
-fun PreviewAppointmentCard() {
-     PatientAppointmentCard(
-            appointment = Appointment(
-                appointmentId = "1",
-                doctorId = "Smith",
-                patientId = "Patient123",
-                date =LocalDate.now(),
-                time = LocalTime.now(),
-                status = Status.CONFIRMED,
-                type = AppointmentType.ANXIETY_DEPRESSION_SCREENING,
-                price = 150.0,
-                address = "123 Main St, City",
-                doctorName = "John Doe",
-                comments = "Follow-up appointment for anxiety and depression screening."
-            )
-        )
-}
-
-@Preview
-@Composable
-fun PreviewAppointmentDetailsDialog() {
-    ShowDetailsDialog(
-        appointment = Appointment(
-            appointmentId = "1",
-            doctorId = "Smith",
-            patientId = "Patient123",
-            date = LocalDate.now(),
-            time = LocalTime.now(),
-            status = Status.CONFIRMED,
-            type = AppointmentType.ANXIETY_DEPRESSION_SCREENING,
-            price = 150.0,
-            address = "123 Main St, City",
-            doctorName = "John Doe",
-            comments = "Follow-up appointment for anxiety and depression screening."
-        ),
-        onDismiss = {}
-    )
-}
 
 
 @Composable
-fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
+fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarController: SnackbarController) {
     val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Color(0xFF4CAF50)
         Status.PENDING -> Color(0xFFFFC107)
         else -> Color(0xFFF44336)
     }
+
+    val authRepo = AuthRepository()
+    val coroutineScope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -465,9 +433,18 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit) {
                 confirmButton = {
                     Button(
                         onClick = {
-                            showCancelConfirmation.value = false
-                            onDismiss()
-                            //cancellation logic here
+                            coroutineScope.launch {
+                               val result = authRepo.cancelAppointment(appointment.appointmentId)
+                                if (result.isSuccess) {
+                                    appointment.status = Status.CANCELLED
+                                    snackbarController.showMessage("Appointment cancelled successfully")
+                                    showCancelConfirmation.value = false
+                                    onDismiss()
+                                } else {
+                                    snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")
+                                }
+                            }
+
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Red.copy(alpha = 0.5f),
