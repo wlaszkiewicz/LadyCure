@@ -39,6 +39,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Edit
@@ -49,7 +50,6 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
@@ -147,7 +147,7 @@ fun BookAppointmentScreen(
     // Get unique available dates from filtered availabilities
     val availableDates = doctorAvailabilities.value
         .map { it.date }
-        .filter { it?.isAfter(LocalDate.now()) == true }
+        .filter { it != null && (it.isAfter(LocalDate.now()) || it.isEqual(LocalDate.now())) }
         .distinct()
         .sortedBy { it }
 
@@ -471,12 +471,12 @@ fun DateCard(
     val dayOfWeek = try {
         LocalDate.parse(date).dayOfWeek.toString().take(3)
     } catch (e: Exception) {
-        "error"
+        "error: ${e.message}"
     }
     val dayOfMonth = try {
         LocalDate.parse(date).dayOfMonth.toString()
     } catch (e: Exception) {
-        "error"
+        "error: ${e.message}"
     }
 
     Card(
@@ -640,7 +640,7 @@ fun formatDateForDisplay(dateString: String): String {
             else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
         }
     } catch (e: Exception) {
-        dateString
+        dateString + " (${e.message})"
     }
 }
 
@@ -1076,7 +1076,7 @@ fun RatingBar(
         }
         if (halfStar) {
             Icon(
-                imageVector = Icons.Default.StarHalf,
+                imageVector = Icons.AutoMirrored.Filled.StarHalf,
                 contentDescription = "Half star",
                 tint = Color(0xFFFFA000),
                 modifier = Modifier.size(16.dp)
@@ -1119,9 +1119,11 @@ fun DoctorCardPreview() {
 
 
 fun filerTimeSlotsForDate(date: LocalDate, availabilities: List<DoctorAvailability>): List<String> {
+    val now = LocalTime.now()
     return availabilities
         .filter { it.date == date }
         .flatMap { it.availableSlots }
+        .filter { date != LocalDate.now() || it.isAfter(now) } // can we changed so shows only the ones 15 minutes from now so user cant book eg one that starts in 2 minutes
         .distinct()
         .sorted()
         .map { it.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)) }
