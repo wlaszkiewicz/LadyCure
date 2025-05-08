@@ -593,4 +593,16 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+
+    suspend fun cancelAppointment(appointmentId: String): Result<Unit> {
+        return try {
+            val appointmentRef = firestore.collection("appointments").document(appointmentId)
+            appointmentRef.delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    }
 }
