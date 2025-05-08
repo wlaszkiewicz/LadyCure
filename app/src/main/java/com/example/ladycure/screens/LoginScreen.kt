@@ -87,7 +87,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                 contentDescription = "Capybara background",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(330.dp)
+                    .height(310.dp)
                     .padding(bottom = 30.dp)
                     .align(Alignment.TopCenter)
                     .zIndex(1f),
@@ -100,7 +100,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 240.dp)
+                    .padding(top = 220.dp)
                     .padding(vertical = 16.dp)
                     .zIndex(0f),
                 shape = RoundedCornerShape(16.dp),
@@ -112,7 +112,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 40.dp)
+                        .padding(horizontal = 16.dp, vertical = 30.dp)
                         .padding(top = 30.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
