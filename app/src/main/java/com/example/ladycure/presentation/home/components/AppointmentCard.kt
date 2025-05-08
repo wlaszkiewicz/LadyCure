@@ -24,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.R
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,6 +36,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.ladycure.data.Appointment.Status
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
@@ -45,7 +48,7 @@ import java.time.LocalTime
 
 
 @Composable
-fun AppointmentsSection(appointments: List<Appointment>, snackbarController: SnackbarController) {
+fun AppointmentsSection(appointments: List<Appointment>, snackbarController: SnackbarController, navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -74,7 +77,7 @@ fun AppointmentsSection(appointments: List<Appointment>, snackbarController: Sna
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 appointments.forEach { appointment ->
-                    PatientAppointmentCard(appointment, snackbarController = snackbarController)
+                    PatientAppointmentCard(appointment, snackbarController = snackbarController, navController = navController)
                 }
             }
         }
@@ -82,7 +85,9 @@ fun AppointmentsSection(appointments: List<Appointment>, snackbarController: Sna
 }
 
 @Composable
-fun PatientAppointmentCard(appointment: Appointment, snackbarController: SnackbarController) {
+fun PatientAppointmentCard(appointment: Appointment, snackbarController: SnackbarController, navController: NavController) {
+    val coroutineScope = rememberCoroutineScope()
+    val authRepo = AuthRepository()
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
@@ -91,7 +96,7 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
         else -> Color(0xFFF44336) // Red
     }
 
-    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp))
+    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
     ) {
         Card(
             modifier = Modifier.width(280.dp),
@@ -207,9 +212,29 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
     }
 
     if (showDetailsDialog.value) {
-        ShowDetailsDialog(appointment = appointment,
-            onDismiss = { showDetailsDialog.value = false
-            },snackbarController = snackbarController
+        ShowDetailsDialog(
+            appointment = appointment,
+            onDismiss = { showDetailsDialog.value = false },
+            onReschedule = {
+                showDetailsDialog.value = false
+                navController.navigate("reschedule/${appointment.appointmentId}")
+            },
+            onCancel = {
+                showDetailsDialog.value = false
+                coroutineScope.launch {
+                    try {
+                        val result = authRepo.cancelAppointment(appointment.appointmentId)
+                        if (result.isSuccess) {
+                            appointment.status = Status.CANCELLED
+                            snackbarController.showMessage("Appointment cancelled successfully")
+                        } else {
+                            snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")
+                        }
+                    } catch (e: Exception) {
+                        snackbarController.showMessage("Error: ${e.message}")
+                    }
+                }
+            }
         )
     }
 }
@@ -249,7 +274,11 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
 
 
 @Composable
-fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarController: SnackbarController) {
+fun ShowDetailsDialog(
+    appointment: Appointment,
+    onDismiss: () -> Unit,
+    onReschedule: () -> Unit,
+    onCancel: () -> Unit){
     val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Color(0xFF4CAF50)
@@ -258,7 +287,6 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarC
     }
 
     val authRepo = AuthRepository()
-    val coroutineScope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -371,43 +399,47 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarC
 
                 // Comments (full width)
                 DetailRow(
-                    icon = Icons.AutoMirrored.Filled.Comment,
-                    title = "Note",
-                    value = appointment.comments.ifEmpty { "No note" }
+                    icon = Icons.Default.Comment,
+                    title = "Comments",
+                    value = appointment.comments.ifEmpty { "No comments" }
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Actions
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = { showCancelConfirmation.value = true }, // Changed from onDismiss
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color.Red),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = Color.Red.copy(alpha = 0.5f)
-                        ),
-                        contentPadding = PaddingValues(12.dp)
+                if (appointment.status != Status.CANCELLED) {
+                    // Actions
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Cancel", color = Color.Red.copy(alpha = 0.8f))
-                    }
+                        Button(
+                            onClick = {
+                                showCancelConfirmation.value = true
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.4f)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = Color.Red.copy(alpha = 0.4f)
+                            ),
+                            contentPadding = PaddingValues(12.dp)
+                        ) {
+                            Text("Cancel", color = Color.Red.copy(alpha = 0.5f))
+                        }
 
-                    Button(
-                        onClick = { /* Handle reschedule */ },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DefaultPrimary.copy(alpha = 0.8f),
-                        )
-                    ) {
-                        Text("Reschedule", color = Color.White)
+                        Button(
+                            onClick = onReschedule,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary.copy(alpha = 0.8f),
+                            )
+                        ) {
+                            Text("Reschedule", color = Color.White)
+                        }
                     }
                 }
             }
@@ -432,20 +464,7 @@ fun ShowDetailsDialog(appointment: Appointment, onDismiss: () -> Unit, snackbarC
                 },
                 confirmButton = {
                     Button(
-                        onClick = {
-                            coroutineScope.launch {
-                               val result = authRepo.cancelAppointment(appointment.appointmentId)
-                                if (result.isSuccess) {
-                                    appointment.status = Status.CANCELLED
-                                    snackbarController.showMessage("Appointment cancelled successfully")
-                                    showCancelConfirmation.value = false
-                                    onDismiss()
-                                } else {
-                                    snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")
-                                }
-                            }
-
-                        },
+                        onClick = onCancel,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Red.copy(alpha = 0.5f),
                             contentColor = Color.White

@@ -43,6 +43,7 @@ import com.example.ladycure.screens.user.BookingSuccessScreen
 import com.example.ladycure.screens.user.ConfirmationScreen
 import com.example.ladycure.screens.user.DoctorsListScreen
 import com.example.ladycure.screens.user.HomeScreen
+import com.example.ladycure.screens.user.RescheduleScreen
 import com.example.ladycure.screens.user.SearchDoctorsScreen
 import com.example.ladycure.screens.user.SelectServiceScreen
 import com.example.ladycure.utility.SnackbarController
@@ -200,7 +201,13 @@ fun MainScreen(navController: NavHostController) {
                         AppointmentType.fromDisplayName(service)
                     )
                 }
-
+                composable("reschedule/{appointmentId}") {backStackEntry ->
+                    val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
+                    RescheduleScreen(
+                        appointmentId,
+                        navController,
+                        snackbarController)
+                }
             }
         }
     }
