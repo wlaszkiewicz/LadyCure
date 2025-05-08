@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -137,9 +138,10 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                 contentDescription = "Capybara background",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(180.dp)
                     .align(Alignment.TopCenter)
-                    .zIndex(1f),
+                    .zIndex(1f)
+                    .graphicsLayer(alpha = 0.98f),
                 contentScale = ContentScale.Fit
             )
 
