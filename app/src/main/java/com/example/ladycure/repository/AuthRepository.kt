@@ -68,7 +68,7 @@ class AuthRepository {
                 "consultationPrice" to FieldValue.delete(),
                 "experience" to FieldValue.delete(),
                 "languages" to FieldValue.delete(),
-                "phoneNumber" to FieldValue.delete(),
+                "phone" to FieldValue.delete(),
                 "speciality" to FieldValue.delete(),
                 "city" to FieldValue.delete(),
                 "bio" to FieldValue.delete(),

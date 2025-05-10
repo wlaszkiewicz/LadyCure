@@ -66,7 +66,7 @@ data class Doctor(
         experience: Int = this.experience,
         languages: List<String> = this.languages,
         city: String = this.city,
-        phoneNumber: String = this.phone,
+        phone: String = this.phone,
         bio: String = this.bio,
     ): Doctor {
         return Doctor(
@@ -79,7 +79,7 @@ data class Doctor(
             experience = experience,
             languages = languages,
             city = city,
-            phone = phoneNumber,
+            phone = phone,
             bio = bio,
             id = id,
             email = email,

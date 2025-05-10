@@ -5,6 +5,8 @@ import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,13 +23,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Person
+
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,12 +52,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
+
+import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import com.example.ladycure.R
+
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
@@ -56,6 +74,9 @@ import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
+
+import kotlinx.coroutines.async
+
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -63,13 +84,15 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
- fun RescheduleScreen(
+fun RescheduleScreen(
     appointmentId: String,
     navController: NavController,
     snackbarController: SnackbarController
-) { var appointment by remember { mutableStateOf<Appointment?>(null) }
-    val selectedDate = remember { mutableStateOf<LocalDate?>(appointment?.date) }
-    val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(appointment?.time) }
+) {
+    var appointment by remember { mutableStateOf<Appointment?>(null) }
+    val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
+    val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
+
     val authRepo = AuthRepository()
     val doctorAvailability = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
     val isLoading = remember { mutableStateOf(true) }
@@ -79,48 +102,69 @@ import java.util.Locale
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(error) {
-        if (error !="") {
+        if (error.isNotEmpty()) {
+
             snackbarController.showMessage(error)
             error = ""
         }
     }
 
-    LaunchedEffect(appointment) {
-        val result = authRepo.getAppointmentById(appointmentId)
-        if (result.isSuccess) {
-            isLoading.value = false
-            appointment = result.getOrNull()
-            val result = authRepo.getDoctorById(appointment!!.doctorId)
-            if (result.isSuccess) {
-                doctor.value = result.getOrNull()
-                val result = authRepo.getDoctorAvailability(appointment!!.doctorId)
-                if (result.isSuccess) {
-                    doctorAvailability.value = result.getOrNull()!!
-                    isLoading.value = false
-                } else {
-                    error = result.exceptionOrNull()?.message!!
+
+    LaunchedEffect(appointmentId) {
+        isLoading.value = true
+        try {
+            // Load appointment
+            val appointmentResult = authRepo.getAppointmentById(appointmentId)
+            if (appointmentResult.isSuccess) {
+                appointment = appointmentResult.getOrNull()
+
+                // Load doctor and availability in parallel
+                val doctorDeferred = coroutineScope.async {
+                    authRepo.getDoctorById(appointment!!.doctorId).getOrNull()
                 }
+                val availabilityDeferred = coroutineScope.async {
+                    authRepo.getDoctorAvailability(appointment!!.doctorId).getOrNull()
+                }
+
+                doctor.value = doctorDeferred.await()
+                doctorAvailability.value = availabilityDeferred.await() ?: emptyList()
             } else {
-                error = result.exceptionOrNull()?.message!!
+                error = appointmentResult.exceptionOrNull()?.message ?: "Failed to load appointment"
             }
-        } else {
-            error = result.exceptionOrNull()?.message!!
+        } catch (e: Exception) {
+            error = e.message ?: "An error occurred"
+        } finally {
+
             isLoading.value = false
         }
     }
 
-    if (isLoading.value || appointment == null) {
-        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+    if (isLoading.value) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
             CircularProgressIndicator(color = DefaultPrimary)
             Spacer(modifier = Modifier.height(16.dp))
             Text("Loading appointment data...", color = DefaultOnPrimary)
         }
-    } else if (appointment != null &&  doctor.value != null) {
+
+    } else if (appointment == null || doctor.value == null) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Failed to load appointment data", color = DefaultOnPrimary)
+        }
+    } else {
         val availableDates = doctorAvailability.value
-            .map { it.date }
-            .filter { it != null && (it.isAfter(LocalDate.now()) || it.isEqual(LocalDate.now())) }
+            .mapNotNull { it.date }
+            .filter { it.isAfter(LocalDate.now()) || it.isEqual(LocalDate.now()) }
             .distinct()
-            .sortedBy { it }
+            .sorted()
 
         val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailability.value) {
             if (selectedDate.value == null) emptyList() else {
@@ -159,88 +203,97 @@ import java.util.Locale
 
             Spacer(modifier = Modifier.height(16.dp))
 
-//            // Doctor info
-//            AppointmentInfoHeader(
-//                appointment = appointment!!,
-//                modifier = Modifier.padding(horizontal = 0.dp)
-//            )
+            // Doctor info
+            AppointmentInfoHeader(
+                doctor = doctor.value!!,
+                appointment = appointment!!,
+                modifier = Modifier.padding(horizontal = 0.dp)
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Service info chip
-            ServiceInfoChip(appointment!!.type, modifier = Modifier.padding(bottom = 16.dp))
-
             // Date selection
-            Text(
-                text = "Select New Date",
-                style = MaterialTheme.typography.titleMedium,
-                color = DefaultOnPrimary,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
-            )
-
-            // Date selector
-            DateSelector(
-                availableDates = availableDates.map { it!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
-                selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                onDateSelected = {
-                    selectedDate.value =
-                        LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    selectedTimeSlot.value = null
-                },
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            // Time slots
-            if (selectedDate.value != null) {
+            if (availableDates.isNotEmpty()) {
                 Text(
-                    text = "Available Time Slots",
+                    text = "Select New Date",
                     style = MaterialTheme.typography.titleMedium,
                     color = DefaultOnPrimary,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
                 )
 
-                if (timeSlotsForSelectedDate.isEmpty()) {
+                DateSelector(
+                    availableDates = availableDates.map { it.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
+                    selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                    onDateSelected = {
+                        selectedDate.value = LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        selectedTimeSlot.value = null
+                    },
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                // Time slots - only show if we have a selected date
+                selectedDate.value?.let {
                     Text(
-                        text = "No available time slots for selected date",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultOnPrimary.copy(alpha = 0.7f)
+                        text = "Available Time Slots",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = DefaultOnPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
-                } else {
-                    TimeSlotGrid(
-                        timeSlots = timeSlotsForSelectedDate,
-                        selectedTimeSlot = selectedTimeSlot.value?.format(
-                            DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                        ),
-                        onTimeSlotSelected = {
-                            selectedTimeSlot.value = LocalTime.parse(
-                                it,
+
+                    if (timeSlotsForSelectedDate.isEmpty()) {
+                        Text(
+                            text = "No available time slots for selected date",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DefaultOnPrimary.copy(alpha = 0.7f)
+                        )
+                    } else {
+                        TimeSlotGrid(
+                            timeSlots = timeSlotsForSelectedDate.map {
+                                it.format(
+                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                )
+                            },
+                            selectedTimeSlot = selectedTimeSlot.value?.format(
                                 DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                            )
+                            ),
+                            onTimeSlotSelected = { timeStr ->
+                                selectedTimeSlot.value = LocalTime.parse(
+                                    timeStr,
+                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                )
 
-                            if (selectedDate.value != null && selectedTimeSlot.value != null) {
-                                coroutineScope.launch{
-                                    val result = authRepo.rescheduleAppointment(appointmentId,
-                                        selectedTimeSlot.value!!, selectedDate.value!!)
+                                if (selectedDate.value != null && selectedTimeSlot.value != null) {
+                                    coroutineScope.launch {
+                                        val result = authRepo.rescheduleAppointment(
+                                            appointmentId,
+                                            selectedTimeSlot.value!!, selectedDate.value!!
+                                        )
 
-                                    if (result.isSuccess) {
-                                        snackbarController.showMessage("Appointment was rescheduled successfully")
-                                        navController.popBackStack()
-                                    } else {
-                                        error = result.exceptionOrNull()?.message!!
+                                        if (result.isSuccess) {
+                                            snackbarController.showMessage("Appointment was rescheduled successfully")
+                                            navController.popBackStack()
+                                        } else {
+                                            error = result.exceptionOrNull()?.message!!
+                                        }
                                     }
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
+            } else {
+                Text(
+                    text = "There are no available dates for rescheduling this appointment",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DefaultOnPrimary.copy(alpha = 0.9f),
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
             }
         }
     }
 }
-
-
 
 @Composable
 private fun DateSelector(
@@ -288,127 +341,72 @@ private fun AppointmentInfoHeader(
     val speciality = Speciality.fromDisplayName(appointment.type.speciality)
 
     Card(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.5f),
+            containerColor = Color.White.copy(alpha = 0.2f),
             contentColor = DefaultOnPrimary
         ),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.padding(12.dp)
         ) {
-            // Current appointment info
-            Text(
-                text = "Current Appointment",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = DefaultPrimary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            // Service type and price
+            // First row - Doctor and service
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
+                // Doctor avatar
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(50.dp)
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f))
-                        .padding(8.dp),
+                        .padding(6.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(speciality.icon),
-                        contentDescription = appointment.type.displayName,
-                        tint = DefaultPrimary,
-                        modifier = Modifier.size(20.dp)
+                    if (doctor.profilePictureUrl.isNotEmpty()){
+                        SubcomposeAsyncImage(
+                            model = doctor.profilePictureUrl,
+                            contentDescription = "Profile Picture",
+                            contentScale = ContentScale.Crop,
+                            loading = {
+                                CircularProgressIndicator(color = DefaultPrimary, modifier = Modifier.fillMaxSize(0.5f))
+                            },
+                            error = {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Doctor",
+                                    tint = DefaultPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            modifier = Modifier.fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp)),
                     )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Doctor",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
 
-                Column {
-                    Text(
-                        text = appointment.type.displayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DefaultOnPrimary
-                    )
-                    Text(
-                        text = "$${"%.2f".format(appointment.price)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.width(8.dp))
 
-            // Date and time
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        "Current Date",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Gray
-                    )
-                    Text(
-                        appointment.date.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultOnPrimary
-                    )
-                }
-
-                Column {
-                    Text(
-                        "Current Time",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Gray
-                    )
-                    Text(
-                        appointment.time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultOnPrimary
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Doctor info
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(DefaultPrimary.copy(alpha = 0.1f))
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
+                // Doctor name and speciality
+                Column(
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Doctor",
-                        tint = DefaultPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Column {
                     Text(
                         text = "Dr. ${appointment.doctorName}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         color = DefaultOnPrimary
                     )
                     Text(
@@ -417,50 +415,77 @@ private fun AppointmentInfoHeader(
                         color = DefaultPrimary
                     )
                 }
+
+                // Service icon
+                Icon(
+                    painter = painterResource(speciality.icon),
+                    contentDescription = "Service",
+                    tint = DefaultPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
 
-            // Status chip
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            val statusColor = when (appointment.status) {
-                Appointment.Status.CONFIRMED -> Color(0xFF4CAF50) // Green
-                Appointment.Status.PENDING -> Color(0xFFFFC107) // Amber
-                else -> Color(0xFFF44336) // Red
-            }
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(statusColor.copy(alpha = 0.1f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            // Second row - Service details and time
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
+                // Service name and duration
                 Text(
-                    text = appointment.status.displayName,
-                    color = statusColor,
-                    style = MaterialTheme.typography.labelMedium
+                    text = "${appointment.type.displayName} • ${appointment.type.durationInMinutes}min",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f),
+                    color = DefaultOnPrimary
+                )
+
+                // Price
+                Text(
+                    text = "$${"%.2f".format(appointment.price)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = DefaultPrimary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Third row - Date and time
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = "Date",
+                    tint = DefaultPrimary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = appointment.date.format(DateTimeFormatter.ofPattern("MMM dd")),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DefaultOnPrimary
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = "Time",
+                    tint = DefaultPrimary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = appointment.time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DefaultOnPrimary
                 )
             }
         }
     }
 }
 
-@Preview
-@Composable
-fun AppointmentInfoHeaderPreview(){
-    AppointmentInfoHeader(
-        appointment = Appointment(
-            appointmentId = "124",
-            doctorId = "RE2CoEAtEmXbYdhQ7PotN1rFqMk1",
-            patientId = "P002",
-            date = LocalDate.now(),
-            time = LocalTime.now(),
-            status = Appointment.Status.PENDING,
-            type = AppointmentType.DENTAL_IMPLANT,
-            price = 30.0,
-            doctorName = "Artur Kot",
-            patientName = "John Doe",
-            comments = "Make sure to arrive 15 minutes early. Bring your ID.",),
-        modifier = Modifier
-    )
-}

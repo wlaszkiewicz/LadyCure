@@ -44,6 +44,7 @@ import com.example.ladycure.screens.user.BookingSuccessScreen
 import com.example.ladycure.screens.user.ConfirmationScreen
 import com.example.ladycure.screens.user.DoctorsListScreen
 import com.example.ladycure.screens.user.HomeScreen
+import com.example.ladycure.screens.user.RescheduleScreen
 import com.example.ladycure.screens.user.SearchDoctorsScreen
 import com.example.ladycure.screens.user.SelectServiceScreen
 import com.example.ladycure.utility.SnackbarController
