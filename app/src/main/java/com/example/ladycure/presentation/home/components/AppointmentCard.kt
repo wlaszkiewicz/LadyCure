@@ -240,6 +240,8 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
                         val result = authRepo.cancelAppointment(appointment.appointmentId)
                         if (result.isSuccess) {
                             appointment.status = Status.CANCELLED
+                            // Update the UI
+
                             snackbarController.showMessage("Appointment cancelled successfully")
                         } else {
                             snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")

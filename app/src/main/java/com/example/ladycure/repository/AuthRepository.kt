@@ -739,62 +739,61 @@ class AuthRepository {
                 currentTime = currentTime.plus(15, ChronoUnit.MINUTES)
             }
 
+
             firestore.runTransaction { transaction ->
-                // Add the old time slot back to the doctor's availability
-                val docRef = firestore.collection("users")
+
+                val oldDateRef = firestore.collection("users")
                     .document(doctorId)
                     .collection("availability")
                     .document(oldDate.toString())
+                val oldDateSnapshot = transaction.get(oldDateRef)
 
-                val newDocRef = firestore.collection("users")
-                    .document(doctorId)
-                    .collection("availability")
-                    .document(newDate.toString())
-
-                // Read all required documents first
-                val availabilitySnapshot = transaction.get(docRef)
-                val newAvailabilitySnapshot = transaction.get(newDocRef)
-
-                // Process the old availability
-                if (availabilitySnapshot.exists()) {
-                    val doctorStartTime =
-                        availabilitySnapshot.getString("startTime")?.let {
-                            LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
-                        } ?: LocalTime.MIN
-                    val doctorEndTime =
-                        availabilitySnapshot.getString("endTime")?.let {
-                            LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
-                        } ?: LocalTime.MAX
-
-                    // Check if the old time is within the doctor's availability (could have been changed)
-                    val filteredSlots = againAvailableSlots.filter { slot ->
-                        (slot.isAfter(doctorStartTime) && slot.isBefore(doctorEndTime)) || slot == doctorStartTime
-                    }
-
-                    val currentAvailableSlots =
-                        availabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
-                    val updatedAvailableSlots = (currentAvailableSlots + filteredSlots.map {
-                        it.format(
-                            DateTimeFormatter.ofPattern(
-                                "h:mm a",
-                                java.util.Locale.US
-                            )
-                        )
-                    }).distinct().sortedBy {
-                        LocalTime.parse(
-                            it,
-                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
-                        )
-                    }
-                    transaction.update(docRef, "availableSlots", updatedAvailableSlots)
+                val newDateRef = if (oldDate != newDate) {
+                    firestore.collection("users")
+                        .document(doctorId)
+                        .collection("availability")
+                        .document(newDate.toString())
                 } else {
+                    oldDateRef
+                }
+                val newDateSnapshot = if (oldDate != newDate) transaction.get(newDateRef) else oldDateSnapshot
+
+                if (!oldDateSnapshot.exists() || !newDateSnapshot.exists()) {
                     throw Exception("Availability document does not exist")
                 }
 
-                // Process the new availability
-                if (newAvailabilitySnapshot.exists()) {
-                    val newAvailableSlots =
-                        newAvailabilitySnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                val doctorStartTime = oldDateSnapshot.getString("startTime")?.let {
+                    LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                } ?: LocalTime.MIN
+                val doctorEndTime = oldDateSnapshot.getString("endTime")?.let {
+                    LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                } ?: LocalTime.MAX
+
+                val filteredSlots = againAvailableSlots.filter { slot ->
+                    (slot.isAfter(doctorStartTime) && slot.isBefore(doctorEndTime)) || slot == doctorStartTime
+                }
+
+                val currentAvailableSlots = oldDateSnapshot.get("availableSlots") as? List<String> ?: emptyList()
+
+                var updatedAvailableSlots = (currentAvailableSlots + filteredSlots.map {
+                    it.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                }).distinct()
+
+                if (oldDate == newDate) {
+                    updatedAvailableSlots = updatedAvailableSlots.filterNot { slot ->
+                        val slotTime = LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                        (slotTime.isAfter(newTime) && slotTime.isBefore(newEndTime)) || slotTime == newTime
+                    }
+                }
+
+                updatedAvailableSlots = updatedAvailableSlots.sortedBy {
+                    LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                }
+
+                transaction.update(oldDateRef, "availableSlots", updatedAvailableSlots)
+
+                if (oldDate != newDate) {
+                    val newAvailableSlots = newDateSnapshot.get("availableSlots") as? List<String> ?: emptyList()
                     val updatedNewAvailableSlots = newAvailableSlots.filterNot { slot ->
                         val slotTime = LocalTime.parse(
                             slot,
@@ -802,9 +801,7 @@ class AuthRepository {
                         )
                         (slotTime.isAfter(newTime) && slotTime.isBefore(newEndTime)) || slotTime == newTime
                     }
-                    transaction.update(newDocRef, "availableSlots", updatedNewAvailableSlots)
-                } else {
-                    throw Exception("Availability document does not exist")
+                    transaction.update(newDateRef, "availableSlots", updatedNewAvailableSlots)
                 }
             }.await()
 
