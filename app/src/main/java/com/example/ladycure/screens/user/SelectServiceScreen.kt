@@ -298,10 +298,7 @@ fun SelectServiceScreen(
 
                         OutlinedButton(
                             onClick = {
-                                isUploading = false
-                                // Note: This won't actually cancel the upload,
-                                // just hides the dialog. For actual cancellation,
-                                // you'd need to implement task cancellation.
+                                //implement task cancellation.
                             },
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = DefaultPrimary
