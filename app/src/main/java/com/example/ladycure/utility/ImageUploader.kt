@@ -32,10 +32,6 @@ class ImageUploader(private val context: Context) {
 
     suspend fun uploadImage(uri: Uri, userId: String): Result<String> {
         return try {
-//            // 1. Get the old image URL
-//            val oldUrl = authRepo.getUserField("profilePictureUrl").getOrNull()
-
-            // 2. Upload the new image first (to ensure we don't lose both if deletion fails)
             val newImageRef = storageRef.child("profile_images/$userId/${UUID.randomUUID()}")
             newImageRef.putFile(uri).await()
             val downloadUrl = newImageRef.downloadUrl.await().toString()
@@ -54,7 +50,6 @@ class ImageUploader(private val context: Context) {
 //                }
 //            }
 
-            // 4. Return the new URL
             Result.success(downloadUrl)
         } catch (e: Exception) {
             Result.failure(e)

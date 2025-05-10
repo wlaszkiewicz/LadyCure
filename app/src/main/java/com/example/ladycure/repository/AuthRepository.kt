@@ -1,16 +1,22 @@
 package com.example.ladycure.repository
 
+import android.net.Uri
 import android.util.Log
 import androidx.navigation.NavController
 import com.example.ladycure.data.Appointment
+import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
+import com.example.ladycure.data.doctor.Referral
+import com.example.ladycure.utility.PdfUploader
+import com.example.ladycure.utility.SnackbarController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -803,6 +809,72 @@ class AuthRepository {
             }.await()
 
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun uploadPdfToFirestore(
+        uri: Uri,
+        service: AppointmentType?,
+        onProgress: (PdfUploader.UploadProgress) -> Unit
+    ): Result<String> {
+        val userId = auth.currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
+
+        return try {
+            val pdfUrl = PdfUploader.uploadPdf(uri, userId, onProgress)
+
+            firestore.runTransaction { transaction ->
+                val userRef = firestore.collection("users")
+                    .document(userId)
+                    .collection("referrals")
+                    .document()
+
+                val referralData = mapOf(
+                    "url" to pdfUrl,
+                    "service" to service?.displayName,
+                    "uploadedAt" to System.currentTimeMillis(),
+                    "patientId" to userId,
+                )
+
+                transaction.set(userRef, referralData)
+            }.await()
+
+            val referralId = firestore.collection("users")
+                .document(userId)
+                .collection("referrals")
+                .whereEqualTo("url", pdfUrl)
+                .get()
+                .await()
+                .documents
+                .firstOrNull()?.id
+
+            Result.success(referralId ?: throw Exception("Referral ID not found"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getReferralById(referralId: String): Result<Referral> {
+        return try {
+            val userId = auth.currentUser?.uid
+                ?: return Result.failure(Exception("User not logged in"))
+            val document = firestore.collection("users")
+                .document(userId)
+                .collection("referrals")
+                .document(referralId)
+                .get()
+                .await()
+
+            if (document.exists()) {
+                val referral = Referral.fromMap(
+                    document.data?.plus("id" to referralId) ?: mapOf("id" to referralId)
+                )
+                Result.success(referral)
+            } else {
+                Result.failure(Exception("Referral not found"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

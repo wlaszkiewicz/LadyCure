@@ -3,6 +3,11 @@ package com.example.ladycure.screens.user
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import Green
+import Yellow
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -32,6 +38,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -39,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,16 +55,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import android.net.Uri
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.let
 
 @Composable
 fun SelectServiceScreen(
@@ -71,6 +86,54 @@ fun SelectServiceScreen(
     val authRepo = AuthRepository()
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedService by remember { mutableStateOf<AppointmentType?>(null) }
+
+    var isUploading by remember { mutableStateOf(false) }
+    var showUploadSuccessDialog by remember { mutableStateOf(false) }
+    var uploadProgress by remember { mutableFloatStateOf(0f) }
+    var referralId by remember { mutableStateOf<String?>(null) }
+
+    val pdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            uri?.let {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        withContext(Dispatchers.Main) {
+                            isUploading = true
+                            uploadProgress = 0f
+                        }
+
+                        val result = authRepo.uploadPdfToFirestore(
+                            uri,
+                            selectedService
+                        ) { progress ->
+                            uploadProgress = progress.progress
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            isUploading = false
+                            if (result.isSuccess) {
+                                referralId = result.getOrNull()
+                                showUploadSuccessDialog = true
+                            } else {
+                                snackbarController?.showMessage(
+                                    message = result.exceptionOrNull()?.message ?: "Could not upload PDF"
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            isUploading = false
+                            snackbarController?.showMessage(
+                                message = e.message ?: "Upload failed"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    )
+
 
     if (doctorId != null) {
         LaunchedEffect(doctorId) {
@@ -94,9 +157,8 @@ fun SelectServiceScreen(
             Text("Loading services...", color = DefaultOnPrimary)
         }
     } else {
-        // Filter services by specialization
         val services = remember(speciality) {
-            AppointmentType.values().filter {
+            AppointmentType.entries.filter {
                 it.speciality == speciality!!.displayName
             }
         }
@@ -113,7 +175,6 @@ fun SelectServiceScreen(
                 .fillMaxSize()
                 .background(DefaultBackground)
         ) {
-            // Header with back button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -140,7 +201,6 @@ fun SelectServiceScreen(
                 )
             }
 
-            // Introduction text
             Text(
                 text = "Available Services",
                 style = MaterialTheme.typography.titleMedium,
@@ -186,13 +246,7 @@ fun SelectServiceScreen(
                 onDismiss = { showReferralDialog = false },
                 onUploadReferral = {
                     showReferralDialog = false
-                    // Handle referral upload
-//                            uploadReferral(
-//                                navController = navController,
-//                                doctorId = doctorId,
-//                                service = selectedService
-//                            )
-
+                    pdfLauncher.launch("application/pdf")
                 },
                 onBringLater = {
                     showReferralDialog = false
@@ -204,8 +258,117 @@ fun SelectServiceScreen(
                 },
             )
         }
+
+        if (isUploading) {
+            Dialog(onDismissRequest = {}) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Uploading your file...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        LinearProgressIndicator(
+                            progress = { uploadProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                            color = DefaultPrimary,
+                            trackColor = DefaultPrimary.copy(alpha = 0.2f)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "${(uploadProgress * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DefaultOnPrimary
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedButton(
+                            onClick = {
+                                isUploading = false
+                                // Note: This won't actually cancel the upload,
+                                // just hides the dialog. For actual cancellation,
+                                // you'd need to implement task cancellation.
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = DefaultPrimary
+                            )
+                        ) {
+                            Text("Cancel Upload")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showUploadSuccessDialog) {
+            Dialog(onDismissRequest = {/* do nothing */ }) { // we dont want them to go back
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Success",
+                            tint =  Green.copy(alpha = 0.7f),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Upload Successful!",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Your referral document has been uploaded successfully.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = {
+                                showUploadSuccessDialog = false
+                                if (city != null && doctorId == null) {
+                                    navController.navigate("book_appointment/$city/${selectedService!!.displayName}/${referralId}")
+                                } else {
+                                    navController.navigate("book_appointment_dir/${doctorId}/${selectedService!!.displayName}/${referralId}")
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Continue to Booking")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
+
 
 @Composable
 fun ServiceCard(
@@ -276,14 +439,14 @@ fun ServiceCard(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "Referral needed",
-                        tint = Color(0xFFFFA000),
+                        tint = Yellow,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "Referral needed",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFFFFA000)
+                        color = Yellow
                     )
                 }
             }
