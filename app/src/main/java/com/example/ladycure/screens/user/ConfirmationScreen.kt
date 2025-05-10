@@ -1,8 +1,12 @@
 package com.example.ladycure.screens.user
 
+import BabyBlue
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import Red
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +72,19 @@ import java.util.Locale
 
 import androidx.compose.ui.platform.LocalContext
 import android.location.Geocoder
+import android.net.Uri
+import android.provider.OpenableColumns
+import android.widget.Toast
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MedicalInformation
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.text.style.TextOverflow
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -77,6 +94,10 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import androidx.core.net.toUri
+import com.example.ladycure.data.doctor.Referral
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
 
 @Composable
 fun ConfirmationScreen(
@@ -86,6 +107,7 @@ fun ConfirmationScreen(
     date: String,
     time: String,
     appointmentType: AppointmentType,
+    referralId: String? = null,
     authRepo: AuthRepository = AuthRepository()
 ) {
 
@@ -94,6 +116,23 @@ fun ConfirmationScreen(
     val errorMessage = remember { mutableStateOf<String?>(null) }
 
     var userName by remember { mutableStateOf("Patient unavailable") }
+
+    var referral by remember { mutableStateOf<Referral?>(null) }
+
+    if (referralId != null) {
+        LaunchedEffect(referralId) {
+            try {
+                val result = authRepo.getReferralById(referralId)
+                if (result.isSuccess) {
+                    referral = result.getOrNull()
+                } else {
+                    errorMessage.value = "Failed to load referral document"
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Error: ${e.message}"
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         userName = authRepo.getUserField("name").getOrNull() + " " +
@@ -245,9 +284,19 @@ fun ConfirmationScreen(
 
                         AppointmentTypeCard(
                             appointmentType = appointmentType,
+                            referralId = referralId,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
+                        if (referralId != null) {
+                            ReferralInfoCard(
+                                referral = referral,
+                                onUploadNew =  {
+
+                                },
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        }
 
                         // Doctor information card
                         DoctorConfirmationCard(
@@ -293,7 +342,11 @@ fun ConfirmationScreen(
                                             snackbarController?.showMessage(
                                                 message = "Appointment booked successfully"
                                             )
-                                            navController.navigate("booking_success/${result.getOrNull()}")
+                                            if (referralId == null) {
+                                                navController.navigate("booking_success/${result.getOrNull()}")}
+                                            else {
+                                                navController.navigate("booking_success/${result.getOrNull()}/$referralId")
+                                            }
                                         } else {
                                             snackbarController?.showMessage(
                                                 message = "Failed to book appointment: ${result.exceptionOrNull()?.message}"
@@ -321,6 +374,7 @@ fun ConfirmationScreen(
 @Composable
 private fun AppointmentTypeCard(
     appointmentType: AppointmentType,
+    referralId: String?,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -385,7 +439,7 @@ private fun AppointmentTypeCard(
             )
 
             // Requirements chip
-            if (appointmentType.needsReferral) {
+            if (appointmentType.needsReferral && referralId == null) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -791,6 +845,244 @@ private fun DoctorConfirmationCard(
                 color = Color.Gray
             )
         }
+    }
+}
+
+@Composable
+fun ReferralInfoCard(
+    referral: Referral?,
+    onUploadNew: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val referralUrl = referral?.url
+    val serviceName = referral?.service
+    val uploadDate = referral?.uploadedAt
+    val context = LocalContext.current
+    val pdfIconPainter = rememberVectorPainter(Icons.Default.PictureAsPdf)
+    val fileSize = remember(referralUrl) { calculateFileSize(context, referralUrl) }
+
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White,
+            contentColor = Color.Black
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Referral Document",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (referralUrl != null) {
+                // Document Preview
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = pdfIconPainter,
+                        contentDescription = "PDF",
+                        tint = Red.copy(alpha = 0.8f),
+                        modifier = Modifier.size(40.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column {
+                        Text(
+                            text = "Referral.pdf",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = fileSize ?: "",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+
+                    IconButton(
+                        onClick = { openPdf(context, referralUrl) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ){
+                            Text(
+                                text = "View",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Visibility,
+                                contentDescription = "View",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Metadata
+                Column(
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                ) {
+                    InfoRow(
+                        icon = Icons.Default.Badge,
+                        label = "For service:",
+                        value = serviceName ?: "Not specified"
+                    )
+
+                    InfoRow(
+                        icon = Icons.Default.DateRange,
+                        label = "Uploaded:",
+                        value = uploadDate?.let {
+                            SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
+                                .format(Date(it))
+                        } ?: "Unknown date"
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No referral uploaded",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Upload/Change Button
+            Button(
+                onClick = onUploadNew,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DefaultPrimary.copy(alpha = 0.1f),
+                    contentColor = DefaultPrimary
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Icon(
+                    imageVector = if (referralUrl == null) Icons.Default.Upload else Icons.Default.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = if (referralUrl == null) "Upload Referral" else "Change Document")
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun InfoRow(icon: ImageVector, label: String, value: String) {
+    Row(
+        modifier = Modifier.padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+private fun calculateFileSize(context: Context, uriString: String?): String? {
+    if (uriString == null) return null
+
+    return try {
+        val uri = Uri.parse(uriString)
+        val file = when (uri.scheme) {
+            "content" -> {
+                val cursor = context.contentResolver.query(uri, null, null, null, null)
+                cursor?.use {
+                    if (it.moveToFirst()) {
+                        val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+                        it.getString(sizeIndex)
+                    } else null
+                }
+            }
+            "file" -> File(uri.path).length().toString()
+            else -> null
+        }
+
+        file?.let {
+            val sizeBytes = it.toLong()
+            when {
+                sizeBytes >= 1_000_000 -> "${sizeBytes / 1_000_000} MB"
+                sizeBytes >= 1_000 -> "${sizeBytes / 1_000} KB"
+                else -> "$sizeBytes bytes"
+            }
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun openPdf(context: Context, pdfUrl: String) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse(pdfUrl), "application/pdf")
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NO_HISTORY
+        }
+        context.startActivity(intent)
+    } catch (e: ActivityNotFoundException) {
+        Toast.makeText(context, "No PDF viewer installed", Toast.LENGTH_SHORT).show()
     }
 }
 

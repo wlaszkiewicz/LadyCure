@@ -141,23 +141,20 @@ fun MainScreen(navController: NavHostController) {
 
                 composable("booking_success/{appointmentId}") { backStackEntry ->
                     val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
-                    BookingSuccessScreen(navController, appointmentId, snackbarController)
+                    BookingSuccessScreen(navController, appointmentId, null, snackbarController)
+                }
+
+                composable("booking_success/{appointmentId}/{referral}") { backStackEntry ->
+                    val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
+                    val referral = backStackEntry.arguments?.getString("referral") ?: ""
+                    BookingSuccessScreen(navController, appointmentId, referral, snackbarController)
                 }
 
                 composable("doctors/{speciality}") { backStackEntry ->
                     val speciality = backStackEntry.arguments?.getString("speciality") ?: ""
                     DoctorsListScreen(navController, speciality, snackbarController)
                 }
-                composable("book_appointment/{city}/{service}") { backStackEntry ->
-                    val city = backStackEntry.arguments?.getString("city") ?: ""
-                    val service = backStackEntry.arguments?.getString("service") ?: ""
-                    BookAppointmentScreen(
-                        navController,
-                        snackbarController,
-                        city,
-                        AppointmentType.fromDisplayName(service)
-                    )
-                }
+
                 composable("confirmation/{doctorId}/{date}/{time}/{appointmentType}") { backStackEntry ->
                     val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
                     val time = backStackEntry.arguments?.getString("time") ?: ""
@@ -171,6 +168,24 @@ fun MainScreen(navController: NavHostController) {
                         date,
                         time,
                         AppointmentType.fromDisplayName(appointmentType!!)
+                    )
+                }
+
+                composable("confirmation/{doctorId}/{date}/{time}/{appointmentType}/{referral}") { backStackEntry ->
+                    val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+                    val time = backStackEntry.arguments?.getString("time") ?: ""
+                    val date = backStackEntry.arguments?.getString("date") ?: ""
+                    val appointmentType = backStackEntry.arguments?.getString("appointmentType")
+                    val referral = backStackEntry.arguments?.getString("referral")
+
+                    ConfirmationScreen(
+                        navController,
+                        snackbarController,
+                        doctorId,
+                        date,
+                        time,
+                        AppointmentType.fromDisplayName(appointmentType!!),
+                        referral
                     )
                 }
 
@@ -201,6 +216,42 @@ fun MainScreen(navController: NavHostController) {
                         AppointmentType.fromDisplayName(service)
                     )
                 }
+                composable("book_appointment/{city}/{service}") { backStackEntry ->
+                    val city = backStackEntry.arguments?.getString("city") ?: ""
+                    val service = backStackEntry.arguments?.getString("service") ?: ""
+                    BookAppointmentScreen(
+                        navController,
+                        snackbarController,
+                        city,
+                        AppointmentType.fromDisplayName(service)
+                    )
+                }
+
+                composable("book_appointment_dir/{doctor}/{service}/{referral}") { backStackEntry ->
+                    val doctor = backStackEntry.arguments?.getString("doctor") ?: ""
+                    val service = backStackEntry.arguments?.getString("service") ?: ""
+                    val referral = backStackEntry.arguments?.getString("referral") ?: ""
+                    BookAppointmentDirectlyScreen(
+                        navController,
+                        snackbarController,
+                        doctor,
+                        AppointmentType.fromDisplayName(service),
+                        referral
+                    )
+                }
+                composable("book_appointment/{city}/{service}/{referral}") { backStackEntry ->
+                    val city = backStackEntry.arguments?.getString("city") ?: ""
+                    val service = backStackEntry.arguments?.getString("service") ?: ""
+                    val referral = backStackEntry.arguments?.getString("referral") ?: ""
+                    BookAppointmentScreen(
+                        navController,
+                        snackbarController,
+                        city,
+                        AppointmentType.fromDisplayName(service),
+                        referral
+                    )
+                }
+
                 composable("reschedule/{appointmentId}") {backStackEntry ->
                     val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
                     RescheduleScreen(

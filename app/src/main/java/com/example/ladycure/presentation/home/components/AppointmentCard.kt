@@ -14,6 +14,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import DefaultOnPrimary
 import DefaultPrimary
+import Green
+import Red
+import Yellow
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -48,7 +51,9 @@ import java.time.LocalTime
 
 
 @Composable
-fun AppointmentsSection(appointments: List<Appointment>, snackbarController: SnackbarController, navController: NavController) {
+fun AppointmentsSection(
+    appointments: List<Appointment>?,
+    snackbarController: SnackbarController, navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -62,7 +67,16 @@ fun AppointmentsSection(appointments: List<Appointment>, snackbarController: Sna
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
-        if (appointments.isEmpty()) {
+        if (appointments == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (appointments.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -91,9 +105,9 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
-        Status.CONFIRMED -> Color(0xFF4CAF50) // Green
-        Status.PENDING -> Color(0xFFFFC107) // Amber
-        else -> Color(0xFFF44336) // Red
+        Status.CONFIRMED -> Green
+        Status.PENDING -> Yellow
+        else -> Red
     }
 
     Surface(modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
@@ -281,9 +295,9 @@ fun ShowDetailsDialog(
     onCancel: () -> Unit){
     val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
-        Status.CONFIRMED -> Color(0xFF4CAF50)
-        Status.PENDING -> Color(0xFFFFC107)
-        else -> Color(0xFFF44336)
+        Status.CONFIRMED -> Green
+        Status.PENDING -> Yellow
+        else -> Red
     }
 
     val authRepo = AuthRepository()

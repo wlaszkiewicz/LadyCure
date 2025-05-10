@@ -1,4 +1,5 @@
 import androidx.compose.ui.graphics.Color
+import com.example.ladycure.data.Appointment.Status
 
 val Black = Color(0xFF000000)
 
@@ -26,6 +27,13 @@ val SnackbarContentColorError = Color(0xFF75020D)
 val SnackbarContentColorSuccess = Color(0xFF91F17F)
 val SnackbarContentColor = Color(0xFF9C45A8)
 val SnackbarActionColor = Color(0xFF261D1E)
+
+// Status colors
+
+val Red =  Color(0xFFF44336)
+val Green =  Color(0xFF4CAF50)
+val Yellow =  Color(0xFFFFC107)
+val YellowOrange =  Color(0xFFFFA000)
 
 
 

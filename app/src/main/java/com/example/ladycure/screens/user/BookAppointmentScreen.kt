@@ -101,7 +101,8 @@ fun BookAppointmentScreen(
     snackbarController: SnackbarController?,
     city: String,
     selectedService: AppointmentType,
-    authRepo: AuthRepository = AuthRepository()
+    referralId: String? = null,
+    authRepo: AuthRepository = AuthRepository(),
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
     // State variables
@@ -232,13 +233,23 @@ fun BookAppointmentScreen(
                 doctors = availableDoctorsForSlot,
                 onBackClick = { showDoctorsForSlot.value = false },
                 onDoctorSelected = { doctorId ->
-                    navController.navigate(
-                        "confirmation/$doctorId/${selectedDate.value}/${
-                            selectedTimeSlot.value!!.format(
-                                DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                            )
-                        }/${selectedService.displayName}"
-                    )
+                    if (referralId == null) {
+                        navController.navigate(
+                            "confirmation/$doctorId/${selectedDate.value}/${
+                                selectedTimeSlot.value!!.format(
+                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                )
+                            }/${selectedService.displayName}"
+                        )
+                    } else {
+                        navController.navigate(
+                            "confirmation/$doctorId/${selectedDate.value}/${
+                                selectedTimeSlot.value!!.format(
+                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                )
+                            }/${selectedService.displayName}/$referralId"
+                        )
+                    }
                 }
             )
         }

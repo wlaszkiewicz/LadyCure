@@ -6,7 +6,6 @@ import DefaultPrimary
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,7 +48,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -143,7 +142,7 @@ fun ProfileScreen(navController: NavHostController) {
             // Profile header
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
                 currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
                 Box(
@@ -151,39 +150,43 @@ fun ProfileScreen(navController: NavHostController) {
                         .size(150.dp)
                         .clip(CircleShape)
                         .border(4.dp, DefaultPrimary, CircleShape)
-                        .background(DefaultPrimary.copy(alpha = 0.2f))
                         .clickable { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
                     when {
-                        userData.value == null -> {
-                            CircularProgressIndicator(color = DefaultPrimary)
-                        }
-
                         currentImageUrl != "" -> {
                             SubcomposeAsyncImage(
                                 model = currentImageUrl,
                                 contentDescription = "Profile Picture",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .background(DefaultPrimary.copy(alpha = 0.2f)),
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize(),
                                 loading = {
-                                    CircularProgressIndicator(color = DefaultPrimary, modifier = Modifier.fillMaxSize(0.5f))
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(70.dp),
+                                        color = DefaultPrimary
+                                    )
                                 },
                                 error = {
-                                    Image(
-                                        painter = painterResource(R.drawable.profile_pic),
-                                        contentDescription = "Error loading image"
+                                    Icon(
+                                        imageVector = Icons.Default.Error,
+                                        contentDescription = "Error loading image",
+                                        tint = DefaultPrimary,
                                     )
                                 }
                             )
                         }
 
                         else -> {
-                            Image(
-                                painter = painterResource(R.drawable.profile_pic),
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
                                 contentDescription = "Default Profile Picture",
-                                modifier = Modifier.graphicsLayer(alpha = 0.7f)
-
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                tint = DefaultPrimary
                             )
                         }
                     }

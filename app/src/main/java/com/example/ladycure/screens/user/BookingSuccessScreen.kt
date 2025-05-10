@@ -1,5 +1,6 @@
 package com.example.ladycure.screens.user
 
+import BabyBlue
 import DefaultBackground
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
@@ -25,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import DefaultOnPrimary
 import DefaultPrimary
+import Yellow
+import YellowOrange
 import android.content.Intent
 import android.provider.CalendarContract
 import androidx.compose.animation.core.RepeatMode
@@ -32,11 +35,16 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FreeCancellation
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.Recommend
+import androidx.compose.material.icons.filled.ThumbUpAlt
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.scale
@@ -50,6 +58,7 @@ import java.util.Locale
 fun BookingSuccessScreen(
     navController: NavController,
     appointmentId: String,
+    referralId: String? = null,
     snackbarController: SnackbarController,
     authRepo: AuthRepository = AuthRepository()
 ) {
@@ -164,7 +173,7 @@ fun BookingSuccessScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Check,
+                    imageVector = Icons.Default.FreeCancellation,
                     contentDescription = "Success",
                     tint = DefaultPrimary,
                     modifier = Modifier.size(80.dp)
@@ -278,7 +287,7 @@ fun BookingSuccessScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Divider(color = Color.LightGray.copy(alpha = 0.3f), thickness = 1.dp)
+                    Divider(color = Color.LightGray, thickness = 1.dp)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -298,6 +307,45 @@ fun BookingSuccessScreen(
                             fontWeight = FontWeight.Bold,
                             color = DefaultPrimary
                         )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (appointment?.type!!.needsReferral && referralId == null) {
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PriorityHigh,
+                                contentDescription = "Referral",
+                                modifier = Modifier.size(20.dp),
+                                tint = YellowOrange
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Don't forget to bring your referral letter!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = YellowOrange
+                            )
+                        }
+                    } else if (referralId != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ThumbUpAlt,
+                                contentDescription = "Referral",
+                                modifier = Modifier.size(20.dp),
+                                tint = BabyBlue
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Referral letter uploaded successfully!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = BabyBlue
+                            )
+                        }
                     }
                 }
             }
@@ -324,22 +372,25 @@ fun BookingSuccessScreen(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = "Reminder",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = DefaultPrimary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Reminder",
                             style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = DefaultPrimary
                         )
                     }
                     Text(
-                        text = "• You'll receive a confirmation email shortly\n" +
-                                "• Arrive 15 minutes before your appointment\n" +
+                        text =  "• Arrive 15 minutes before your appointment\n" +
                                 "• Bring your insurance card if applicable\n" +
                                 "• ${appointment?.type!!.preparationInstructions}",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
                     )
+
                 }
             }
 
@@ -357,12 +408,12 @@ fun BookingSuccessScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(50.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary,
+                        containerColor = DefaultPrimary.copy(alpha = 0.8f),
                         contentColor = Color.White
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(17.dp)
                 ) {
                     Text(
                         text = "Back to Home",
@@ -373,11 +424,17 @@ fun BookingSuccessScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TextButton(
+                OutlinedButton(
                     onClick = {
                         addToCalendar()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    border = BorderStroke(1.dp, DefaultPrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = DefaultPrimary,
+                        containerColor = Color.Transparent
+                    ), shape = RoundedCornerShape(17.dp)
+
                 ) {
                     Icon(
                         imageVector = Icons.Default.CalendarToday,

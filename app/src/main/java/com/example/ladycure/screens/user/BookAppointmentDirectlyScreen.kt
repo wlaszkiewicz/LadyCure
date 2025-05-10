@@ -63,6 +63,7 @@ fun BookAppointmentDirectlyScreen(
     snackbarController: SnackbarController?,
     doctorId: String,
     selectedService: AppointmentType,
+    referralId: String? = null,
     authRepo: AuthRepository = AuthRepository()
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
@@ -169,13 +170,23 @@ fun BookAppointmentDirectlyScreen(
                     onTimeSlotSelected = {
                         selectedTimeSlot.value =
                             LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", Locale.US))
-                        navController.navigate(
-                            "confirmation/$doctorId/${selectedDate.value}/${
-                                selectedTimeSlot.value!!.format(
-                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                )
-                            }/${selectedService.displayName}"
-                        )
+                        if (referralId == null) {
+                            navController.navigate(
+                                "confirmation/$doctorId/${selectedDate.value}/${
+                                    selectedTimeSlot.value!!.format(
+                                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                    )
+                                }/${selectedService.displayName}"
+                            )
+                        } else {
+                            navController.navigate(
+                                "confirmation/$doctorId/${selectedDate.value}/${
+                                    selectedTimeSlot.value!!.format(
+                                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                    )
+                                }/${selectedService.displayName}/$referralId"
+                            )
+                        }
                     })
 
             }

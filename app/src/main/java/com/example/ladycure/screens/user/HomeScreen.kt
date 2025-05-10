@@ -61,7 +61,7 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     val selectedCity = remember { mutableStateOf("Wrocław") }
     var error = remember { mutableStateOf<String?>(null) }
-    val appointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
+    val appointments = remember { mutableStateOf<List<Appointment>?>(null) }
 
     LaunchedEffect(Unit) {
         val result = authRepo.getCurrentUserData()
@@ -80,11 +80,11 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
         } else {
             appointments.value = result.getOrNull() ?: emptyList()
 
-            appointments.value = appointments.value.filter {
+            appointments.value = appointments.value!!.filter {
                 it.date.isAfter(LocalDate.now()) || (it.date == LocalDate.now() && it.time >= LocalTime.now())
             }
 
-            appointments.value = appointments.value.sortedWith(
+            appointments.value = appointments.value!!.sortedWith(
                 compareBy({ it.date }, { it.time })
             )
 
@@ -120,7 +120,7 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
                 ) {
                     // Header with greeting
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -267,8 +267,7 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
                         }
                     )
 
-                    AppointmentsSection(
-                        appointments = appointments.value, snackbarController!!, navController
+                    AppointmentsSection(appointments =  appointments.value, snackbarController!!, navController
                     )
             }
     }
