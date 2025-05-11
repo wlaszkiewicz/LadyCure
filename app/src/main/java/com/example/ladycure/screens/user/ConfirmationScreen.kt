@@ -75,13 +75,20 @@ import android.location.Geocoder
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.style.TextOverflow
@@ -95,6 +102,8 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import androidx.core.net.toUri
 import com.example.ladycure.data.doctor.Referral
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -118,6 +127,56 @@ fun ConfirmationScreen(
     var userName by remember { mutableStateOf("Patient unavailable") }
 
     var referral by remember { mutableStateOf<Referral?>(null) }
+
+    var isUploading by remember { mutableStateOf(false) }
+    var showUploadSuccess by remember { mutableStateOf(false) }
+    var uploadProgress by remember { mutableFloatStateOf(0f) }
+
+    val pdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            uri?.let {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        withContext(Dispatchers.Main) {
+                            isUploading = true
+                            uploadProgress = 0f
+                        }
+
+                        val result = authRepo.replaceReferralInFirestore(
+                            uri = uri,
+                            oldUri = referral?.url.toString(),
+                            referralId = referralId.toString(),
+                            service = appointmentType.displayName,
+                        ) { progress ->
+                            uploadProgress = progress.progress
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            isUploading = false
+                            if (result.isSuccess) {
+                                referral = referral?.copy(url = result.getOrNull() ?: "")
+                                showUploadSuccess = true
+                            } else {
+                                snackbarController?.showMessage(
+                                    message = result.exceptionOrNull()?.message ?: "Could not upload PDF"
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            isUploading = false
+                            snackbarController?.showMessage(
+                                message = e.message ?: "Upload failed"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+
 
     if (referralId != null) {
         LaunchedEffect(referralId) {
@@ -291,10 +350,13 @@ fun ConfirmationScreen(
                         if (referralId != null) {
                             ReferralInfoCard(
                                 referral = referral,
-                                onUploadNew =  {
-
+                                onUploadNew = {
+                                    pdfLauncher.launch("application/pdf")
                                 },
-                                modifier = Modifier.padding(bottom = 16.dp)
+                                modifier = Modifier.padding(bottom = 16.dp),
+                                isUploading = isUploading,
+                                uploadProgress = uploadProgress,
+                                showUploadSuccess = showUploadSuccess
                             )
                         }
 
@@ -852,7 +914,10 @@ private fun DoctorConfirmationCard(
 fun ReferralInfoCard(
     referral: Referral?,
     onUploadNew: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isUploading: Boolean = false,
+    uploadProgress: Float = 0f,
+    showUploadSuccess: Boolean = false
 ) {
     val referralUrl = referral?.url
     val serviceName = referral?.service
@@ -860,6 +925,16 @@ fun ReferralInfoCard(
     val context = LocalContext.current
     val pdfIconPainter = rememberVectorPainter(Icons.Default.PictureAsPdf)
     val fileSize = remember(referralUrl) { calculateFileSize(context, referralUrl) }
+
+    // Animation for success message
+    var showSuccessMessage by remember { mutableStateOf(false) }
+    LaunchedEffect(showUploadSuccess) {
+        if (showUploadSuccess) {
+            showSuccessMessage = true
+            delay(2000) // Show for 2 seconds
+            showSuccessMessage = false
+        }
+    }
 
     Card(
         modifier = modifier,
@@ -883,13 +958,65 @@ fun ReferralInfoCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (referralUrl != null) {
-                // Document Preview
+            // Upload progress section
+            if (isUploading) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    LinearProgressIndicator(
+                        progress = { uploadProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp),
+                        color = BabyBlue,
+                        trackColor = BabyBlue.copy(alpha = 0.2f))
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Uploading... ${(uploadProgress * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = BabyBlue,
+                    )
+                }
+            } else if (showSuccessMessage) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(BabyBlue.copy(alpha = 0.1f))
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Success",
+                            tint = BabyBlue,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Upload successful!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = BabyBlue,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            if (!isUploading && referralUrl != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -925,15 +1052,14 @@ fun ReferralInfoCard(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-
                     IconButton(
                         onClick = { openPdf(context, referralUrl) },
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Row (
+                        Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ){
+                        ) {
                             Text(
                                 text = "View",
                                 style = MaterialTheme.typography.labelMedium,
@@ -969,7 +1095,7 @@ fun ReferralInfoCard(
                         } ?: "Unknown date"
                     )
                 }
-            } else {
+            } else if (!isUploading) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -987,16 +1113,17 @@ fun ReferralInfoCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Upload/Change Button
+            // Upload/Change Button (disabled during upload)
             Button(
                 onClick = onUploadNew,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DefaultPrimary.copy(alpha = 0.1f),
-                    contentColor = DefaultPrimary
+                    containerColor = if (isUploading) Color.LightGray else DefaultPrimary.copy(alpha = 0.1f),
+                    contentColor = if (isUploading) Color.Gray else DefaultPrimary
                 ),
+                enabled = !isUploading,
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp
@@ -1008,12 +1135,14 @@ fun ReferralInfoCard(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = if (referralUrl == null) "Upload Referral" else "Change Document")
+                Text(
+                    text = if (referralUrl == null) "Upload Referral" else "Change Document",
+                    color = if (isUploading) Color.Gray else DefaultPrimary
+                )
             }
         }
     }
 }
-
 
 @Composable
 private fun InfoRow(icon: ImageVector, label: String, value: String) {

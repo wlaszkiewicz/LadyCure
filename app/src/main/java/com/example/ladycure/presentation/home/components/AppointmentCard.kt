@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.R
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,6 +55,7 @@ import java.time.LocalTime
 @Composable
 fun AppointmentsSection(
     appointments: List<Appointment>?,
+    onAppointmentChanged: (Appointment) -> Unit,
     snackbarController: SnackbarController, navController: NavController) {
     Column(
         modifier = Modifier
@@ -91,7 +94,13 @@ fun AppointmentsSection(
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 appointments.forEach { appointment ->
-                    PatientAppointmentCard(appointment, snackbarController = snackbarController, navController = navController)
+                    PatientAppointmentCard(
+                        appointment = appointment,
+                        onAppointmentChanged = { updatedAppointment ->
+                            onAppointmentChanged(updatedAppointment)
+                        },
+                        snackbarController = snackbarController,
+                        navController = navController)
                 }
             }
         }
@@ -99,16 +108,26 @@ fun AppointmentsSection(
 }
 
 @Composable
-fun PatientAppointmentCard(appointment: Appointment, snackbarController: SnackbarController, navController: NavController) {
+fun PatientAppointmentCard(
+    appointment: Appointment,
+    onAppointmentChanged: (Appointment) -> Unit,
+    snackbarController: SnackbarController,
+    navController: NavController
+) {
+    val statusColor by remember(appointment.status) {
+        derivedStateOf {
+            when (appointment.status) {
+                Status.CONFIRMED -> Green
+                Status.PENDING -> Yellow
+                else -> Red
+            }
+        }
+    }
     val coroutineScope = rememberCoroutineScope()
     val authRepo = AuthRepository()
 
     val showDetailsDialog = remember { mutableStateOf(false) }
-    val statusColor = when (appointment.status) {
-        Status.CONFIRMED -> Green
-        Status.PENDING -> Yellow
-        else -> Red
-    }
+
 
     Surface(modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
     ) {
@@ -240,7 +259,7 @@ fun PatientAppointmentCard(appointment: Appointment, snackbarController: Snackba
                         val result = authRepo.cancelAppointment(appointment.appointmentId)
                         if (result.isSuccess) {
                             appointment.status = Status.CANCELLED
-                            // Update the UI
+                            onAppointmentChanged(appointment)
 
                             snackbarController.showMessage("Appointment cancelled successfully")
                         } else {

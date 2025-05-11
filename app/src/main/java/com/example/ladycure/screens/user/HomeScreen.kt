@@ -267,7 +267,15 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
                         }
                     )
 
-                    AppointmentsSection(appointments =  appointments.value, snackbarController!!, navController
+                    AppointmentsSection(
+                        appointments = appointments.value,
+                        onAppointmentChanged = { updatedAppointment ->
+                            appointments.value = appointments.value?.map {
+                                if (it.appointmentId == updatedAppointment.appointmentId) updatedAppointment else it
+                            }
+                        },
+                        snackbarController = snackbarController!!,
+                        navController = navController
                     )
             }
     }

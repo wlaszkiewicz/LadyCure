@@ -9,14 +9,12 @@ import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.data.doctor.Referral
 import com.example.ladycure.utility.PdfUploader
-import com.example.ladycure.utility.SnackbarController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -811,7 +809,7 @@ class AuthRepository {
         }
     }
 
-    suspend fun uploadPdfToFirestore(
+    suspend fun uploadReferralToFirestore(
         uri: Uri,
         service: AppointmentType?,
         onProgress: (PdfUploader.UploadProgress) -> Unit
@@ -820,7 +818,8 @@ class AuthRepository {
             ?: return Result.failure(Exception("User not logged in"))
 
         return try {
-            val pdfUrl = PdfUploader.uploadPdf(uri, userId, onProgress)
+
+            val pdfUrl = PdfUploader.uploadReferral(uri, userId, onProgress)
 
             firestore.runTransaction { transaction ->
                 val userRef = firestore.collection("users")
@@ -847,7 +846,44 @@ class AuthRepository {
                 .documents
                 .firstOrNull()?.id
 
+
+
             Result.success(referralId ?: throw Exception("Referral ID not found"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun replaceReferralInFirestore(
+        uri: Uri,
+        oldUri: String,
+        referralId: String,
+        service: String?,
+        onProgress: (PdfUploader.UploadProgress) -> Unit
+    ): Result<String> {
+        val userId = auth.currentUser?.uid
+            ?: return Result.failure(Exception("User not logged in"))
+
+        return try {
+            val pdfUrl = PdfUploader.replaceReferral(uri, oldUri, userId, onProgress)
+
+            firestore.runTransaction { transaction ->
+                val userRef = firestore.collection("users")
+                    .document(userId)
+                    .collection("referrals")
+                    .document(referralId)
+
+                val referralData = mapOf(
+                    "url" to pdfUrl,
+                    "service" to service,
+                    "uploadedAt" to System.currentTimeMillis(),
+                    "patientId" to userId,
+                )
+
+                transaction.update(userRef, referralData)
+            }.await()
+
+            Result.success(pdfUrl)
         } catch (e: Exception) {
             Result.failure(e)
         }

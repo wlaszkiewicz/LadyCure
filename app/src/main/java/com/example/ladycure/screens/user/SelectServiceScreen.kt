@@ -5,7 +5,6 @@ import DefaultOnPrimary
 import DefaultPrimary
 import Green
 import Yellow
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -61,7 +60,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import android.net.Uri
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.Speciality
@@ -103,7 +101,7 @@ fun SelectServiceScreen(
                             uploadProgress = 0f
                         }
 
-                        val result = authRepo.uploadPdfToFirestore(
+                        val result = authRepo.uploadReferralToFirestore(
                             uri,
                             selectedService
                         ) { progress ->
