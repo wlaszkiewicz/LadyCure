@@ -61,14 +61,27 @@ fun AppointmentsSection(
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        Text(
-            text = "Upcoming Appointments",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
-                color = DefaultPrimary
-            ),
-            modifier = Modifier.padding(bottom = 12.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         )
+        {
+            Text(
+                text = "Upcoming Appointments",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = DefaultPrimary
+                ),
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            TextButton(onClick = {
+                navController.navigate("appointments")
+            }) {
+                Text("View All", color = DefaultPrimary)
+            }
+        }
 
         if (appointments == null) {
             Box(
@@ -482,50 +495,65 @@ fun ShowDetailsDialog(
 
         // Confirmation Dialog
         if (showCancelConfirmation.value) {
-            AlertDialog(
-                onDismissRequest = { showCancelConfirmation.value = false },
-                title = {
-                    Text(
-                        text = "Cancel Appointment",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = DefaultPrimary
-                    )
+            CancelConfirmationDialog(
+                onDismiss = { showCancelConfirmation.value = false },
+                onConfirm = {
+                    showCancelConfirmation.value = false
+                    onCancel()
                 },
-                text = {
-                    Text(
-                        text = "Are you sure you want to cancel this appointment with Dr. ${appointment.doctorName} on ${appointment.date}?",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = onCancel,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red.copy(alpha = 0.5f),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text("Yes, Cancel")
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { showCancelConfirmation.value = false },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DefaultPrimary.copy(alpha = 0.1f),
-                            contentColor = DefaultPrimary
-                        )
-                    ) {
-                        Text("No, Keep It")
-                    }
-                },
-                shape = RoundedCornerShape(16.dp),
-                containerColor = Color.White
+                appointment = appointment
             )
         }
     }
+}
 
+@Composable
+fun CancelConfirmationDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    appointment: Appointment
 
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Cancel Appointment",
+                style = MaterialTheme.typography.titleLarge,
+                color = DefaultPrimary
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to cancel this appointment with Dr. ${appointment.doctorName} on ${appointment.date}?",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Red.copy(alpha = 0.5f),
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Yes, Cancel")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DefaultPrimary.copy(alpha = 0.1f),
+                    contentColor = DefaultPrimary
+                )
+            ) {
+                Text("No, Keep It")
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color.White
+    )
 }
 
 @Composable

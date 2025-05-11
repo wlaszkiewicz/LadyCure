@@ -37,6 +37,7 @@ import com.example.ladycure.screens.WelcomeScreen
 import com.example.ladycure.screens.doctor.AvailabilityListScreen
 import com.example.ladycure.screens.doctor.DoctorHomeScreen
 import com.example.ladycure.screens.doctor.SetAvailabilityScreen
+import com.example.ladycure.screens.user.AppointmentsScreen
 import com.example.ladycure.screens.user.BookAppointmentDirectlyScreen
 import com.example.ladycure.screens.user.BookAppointmentScreen
 import com.example.ladycure.screens.user.BookingSuccessScreen
@@ -259,6 +260,8 @@ fun MainScreen(navController: NavHostController) {
                         navController,
                         snackbarController)
                 }
+
+                composable("appointments") { AppointmentsScreen(navController, snackbarController) }
             }
         }
     }
