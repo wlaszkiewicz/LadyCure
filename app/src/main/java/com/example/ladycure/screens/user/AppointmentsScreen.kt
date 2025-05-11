@@ -20,6 +20,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition.Center
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Filter
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -99,19 +102,52 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalAnimationApi::class
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun AppointmentsScreen(
     navController: NavController,
     snackbarController: SnackbarController?,
     authRepo: AuthRepository = AuthRepository()
 ) {
+    // Existing state variables
     var futureAppointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     var pastAppointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+
+    // New filter state variables
+    var showFilters by remember { mutableStateOf(false) }
+    var selectedSpecialization by remember { mutableStateOf<String?>(null) }
+    var selectedDoctor by remember { mutableStateOf<String?>(null) }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+
+    // Get unique specializations and doctors for filters
+    val allSpecializations = remember(futureAppointments + pastAppointments) {
+        (futureAppointments + pastAppointments).map { it.type.speciality }.distinct()
+    }
+
+    val allDoctors = remember(futureAppointments + pastAppointments) {
+        (futureAppointments + pastAppointments).map { it.doctorName }.distinct()
+    }
+
+    // Filtered appointments
+    val filteredFutureAppointments =
+        remember(futureAppointments, selectedSpecialization, selectedDoctor, selectedDate) {
+            futureAppointments.filter { appointment ->
+                (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
+                        (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
+                        (selectedDate == null || appointment.date == selectedDate)
+            }
+        }
+
+    val filteredPastAppointments =
+        remember(pastAppointments, selectedSpecialization, selectedDoctor, selectedDate) {
+            pastAppointments.filter { appointment ->
+                (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
+                        (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
+                        (selectedDate == null || appointment.date == selectedDate)
+            }
+        }
 
     LaunchedEffect(Unit) {
         try {
@@ -126,7 +162,7 @@ fun AppointmentsScreen(
                 pastAppointments = allAppointments.filter {
                     (it.date.isBefore(LocalDate.now()) ||
                             (it.date == LocalDate.now() && it.time.isBefore(LocalTime.now())))
-                     //       && it.status != Status.PENDING
+                    //       && it.status != Status.PENDING
                 }.sortedWith(compareBy({ it.date }, { it.time })).reversed()
             } else {
                 error = result.exceptionOrNull()?.message ?: "Failed to load appointments"
@@ -148,116 +184,275 @@ fun AppointmentsScreen(
     val tabs = listOf("Upcoming", "History")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.size(48.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp))
+            {   Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Go back",
-                        tint = DefaultOnPrimary,
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go back",
+                                tint = DefaultOnPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
 
-                Text(
-                    text = "Appointments",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = DefaultOnPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Spacer(modifier = Modifier.height(20.dp))
+                        Text(
+                            text = "Appointments",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = DefaultOnPrimary,
+                        )
+                    }
 
-            TabRow(
-                selectedTabIndex = pagerState.currentPage,
-                containerColor = Color.Transparent,
-                contentColor = DefaultPrimary,
-                indicator = { tabPositions ->
-                    Box(
-                        modifier = Modifier
-                            .tabIndicatorOffset(tabPositions[pagerState.currentPage])
-                            .height(3.dp)
-                            .background(DefaultPrimary, RoundedCornerShape(12.dp))
-                    )
-                },
-                divider = {
-                    Divider(color = DefaultPrimary.copy(alpha = 0.8f))
-                }
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Add filter toggle button
+                    IconButton(
+                        onClick = { showFilters = !showFilters },
+                        modifier = Modifier.width(80.dp).padding(8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxSize())
+                            {
+                                Text(
+                                    text = "Filter",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = if (showFilters) DefaultPrimary else DefaultOnPrimary,
+                                )
                                 Icon(
-                                    imageVector = if (index == 0) Icons.Default.CalendarToday else Icons.Default.History,
-                                    contentDescription = null,
+                                    imageVector = Icons.Default.FilterAlt,
+                                    contentDescription = "Filter appointments",
+                                    tint = if (showFilters) DefaultPrimary else DefaultOnPrimary,
                                     modifier = Modifier.size(20.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = title,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp
-                                )
                             }
-                        },
-                        selectedContentColor = DefaultPrimary,
-                        unselectedContentColor = DefaultOnPrimary.copy(alpha = 0.6f)
+                    }
+                }
+
+        // Add filter panel
+        AnimatedVisibility(
+            visible = showFilters,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .background(DefaultBackground, RoundedCornerShape(8.dp))
+            ) {
+                // Specialization filter
+                Text(
+                    text = "Specialization",
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DefaultOnPrimary.copy(alpha = 0.8f)
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 120.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(allSpecializations.size) { specialization ->
+                        FilterChip(
+                            label = allSpecializations[specialization],
+                            selected = selectedSpecialization == allSpecializations[specialization],
+                            onSelected = {
+                                selectedSpecialization =
+                                    if (selectedSpecialization == allSpecializations[specialization]) null else allSpecializations[specialization]
+                            }
+                        )
+                    }
+                }
+
+                // Doctor filter
+                Text(
+                    text = "Doctor",
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DefaultOnPrimary.copy(alpha = 0.8f)
+                )
+
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 120.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(allDoctors.size) { doctor ->
+                        FilterChip(
+                            label = allDoctors[doctor],
+                            selected = selectedDoctor == allDoctors[doctor],
+                            onSelected = {
+                                selectedDoctor = if (selectedDoctor == allDoctors[doctor]) null else allDoctors[doctor]
+                            }
+                        )
+                    }
+                }
+
+                // Date filter
+                Text(
+                    text = "Date",
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = DefaultOnPrimary.copy(alpha = 0.8f)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Today button
+                    FilterChip(
+                        label = "Today",
+                        selected = selectedDate == LocalDate.now(),
+                        onSelected = {
+                            selectedDate =
+                                if (selectedDate == LocalDate.now()) null else LocalDate.now()
+                        }
+                    )
+
+                    // Tomorrow button
+                    FilterChip(
+                        label = "Tomorrow",
+                        selected = selectedDate == LocalDate.now().plusDays(1),
+                        onSelected = {
+                            selectedDate = if (selectedDate == LocalDate.now()
+                                    .plusDays(1)
+                            ) null else LocalDate.now().plusDays(1)
+                        }
+                    )
+
+                    // Custom date picker
+                    FilterChip(
+                        label = "Pick date",
+                        selected = selectedDate != null &&
+                                selectedDate != LocalDate.now() &&
+                                selectedDate != LocalDate.now().plusDays(1),
+                        onSelected = {
+                            // You'll need to implement a date picker dialog here
+                            // For now, we'll just clear the date filter
+                            selectedDate = null
+                        }
                     )
                 }
-            }
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.weight(1f)
-            ) { page ->
-                AnimatedContent(
-                    targetState = page,
-                    transitionSpec = {
-                        slideIntoContainer(
-                            towards = if (page > pagerState.currentPage) AnimatedContentTransitionScope.SlideDirection.Left
-                            else AnimatedContentTransitionScope.SlideDirection.Right
-                        ) + fadeIn() with fadeOut()
-                    }
-                ) { targetPage ->
-                    when {
-                        isLoading -> LoadingView()
-                        targetPage == 0 -> AppointmentsList(
-                            appointments = futureAppointments,
-                            emptyMessage = "No upcoming appointments",
-                            navController = navController,
-                            snackbarController = snackbarController!!
-                        )
-                        else -> AppointmentsList(
-                            appointments = pastAppointments,
-                            emptyMessage = "No past appointments",
-                            navController = navController,
-                            snackbarController = snackbarController!!
-                        )
-                    }
+                // Clear all filters button
+                Button(
+                    onClick = {
+                        selectedSpecialization = null
+                        selectedDoctor = null
+                        selectedDate = null
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DefaultPrimary.copy(alpha = 0.1f),
+                        contentColor = DefaultPrimary
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
+                ) {
+                    Text("Clear all filters")
                 }
             }
         }
+        Spacer(modifier = Modifier.height(20.dp))
+
+        TabRow(
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = Color.Transparent,
+            contentColor = DefaultPrimary,
+            indicator = { tabPositions ->
+                Box(
+                    modifier = Modifier
+                        .tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                        .height(3.dp)
+                        .background(DefaultPrimary, RoundedCornerShape(12.dp))
+                )
+            },
+            divider = {
+                Divider(color = DefaultPrimary.copy(alpha = 0.8f))
+            }
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
+                        }
+                    },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (index == 0) Icons.Default.CalendarToday else Icons.Default.History,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = title,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp
+                            )
+                        }
+                    },
+                    selectedContentColor = DefaultPrimary,
+                    unselectedContentColor = DefaultOnPrimary.copy(alpha = 0.6f)
+                )
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f)
+        ) { page ->
+            AnimatedContent(
+                targetState = page,
+                transitionSpec = {
+                    slideIntoContainer(
+                        towards = if (page > pagerState.currentPage) AnimatedContentTransitionScope.SlideDirection.Left
+                        else AnimatedContentTransitionScope.SlideDirection.Right
+                    ) + fadeIn() with fadeOut()
+                }
+            ) { targetPage ->
+                when {
+                    isLoading -> LoadingView()
+                    targetPage == 0 -> AppointmentsList(
+                        appointments = filteredFutureAppointments, // Use filtered list
+                        emptyMessage = "No upcoming appointments",
+                        navController = navController,
+                        snackbarController = snackbarController!!
+                    )
+
+                    else -> AppointmentsList(
+                        appointments = filteredPastAppointments, // Use filtered list
+                        emptyMessage = "No past appointments",
+                        navController = navController,
+                        snackbarController = snackbarController!!
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -393,25 +588,25 @@ fun AppointmentCard(
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = when (appointment.status) {
-                            Appointment.Status.CONFIRMED -> Color(0xFFE8F5E9)
-                            Appointment.Status.PENDING -> Color(0xFFFFF8E1)
-                            Appointment.Status.CANCELLED -> Color(0xFFFFEBEE)
+                            Status.CONFIRMED -> Color(0xFFE8F5E9)
+                            Status.PENDING -> Color(0xFFFFF8E1)
+                            Status.CANCELLED -> Color(0xFFFFEBEE)
                         },
                         border = BorderStroke(
                             0.5.dp,
                             when (appointment.status) {
-                                Appointment.Status.CONFIRMED -> Color(0xFF81C784)
-                                Appointment.Status.PENDING -> Color(0xFFFFB74D)
-                                Appointment.Status.CANCELLED -> Color(0xFFE57373)
+                                Status.CONFIRMED -> Color(0xFF81C784)
+                                Status.PENDING -> Color(0xFFFFB74D)
+                                Status.CANCELLED -> Color(0xFFE57373)
                             }
                         )
                     ) {
                         Text(
                             text = appointment.status.displayName,
                             color = when (appointment.status) {
-                                Appointment.Status.CONFIRMED -> Color(0xFF2E7D32)
-                                Appointment.Status.PENDING -> Color(0xFFF57C00)
-                                Appointment.Status.CANCELLED -> Color(0xFFC62828)
+                                Status.CONFIRMED -> Color(0xFF2E7D32)
+                                Status.PENDING -> Color(0xFFF57C00)
+                                Status.CANCELLED -> Color(0xFFC62828)
                             },
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -545,7 +740,7 @@ fun AppointmentCard(
                     }
 
                     // Action buttons for future appointments
-                    if (!isPastAppointment && appointment.status != Appointment.Status.CANCELLED) {
+                    if (!isPastAppointment && appointment.status != Status.CANCELLED) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -595,6 +790,33 @@ fun AppointmentCard(
         )
     }
 }
+
+@Composable
+fun FilterChip(
+    label: String,
+    selected: Boolean,
+    onSelected: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) DefaultPrimary else DefaultPrimary.copy(alpha = 0.1f),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) DefaultPrimary else DefaultPrimary.copy(alpha = 0.3f)
+        ),
+        onClick = onSelected
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) Color.White else DefaultOnPrimary,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        )
+    }
+}
+
 @Composable
 fun EmptyAppointmentsView(message: String) {
     Column(
