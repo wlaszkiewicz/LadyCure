@@ -10,10 +10,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -22,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.ladycure.R
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.Firebase
@@ -95,7 +99,7 @@ fun WelcomeContent(navController: NavController) {
 
     val uninstallLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (isAppInstalled(context)) {
-            shouldShowUninstall = true
+            shouldShowUninstall = false
         }
     }
 
@@ -113,39 +117,80 @@ fun WelcomeContent(navController: NavController) {
             onDismissRequest = {},
             title = {
                 Text(
-                    text = "Select Your Gender",
+                    text = "Welcome to LadyCure!",
                     modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    fontSize = 26.sp
                 )
             },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.login_kapi),
+                            contentDescription = "Welcome illustration for women",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .zIndex(1f)
+                                .height(200.dp),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        // White speech bubble with text
+                        Card(
+                            modifier = Modifier
+                                .width(280.dp)
+                                .padding(top = 170.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Text(
+                                text = "" + "\nOur app is designed primarily for women's health needs. " +
+                                        "However, if you still find our services helpful, you're more than welcome to continue using the app",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+
                     Button(
                         onClick = { showDialog = false },
-                        modifier = Modifier.width(150.dp),
+                        modifier = Modifier.width(200.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DefaultPrimary
                         )
                     ) {
-                        Text("Female")
+                        Text("Continue to App")
                     }
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(
+
+                    OutlinedButton(
                         onClick = {
                             shouldShowUninstall = true
                             showDialog = false
-                            ITSAMAN = true
                         },
-                        modifier = Modifier.width(150.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DefaultPrimary
+                        modifier = Modifier.width(200.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = DefaultPrimary
                         )
                     ) {
-                        Text("Male")
+                        Text("Not for me")
                     }
                 }
             },
@@ -154,26 +199,6 @@ fun WelcomeContent(navController: NavController) {
         )
     }
 
-    if (ITSAMAN) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Go away",
-                style = MaterialTheme.typography.headlineLarge,
-            )
-            Image(
-                painter = painterResource(id = R.drawable.diva),
-                contentDescription = "Capybara background",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 30.dp),
-                contentScale = ContentScale.Crop
-            )
-        }
-    }
 
     if (!showDialog && !ITSAMAN) {
         LadyCureTheme {
