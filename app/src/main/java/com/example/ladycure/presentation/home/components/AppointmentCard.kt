@@ -16,6 +16,7 @@ import DefaultOnPrimary
 import DefaultPrimary
 import Green
 import Red
+import BabyBlue
 import Yellow
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
@@ -37,8 +38,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -50,6 +53,8 @@ import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 
 @Composable
@@ -238,8 +243,7 @@ fun PatientAppointmentCard(
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = appointment.status.name.lowercase()
-                                .replaceFirstChar { it.uppercase() },
+                            text = appointment.status.displayName,
                             color = statusColor,
                             style = MaterialTheme.typography.labelMedium
                         )
@@ -287,46 +291,13 @@ fun PatientAppointmentCard(
     }
 }
 
-    @Composable
-    private fun DetailRow(
-        icon: ImageVector,
-        title: String,
-        value: String,
-        valueColor: Color = MaterialTheme.colorScheme.onSurface
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = DefaultPrimary.copy(alpha = 0.8f),
-                modifier = Modifier.size(20.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray
-                )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = valueColor
-                )
-            }
-        }
-    }
-
-
-
 @Composable
 fun ShowDetailsDialog(
     appointment: Appointment,
     onDismiss: () -> Unit,
     onReschedule: () -> Unit,
-    onCancel: () -> Unit){
+    onCancel: () -> Unit
+) {
     val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Green
@@ -334,176 +305,256 @@ fun ShowDetailsDialog(
         else -> Red
     }
 
-    val authRepo = AuthRepository()
-
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(8.dp)
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            shadowElevation = 16.dp,
+            modifier = Modifier
+                .fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp)
+                modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
             ) {
-                // Header
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(DefaultPrimary.copy(alpha = 0.1f))
-                            .padding(12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(Speciality.fromDisplayName(appointment.type.speciality).icon),
-                            contentDescription = "Appointment Type",
-                            tint = DefaultPrimary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-
-                    Column {
-                        Text(
-                            text = appointment.type.displayName,
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 19.sp
+                // Header with doctor info
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    DefaultPrimary.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                ),
+                                startY = 0f,
+                                endY = 100f
                             )
                         )
-                        Text(
-                            text = "Dr. ${appointment.doctorName}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Date and Time in one row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(24.dp)
                 ) {
-                    // Date
-                    DetailRow(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.CalendarToday,
-                        title = "Date",
-                        value = appointment.date.toString()
-                    )
-
-                    // Time
-                    DetailRow(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Schedule,
-                        title = "Time",
-                        value = appointment.time.toString()
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Status and Price in one row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Status
-                    DetailRow(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Info,
-                        title = "Status",
-                        value = appointment.status.name.lowercase()
-                            .replaceFirstChar { it.uppercase() },
-                        valueColor = statusColor
-                    )
-
-                    // Price
-                    DetailRow(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.MonetizationOn,
-                        title = "Price",
-                        value = "$${"%.2f".format(appointment.price)}"
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Address (full width)
-                DetailRow(
-                    icon = Icons.Default.LocationOn,
-                    title = "Address",
-                    value = appointment.address.ifEmpty { "N/A" }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Comments (full width)
-                DetailRow(
-                    icon = Icons.Default.Comment,
-                    title = "Comments",
-                    value = appointment.comments.ifEmpty { "No comments" }
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                if (appointment.status != Status.CANCELLED) {
-                    // Actions
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                showCancelConfirmation.value = true
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.4f)),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = Color.Red.copy(alpha = 0.4f)
-                            ),
-                            contentPadding = PaddingValues(12.dp)
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text("Cancel", color = Color.Red.copy(alpha = 0.5f))
+                            // Doctor avatar
+                            Box(
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                                    .background(DefaultPrimary.copy(alpha = 0.1f))
+                                    .padding(12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(Speciality.fromDisplayName(appointment.type.speciality).icon),
+                                    contentDescription = "Appointment Type",
+                                    tint = DefaultPrimary,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = appointment.type.displayName,
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp
+                                    )
+                                )
+                                Text(
+                                    text =  "Dr. ${appointment.doctorName}",
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        color = DefaultOnPrimary.copy(alpha = 0.7f)
+                                    )
+                                )
+                            }
                         }
 
-                        Button(
-                            onClick = onReschedule,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DefaultPrimary.copy(alpha = 0.8f),
-                            )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Info chips
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Text("Reschedule", color = Color.White)
+                            // Status chip
+                            InfoChip(
+                                text = appointment.status.displayName,
+                                color = statusColor
+                            )
+
+                            // Duration chip
+                            InfoChip(
+                                text = "${appointment.type.durationInMinutes} min",
+                                color = DefaultPrimary
+                            )
+
+                            // Price chip
+                            InfoChip(
+                                text = "$%.2f".format(appointment.price),
+                                color = BabyBlue
+                            )
+                        }
+                    }
+                }
+
+                // Appointment details
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                ) {
+                    // Date and time section
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = DefaultPrimary.copy(alpha = 0.05f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Date",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = DefaultOnPrimary.copy(alpha = 0.6f)
+                                    )
+                                )
+                                Text(
+                                    text = appointment.date.format(DateTimeFormatter.ofPattern("EEE, MMM dd")),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                )
+                            }
+
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = "Time",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = DefaultOnPrimary.copy(alpha = 0.6f)
+                                    )
+                                )
+                                Text(
+                                    text = appointment.time.format(
+                                        DateTimeFormatter.ofPattern(
+                                            "h:mm a",
+                                            Locale.US
+                                        )
+                                    ),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Details section
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Location
+                        AppointmentDetailItem(
+                            icon = Icons.Default.LocationOn,
+                            title = "Location",
+                            value = appointment.address.ifEmpty { "Not specified" }
+                        )
+
+                        // Preparation instructions
+                        if (appointment.type.preparationInstructions.isNotEmpty()) {
+                            AppointmentDetailItem(
+                                icon = Icons.Default.Info,
+                                title = "Preparation",
+                                value = appointment.type.preparationInstructions
+                            )
+                        }
+
+                        // Comments
+                        if (appointment.comments.isNotEmpty()) {
+                            AppointmentDetailItem(
+                                icon = Icons.AutoMirrored.Filled.Comment,
+                                title = "Notes",
+                                value = appointment.comments
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Action buttons
+                    if (appointment.status != Status.CANCELLED) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            // Cancel button
+                            OutlinedButton(
+                                onClick = { showCancelConfirmation.value = true },
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Red
+                                ),
+                                modifier = Modifier.padding(6.dp),
+                                border = BorderStroke(1.dp, Red.copy(alpha = 0.5f))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Cancel",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Cancel",
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
+
+                            // Reschedule button
+                            Button(
+                                onClick = onReschedule,
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = DefaultPrimary,
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.padding(6.dp),
+                                ) {
+                                Text(
+                                    "Reschedule",
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
 
-        // Confirmation Dialog
-        if (showCancelConfirmation.value) {
-            CancelConfirmationDialog(
-                onDismiss = { showCancelConfirmation.value = false },
-                onConfirm = {
-                    showCancelConfirmation.value = false
-                    onCancel()
-                },
-                appointment = appointment
-            )
-        }
+    // Enhanced Cancel Confirmation Dialog
+    if (showCancelConfirmation.value) {
+        CancelConfirmationDialog(
+            onDismiss = { showCancelConfirmation.value = false },
+            onConfirm = {
+                showCancelConfirmation.value = false
+                onCancel()
+            },
+            appointment = appointment
+        )
     }
 }
 
@@ -512,61 +563,176 @@ fun CancelConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     appointment: Appointment
-
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Cancel Appointment",
-                style = MaterialTheme.typography.titleLarge,
-                color = DefaultPrimary
-            )
-        },
-        text = {
-            Text(
-                text = "Are you sure you want to cancel this appointment with Dr. ${appointment.doctorName} on ${appointment.date}?",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Red.copy(alpha = 0.5f),
-                    contentColor = Color.White
-                )
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            shadowElevation = 16.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
             ) {
-                Text("Yes, Cancel")
-            }
-        },
-        dismissButton = {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DefaultPrimary.copy(alpha = 0.1f),
-                    contentColor = DefaultPrimary
+                // Warning icon
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(Red.copy(alpha = 0.1f))
+                        .align(Alignment.CenterHorizontally)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = Red,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Title
+                Text(
+                    text = "Cancel Appointment?",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color =  Red,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
-            ) {
-                Text("No, Keep It")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Appointment details
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFFFAFAFA),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Dr. ${appointment.doctorName}",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                        Text(
+                            text = appointment.type.displayName,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = appointment.date.format(DateTimeFormatter.ofPattern("EEE, MMM dd")),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = appointment.time.format(DateTimeFormatter.ofPattern("h:mm a")),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Confirmation text
+                Text(
+                    text = "This action cannot be undone. Are you sure you want to cancel this appointment?",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.padding(16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = DefaultPrimary
+                        ),
+                        border = BorderStroke(1.dp, DefaultPrimary)
+                    ) {
+                        Text(
+                            "Go Back",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            onConfirm()
+                        },
+                        modifier = Modifier.padding(16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor =  Red,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            "Confirm",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
+                }
             }
-        },
-        shape = RoundedCornerShape(16.dp),
-        containerColor = Color.White
-    )
+        }
+    }
 }
 
 @Composable
-private fun DetailRow(
-    modifier: Modifier = Modifier,
+private fun InfoChip(
+    text: String,
+    color: Color
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.1f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = text,
+                color = color,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppointmentDetailItem(
     icon: ImageVector,
     title: String,
-    value: String,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface
+    value: String
 ) {
     Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Icon(
@@ -575,16 +741,19 @@ private fun DetailRow(
             tint = DefaultPrimary.copy(alpha = 0.8f),
             modifier = Modifier.size(20.dp)
         )
-        Column(modifier = Modifier.weight(1f)) {
+        Column {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = DefaultOnPrimary.copy(alpha = 0.6f)
+                )
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = valueColor
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = DefaultOnPrimary
+                )
             )
         }
     }
