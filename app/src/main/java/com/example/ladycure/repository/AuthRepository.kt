@@ -407,7 +407,8 @@ class AuthRepository {
         endTime: LocalTime
     ): Result<Unit> {
         val batch = firestore.batch()
-        val doctorId = auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+        val doctorId =
+            auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
 
         // Generate all possible slots for the new time range
         val newSlots = mutableSetOf<LocalTime>()
@@ -431,14 +432,15 @@ class AuthRepository {
 
                 if (existingDoc.exists()) {
                     // Get existing available slots
-                    val existingAvailableSlots = (existingDoc.get("availableSlots") as? List<String>)
-                        ?.mapNotNull { timeString ->
-                            try {
-                                LocalTime.parse(timeString, timeFormatter)
-                            } catch (e: Exception) {
-                                null
-                            }
-                        }?.toSet() ?: emptySet()
+                    val existingAvailableSlots =
+                        (existingDoc.get("availableSlots") as? List<String>)
+                            ?.mapNotNull { timeString ->
+                                try {
+                                    LocalTime.parse(timeString, timeFormatter)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }?.toSet() ?: emptySet()
 
                     // Get existing time range
                     val existingStartTime = (existingDoc.getString("startTime")?.let {
@@ -679,7 +681,12 @@ class AuthRepository {
                                 java.util.Locale.US
                             )
                         )
-                    }).distinct().sortedBy { LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)) }
+                    }).distinct().sortedBy {
+                        LocalTime.parse(
+                            it,
+                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        )
+                    }
                     transaction.update(docRef, "availableSlots", updatedAvailableSlots)
                 } else {
                     throw Exception("Availability document does not exist")
@@ -723,7 +730,12 @@ class AuthRepository {
 
             // Update the appointment with the new date and time
             val updatedAppointmentData = mapOf(
-                "date" to newDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd", java.util.Locale.US)),
+                "date" to newDate.format(
+                    DateTimeFormatter.ofPattern(
+                        "yyyy-MM-dd",
+                        java.util.Locale.US
+                    )
+                ),
                 "time" to newTime.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
             )
 
@@ -754,7 +766,8 @@ class AuthRepository {
                 } else {
                     oldDateRef
                 }
-                val newDateSnapshot = if (oldDate != newDate) transaction.get(newDateRef) else oldDateSnapshot
+                val newDateSnapshot =
+                    if (oldDate != newDate) transaction.get(newDateRef) else oldDateSnapshot
 
                 if (!oldDateSnapshot.exists() || !newDateSnapshot.exists()) {
                     throw Exception("Availability document does not exist")
@@ -771,7 +784,8 @@ class AuthRepository {
                     (slot.isAfter(doctorStartTime) && slot.isBefore(doctorEndTime)) || slot == doctorStartTime
                 }
 
-                val currentAvailableSlots = oldDateSnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                val currentAvailableSlots =
+                    oldDateSnapshot.get("availableSlots") as? List<String> ?: emptyList()
 
                 var updatedAvailableSlots = (currentAvailableSlots + filteredSlots.map {
                     it.format(DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
@@ -779,7 +793,10 @@ class AuthRepository {
 
                 if (oldDate == newDate) {
                     updatedAvailableSlots = updatedAvailableSlots.filterNot { slot ->
-                        val slotTime = LocalTime.parse(slot, DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US))
+                        val slotTime = LocalTime.parse(
+                            slot,
+                            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+                        )
                         (slotTime.isAfter(newTime) && slotTime.isBefore(newEndTime)) || slotTime == newTime
                     }
                 }
@@ -791,7 +808,8 @@ class AuthRepository {
                 transaction.update(oldDateRef, "availableSlots", updatedAvailableSlots)
 
                 if (oldDate != newDate) {
-                    val newAvailableSlots = newDateSnapshot.get("availableSlots") as? List<String> ?: emptyList()
+                    val newAvailableSlots =
+                        newDateSnapshot.get("availableSlots") as? List<String> ?: emptyList()
                     val updatedNewAvailableSlots = newAvailableSlots.filterNot { slot ->
                         val slotTime = LocalTime.parse(
                             slot,
@@ -912,4 +930,32 @@ class AuthRepository {
             Result.failure(e)
         }
     }
+
+
+    suspend fun getDoctorsFromAppointments(): Result<List<String>> {
+        return try {
+            val appointmentsCollection = firestore.collection("appointments")
+            val snapshot = appointmentsCollection.get().await()
+            val doctorNames = snapshot.documents.mapNotNull { document ->
+                document.getString("doctorName")
+            }
+            Result.success(doctorNames)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getPatientsFromAppointments(): Result<List<String>> {
+        return try {
+            val appointmentsCollection = firestore.collection("appointments")
+            val snapshot = appointmentsCollection.get().await()
+            val patientNames = snapshot.documents.mapNotNull { document ->
+                document.getString("patientName")
+            }
+            Result.success(patientNames)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
+
