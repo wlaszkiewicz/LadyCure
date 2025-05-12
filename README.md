@@ -12,7 +12,7 @@ The application should support multiple user roles, each with specific functiona
  ~~A medical professional who can update their profile information, set their availability for appointments, view scheduled consultations,~~ and interact with patients via chat during e-consultations.
 
 - **Patient/User**:  
-  ~~A general user who can register for an account, browse available doctors, book appointments,~~ **attend e-consultations via chat, view past consultations in their medical history, and upload/download medical documents such as prescriptions**.
+  ~~A general user who can register for an account, browse available doctors, book appointments,~~ **attend e-consultations via chat**, ~~view past consultations in their medical history~~, and upload/download medical documents such as prescriptions**.
 
 ---
 

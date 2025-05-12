@@ -213,7 +213,8 @@ fun PatientAppointmentCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.date.toString(), style = MaterialTheme.typography.bodyMedium)
+                        Text(appointment.date.format(DateTimeFormatter.ofPattern("MMM dd yyyy")),
+                            style = MaterialTheme.typography.bodyMedium)
                     }
 
                     Column(
@@ -224,7 +225,8 @@ fun PatientAppointmentCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.time.toString(), style = MaterialTheme.typography.bodyMedium)
+                        Text(appointment.time.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.US)),
+                            style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
