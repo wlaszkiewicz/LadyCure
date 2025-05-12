@@ -4,7 +4,6 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import Red
-import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -13,14 +12,11 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.animation.with
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.SnapPosition.Center
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -42,29 +39,26 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Filter
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,34 +69,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.Appointment.Status
-import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.CancelConfirmationDialog
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalAnimationApi::class
+)
 @Composable
 fun AppointmentsScreen(
     navController: NavController,
@@ -187,62 +178,67 @@ fun AppointmentsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp))
-            {   Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+            .padding(16.dp)
+    )
+    {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.size(48.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Go back",
-                                tint = DefaultOnPrimary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        Text(
-                            text = "Appointments",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = DefaultOnPrimary,
-                        )
-                    }
-
-                    // Add filter toggle button
-                    IconButton(
-                        onClick = { showFilters = !showFilters },
-                        modifier = Modifier.width(80.dp).padding(8.dp),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize())
-                            {
-                                Text(
-                                    text = "Filter",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = if (showFilters) DefaultPrimary else DefaultOnPrimary,
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.FilterAlt,
-                                    contentDescription = "Filter appointments",
-                                    tint = if (showFilters) DefaultPrimary else DefaultOnPrimary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Go back",
+                        tint = DefaultOnPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
+
+                Text(
+                    text = "Appointments",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DefaultOnPrimary,
+                )
+            }
+
+            // Add filter toggle button
+            IconButton(
+                onClick = { showFilters = !showFilters },
+                modifier = Modifier
+                    .width(80.dp)
+                    .padding(8.dp),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
+                )
+                {
+                    Text(
+                        text = "Filter",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (showFilters) DefaultPrimary else DefaultOnPrimary,
+                    )
+                    Icon(
+                        imageVector = Icons.Default.FilterAlt,
+                        contentDescription = "Filter appointments",
+                        tint = if (showFilters) DefaultPrimary else DefaultOnPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
 
         // Add filter panel
         AnimatedVisibility(
@@ -299,7 +295,8 @@ fun AppointmentsScreen(
                             label = allDoctors[doctor],
                             selected = selectedDoctor == allDoctors[doctor],
                             onSelected = {
-                                selectedDoctor = if (selectedDoctor == allDoctors[doctor]) null else allDoctors[doctor]
+                                selectedDoctor =
+                                    if (selectedDoctor == allDoctors[doctor]) null else allDoctors[doctor]
                             }
                         )
                     }
@@ -319,7 +316,6 @@ fun AppointmentsScreen(
                         .padding(horizontal = 8.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Today button
                     FilterChip(
                         label = "Today",
                         selected = selectedDate == LocalDate.now(),
@@ -329,7 +325,6 @@ fun AppointmentsScreen(
                         }
                     )
 
-                    // Tomorrow button
                     FilterChip(
                         label = "Tomorrow",
                         selected = selectedDate == LocalDate.now().plusDays(1),
@@ -340,21 +335,18 @@ fun AppointmentsScreen(
                         }
                     )
 
-                    // Custom date picker
                     FilterChip(
                         label = "Pick date",
                         selected = selectedDate != null &&
                                 selectedDate != LocalDate.now() &&
                                 selectedDate != LocalDate.now().plusDays(1),
                         onSelected = {
-                            // You'll need to implement a date picker dialog here
-                            // For now, we'll just clear the date filter
+                            //  implement a date picker dialog here
                             selectedDate = null
                         }
                     )
                 }
 
-                // Clear all filters button
                 Button(
                     onClick = {
                         selectedSpecialization = null
@@ -374,6 +366,16 @@ fun AppointmentsScreen(
                 }
             }
         }
+
+        ActiveFiltersRow(
+            selectedSpecialization = selectedSpecialization,
+            selectedDoctor = selectedDoctor,
+            selectedDate = selectedDate,
+            onRemoveSpecialization = { selectedSpecialization = null },
+            onRemoveDoctor = { selectedDoctor = null },
+            onRemoveDate = { selectedDate = null },
+            modifier = Modifier.padding(top = 8.dp)
+        )
         Spacer(modifier = Modifier.height(20.dp))
 
         TabRow(
@@ -485,7 +487,8 @@ fun AppointmentsList(
                         onCancel = {
                             coroutineScope.launch {
                                 try {
-                                    val result = authRepo.cancelAppointment(appointment.appointmentId)
+                                    val result =
+                                        authRepo.cancelAppointment(appointment.appointmentId)
                                     if (result.isSuccess) {
                                         appointment.status = Status.CANCELLED
 
@@ -639,7 +642,12 @@ fun AppointmentCard(
                         color = DefaultOnPrimary
                     )
                     Text(
-                        text = appointment.time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+                        text = appointment.time.format(
+                            DateTimeFormatter.ofPattern(
+                                "h:mm a",
+                                Locale.US
+                            )
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.7f)
                     )
@@ -675,19 +683,19 @@ fun AppointmentCard(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         // Address if available
-                            Column {
-                                Text(
-                                    text = "Location",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = appointment.address,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = DefaultOnPrimary,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
+                        Column {
+                            Text(
+                                text = "Location",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = DefaultOnPrimary.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = appointment.address,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DefaultOnPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
 
                         Column {
                             Text(
@@ -748,11 +756,11 @@ fun AppointmentCard(
                             // Cancel button
                             OutlinedButton(
                                 onClick = {
-                                   showCancelConfirmationDialog = true
+                                    showCancelConfirmationDialog = true
                                 },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor =  Red.copy(alpha = 0.8f),
+                                    contentColor = Red.copy(alpha = 0.8f),
                                 ),
                                 border = BorderStroke(1.dp, Red.copy(alpha = 0.5f))
                             ) {
@@ -861,5 +869,106 @@ private fun LoadingView() {
             color = DefaultOnPrimary,
             fontSize = 16.sp
         )
+    }
+}
+
+
+@Composable
+fun ActiveFiltersRow(
+    selectedSpecialization: String?,
+    selectedDoctor: String?,
+    selectedDate: LocalDate?,
+    onRemoveSpecialization: () -> Unit,
+    onRemoveDoctor: () -> Unit,
+    onRemoveDate: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val hasFilters =
+        selectedSpecialization != null || selectedDoctor != null || selectedDate != null
+
+    AnimatedVisibility(
+        visible = hasFilters,
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically()
+    ) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Filters:",
+                style = MaterialTheme.typography.labelMedium,
+                color = DefaultOnPrimary.copy(alpha = 0.8f),
+                modifier = Modifier.padding(end = 8.dp)
+            )
+
+            if (selectedSpecialization != null) {
+                ActiveFilterChip(
+                    label = selectedSpecialization,
+                    onRemove = onRemoveSpecialization
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            if (selectedDoctor != null) {
+                ActiveFilterChip(
+                    label = selectedDoctor,
+                    onRemove = onRemoveDoctor
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            if (selectedDate != null) {
+                val dateLabel = when (selectedDate) {
+                    LocalDate.now() -> "Today"
+                    LocalDate.now().plusDays(1) -> "Tomorrow"
+                    else -> selectedDate.format(DateTimeFormatter.ofPattern("MMM d"))
+                }
+                ActiveFilterChip(
+                    label = dateLabel,
+                    onRemove = onRemoveDate
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ActiveFilterChip(
+    label: String,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = DefaultPrimary.copy(alpha = 0.1f),
+        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f))
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(end = 8.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = DefaultOnPrimary,
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 4.dp)
+            )
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Remove filter",
+                    tint = DefaultPrimary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
     }
 }
