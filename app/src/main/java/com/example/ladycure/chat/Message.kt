@@ -10,7 +10,7 @@ data class Message(
     val timestamp: Timestamp = Timestamp.now(),
     val attachmentUrl: String? = null
 ) {
-    @Exclude
+
     fun toMap(): Map<String, Any?> {
         return mapOf(
             "sender" to sender,
