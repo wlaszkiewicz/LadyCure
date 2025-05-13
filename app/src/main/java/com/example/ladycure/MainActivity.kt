@@ -30,7 +30,7 @@ import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.screens.AdminScreen
 import com.example.ladycure.screens.ChatScreen
-import com.example.ladycure.screens.DoctorChatScreen
+import com.example.ladycure.chat.DoctorChatScreen
 import com.example.ladycure.screens.LoginScreen
 import com.example.ladycure.screens.ProfileScreen
 import com.example.ladycure.screens.RegisterScreen
