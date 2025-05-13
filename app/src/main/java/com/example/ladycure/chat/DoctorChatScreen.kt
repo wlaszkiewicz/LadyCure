@@ -26,7 +26,8 @@ import kotlinx.coroutines.launch
 fun DoctorChatScreen(
     navController: NavController,
     doctorName: String,
-    chatRepository: ChatRepository = ChatRepository()
+    chatRepository: ChatRepository = ChatRepository(),
+    chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
 ) {
     val chatId = "${chatRepository.getCurrentUserId()}_$doctorName"
     var messageText by remember { mutableStateOf("") }
@@ -44,6 +45,7 @@ fun DoctorChatScreen(
 
     // Load messages
     LaunchedEffect(chatId) {
+        chatViewModel.initializeChat(chatId, listOf(chatRepository.getCurrentUserId(), doctorName))
         chatRepository.getMessages(chatId) { messageList ->
             messages = messageList
         }

@@ -11,9 +11,35 @@ class ChatRepository {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val storage = FirebaseStorage.getInstance()
+    private val firestore = FirebaseFirestore.getInstance("telecure")
 
     fun getCurrentUserId(): String {
         return auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+    }
+
+    suspend fun createChat(chatId: String, participants: List<String>): Result<Unit> {
+        return try {
+            firestore.runTransaction { transaction ->
+                val chatRef = firestore.collection("chats").document(chatId)
+
+                // Sprawdzenie, czy dokument już istnieje
+                val chatSnapshot = transaction.get(chatRef)
+                if (chatSnapshot.exists()) {
+                    throw Exception("Chat o podanym ID już istnieje")
+                }
+
+                // Tworzenie nowego dokumentu w kolekcji "chats"
+                val chatData = mapOf(
+                    "participants" to participants,
+                    "createdAt" to System.currentTimeMillis()
+                )
+                transaction.set(chatRef, chatData)
+            }.await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun uploadFile(uri: Uri): String {
@@ -22,6 +48,17 @@ class ChatRepository {
         val uploadTask = fileRef.putFile(uri).await()
         return fileRef.downloadUrl.await().toString()
     }
+
+    // jak to bylo to pozostawialo in "type a message" wyslaną wiadomosc
+//    suspend fun sendMessage(chatId: String, message: Message) {
+//        val chatRef = db.collection("chats").document(chatId)
+//        val document = chatRef.get().await()
+//
+//        if (!document.exists()) {
+//            chatRef.set(mapOf("createdAt" to System.currentTimeMillis())).await()
+//        }
+//        chatRef.collection("messages").add(message.toMap()).await()
+//    }
 
     fun sendMessage(chatId: String, message: Message) {
         db.collection("chats")
