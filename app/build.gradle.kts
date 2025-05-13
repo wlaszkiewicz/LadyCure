@@ -91,6 +91,8 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
     implementation(libs.firebase.storage.ktx)
 
+    implementation ("io.coil-kt:coil-compose:2.5.0")
+    implementation ("com.google.firebase:firebase-storage-ktx")
 }
 
 apply(plugin = "com.google.gms.google-services")
