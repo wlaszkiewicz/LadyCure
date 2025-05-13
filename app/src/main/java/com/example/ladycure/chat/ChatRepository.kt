@@ -1,8 +1,6 @@
-package com.example.ladycure.repository
+package com.example.ladycure.chat
 
 import android.net.Uri
-import com.example.ladycure.data.Message
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage

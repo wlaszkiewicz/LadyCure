@@ -1,4 +1,4 @@
-package com.example.ladycure.screens
+package com.example.ladycure.chat
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,11 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.ladycure.data.Message
-import com.example.ladycure.repository.ChatRepository
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

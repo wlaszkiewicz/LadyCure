@@ -1,4 +1,4 @@
-package com.example.ladycure.data
+package com.example.ladycure.chat
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Exclude
