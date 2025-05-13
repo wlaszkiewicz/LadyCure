@@ -137,14 +137,15 @@ fun WelcomeContent(navController: NavController) {
                         contentAlignment = Alignment.TopCenter
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.login_kapi),
+                            painter = painterResource(id = R.drawable.akczuali_kapi),
                             contentDescription = "Welcome illustration for women",
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .align(Alignment.TopCenter)
                                 .zIndex(1f)
-                                .height(200.dp),
-                            contentScale = ContentScale.Crop
+                                .height(170.dp)
+                                .offset(y = (0).dp),
+                            contentScale = ContentScale.Fit
                         )
 
                         // White speech bubble with text
@@ -159,7 +160,7 @@ fun WelcomeContent(navController: NavController) {
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {
                             Text(
-                                text = "" + "\nOur app is designed primarily for women's health needs. " +
+                                text = " Our app is designed primarily for women's health needs. " +
                                         "However, if you still find our services helpful, you're more than welcome to continue using the app",
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(16.dp),
