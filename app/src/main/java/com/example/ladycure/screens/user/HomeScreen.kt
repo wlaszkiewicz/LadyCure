@@ -58,7 +58,7 @@ import android.location.Location
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
-import com.example.ladycure.SharedPreferencesHelper
+import com.example.ladycure.utility.SharedPreferencesHelper
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -90,7 +90,9 @@ fun HomeScreen(
     )
     var locationFetched by remember { mutableStateOf(false) }
 
-    val availableCities = listOf("Warszawa", "Kraków", "Wrocław", "Poznań", "Gdańsk", "Łódź")
+    val availableCities = listOf("Warszawa", "Kraków", "Wrocław", "Poznań", "Gdańsk", "Łódź",
+        "Szczecin", "Bydgoszcz", "Lublin", "Katowice", "Białystok", "Gdynia", "Częstochowa",
+        "Radom", "Sosnowiec","Toruń", "Kielce", "Rzeszów", "Olsztyn", "Zielona Góra")
 
 
     fun findNearestCity(latitude: Double, longitude: Double): String {

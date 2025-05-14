@@ -36,7 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
-import com.example.ladycure.SharedPreferencesHelper
+import com.example.ladycure.utility.SharedPreferencesHelper
 import com.google.android.gms.location.LocationServices
 
 

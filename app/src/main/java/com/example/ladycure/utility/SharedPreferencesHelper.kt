@@ -1,4 +1,4 @@
-package com.example.ladycure
+package com.example.ladycure.utility
 
 import android.content.Context
 
