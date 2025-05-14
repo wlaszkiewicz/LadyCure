@@ -3,6 +3,8 @@ package com.example.ladycure.screens
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -45,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,6 +65,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
     val authRepo = AuthRepository()
     var error by remember { mutableStateOf("") }
     var showDoctorsList by remember { mutableStateOf(false) }
+    var showSupportDialog by remember { mutableStateOf(false) }
     val doctorNames = remember { mutableStateOf<List<String>>(emptyList()) }
 
     BackHandler(enabled = showDoctorsList) {
@@ -132,6 +137,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                 InitialChatView(
                     role = role,
                     onFindDoctorsClick = { showDoctorsList = true },
+                    onUrgentHelpClick = { showSupportDialog = true },
                     modifier = Modifier.weight(1f)
                 )
             } else {
@@ -152,12 +158,77 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             }
         }
     }
+
+    // Support Dialog
+    if (showSupportDialog) {
+        SupportDialog(
+            onDismiss = { showSupportDialog = false },
+            navController = navController
+        )
+    }
+}
+
+@Composable
+private fun SupportDialog(
+    onDismiss: () -> Unit,
+    navController: NavHostController
+) {
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Need Help?",
+                style = MaterialTheme.typography.titleLarge,
+                color = DefaultPrimary
+            )
+        },
+        text = {
+            Text(
+                text = "Can’t find your preferred doctor? Our support team is here to help! Please contact us via email.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:ladycure_admin@gmail.com")
+                        putExtra(Intent.EXTRA_SUBJECT, "Urgent Help Request")
+                    }
+                    context.startActivity(intent)
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DefaultPrimary,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Contact Support")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = DefaultPrimary
+                ),
+                border = BorderStroke(1.dp, DefaultPrimary)
+            ) {
+                Text("Cancel")
+            }
+        },
+        containerColor = DefaultBackground
+    )
 }
 
 @Composable
 private fun InitialChatView(
     role: String,
     onFindDoctorsClick: () -> Unit,
+    onUrgentHelpClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -181,7 +252,6 @@ private fun InitialChatView(
                 tint = DefaultPrimary,
                 modifier = Modifier.size(80.dp)
             )
-
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -247,7 +317,7 @@ private fun InitialChatView(
 
             if (role == "user") {
                 Button(
-                    onClick = { /* Emergency handler */ },
+                    onClick = onUrgentHelpClick,
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
                         .height(56.dp),
