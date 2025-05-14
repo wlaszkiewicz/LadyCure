@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -93,6 +94,11 @@ dependencies {
 
     implementation ("io.coil-kt:coil-compose:2.5.0")
     implementation ("com.google.firebase:firebase-storage-ktx")
+    implementation ("com.google.accompanist:accompanist-permissions:0.32.0")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation ("com.google.android.gms:play-services-maps:18.1.0")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation ("com.google.maps.android:android-maps-utils:2.3.0")
 }
 
 apply(plugin = "com.google.gms.google-services")

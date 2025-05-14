@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -114,7 +115,14 @@ fun MainScreen(navController: NavHostController) {
                 navController = navController,
                 startDestination = "welcome"
             ) {
-                composable("home") { HomeScreen(navController, snackbarController) }
+                composable("home") {
+                    val context = LocalContext.current
+                    HomeScreen(
+                        navController = navController,
+                        snackbarController = snackbarController,
+                        context = context
+                    )
+                }
 
                 composable("profile") { ProfileScreen(navController) }
                 composable("doctor") { SearchDoctorsScreen(navController) }
