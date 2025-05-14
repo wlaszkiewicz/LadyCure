@@ -161,7 +161,7 @@ fun WelcomeContent(navController: NavController) {
                         ) {
                             Text(
                                 text = " Our app is designed primarily for women's health needs. " +
-                                        "However, if you still find our services helpful, you're more than welcome to continue using the app",
+                                        "However, if you still find our services helpful, you're more than welcome to continue using the app.",
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(16.dp),
                                 style = MaterialTheme.typography.bodyMedium

@@ -2,6 +2,10 @@ package com.example.ladycure.presentation.home.components
 
 import DefaultPrimary
 import DefaultOnPrimary
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.clickable
@@ -30,27 +34,52 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import com.example.ladycure.SharedPreferencesHelper
+import com.google.android.gms.location.LocationServices
 
 
 @Composable
 fun BookAppointmentSection(
     specialities: List<Speciality>,
+    selectedCity: String?,
+    availableCities: List<String>,
     onCitySelected: (String) -> Unit = {},
-    onSpecializationSelected: (Speciality) -> Unit
+    onSpecializationSelected: (Speciality) -> Unit,
+    context: Context = LocalContext.current
 ) {
     var showLocationDropdown by remember { mutableStateOf(false) }
-    var selectedLocation by remember { mutableStateOf("Detecting your location...") }
+    var selectedLocation by remember { mutableStateOf(selectedCity ?: "Detecting your location...") }
 
-    val availableLocations = listOf(
-        "Wrocław", "Warszawa", "Kraków", "Łódź", "Poznań",
-        "Gdańsk", "Szczecin", "Bydgoszcz", "Lublin", "Katowice",
-        "Białystok", "Gdynia", "Częstochowa", "Radom", "Sosnowiec",
-        "Toruń", "Kielce", "Rzeszów", "Olsztyn", "Zielona Góra"
-    )
+    var rememberChoice by remember { mutableStateOf(SharedPreferencesHelper.shouldRememberChoice(context)) }
 
-    LaunchedEffect(Unit) {
-        detectNearestPolishCity { nearestCity ->
-            selectedLocation = nearestCity ?: "Detecting your location..."
+    var lastCityChangeSource by remember { mutableStateOf<Any?>(null) }
+
+    LaunchedEffect(rememberChoice) {
+        if (rememberChoice) {
+            SharedPreferencesHelper.getCity(context)?.let { savedCity ->
+                selectedLocation = savedCity
+                onCitySelected(savedCity)
+                lastCityChangeSource = "remember"
+            }
+        }
+    }
+
+    LaunchedEffect(selectedCity) {
+        if (selectedCity != null && lastCityChangeSource != "remember") {
+            selectedLocation = selectedCity
+            rememberChoice = false // resetowanie checkboxa
+            lastCityChangeSource = "external"
+        } else if (!rememberChoice && selectedCity == null) {
+            detectNearestPolishCity(context) { nearestCity ->
+                nearestCity?.let {
+                    selectedLocation = it
+                    onCitySelected(it)
+                    rememberChoice = false //resetowanie checkboxa
+                    lastCityChangeSource = "detection"
+                }
+            }
         }
     }
 
@@ -67,7 +96,6 @@ fun BookAppointmentSection(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-
         Box(modifier = Modifier.fillMaxWidth()) {
             Card(
                 modifier = Modifier
@@ -76,41 +104,77 @@ fun BookAppointmentSection(
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                OutlinedTextField(
-                    value = selectedLocation,
-                    onValueChange = {},
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    enabled = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.5f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.5f),
-                        focusedIndicatorColor = DefaultOnPrimary.copy(alpha = 0.1f),
-                        unfocusedIndicatorColor = DefaultOnPrimary.copy(alpha = 0.1f),
-                        focusedLeadingIconColor = DefaultPrimary,
-                        unfocusedLeadingIconColor = DefaultPrimary,
-                        focusedTextColor = DefaultPrimary,
-                        unfocusedTextColor = DefaultPrimary
-                    ),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = DefaultPrimary
+                Column {
+                    OutlinedTextField(
+                        value = selectedLocation,
+                        onValueChange = {},
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        enabled = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.5f),
+                            focusedIndicatorColor = DefaultOnPrimary.copy(alpha = 0.1f),
+                            unfocusedIndicatorColor = DefaultOnPrimary.copy(alpha = 0.1f),
+                            focusedLeadingIconColor = DefaultPrimary,
+                            unfocusedLeadingIconColor = DefaultPrimary,
+                            focusedTextColor = DefaultPrimary,
+                            unfocusedTextColor = DefaultPrimary
+                        ),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = DefaultPrimary
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                tint = DefaultPrimary,
+                                modifier = Modifier.clickable {
+                                    showLocationDropdown = !showLocationDropdown
+                                }
+                            )
+                        }
+                    )
+
+                    // Checkbox "Remember my choice"
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, bottom = 8.dp, top = 4.dp)
+                            .height(30.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = rememberChoice,
+                            onCheckedChange = { isChecked ->
+                                rememberChoice = isChecked
+                                SharedPreferencesHelper.saveRememberChoice(context, isChecked)
+                                if (isChecked && selectedLocation.isNotEmpty() && selectedLocation != "Detecting your location...") {
+                                    SharedPreferencesHelper.saveCity(context, selectedLocation)
+                                    lastCityChangeSource = "checkbox"
+                                } else {
+                                    SharedPreferencesHelper.saveCity(context, "") // czyszceznie zapisanego miasta
+                                }
+                            },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = DefaultPrimary,
+                                uncheckedColor = DefaultPrimary.copy(alpha = 0.6f)
+                            )
                         )
-                    },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = null,
-                            tint = DefaultPrimary,
-                            modifier = Modifier.clickable {
-                                showLocationDropdown = !showLocationDropdown
-                            }
+                        Text(
+                            text = "Remember my choice",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DefaultPrimary,
+                            modifier = Modifier.padding(start = 4.dp)
                         )
                     }
-                )
+                }
             }
+
             DropdownMenu(
                 expanded = showLocationDropdown,
                 onDismissRequest = { showLocationDropdown = false },
@@ -122,7 +186,7 @@ fun BookAppointmentSection(
                         shape = RoundedCornerShape(12.dp)
                     )
             ) {
-                availableLocations.forEach { location ->
+                availableCities.forEach { location ->
                     DropdownMenuItem(
                         text = {
                             Text(
@@ -134,7 +198,9 @@ fun BookAppointmentSection(
                         onClick = {
                             selectedLocation = location
                             showLocationDropdown = false
-                            onCitySelected(selectedLocation)
+                            onCitySelected(location)
+                            rememberChoice = false // Resetuj checkbox przy zmianie miasta
+                            lastCityChangeSource = "dropdown"
                         },
                         modifier = Modifier.padding(horizontal = 8.dp),
                         colors = MenuDefaults.itemColors(
@@ -168,10 +234,36 @@ fun BookAppointmentSection(
 //    Color.White
 //)
 
-fun detectNearestPolishCity(onCityDetected: (String?) -> Unit) {
-    // will detect the nearest city and return it
+fun detectNearestPolishCity(
+    context: Context,
+    onCityDetected: (String?) -> Unit
+) {
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    return onCityDetected("Wrocław")
+    if (ActivityCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED &&
+        ActivityCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED
+    ) {
+        onCityDetected(null)
+        return
+    }
+
+    fusedLocationClient.lastLocation
+        .addOnSuccessListener { location: Location? ->
+            location?.let {
+                onCityDetected("Warszawa")
+            } ?: run {
+                onCityDetected(null)
+            }
+        }
+        .addOnFailureListener {
+            onCityDetected(null)
+        }
 }
 
 
@@ -235,6 +327,8 @@ fun PreviewBookAppointmentSection() {
             Speciality.PEDIATRICS,
             Speciality.PSYCHIATRY,
         ),
+        selectedCity = null,
+        availableCities = emptyList(),
         onSpecializationSelected = {}
     )
 }

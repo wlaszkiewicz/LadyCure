@@ -51,19 +51,156 @@ import com.example.ladycure.presentation.home.components.BookAppointmentSection
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import com.example.ladycure.SharedPreferencesHelper
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import kotlin.math.*
 
-
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun HomeScreen(navController: NavHostController, snackbarController: SnackbarController? = null) {
+fun HomeScreen(
+    navController: NavHostController,
+    snackbarController: SnackbarController? = null,
+    context: Context = LocalContext.current
+) {
     val authRepo = remember { AuthRepository() }
+    val fusedLocationClient: FusedLocationProviderClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
 
     val selectedSpeciality = remember { mutableStateOf<Speciality?>(null) }
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
-    val selectedCity = remember { mutableStateOf("Wrocław") }
+    val selectedCity = remember { mutableStateOf<String?>(null) }
     var error = remember { mutableStateOf<String?>(null) }
     val appointments = remember { mutableStateOf<List<Appointment>?>(null) }
+    val locationPermissionGranted = remember { mutableStateOf(false) }
+    val locationPermissionState = rememberPermissionState(
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
+    var locationFetched by remember { mutableStateOf(false) }
+
+    val availableCities = listOf("Warszawa", "Kraków", "Wrocław", "Poznań", "Gdańsk", "Łódź")
+
+
+    fun findNearestCity(latitude: Double, longitude: Double): String {
+        val cities = mapOf(
+            "Warszawa" to Pair(52.2297, 21.0122),
+            "Kraków" to Pair(50.0647, 19.9450),
+            "Wrocław" to Pair(51.1079, 17.0385),
+            "Poznań" to Pair(52.4064, 16.9252),
+            "Gdańsk" to Pair(54.3520, 18.6466),
+            "Łódź" to Pair(51.7592, 19.4560)
+        )
+
+        fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+            val R = 6371.0 // earth radius in km
+            val dLat = Math.toRadians(lat2 - lat1)
+            val dLon = Math.toRadians(lon2 - lon1)
+            val a = sin(dLat / 2).pow(2) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLon / 2).pow(2)
+            val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+            return R * c
+        }
+
+        return cities.minByOrNull { (_, coords) ->
+            haversine(latitude, longitude, coords.first, coords.second)
+        }?.key ?: "Warszawa"
+    }
+
+
+
+    fun fetchLocation(
+        fusedLocationClient: FusedLocationProviderClient,
+        selectedCity: MutableState<String?>,
+        availableCities: List<String>
+    ) {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location ->
+                    location?.let {
+                        val city = findNearestCity(it.latitude, it.longitude)
+                        selectedCity.value = city
+                    } ?: run {
+                        selectedCity.value = availableCities.firstOrNull()
+                    }
+                }
+                .addOnFailureListener {
+                    selectedCity.value = availableCities.firstOrNull()
+                }
+        } else {
+            selectedCity.value = availableCities.firstOrNull()
+        }
+    }
 
     LaunchedEffect(Unit) {
+        if (SharedPreferencesHelper.shouldRememberChoice(context)) {
+            SharedPreferencesHelper.getCity(context)?.let { savedCity ->
+                selectedCity.value = savedCity
+            }
+        }
+    }
+
+    LaunchedEffect(locationPermissionState.status) {
+        when {
+            locationPermissionState.status.isGranted && !locationFetched -> {
+                fetchLocation(fusedLocationClient, selectedCity, availableCities)
+                locationFetched = true
+            }
+            locationPermissionState.status.shouldShowRationale -> {
+                snackbarController?.showMessage("We need access to location to find the closest doctors")
+            }
+            !locationPermissionState.status.isGranted && !locationPermissionState.status.shouldShowRationale -> {
+                locationPermissionState.launchPermissionRequest()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!locationPermissionState.status.isGranted) {
+            locationPermissionState.launchPermissionRequest()
+        }
+    }
+
+    //asking for localizatioon
+    LaunchedEffect(Unit) {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            locationPermissionGranted.value = true
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        val city = findNearestCity(it.latitude, it.longitude)
+                        selectedCity.value = city
+                    } ?: run {
+                        selectedCity.value = availableCities.firstOrNull()
+                    }
+                }
+        } else {
+            // if we dont have a permission we set the default city- Warszawa
+            selectedCity.value = availableCities.firstOrNull()
+        }
+
         val result = authRepo.getCurrentUserData()
         if (result.isSuccess) {
             userData.value = result.getOrNull()
@@ -87,7 +224,6 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
             appointments.value = appointments.value!!.sortedWith(
                 compareBy({ it.date }, { it.time })
             )
-
         }
         error.value = null
     }
@@ -105,184 +241,192 @@ fun HomeScreen(navController: NavHostController, snackbarController: SnackbarCon
             )
         }
     } else {
-                if (error.value != null) {
-                    snackbarController?.showMessage(
-                        message = error.value ?: "An error occurred"
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(DefaultBackground)
-                        .padding(horizontal = 16.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    // Header with greeting
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+        if (error.value != null) {
+            snackbarController?.showMessage(
+                message = error.value ?: "An error occurred"
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DefaultBackground)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Header with greeting
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Hii, ${userData.value?.get("name") ?: ""}",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = DefaultPrimary
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { //navController.navigate("notifications")
+                        },
+                        modifier = Modifier.size(30.dp)
                     ) {
-                        Text(
-                            text = "Hii, ${userData.value?.get("name") ?: ""}",
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = DefaultPrimary
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.fillMaxSize()
                         )
+                    }
+                    Spacer(modifier = Modifier.size(8.dp))
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = { //navController.navigate("notifications")
-                                },
-                                modifier = Modifier.size(30.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Notifications",
-                                    tint = DefaultPrimary,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                            Spacer(modifier = Modifier.size(8.dp))
-
-                            // User avatar
-                            Box(
+                    // User avatar
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(DefaultPrimary.copy(alpha = 0.2f))
+                            .clickable { navController.navigate("profile") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val profileUrl = userData.value?.get("profilePictureUrl") as? String
+                        if (profileUrl != null) {
+                            SubcomposeAsyncImage(
+                                model = profileUrl,
+                                contentDescription = "Profile Picture",
                                 modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(CircleShape)
-                                    .background(DefaultPrimary.copy(alpha = 0.2f))
-                                    .clickable { navController.navigate("profile") },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                val profileUrl =  userData.value?.get("profilePictureUrl") as? String
-                                if (profileUrl != null) {
-                                    SubcomposeAsyncImage(
-                                        model = profileUrl,
-                                        contentDescription = "Profile Picture",
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(CircleShape),
-                                        contentScale = ContentScale.Crop,
-                                        loading = {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(20.dp),
-                                                color = DefaultPrimary
-                                            )
-                                        },
-                                        error = {
-                                            Icon(
-                                                imageVector = Icons.Default.AccountCircle,
-                                                contentDescription = "Profile",
-                                                tint = DefaultPrimary
-                                            )
-                                        }
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop,
+                                loading = {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = DefaultPrimary
                                     )
-                                } else {
+                                },
+                                error = {
                                     Icon(
                                         imageVector = Icons.Default.AccountCircle,
                                         contentDescription = "Profile",
-                                        tint = DefaultPrimary,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                            }
-
-                        }
-                    }
-
-                    // Health tips card
-                    var dailyTip by remember { mutableStateOf(getDailyTip()) }
-
-                    var setToTodays = remember { mutableStateOf(false) }
-
-                    if (dailyTip != getDailyTip()) {
-                        setToTodays.value = false
-                    } else {
-                        setToTodays.value = true
-                    }
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row {
-                                Text(
-                                    text = "Daily Health Tip",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = DefaultOnPrimary,
-                                    fontWeight = FontWeight.Normal
-                                )
-                                IconButton(
-                                    onClick = { dailyTip = getRandomTip() },
-                                    modifier = Modifier
-                                        .padding(start = 8.dp)
-                                        .size(24.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = "Regenerate Tip",
                                         tint = DefaultPrimary
                                     )
                                 }
-                                if (!setToTodays.value) {
-                                    IconButton(
-                                        onClick = { dailyTip = getDailyTip() },
-                                        modifier = Modifier
-                                            .padding(start = 8.dp)
-                                            .size(24.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CalendarToday,
-                                            contentDescription = "Todays Tip",
-                                            tint = DefaultPrimary
-                                        )
-                                    }
-                                }
-                            }
-                            Text(
-                                text = dailyTip,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = DefaultOnPrimary.copy(alpha = 0.8f)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile",
+                                tint = DefaultPrimary,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
-
-                    BookAppointmentSection(
-                        specialities = Speciality.entries,
-                        onCitySelected = { city ->
-                            selectedCity.value = city
-                        },
-                        onSpecializationSelected = { specialization ->
-                            selectedSpeciality.value = specialization
-                            navController.navigate("services/${selectedCity.value}/${specialization.displayName}")
-                        }
-                    )
-
-                    AppointmentsSection(
-                        appointments = appointments.value,
-                        onAppointmentChanged = { updatedAppointment ->
-                            appointments.value = appointments.value?.map {
-                                if (it.appointmentId == updatedAppointment.appointmentId) updatedAppointment else it
-                            }
-                        },
-                        snackbarController = snackbarController!!,
-                        navController = navController
-                    )
+                }
             }
-    }
 
+            // Health tips card
+            var dailyTip by remember { mutableStateOf(getDailyTip()) }
+
+            var setToTodays = remember { mutableStateOf(false) }
+
+            if (dailyTip != getDailyTip()) {
+                setToTodays.value = false
+            } else {
+                setToTodays.value = true
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row {
+                        Text(
+                            text = "Daily Health Tip",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = DefaultOnPrimary,
+                            fontWeight = FontWeight.Normal
+                        )
+                        IconButton(
+                            onClick = { dailyTip = getRandomTip() },
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Regenerate Tip",
+                                tint = DefaultPrimary
+                            )
+                        }
+                        if (!setToTodays.value) {
+                            IconButton(
+                                onClick = { dailyTip = getDailyTip() },
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = "Todays Tip",
+                                    tint = DefaultPrimary
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        text = dailyTip,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            BookAppointmentSection(
+                specialities = Speciality.entries,
+                selectedCity = selectedCity.value,
+                availableCities = availableCities,
+                onCitySelected = { city ->
+                    selectedCity.value = city
+                },
+                onSpecializationSelected = { specialization ->
+                    selectedSpeciality.value = specialization
+                    selectedCity.value?.let { city ->
+                        navController.navigate("services/$city/${specialization.displayName}")
+                    }
+                },
+                context = context
+            )
+
+            AppointmentsSection(
+                appointments = appointments.value,
+                onAppointmentChanged = { updatedAppointment ->
+                    appointments.value = appointments.value?.map {
+                        if (it.appointmentId == updatedAppointment.appointmentId) updatedAppointment else it
+                    }
+                },
+                snackbarController = snackbarController!!,
+                navController = navController
+            )
+        }
+    }
 }
+
 @Preview
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen(navController = rememberNavController(), snackbarController = null)
+    HomeScreen(
+        navController = rememberNavController(),
+        snackbarController = null,
+        context = LocalContext.current
+    )
 }
