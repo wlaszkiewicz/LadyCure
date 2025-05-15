@@ -25,13 +25,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.ladycure.chat.DoctorChatScreen
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.screens.AdminScreen
 import com.example.ladycure.screens.ChatScreen
-import com.example.ladycure.chat.DoctorChatScreen
 import com.example.ladycure.screens.LoginScreen
 import com.example.ladycure.screens.ProfileScreen
 import com.example.ladycure.screens.RegisterScreen
@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(navController: NavHostController) {
-    val authRepo = AuthRepository()
+    AuthRepository()
 
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
@@ -134,7 +134,7 @@ fun MainScreen(navController: NavHostController) {
                 composable("login") { LoginScreen(navController, snackbarController) }
                 composable("register") { RegisterScreen(navController, snackbarController) }
 
-                composable("doctor_main") { DoctorHomeScreen(navController) }
+                composable("doctor_main") { DoctorHomeScreen(navController, snackbarController) }
                 composable("set_availability") {
                     SetAvailabilityScreen(
                         navController,
@@ -262,12 +262,13 @@ fun MainScreen(navController: NavHostController) {
                     )
                 }
 
-                composable("reschedule/{appointmentId}") {backStackEntry ->
+                composable("reschedule/{appointmentId}") { backStackEntry ->
                     val appointmentId = backStackEntry.arguments?.getString("appointmentId") ?: ""
                     RescheduleScreen(
                         appointmentId,
                         navController,
-                        snackbarController)
+                        snackbarController
+                    )
                 }
 
                 composable("appointments") { AppointmentsScreen(navController, snackbarController) }
