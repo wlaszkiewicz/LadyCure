@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -59,6 +60,9 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,10 +83,14 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.Appointment.Status
+import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.CancelConfirmationDialog
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.screens.doctor.ConfirmAppointmentDialog
 import com.example.ladycure.utility.SnackbarController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -106,11 +114,17 @@ fun AppointmentsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
+    var showEditStatusDialog by remember { mutableStateOf(false) }
+
     // New filter state variables
     var showFilters by remember { mutableStateOf(false) }
     var selectedSpecialization by remember { mutableStateOf<String?>(null) }
     var selectedDoctor by remember { mutableStateOf<String?>(null) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedTypes by remember { mutableStateOf<AppointmentType?>(null) }
+    var selectedPatient by remember { mutableStateOf<String?>(null) }
+    var role by remember { mutableStateOf<String?>(null) }
 
     // Get unique specializations and doctors for filters
     val allSpecializations = remember(futureAppointments + pastAppointments) {
@@ -121,17 +135,36 @@ fun AppointmentsScreen(
         (futureAppointments + pastAppointments).map { it.doctorName }.distinct()
     }
 
+    val allPatients = remember(futureAppointments + pastAppointments) {
+        (futureAppointments + pastAppointments).map { it.patientName }.distinct()
+    }
+
+    val allTypes = remember(futureAppointments + pastAppointments) {
+        (futureAppointments + pastAppointments).map { it.type }.distinct()
+    }
+
+
     // Filtered appointments
     val filteredFutureAppointments =
-        remember(futureAppointments, selectedSpecialization, selectedDoctor, selectedDate) {
-            futureAppointments.filter { appointment ->
-                (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
-                        (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
-                        (selectedDate == null || appointment.date == selectedDate)
+        if (role == "user") {
+            remember(futureAppointments, selectedSpecialization, selectedDoctor, selectedDate) {
+                futureAppointments.filter { appointment ->
+                    (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
+                            (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
+                            (selectedDate == null || appointment.date == selectedDate)
+                }
+            }
+        } else {
+            remember(futureAppointments, selectedTypes, selectedPatient, selectedDate) {
+                futureAppointments.filter { appointment ->
+                    (selectedTypes == null || appointment.type == selectedTypes) &&
+                            (selectedPatient == null || appointment.patientName == selectedPatient) &&
+                            (selectedDate == null || appointment.date == selectedDate)
+                }
             }
         }
 
-    val filteredPastAppointments =
+    val filteredPastAppointments = if (role == "user") {
         remember(pastAppointments, selectedSpecialization, selectedDoctor, selectedDate) {
             pastAppointments.filter { appointment ->
                 (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
@@ -139,31 +172,48 @@ fun AppointmentsScreen(
                         (selectedDate == null || appointment.date == selectedDate)
             }
         }
+    } else {
+        remember(pastAppointments, selectedTypes, selectedPatient, selectedDate) {
+            pastAppointments.filter { appointment ->
+                (selectedTypes == null || appointment.type == selectedTypes) &&
+                        (selectedPatient == null || appointment.patientName == selectedPatient) &&
+                        (selectedDate == null || appointment.date == selectedDate)
+            }
+        }
+    }
+
 
     LaunchedEffect(Unit) {
         try {
-            val result = authRepo.getAppointments("user")
+            val result = authRepo.getUserRole()
             if (result.isSuccess) {
-                val allAppointments = result.getOrNull() ?: emptyList()
-                futureAppointments = allAppointments.filter {
-                    it.date.isAfter(LocalDate.now()) ||
-                            (it.date == LocalDate.now() && it.time.isAfter(LocalTime.now()))
-                }.sortedWith(compareBy({ it.date }, { it.time }))
+                role = result.getOrNull()
+                val result = authRepo.getAppointments(role!!)
+                if (result.isSuccess) {
+                    val allAppointments = result.getOrNull() ?: emptyList()
+                    futureAppointments = allAppointments.filter {
+                        it.date.isAfter(LocalDate.now()) ||
+                                (it.date == LocalDate.now() && it.time.isAfter(LocalTime.now()))
+                    }.sortedWith(compareBy({ it.date }, { it.time }))
 
-                pastAppointments = allAppointments.filter {
-                    (it.date.isBefore(LocalDate.now()) ||
-                            (it.date == LocalDate.now() && it.time.isBefore(LocalTime.now())))
-                    //       && it.status != Status.PENDING
-                }.sortedWith(compareBy({ it.date }, { it.time })).reversed()
+                    pastAppointments = allAppointments.filter {
+                        (it.date.isBefore(LocalDate.now()) ||
+                                (it.date == LocalDate.now() && it.time.isBefore(LocalTime.now())))
+                        //       && it.status != Status.PENDING
+                    }.sortedWith(compareBy({ it.date }, { it.time })).reversed()
+                } else {
+                    error = result.exceptionOrNull()?.message ?: "Failed to load appointments"
+                }
+                isLoading = false
             } else {
-                error = result.exceptionOrNull()?.message ?: "Failed to load appointments"
+                error = result.exceptionOrNull()?.message ?: "Failed to load user role"
             }
-            isLoading = false
         } catch (e: Exception) {
-            error = e.message ?: "An error occurred"
+            error = e.message ?: "An error occurred loading appointments"
             isLoading = false
         }
     }
+
 
     LaunchedEffect(error) {
         error?.let {
@@ -253,53 +303,105 @@ fun AppointmentsScreen(
                     .background(DefaultBackground, RoundedCornerShape(8.dp))
             ) {
                 // Specialization filter
-                Text(
-                    text = "Specialization",
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = DefaultOnPrimary.copy(alpha = 0.8f)
-                )
+                if (role == "user") {
+                    Text(
+                        text = "Specialization",
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 120.dp),
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    items(allSpecializations.size) { specialization ->
-                        FilterChip(
-                            label = allSpecializations[specialization],
-                            selected = selectedSpecialization == allSpecializations[specialization],
-                            onSelected = {
-                                selectedSpecialization =
-                                    if (selectedSpecialization == allSpecializations[specialization]) null else allSpecializations[specialization]
-                            }
-                        )
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 120.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        items(allSpecializations.size) { specialization ->
+                            FilterChip(
+                                label = allSpecializations[specialization],
+                                selected = selectedSpecialization == allSpecializations[specialization],
+                                onSelected = {
+                                    selectedSpecialization =
+                                        if (selectedSpecialization == allSpecializations[specialization]) null else allSpecializations[specialization]
+                                }
+                            )
+                        }
                     }
-                }
 
-                // Doctor filter
-                Text(
-                    text = "Doctor",
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = DefaultOnPrimary.copy(alpha = 0.8f)
-                )
+                    // Doctor filter
+                    Text(
+                        text = "Doctor",
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 120.dp),
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    items(allDoctors.size) { doctor ->
-                        FilterChip(
-                            label = allDoctors[doctor],
-                            selected = selectedDoctor == allDoctors[doctor],
-                            onSelected = {
-                                selectedDoctor =
-                                    if (selectedDoctor == allDoctors[doctor]) null else allDoctors[doctor]
-                            }
-                        )
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 120.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        items(allDoctors.size) { doctor ->
+                            FilterChip(
+                                label = allDoctors[doctor],
+                                selected = selectedDoctor == allDoctors[doctor],
+                                onSelected = {
+                                    selectedDoctor =
+                                        if (selectedDoctor == allDoctors[doctor]) null else allDoctors[doctor]
+                                }
+                            )
+                        }
                     }
+                } else {
+                    Text(
+                        text = "Appointment Type",
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 120.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        items(allTypes.size) { type ->
+                            FilterChip(
+                                label = allTypes[type].displayName,
+                                selected = selectedTypes == allTypes[type],
+                                onSelected = {
+                                    selectedTypes =
+                                        if (selectedTypes == allTypes[type]) null else allTypes[type]
+                                }
+                            )
+                        }
+                    }
+
+                    // Doctor filter
+                    Text(
+                        text = "Patient",
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 120.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        items(allPatients.size) { patient ->
+                            FilterChip(
+                                label = allPatients[patient],
+                                selected = selectedPatient == allPatients[patient],
+                                onSelected = {
+                                    selectedPatient =
+                                        if (selectedPatient == allPatients[patient]) null else allPatients[patient]
+                                }
+                            )
+                        }
+                    }
+
                 }
 
                 // Date filter
@@ -368,11 +470,31 @@ fun AppointmentsScreen(
         }
 
         ActiveFiltersRow(
-            selectedSpecialization = selectedSpecialization,
-            selectedDoctor = selectedDoctor,
+            selectedSpecialization = if (role == "user") {
+                selectedSpecialization
+            } else {
+                selectedTypes?.displayName
+            },
+            selectedDoctor = if (role == "user") {
+                selectedDoctor
+            } else {
+                selectedPatient
+            },
             selectedDate = selectedDate,
-            onRemoveSpecialization = { selectedSpecialization = null },
-            onRemoveDoctor = { selectedDoctor = null },
+            onRemoveSpecialization = {
+                if (role == "user") {
+                    selectedSpecialization = null
+                } else {
+                    selectedTypes = null
+                }
+            },
+            onRemoveDoctor = {
+                if (role == "user") {
+                    selectedDoctor = null
+                } else {
+                    selectedPatient = null
+                }
+            },
             onRemoveDate = { selectedDate = null },
             modifier = Modifier.padding(top = 8.dp)
         )
@@ -439,30 +561,87 @@ fun AppointmentsScreen(
                 when {
                     isLoading -> LoadingView()
                     targetPage == 0 -> AppointmentsList(
+                        role = role!!,
                         appointments = filteredFutureAppointments, // Use filtered list
                         emptyMessage = "No upcoming appointments",
                         navController = navController,
-                        snackbarController = snackbarController!!
+                        snackbarController = snackbarController!!,
+                        onClickStatus = { appointment ->
+                            selectedAppointment = appointment
+                            if (appointment.status == Status.PENDING) {
+                                showEditStatusDialog = true
+                            }
+                        },
+                        onCommentUpdated = { appointmentId, newComment ->
+                            futureAppointments = futureAppointments.map {
+                                if (it.appointmentId == appointmentId) {
+                                    it.copy(comments = newComment)
+                                } else {
+                                    it
+                                }
+                            }
+                        }
                     )
 
                     else -> AppointmentsList(
+                        role = role!!,
                         appointments = filteredPastAppointments, // Use filtered list
                         emptyMessage = "No past appointments",
                         navController = navController,
-                        snackbarController = snackbarController!!
+                        snackbarController = snackbarController!!,
+                        onClickStatus = {},
+                        onCommentUpdated = { appointmentId, newComment ->
+                            futureAppointments = futureAppointments.map {
+                                if (it.appointmentId == appointmentId) {
+                                    it.copy(comments = newComment)
+                                } else {
+                                    it
+                                }
+                            }
+                        }
                     )
                 }
             }
         }
     }
+    if (showEditStatusDialog) {
+        ConfirmAppointmentDialog(
+            onDismiss = { showEditStatusDialog = false },
+            onConfirm = {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val result = authRepo.updateAppointmentStatus(
+                        appointmentId = selectedAppointment!!.appointmentId,
+                        status = Status.CONFIRMED.displayName
+                    )
+                    if (result.isFailure) {
+                        snackbarController!!.showMessage(result.exceptionOrNull()?.message!!)
+                    } else {
+                        // Change the status of the appointment in the list
+                        futureAppointments = futureAppointments.map {
+                            if (it.appointmentId == selectedAppointment!!.appointmentId) {
+                                it.copy(status = Status.CONFIRMED)
+                            } else {
+                                it
+                            }
+                        }
+                    }
+                }
+                showEditStatusDialog = false
+            }
+        )
+    }
+
 }
 
 @Composable
 fun AppointmentsList(
+    role: String,
     appointments: List<Appointment>,
     emptyMessage: String,
     navController: NavController,
-    snackbarController: SnackbarController
+    snackbarController: SnackbarController,
+    onClickStatus: (Appointment) -> Unit,
+    onCommentUpdated: (String, String) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val authRepo = AuthRepository()
@@ -482,6 +661,7 @@ fun AppointmentsList(
                     exit = fadeOut() + shrinkVertically()
                 ) {
                     AppointmentCard(
+                        role = role,
                         appointment = appointment,
                         navController = navController,
                         onCancel = {
@@ -500,6 +680,25 @@ fun AppointmentsList(
                                     snackbarController.showMessage("Error: ${e.message}")
                                 }
                             }
+                        },
+                        onCommentUpdated = { appointmentId, newComment ->
+                            coroutineScope.launch {
+                                val result = authRepo.updateAppointmentComment(
+                                    appointment.appointmentId,
+                                    newComment
+                                )
+                                if (result.isFailure) {
+                                    snackbarController.showMessage(
+                                        result.exceptionOrNull()?.message
+                                            ?: "Failed to update comment"
+                                    )
+                                } else {
+                                    onCommentUpdated(appointment.appointmentId, newComment)
+                                }
+                            }
+                        },
+                        onClickStatus = {
+                            onClickStatus(appointment)
                         }
                     )
                 }
@@ -510,9 +709,12 @@ fun AppointmentsList(
 
 @Composable
 fun AppointmentCard(
+    role: String,
     appointment: Appointment,
     navController: NavController,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    onCommentUpdated: (String, String) -> Unit,
+    onClickStatus: () -> Unit
 ) {
     val speciality = Speciality.fromDisplayName(appointment.type.speciality)
     val isPastAppointment = appointment.date.isBefore(LocalDate.now()) ||
@@ -520,6 +722,8 @@ fun AppointmentCard(
 
     var isExpanded by remember { mutableStateOf(false) }
     var showCancelConfirmationDialog by remember { mutableStateOf(false) }
+    var showEditComment by remember { mutableStateOf(false) }
+    var editedComment by remember { mutableStateOf(appointment.comments) }
 
     Surface(
         modifier = Modifier
@@ -573,7 +777,11 @@ fun AppointmentCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "Dr. ${appointment.doctorName}",
+                            text = if (role == "user") {
+                                "Dr. ${appointment.doctorName}"
+                            } else {
+                                appointment.patientName
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = DefaultOnPrimary.copy(alpha = 0.7f),
                             maxLines = 1,
@@ -602,7 +810,8 @@ fun AppointmentCard(
                                 Status.PENDING -> Color(0xFFFFB74D)
                                 Status.CANCELLED -> Color(0xFFE57373)
                             }
-                        )
+                        ),
+                        onClick = onClickStatus
                     ) {
                         Text(
                             text = appointment.status.displayName,
@@ -730,10 +939,10 @@ fun AppointmentCard(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (appointment.comments.isNotBlank()) {
+                    if (appointment.comments.isNotBlank() && (role == "user" || (role == "doctor" && isPastAppointment))) {
                         Column {
                             Text(
-                                text = "Comments",
+                                text = "Notes",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = DefaultOnPrimary.copy(alpha = 0.6f)
                             )
@@ -744,15 +953,123 @@ fun AppointmentCard(
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    if (role == "doctor" && !isPastAppointment) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Notes",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
+                                )
+
+                                IconButton(
+                                    onClick = { showEditComment = !showEditComment },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (showEditComment) Icons.Default.Close else Icons.Default.Edit,
+                                        contentDescription = if (showEditComment) "Close" else "Edit",
+                                        tint = DefaultPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+
+                            AnimatedVisibility(
+                                visible = showEditComment,
+                                enter = fadeIn() + expandVertically(),
+                                exit = fadeOut() + shrinkVertically()
+                            ) {
+                                Column {
+                                    TextField(
+                                        value = editedComment,
+                                        onValueChange = { editedComment = it },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color.White, RoundedCornerShape(8.dp)),
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = Color.White,
+                                            unfocusedContainerColor = Color.White,
+                                            disabledContainerColor = Color.White,
+                                            focusedIndicatorColor = DefaultPrimary,
+                                            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.5f),
+                                            focusedTextColor = DefaultOnPrimary,
+                                            unfocusedTextColor = DefaultOnPrimary
+                                        ),
+                                        textStyle = MaterialTheme.typography.bodyMedium,
+                                        placeholder = {
+                                            Text(
+                                                "Add notes about this appointment",
+                                                color = DefaultOnPrimary.copy(alpha = 0.5f)
+                                            )
+                                        },
+                                        maxLines = 3,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                showEditComment = false
+                                                editedComment = appointment.comments
+                                            }
+                                        ) {
+                                            Text("Cancel", color = DefaultPrimary)
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Button(
+                                            onClick = {
+                                                onCommentUpdated(
+                                                    appointment.appointmentId,
+                                                    editedComment
+                                                )
+                                                showEditComment = false
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = DefaultPrimary,
+                                                contentColor = Color.White
+                                            ),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text("Save")
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!showEditComment) {
+                                Text(
+                                    text = appointment.comments.ifEmpty { "No notes added" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = DefaultOnPrimary,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
                     }
 
-                    // Action buttons for future appointments
-                    if (!isPastAppointment && appointment.status != Status.CANCELLED) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                    Spacer(modifier = Modifier.height(13.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        if (!isPastAppointment && appointment.status != Status.CANCELLED && role == "user") {
                             // Cancel button
                             OutlinedButton(
                                 onClick = {
@@ -766,6 +1083,8 @@ fun AppointmentCard(
                             ) {
                                 Text("Cancel")
                             }
+
+                            Spacer(modifier = Modifier.width(16.dp))
 
                             // Reschedule button
                             Button(
@@ -781,6 +1100,23 @@ fun AppointmentCard(
                                 Text("Reschedule")
                             }
                         }
+
+                        if (appointment.status != Status.CANCELLED && role == "doctor") {
+
+                            OutlinedButton(
+                                onClick = {
+                                    ///      navController.navigate("reschedule/${appointment.appointmentId}")
+                                },
+                                modifier = Modifier.fillMaxWidth(0.6f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = DefaultPrimary,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Message")
+                            }
+                        }
+
                     }
                 }
             }
@@ -972,3 +1308,5 @@ fun ActiveFilterChip(
         }
     }
 }
+
+

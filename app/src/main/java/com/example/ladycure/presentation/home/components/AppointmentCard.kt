@@ -1,58 +1,82 @@
 package com.example.ladycure.presentation.home.components
 
 
-import androidx.compose.ui.window.Dialog
-import androidx.compose.runtime.Composable
-import com.example.ladycure.data.Appointment
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import BabyBlue
 import DefaultOnPrimary
 import DefaultPrimary
 import Green
 import Red
-import BabyBlue
 import Yellow
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.R
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.Appointment.Status
-import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -61,7 +85,8 @@ import java.util.Locale
 fun AppointmentsSection(
     appointments: List<Appointment>?,
     onAppointmentChanged: (Appointment) -> Unit,
-    snackbarController: SnackbarController, navController: NavController) {
+    snackbarController: SnackbarController, navController: NavController
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,7 +135,10 @@ fun AppointmentsSection(
                 )
             }
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState())
+            ) {
                 appointments.forEach { appointment ->
                     PatientAppointmentCard(
                         appointment = appointment,
@@ -118,7 +146,8 @@ fun AppointmentsSection(
                             onAppointmentChanged(updatedAppointment)
                         },
                         snackbarController = snackbarController,
-                        navController = navController)
+                        navController = navController
+                    )
                 }
             }
         }
@@ -147,7 +176,8 @@ fun PatientAppointmentCard(
     val showDetailsDialog = remember { mutableStateOf(false) }
 
 
-    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
+    Surface(
+        modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
     ) {
         Card(
             modifier = Modifier.width(280.dp),
@@ -213,8 +243,10 @@ fun PatientAppointmentCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.date.format(DateTimeFormatter.ofPattern("MMM dd yyyy")),
-                            style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            appointment.date.format(DateTimeFormatter.ofPattern("MMM dd yyyy")),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
 
                     Column(
@@ -225,8 +257,15 @@ fun PatientAppointmentCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
-                        Text(appointment.time.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.US)),
-                            style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            appointment.time.format(
+                                DateTimeFormatter.ofPattern(
+                                    "hh:mm a",
+                                    Locale.US
+                                )
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
 
@@ -293,6 +332,7 @@ fun PatientAppointmentCard(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ShowDetailsDialog(
     appointment: Appointment,
@@ -300,6 +340,7 @@ fun ShowDetailsDialog(
     onReschedule: () -> Unit,
     onCancel: () -> Unit
 ) {
+    val isPreparationExpanded = remember { mutableStateOf(false) }
     val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Green
@@ -316,7 +357,9 @@ fun ShowDetailsDialog(
                 .fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .fillMaxSize()
             ) {
                 // Header with doctor info
                 Box(
@@ -365,7 +408,7 @@ fun ShowDetailsDialog(
                                     )
                                 )
                                 Text(
-                                    text =  "Dr. ${appointment.doctorName}",
+                                    text = "Dr. ${appointment.doctorName}",
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = DefaultOnPrimary.copy(alpha = 0.7f)
                                     )
@@ -407,8 +450,6 @@ fun ShowDetailsDialog(
                 ) {
                     // Date and time section
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = DefaultPrimary.copy(alpha = 0.05f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -472,11 +513,67 @@ fun ShowDetailsDialog(
 
                         // Preparation instructions
                         if (appointment.type.preparationInstructions.isNotEmpty()) {
-                            AppointmentDetailItem(
-                                icon = Icons.Default.Info,
-                                title = "Preparation",
-                                value = appointment.type.preparationInstructions
-                            )
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            isPreparationExpanded.value =
+                                                !isPreparationExpanded.value
+                                        },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = "Preparation",
+                                        tint = DefaultPrimary.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Preparation",
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                color = DefaultOnPrimary.copy(alpha = 0.6f)
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        if (!isPreparationExpanded.value) {
+                                            Text(
+                                                text = "Tap to view preparation instructions",
+                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                    color = DefaultPrimary,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            )
+                                        }
+                                    }
+                                    Icon(
+                                        imageVector = if (isPreparationExpanded.value)
+                                            Icons.Default.KeyboardArrowUp
+                                        else Icons.Default.KeyboardArrowDown,
+                                        contentDescription = if (isPreparationExpanded.value)
+                                            "Collapse"
+                                        else "Expand",
+                                        tint = DefaultPrimary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+
+                                AnimatedVisibility(
+                                    visible = isPreparationExpanded.value,
+                                    enter = fadeIn() + expandVertically(),
+                                    exit = fadeOut() + shrinkVertically()
+                                ) {
+                                    Text(
+                                        text = appointment.type.preparationInstructions,
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            color = DefaultOnPrimary
+                                        ),
+                                        modifier = Modifier.padding(start = 32.dp, top = 8.dp)
+                                    )
+                                }
+                            }
                         }
 
                         // Comments
@@ -532,7 +629,7 @@ fun ShowDetailsDialog(
                                     contentColor = Color.White
                                 ),
                                 modifier = Modifier.padding(6.dp),
-                                ) {
+                            ) {
                                 Text(
                                     "Reschedule",
                                     style = MaterialTheme.typography.labelLarge.copy(
@@ -602,7 +699,7 @@ fun CancelConfirmationDialog(
                     text = "Cancel Appointment?",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color =  Red,
+                        color = Red,
                         textAlign = TextAlign.Center
                     ),
                     modifier = Modifier.fillMaxWidth()
@@ -684,7 +781,7 @@ fun CancelConfirmationDialog(
                         modifier = Modifier.padding(16.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor =  Red,
+                            containerColor = Red,
                             contentColor = Color.White
                         )
                     ) {
@@ -702,14 +799,16 @@ fun CancelConfirmationDialog(
 }
 
 @Composable
-private fun InfoChip(
+fun InfoChip(
     text: String,
-    color: Color
+    color: Color,
+    onClick: () -> Unit = {}
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = color.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f)),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -727,7 +826,7 @@ private fun InfoChip(
 }
 
 @Composable
-private fun AppointmentDetailItem(
+fun AppointmentDetailItem(
     icon: ImageVector,
     title: String,
     value: String
