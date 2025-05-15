@@ -254,7 +254,7 @@ fun HomeScreen(
                 .background(DefaultBackground)
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
             // Header with greeting
             Row(
