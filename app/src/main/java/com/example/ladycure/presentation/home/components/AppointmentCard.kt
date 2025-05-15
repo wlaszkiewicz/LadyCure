@@ -448,50 +448,45 @@ fun ShowDetailsDialog(
                 Column(
                     modifier = Modifier.padding(horizontal = 24.dp)
                 ) {
-                    // Date and time section
-                    Surface(
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Date",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                                    )
+                        Column {
+                            Text(
+                                text = "Date",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
                                 )
-                                Text(
-                                    text = appointment.date.format(DateTimeFormatter.ofPattern("EEE, MMM dd")),
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = FontWeight.Medium
-                                    )
+                            )
+                            Text(
+                                text = appointment.date.format(DateTimeFormatter.ofPattern("EEE, MMM dd")),
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium
                                 )
-                            }
+                            )
+                        }
 
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = "Time",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                                    )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "Time",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
                                 )
-                                Text(
-                                    text = appointment.time.format(
-                                        DateTimeFormatter.ofPattern(
-                                            "h:mm a",
-                                            Locale.US
-                                        )
-                                    ),
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = appointment.time.format(
+                                    DateTimeFormatter.ofPattern(
+                                        "h:mm a",
+                                        Locale.US
                                     )
+                                ),
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium
                                 )
-                            }
+                            )
                         }
                     }
 
