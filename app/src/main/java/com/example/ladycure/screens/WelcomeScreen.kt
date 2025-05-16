@@ -171,7 +171,7 @@ fun GenderSelectionScreen(navController: NavController) {
                 painter = painterResource(id = R.drawable.icon),
                 contentDescription = "App Logo",
                 modifier = Modifier
-                    .fillMaxWidth(0.6f)
+                    .fillMaxWidth(0.4f)
                     .padding(bottom = 24.dp),
                 contentScale = ContentScale.Fit
             )
