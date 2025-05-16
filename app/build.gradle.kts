@@ -85,20 +85,21 @@ dependencies {
 
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation ("com.google.maps.android:maps-compose:2.11.0")
+    implementation("com.google.maps.android:maps-compose:2.11.0")
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
     implementation(libs.firebase.storage.ktx)
 
-    implementation ("io.coil-kt:coil-compose:2.5.0")
-    implementation ("com.google.firebase:firebase-storage-ktx")
-    implementation ("com.google.accompanist:accompanist-permissions:0.32.0")
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
-    implementation ("com.google.android.gms:play-services-maps:18.1.0")
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
-    implementation ("com.google.maps.android:android-maps-utils:2.3.0")
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.maps.android:android-maps-utils:2.3.0")
+
 }
 
 apply(plugin = "com.google.gms.google-services")

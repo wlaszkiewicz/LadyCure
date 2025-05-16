@@ -1,41 +1,62 @@
 package com.example.ladycure.presentation.home.components
 
-import DefaultPrimary
 import DefaultOnPrimary
+import DefaultPrimary
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import androidx.compose.foundation.background
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.ladycure.data.doctor.Speciality
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.utility.SharedPreferencesHelper
 import com.google.android.gms.location.LocationServices
 
@@ -50,9 +71,19 @@ fun BookAppointmentSection(
     context: Context = LocalContext.current
 ) {
     var showLocationDropdown by remember { mutableStateOf(false) }
-    var selectedLocation by remember { mutableStateOf(selectedCity ?: "Detecting your location...") }
+    var selectedLocation by remember {
+        mutableStateOf(
+            selectedCity ?: "Detecting your location..."
+        )
+    }
 
-    var rememberChoice by remember { mutableStateOf(SharedPreferencesHelper.shouldRememberChoice(context)) }
+    var rememberChoice by remember {
+        mutableStateOf(
+            SharedPreferencesHelper.shouldRememberChoice(
+                context
+            )
+        )
+    }
 
     var lastCityChangeSource by remember { mutableStateOf<Any?>(null) }
 
@@ -157,7 +188,10 @@ fun BookAppointmentSection(
                                     SharedPreferencesHelper.saveCity(context, selectedLocation)
                                     lastCityChangeSource = "checkbox"
                                 } else {
-                                    SharedPreferencesHelper.saveCity(context, "") // czyszceznie zapisanego miasta
+                                    SharedPreferencesHelper.saveCity(
+                                        context,
+                                        ""
+                                    ) // czyszceznie zapisanego miasta
                                 }
                             },
                             colors = CheckboxDefaults.colors(
@@ -227,7 +261,6 @@ fun BookAppointmentSection(
 }
 
 
-
 //val specializationColors = listOf(
 //    Color(0xFFFFF0F5), // Lavender Blush (very light pink)
 //    Color(0xFFF0F8FF),
@@ -273,7 +306,8 @@ fun SpecialityCard(
     onSpecialitySelected: (Speciality) -> Unit
 ) {
 
-    val specializationColors = listOf(Color(0xFFFFF0F5),
+    val specializationColors = listOf(
+        Color(0xFFFFF0F5),
         Color(0xFFF0F8FF),
         Color(0xFFFAFAD2),
         Color(0xFFE9FFEB),
@@ -281,7 +315,8 @@ fun SpecialityCard(
     )
 
     val cardColor = specializationColors[speciality.ordinal % specializationColors.size]
-    Surface(modifier = Modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp)) // Apply shadow here
+    Surface(
+        modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
     ) {
         Card(
             modifier = Modifier
@@ -294,7 +329,9 @@ fun SpecialityCard(
             onClick = { onSpecialitySelected(speciality) }
         ) {
             Column(
-                modifier = Modifier.padding(12.dp).fillMaxSize(),
+                modifier = Modifier
+                    .padding(12.dp)
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
