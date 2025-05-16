@@ -41,8 +41,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.NoteAdd
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
@@ -106,6 +104,7 @@ fun DoctorHomeScreen(
     val doctorData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var upcomingAppointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
     val isLoading = remember { mutableStateOf(true) }
+    val allAppointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
     remember { mutableStateOf(false) }
     var showEditStatusDialog by remember { mutableStateOf(false) }
@@ -120,9 +119,9 @@ fun DoctorHomeScreen(
 
             val appointmentsResult = authRepo.getAppointments("doctor")
             if (appointmentsResult.isSuccess) {
-                upcomingAppointments.value = appointmentsResult.getOrNull() ?: emptyList()
+                allAppointments.value = appointmentsResult.getOrNull() ?: emptyList()
 
-                upcomingAppointments.value = upcomingAppointments.value.filter {
+                upcomingAppointments.value = allAppointments.value.filter {
                     it.date.isAfter(LocalDate.now()) || (it.date == LocalDate.now() && it.time >= LocalTime.now())
                 }
 
@@ -229,15 +228,31 @@ fun DoctorHomeScreen(
                 // Today's Appointments
                 StatCard(
                     icon = Icons.Default.CalendarToday,
+                    color = Color(0xFFFFF0F5),
                     value = upcomingAppointments.value.count { it.date == LocalDate.now() && it.time >= LocalTime.now() },
                     label = "Today",
                     modifier = Modifier.weight(1f)
                 )
 
+                //val specializationColors = listOf(
+//    Color(0xFFFFF0F5), // Lavender Blush (very light pink)
+//    Color(0xFFF0F8FF),
+//    Color.White
+//)
+                listOf(
+                    Color(0xFFFFF0F5), // light pink
+                    Color(0xFFF0F8FF), // light blue
+                    Color(0xFFFAFAD2), // light yellow
+                    Color(0xFFE9FFEB), // light green
+                    Color(0xFFE2DCFA) // light purple
+                )
+
+
                 // Total Patients
                 StatCard(
                     icon = Icons.Default.People,
-                    value = doctorData.value?.get("patientCount") as? Int ?: 0,
+                    color = Color(0xFFF0F8FF),
+                    value = allAppointments.value.distinctBy { it.patientId }.size,
                     label = "Patients",
                     modifier = Modifier.weight(1f)
                 )
@@ -253,6 +268,7 @@ fun DoctorHomeScreen(
                 // Rating
                 StatCard(
                     icon = Icons.Default.Star,
+                    color = Color(0xFFFAFAD2),
                     value = rating,
                     label = "Rating",
                     isDecimal = true,
@@ -389,42 +405,6 @@ fun DoctorHomeScreen(
                     )
                 }
             }
-
-            // Recent Activity/Notifications
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Recent Activity",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = DefaultPrimary
-                        )
-                    )
-                    TextButton(onClick = { /* View all */ }) {
-                        Text("See All", color = DefaultPrimary)
-                    }
-                }
-
-                // Sample activity items
-                ActivityItem(
-                    icon = Icons.Default.Notifications,
-                    title = "New appointment booked",
-                    description = "Patient: Sarah Johnson, Tomorrow at 10:00 AM",
-                    time = "2 hours ago"
-                )
-                ActivityItem(
-                    icon = Icons.Default.Payment,
-                    title = "Payment received",
-                    description = "$120 for consultation with Michael Brown",
-                    time = "Yesterday"
-                )
-            }
         }
 
         if (showEditStatusDialog) {
@@ -485,6 +465,7 @@ fun ConfirmAppointmentDialog(
 @Composable
 private fun StatCard(
     icon: ImageVector,
+    color: Color,
     value: Number,
     label: String,
     isDecimal: Boolean = false,
@@ -494,8 +475,9 @@ private fun StatCard(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.5f)
-        )
+            containerColor = color
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
