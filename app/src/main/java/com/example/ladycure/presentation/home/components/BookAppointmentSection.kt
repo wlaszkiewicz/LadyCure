@@ -3,6 +3,10 @@ package com.example.ladycure.presentation.home.components
 import DefaultOnPrimary
 import DefaultPrimary
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -54,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.utility.SharedPreferencesHelper
 
-
 @Composable
 fun BookAppointmentSection(
     specialities: List<Speciality>,
@@ -83,7 +86,7 @@ fun BookAppointmentSection(
                 selectedCity != initialCity
     }
 
-    LaunchedEffect(selectedCity, lastFetchedCity.value) {
+    LaunchedEffect(selectedCity, initialCity) {
         selectedCity?.let {
             selectedLocation = it
         } ?: run {
@@ -152,8 +155,17 @@ fun BookAppointmentSection(
                                 })
                         })
 
-
-                    if (showRememberChoice) {
+                    AnimatedVisibility(
+                        visible = showRememberChoice,
+                        enter = slideInVertically(
+                            initialOffsetY = { -it }, // Slides down from above
+                            animationSpec = tween(durationMillis = 300)
+                        ),
+                        exit = slideOutVertically(
+                            targetOffsetY = { -it }, // Slides up to hide
+                            animationSpec = tween(durationMillis = 300)
+                        )
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
