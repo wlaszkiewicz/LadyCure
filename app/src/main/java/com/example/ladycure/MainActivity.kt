@@ -125,7 +125,7 @@ fun MainScreen(navController: NavHostController) {
                 }
 
                 composable("profile") { ProfileScreen(navController) }
-                composable("doctor") { SearchDoctorsScreen(navController) }
+                composable("doctor") { SearchDoctorsScreen(navController, snackbarController) }
                 composable("chat") { ChatScreen(navController, snackbarController) }
 
                 composable("admin") { AdminScreen(navController, snackbarController) }

@@ -844,7 +844,7 @@ private fun EmptyDoctorsView() {
 
 
 @Composable
-private fun DoctorCard(
+fun DoctorCard(
     doctor: Doctor,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
@@ -856,7 +856,8 @@ private fun DoctorCard(
             contentColor = Color.Black
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        onClick = onSelect,
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -1017,6 +1018,17 @@ private fun DoctorCard(
                     )
                 }
 
+                if (!expanded) {
+                    Text(
+                        text = doctor.bio,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 8.dp),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
                 AnimatedVisibility(
                     visible = expanded,
                     enter = fadeIn() + expandVertically(),
@@ -1029,7 +1041,6 @@ private fun DoctorCard(
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
-
                 TextButton(
                     onClick = { expanded = !expanded },
                     modifier = Modifier.align(Alignment.End)
@@ -1047,22 +1058,6 @@ private fun DoctorCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Select button centered
-            Button(
-                onClick = onSelect,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DefaultPrimary,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp)
-            ) {
-                Text("Select Doctor", style = MaterialTheme.typography.labelLarge)
-            }
         }
     }
 }

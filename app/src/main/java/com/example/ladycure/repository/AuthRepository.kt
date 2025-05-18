@@ -195,13 +195,13 @@ class AuthRepository {
     }
 
 
-    suspend fun getDoctors(): Result<List<Map<String, Any>>> {
+    suspend fun getDoctors(): Result<List<Doctor>> {
         return try {
             val querySnapshot = firestore.collection("users")
                 .whereEqualTo("role", "doctor")
                 .get()
                 .await()
-            val doctors = querySnapshot.documents.map { it.data ?: emptyMap() }
+            val doctors = querySnapshot.documents.map { Doctor.fromMap(it.data!!.plus("id" to it.id)) }
             Result.success(doctors)
         } catch (e: Exception) {
             Log.e("AuthRepository", "Error fetching doctors", e)

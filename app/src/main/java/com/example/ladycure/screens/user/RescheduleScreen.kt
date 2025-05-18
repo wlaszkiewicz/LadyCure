@@ -1,12 +1,11 @@
 package com.example.ladycure.screens.user
 
+import BabyBlue
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,15 +22,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,16 +51,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
-import com.example.ladycure.R
 import com.example.ladycure.data.Appointment
-import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.data.doctor.Speciality
@@ -86,8 +85,10 @@ fun RescheduleScreen(
     val isLoading = remember { mutableStateOf(true) }
     val doctor = remember { mutableStateOf<Doctor?>(null) }
     var error by remember { mutableStateOf("") }
+    var showRescheduleSuccessDialog by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
+    var showRescheduleDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(error) {
         if (error.isNotEmpty()) {
@@ -209,7 +210,8 @@ fun RescheduleScreen(
                     availableDates = availableDates.map { it.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
                     selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                     onDateSelected = {
-                        selectedDate.value = LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        selectedDate.value =
+                            LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         selectedTimeSlot.value = null
                     },
                     modifier = Modifier.padding(bottom = 24.dp)
@@ -246,22 +248,7 @@ fun RescheduleScreen(
                                     timeStr,
                                     DateTimeFormatter.ofPattern("h:mm a", Locale.US)
                                 )
-
-                                if (selectedDate.value != null && selectedTimeSlot.value != null) {
-                                    coroutineScope.launch {
-                                        val result = authRepo.rescheduleAppointment(
-                                            appointmentId,
-                                            selectedTimeSlot.value!!, selectedDate.value!!
-                                        )
-
-                                        if (result.isSuccess) {
-                                            snackbarController.showMessage("Appointment was rescheduled successfully")
-                                            navController.popBackStack()
-                                        } else {
-                                            error = result.exceptionOrNull()?.message!!
-                                        }
-                                    }
-                                }
+                                showRescheduleDialog = true
                             }
                         )
                     }
@@ -276,7 +263,49 @@ fun RescheduleScreen(
             }
         }
     }
+
+    if (showRescheduleDialog) {
+        RescheduleConfirmationDialog(
+            oldAppointment = appointment!!,
+            newDate = selectedDate.value!!,
+            newTime = selectedTimeSlot.value!!,
+            onConfirm = {
+                if (selectedDate.value != null && selectedTimeSlot.value != null) {
+                    coroutineScope.launch {
+                        val result = authRepo.rescheduleAppointment(
+                            appointmentId,
+                            selectedTimeSlot.value!!, selectedDate.value!!
+                        )
+                        if (result.isSuccess) {
+                            showRescheduleDialog = false
+                            showRescheduleSuccessDialog = true
+                        } else {
+                            error = result.exceptionOrNull()?.message!!
+                        }
+                    }
+                }
+            },
+            onDismiss = { showRescheduleDialog = false }
+        )
+    }
+
+    if (showRescheduleSuccessDialog) {
+        RescheduleSuccessDialog(
+            onDismiss = {
+                showRescheduleSuccessDialog = false
+                navController.popBackStack()
+            },
+            newDate = selectedDate.value!!.format(DateTimeFormatter.ofPattern("MMM dd")),
+            newTime = selectedTimeSlot.value!!.format(
+                DateTimeFormatter.ofPattern(
+                    "h:mm a",
+                    Locale.US
+                )
+            )
+        )
+    }
 }
+
 @Composable
 private fun DateSelector(
     availableDates: List<String>,
@@ -349,13 +378,16 @@ private fun AppointmentInfoHeader(
                         .padding(6.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (doctor.profilePictureUrl.isNotEmpty()){
+                    if (doctor.profilePictureUrl.isNotEmpty()) {
                         SubcomposeAsyncImage(
                             model = doctor.profilePictureUrl,
                             contentDescription = "Profile Picture",
                             contentScale = ContentScale.Crop,
                             loading = {
-                                CircularProgressIndicator(color = DefaultPrimary, modifier = Modifier.fillMaxSize(0.5f))
+                                CircularProgressIndicator(
+                                    color = DefaultPrimary,
+                                    modifier = Modifier.fillMaxSize(0.5f)
+                                )
                             },
                             error = {
                                 Icon(
@@ -365,9 +397,10 @@ private fun AppointmentInfoHeader(
                                     modifier = Modifier.size(18.dp)
                                 )
                             },
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
                                 .clip(RoundedCornerShape(8.dp)),
-                    )
+                        )
                     } else {
                         Icon(
                             imageVector = Icons.Default.Person,
@@ -462,11 +495,345 @@ private fun AppointmentInfoHeader(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = appointment.time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+                    text = appointment.time.format(
+                        DateTimeFormatter.ofPattern(
+                            "h:mm a",
+                            Locale.US
+                        )
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = DefaultOnPrimary
                 )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun RescheduleSuccessDialog(
+    onDismiss: () -> Unit,
+    newDate: String,
+    newTime: String
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            shadowElevation = 16.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                // Celebration icon
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(DefaultPrimary.copy(alpha = 0.1f))
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.EditCalendar,
+                        contentDescription = "Rescheduled",
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Title with emoji
+                Text(
+                    text = "Rescheduled Successfully!",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = DefaultPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // New appointment details card
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = BabyBlue.copy(alpha = 0.05f),
+                    border = BorderStroke(1.dp, BabyBlue.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "New Appointment",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = BabyBlue,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = newDate,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = DefaultOnPrimary
+                        )
+                        Text(
+                            text = newTime,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = DefaultOnPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Additional message
+                Text(
+                    text = "We've sent a confirmation to your email. You can view all your appointments in the 'My Appointments' section.",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Action button
+                Button(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DefaultPrimary,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Text(
+                        "View Appointments",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RescheduleConfirmationDialog(
+    oldAppointment: Appointment,
+    newDate: LocalDate,
+    newTime: LocalTime,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            shadowElevation = 16.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    text = "Confirm Reschedule",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = DefaultPrimary
+                    ),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Current appointment
+                Text(
+                    text = "Current Appointment",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    ),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.LightGray.copy(alpha = 0.1f),
+                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Date",
+                                tint = DefaultPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = oldAppointment.date.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DefaultOnPrimary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Time",
+                                tint = DefaultPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = oldAppointment.time.format(
+                                    DateTimeFormatter.ofPattern(
+                                        "h:mm a",
+                                        Locale.US
+                                    )
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DefaultOnPrimary
+                            )
+                        }
+                    }
+                }
+
+                // Arrow icon
+                Icon(
+                    imageVector = Icons.Default.ArrowDownward,
+                    contentDescription = "Reschedule to",
+                    tint = DefaultPrimary,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 8.dp)
+                )
+
+                // New appointment
+                Text(
+                    text = "New Appointment",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f)
+                    ),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = BabyBlue.copy(alpha = 0.1f),
+                    border = BorderStroke(1.dp, BabyBlue.copy(alpha = 0.3f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = "Date",
+                                tint = BabyBlue,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = newDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DefaultOnPrimary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Time",
+                                tint = BabyBlue,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = newTime.format(
+                                    DateTimeFormatter.ofPattern(
+                                        "h:mm a",
+                                        Locale.US
+                                    )
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DefaultOnPrimary
+                            )
+                        }
+                    }
+                }
+
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = DefaultPrimary
+                        ),
+                        border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.5f))
+                    ) {
+                        Text("Cancel", color = DefaultPrimary)
+                    }
+
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultPrimary,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Confirm")
+                    }
+                }
             }
         }
     }
