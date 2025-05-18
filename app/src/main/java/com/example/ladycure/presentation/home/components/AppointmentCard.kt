@@ -35,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -57,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -77,6 +79,8 @@ import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -87,6 +91,13 @@ fun AppointmentsSection(
     onAppointmentChanged: (Appointment) -> Unit,
     snackbarController: SnackbarController, navController: NavController
 ) {
+    val futureAppointments = appointments?.filter {
+        it.date.isAfter(LocalDate.now()) ||
+                (it.date == LocalDate.now() && it.time >= LocalTime.now())
+    }?.sortedWith(compareBy({ it.date }, { it.time })) ?: emptyList()
+
+    val pastAppointments =
+        appointments?.sortedWith(compareBy({ it.date }, { it.time }))?.reversed() ?: emptyList()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -99,7 +110,14 @@ fun AppointmentsSection(
         )
         {
             Text(
-                text = "Upcoming Appointments",
+                text = if (futureAppointments.isNotEmpty()) {
+                    "Upcoming Appointments"
+                } else if (
+                    appointments?.isNotEmpty() == true) {
+                    "Past Appointments"
+                } else {
+                    "Appointments"
+                },
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = DefaultPrimary
@@ -134,12 +152,28 @@ fun AppointmentsSection(
                     color = DefaultOnPrimary.copy(alpha = 0.6f)
                 )
             }
+        } else if (futureAppointments.isNotEmpty()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState())
+            ) {
+                futureAppointments.forEach { appointment ->
+                    PatientAppointmentCard(
+                        appointment = appointment,
+                        onAppointmentChanged = { updatedAppointment ->
+                            onAppointmentChanged(updatedAppointment)
+                        },
+                        snackbarController = snackbarController,
+                        navController = navController
+                    )
+                }
+            }
         } else {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.horizontalScroll(rememberScrollState())
             ) {
-                appointments.forEach { appointment ->
+                pastAppointments.take(5).forEach { appointment ->
                     PatientAppointmentCard(
                         appointment = appointment,
                         onAppointmentChanged = { updatedAppointment ->
@@ -174,7 +208,7 @@ fun PatientAppointmentCard(
     val authRepo = AuthRepository()
 
     val showDetailsDialog = remember { mutableStateOf(false) }
-
+    var showCancelSuccessDialog by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
@@ -318,8 +352,8 @@ fun PatientAppointmentCard(
                         if (result.isSuccess) {
                             appointment.status = Status.CANCELLED
                             onAppointmentChanged(appointment)
+                            showCancelSuccessDialog = true
 
-                            snackbarController.showMessage("Appointment cancelled successfully")
                         } else {
                             snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")
                         }
@@ -328,6 +362,13 @@ fun PatientAppointmentCard(
                     }
                 }
             }
+        )
+    }
+
+
+    if (showCancelSuccessDialog) {
+        CancelSuccessDialog(
+            onDismiss = { showCancelSuccessDialog = false },
         )
     }
 }
@@ -638,14 +679,12 @@ fun ShowDetailsDialog(
             }
         }
     }
-
-    // Enhanced Cancel Confirmation Dialog
     if (showCancelConfirmation.value) {
         CancelConfirmationDialog(
             onDismiss = { showCancelConfirmation.value = false },
             onConfirm = {
-                showCancelConfirmation.value = false
                 onCancel()
+                showCancelConfirmation.value = false
             },
             appointment = appointment
         )
@@ -851,6 +890,89 @@ fun AppointmentDetailItem(
                     color = DefaultOnPrimary
                 )
             )
+        }
+    }
+}
+
+
+@Composable
+fun CancelSuccessDialog(
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            shadowElevation = 16.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                // Animated checkmark icon with circle background
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(DefaultPrimary.copy(alpha = 0.1f))
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.EventBusy,
+                        contentDescription = "Success",
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Appointment Cancelled!",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = DefaultPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Message
+                Text(
+                    text = "Your appointment has been successfully cancelled. Any payments will be refunded within 7 business days.",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Action button
+                Button(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DefaultPrimary,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .height(40.dp)
+                ) {
+                    Text(
+                        "Got it!",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
+            }
         }
     }
 }

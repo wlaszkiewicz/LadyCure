@@ -5,23 +5,22 @@ import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import  androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -30,32 +29,71 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.Speciality
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.shadow
+import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.utility.SnackbarController
 
 @Composable
-fun SearchDoctorsScreen(navController: NavHostController) {
+fun SearchDoctorsScreen(navController: NavHostController, snackbarController: SnackbarController) {
     val searchQuery = remember { mutableStateOf("") }
+    val authRepo = AuthRepository()
+    var allDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
+    var error by remember { mutableStateOf("") }
+    var filteredDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
+    LaunchedEffect(Unit) {
+        val result = authRepo.getDoctors()
+        if (result.isSuccess) {
+            allDoctors = authRepo.getDoctors().getOrNull()!!
+        } else {
+            error = result.exceptionOrNull()?.message ?: "Unknown error"
+        }
+    }
 
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp) ) {
+    LaunchedEffect(error) {
+        if (error.isNotEmpty()) {
+            snackbarController.showMessage(
+                message = error,
+            )
+        }
+    }
+
+    LaunchedEffect(searchQuery.value) {
+        val queryWords = searchQuery.value.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        filteredDoctors = if (queryWords.isNotEmpty()) {
+            allDoctors.filter { doctor ->
+                queryWords.all { word ->
+                    doctor.name.contains(word, ignoreCase = true) ||
+                            doctor.surname.contains(word, ignoreCase = true) ||
+                            doctor.speciality.displayName.contains(word, ignoreCase = true)
+                }
+            }
+        } else {
+            allDoctors
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = DefaultBackground,
@@ -84,11 +122,38 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                 .background(DefaultBackground),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-                SearchBar(
-                    value = searchQuery.value,
-                    onValueChange = { searchQuery.value = it },
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+            SearchBar(
+                value = searchQuery.value,
+                onValueChange = { searchQuery.value = it },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            if (searchQuery.value.isNotEmpty()) {
+                if (filteredDoctors.isNotEmpty()) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        items(filteredDoctors) { doctor ->
+                            DoctorCard(
+                                doctor = doctor,
+                                onSelect = {
+                                    navController.navigate("services/${doctor.id}")
+                                },
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "No doctors found in this category",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = DefaultOnPrimary.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+            } else {
 
                 PopularCategories(navController)
 
@@ -99,27 +164,28 @@ fun SearchDoctorsScreen(navController: NavHostController) {
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                items(Speciality.entries.chunked(2)) { rowItems ->
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        rowItems.forEach { spec ->
-                            DoctorSpecialityCard(
-                                speciality = spec,
-                                navController = navController,
-                                modifier = Modifier.weight(1f)
-                            )
+                    items(Speciality.entries.chunked(2)) { rowItems ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            rowItems.forEach { spec ->
+                                DoctorSpecialityCard(
+                                    speciality = spec,
+                                    navController = navController,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
                         }
-
                     }
                 }
-            }
 
+            }
         }
     }
 }
@@ -148,14 +214,16 @@ private fun SearchBar(
         placeholder = {
             Text(
                 "Search for doctors or specialties...",
-                color = DefaultOnPrimary.copy(alpha = 0.5f))
+                color = DefaultOnPrimary.copy(alpha = 0.5f)
+            )
         },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search",
                 tint = DefaultOnPrimary,
-                modifier = Modifier.size(24.dp))
+                modifier = Modifier.size(24.dp)
+            )
         },
         trailingIcon = {
             if (value.isNotEmpty()) {
@@ -165,7 +233,8 @@ private fun SearchBar(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Clear",
-                        tint = DefaultOnPrimary.copy(alpha = 0.5f))
+                        tint = DefaultOnPrimary.copy(alpha = 0.5f)
+                    )
                 }
             }
         },
@@ -185,10 +254,12 @@ private fun PopularCategories(navController: NavHostController) {
             style = MaterialTheme.typography.titleLarge,
             color = DefaultPrimary,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp, start = 16.dp))
+            modifier = Modifier.padding(bottom = 12.dp, start = 16.dp)
+        )
 
 
-        val specializationColors = listOf(Color(0xFFFFF0F5),
+        val specializationColors = listOf(
+            Color(0xFFFFF0F5),
             Color(0xFFF0F8FF),
             Color(0xFFFAFAD2),
             Color(0xFFE9FFEB),
@@ -199,10 +270,13 @@ private fun PopularCategories(navController: NavHostController) {
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
         ) {
             items(categories) { category ->
-                val cardColor = specializationColors[categories.indexOf(category) % specializationColors.size]
+                val cardColor =
+                    specializationColors[categories.indexOf(category) % specializationColors.size]
 
                 PopularCategoryCard(
                     cardColor = cardColor,
@@ -231,8 +305,8 @@ private fun PopularCategoryCard(
         Card(
             onClick = onClick,
             modifier = Modifier
-                .width(140.dp)
-                .height(80.dp),
+                .width(150.dp)
+                .height(100.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = cardColor.copy(alpha = 0.9f)
@@ -276,13 +350,14 @@ private fun DoctorSpecialityCard(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    Surface(modifier = modifier.shadow(elevation = 2.dp, shape =RoundedCornerShape(20.dp))
+    Surface(
+        modifier = modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
     ) {
         Card(
             onClick = {
                 navController.navigate("doctors/${speciality.displayName}")
             },
-            modifier = modifier,
+            modifier = modifier.padding(vertical = 2.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White.copy(alpha = 0.9f),
@@ -294,7 +369,8 @@ private fun DoctorSpecialityCard(
                 modifier = Modifier
                     .padding(12.dp)
                     .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
             ) {
                 Box(
                     modifier = Modifier
@@ -311,32 +387,18 @@ private fun DoctorSpecialityCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    text = speciality.displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "View",
-                    tint = DefaultPrimary.copy(alpha = 0.5f)
-                )
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = speciality.displayName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
             }
 
         }
     }
 
-}
-
-@Preview
-@Composable
-fun SearchDoctorsScreenPreview() {
-    SearchDoctorsScreen(navController = rememberNavController())
 }
 
 

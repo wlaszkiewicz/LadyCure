@@ -6,6 +6,7 @@ import DefaultPrimary
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -65,10 +66,9 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
-import java.time.LocalTime
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -105,10 +105,8 @@ fun HomeScreen(
         Manifest.permission.ACCESS_FINE_LOCATION
     )
 
-    // Fetch user data and appointments - runs once when composable first enters composition
     LaunchedEffect(Unit) {
         try {
-            // Check saved city first
             if (SharedPreferencesHelper.shouldRememberChoice(context)) {
                 SharedPreferencesHelper.getCity(context)?.let { savedCity ->
                     selectedCity = savedCity
@@ -116,18 +114,11 @@ fun HomeScreen(
                 }
             }
 
-            // Get user data
             authRepo.getCurrentUserData().getOrNull()?.let { data ->
                 userData.value = data
 
-                // Get appointments
                 authRepo.getAppointments("user").getOrNull()?.let { apps ->
                     appointments.value = apps
-                        .filter {
-                            it.date.isAfter(LocalDate.now()) ||
-                                    (it.date == LocalDate.now() && it.time >= LocalTime.now())
-                        }
-                        .sortedWith(compareBy({ it.date }, { it.time }))
                 }
             }
         } catch (e: Exception) {
@@ -135,7 +126,6 @@ fun HomeScreen(
         }
     }
 
-    // Handle location permission and fetching - separate effect
     LaunchedEffect(locationPermissionState.status, locationFetched.value) {
         if (locationFetched.value) return@LaunchedEffect
 
@@ -147,38 +137,56 @@ fun HomeScreen(
                             Manifest.permission.ACCESS_FINE_LOCATION
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
-                        val lastLocation = try {
-                            fusedLocationClient.lastLocation.await()
+                        var lastLocation: Location? = null
+                        try {
+                            lastLocation = fusedLocationClient.lastLocation.await()
                         } catch (e: Exception) {
-                            null
+                            error.value = "Error fetching location: ${e.message}"
+                        }
+
+                        if (lastLocation == null) {
+                            try {
+                                LocationRequest.create().apply {
+                                    priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+                                    numUpdates = 1
+                                    interval = 10000
+                                    fastestInterval = 5000
+                                }
+
+                                lastLocation = fusedLocationClient.getCurrentLocation(
+                                    LocationRequest.PRIORITY_HIGH_ACCURACY,
+                                    null
+                                ).await()
+                            } catch (e: Exception) {
+                                error.value = "Error getting fresh location: ${e.message}"
+                            }
                         }
 
                         lastLocation?.let { loc ->
                             initialCity = findNearestCity(loc.latitude, loc.longitude)
                             locationFetched.value = true
                         } ?: run {
-                            // If last location is null, use default city
-                            selectedCity = availableCities.firstOrNull()
+                            initialCity = availableCities.firstOrNull()
                             locationFetched.value = true
                             snackbarController?.showMessage("Couldn't determine your location. Using default city.")
                         }
                     }
                 } catch (e: Exception) {
-                    selectedCity = availableCities.firstOrNull()
+                    initialCity = availableCities.firstOrNull()
                     locationFetched.value = true
-                    snackbarController?.showMessage("Error getting location. Using default city.")
+                    snackbarController?.showMessage("Error getting location: $e. Using default city.")
                 }
             }
 
             locationPermissionState.status.shouldShowRationale -> {
                 snackbarController?.showMessage("We need access to location to find the closest doctors")
-                selectedCity = availableCities.firstOrNull()
+                initialCity = availableCities.firstOrNull()
                 locationFetched.value = true
             }
 
             !locationPermissionState.status.isGranted -> {
                 locationPermissionState.launchPermissionRequest()
-                selectedCity = availableCities.firstOrNull()
+                initialCity = availableCities.firstOrNull()
                 locationFetched.value = true
             }
         }
@@ -188,7 +196,7 @@ fun HomeScreen(
     LaunchedEffect(error.value) {
         error.value?.let { err ->
             snackbarController?.showMessage(err)
-            error.value = null // Clear error after showing
+            error.value = null
         }
     }
 

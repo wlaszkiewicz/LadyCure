@@ -2,31 +2,8 @@ package com.example.ladycure.screens.user
 
 import BabyBlue
 import DefaultBackground
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.example.ladycure.repository.AuthRepository
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.*
-
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import DefaultOnPrimary
 import DefaultPrimary
-import Yellow
 import YellowOrange
 import android.content.Intent
 import android.provider.CalendarContract
@@ -36,20 +13,56 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.FreeCancellation
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PriorityHigh
-import androidx.compose.material.icons.filled.Recommend
 import androidx.compose.material.icons.filled.ThumbUpAlt
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.ladycure.data.Appointment
+import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -73,7 +86,8 @@ fun BookingSuccessScreen(
             if (result.isSuccess) {
                 appointment = result.getOrNull()
             } else {
-                errorMessage.value = "Failed to load appointment details: ${result.exceptionOrNull()?.message}"
+                errorMessage.value =
+                    "Failed to load appointment details: ${result.exceptionOrNull()?.message}"
             }
             isLoading.value = false
         } catch (e: Exception) {
@@ -105,6 +119,7 @@ fun BookingSuccessScreen(
         val dateTimeStr = "$dateStr ${timeStr.substring(0, 5)}"
         return dateFormat.parse(dateTimeStr)?.time ?: System.currentTimeMillis()
     }
+
     // Function to add event to calendar
     fun addToCalendar() {
         val appointment = appointment ?: return
@@ -112,15 +127,30 @@ fun BookingSuccessScreen(
         try {
             val intent = Intent(Intent.ACTION_INSERT)
                 .setData(CalendarContract.Events.CONTENT_URI)
-                .putExtra(CalendarContract.Events.TITLE, "Appointment with Dr. ${appointment.doctorName}")
-                .putExtra(CalendarContract.Events.DESCRIPTION,
-                    "Appointment for ${appointment.type.displayName} at LadyCure Clinic")
-                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                    parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString()))
-                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME,
-                    parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString()) + appointment.type.durationInMinutes * 60 * 1000)
+                .putExtra(
+                    CalendarContract.Events.TITLE,
+                    "Appointment with Dr. ${appointment.doctorName}"
+                )
+                .putExtra(
+                    CalendarContract.Events.DESCRIPTION,
+                    "Appointment for ${appointment.type.displayName} at LadyCure Clinic"
+                )
+                .putExtra(
+                    CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                    parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString())
+                )
+                .putExtra(
+                    CalendarContract.EXTRA_EVENT_END_TIME,
+                    parseDateTimeToMillis(
+                        appointment.date.toString(),
+                        appointment.time.toString()
+                    ) + appointment.type.durationInMinutes * 60 * 1000
+                )
                 .putExtra(CalendarContract.Events.EVENT_LOCATION, appointment.address)
-                .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
+                .putExtra(
+                    CalendarContract.Events.AVAILABILITY,
+                    CalendarContract.Events.AVAILABILITY_BUSY
+                )
 
             context.startActivity(intent)
         } catch (e: Exception) {
@@ -173,7 +203,7 @@ fun BookingSuccessScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.FreeCancellation,
+                    imageVector = Icons.Default.EventAvailable,
                     contentDescription = "Success",
                     tint = DefaultPrimary,
                     modifier = Modifier.size(80.dp)
@@ -269,21 +299,21 @@ fun BookingSuccessScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Doctor:",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "Dr. ${appointment!!.doctorName}",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Doctor:",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Dr. ${appointment!!.doctorName}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -311,7 +341,7 @@ fun BookingSuccessScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     if (appointment?.type!!.needsReferral && referralId == null) {
-                        Row (
+                        Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
@@ -384,7 +414,7 @@ fun BookingSuccessScreen(
                         )
                     }
                     Text(
-                        text =  "• Arrive 15 minutes before your appointment\n" +
+                        text = "• Arrive 15 minutes before your appointment\n" +
                                 "• Bring your insurance card if applicable\n" +
                                 "• ${appointment?.type!!.preparationInstructions}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -428,7 +458,9 @@ fun BookingSuccessScreen(
                     onClick = {
                         addToCalendar()
                     },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
                     border = BorderStroke(1.dp, DefaultPrimary),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = DefaultPrimary,

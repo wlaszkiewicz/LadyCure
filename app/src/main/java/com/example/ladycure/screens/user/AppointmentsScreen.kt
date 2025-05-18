@@ -86,6 +86,7 @@ import com.example.ladycure.data.Appointment.Status
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.CancelConfirmationDialog
+import com.example.ladycure.presentation.home.components.CancelSuccessDialog
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.screens.doctor.ConfirmAppointmentDialog
 import com.example.ladycure.utility.SnackbarController
@@ -643,6 +644,7 @@ fun AppointmentsList(
     onClickStatus: (Appointment) -> Unit,
     onCommentUpdated: (String, String) -> Unit
 ) {
+    var showCancelSuccessDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val authRepo = AuthRepository()
 
@@ -671,8 +673,7 @@ fun AppointmentsList(
                                         authRepo.cancelAppointment(appointment.appointmentId)
                                     if (result.isSuccess) {
                                         appointment.status = Status.CANCELLED
-
-                                        snackbarController.showMessage("Appointment cancelled successfully")
+                                        showCancelSuccessDialog = true
                                     } else {
                                         snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")
                                     }
@@ -704,6 +705,12 @@ fun AppointmentsList(
                 }
             }
         }
+    }
+
+    if (showCancelSuccessDialog) {
+        CancelSuccessDialog(
+            onDismiss = { showCancelSuccessDialog = false },
+        )
     }
 }
 
@@ -1073,6 +1080,7 @@ fun AppointmentCard(
                             // Cancel button
                             OutlinedButton(
                                 onClick = {
+                                    isExpanded = false
                                     showCancelConfirmationDialog = true
                                 },
                                 modifier = Modifier.weight(1f),
