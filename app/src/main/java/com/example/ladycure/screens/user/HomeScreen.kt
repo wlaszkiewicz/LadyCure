@@ -6,7 +6,6 @@ import DefaultPrimary
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,8 +65,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
 import kotlin.math.atan2
@@ -85,20 +83,17 @@ fun HomeScreen(
     context: Context = LocalContext.current
 ) {
     val authRepo = remember { AuthRepository() }
-    val fusedLocationClient: FusedLocationProviderClient = remember {
-        LocationServices.getFusedLocationProviderClient(context)
-    }
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
+    // State variables
     val selectedSpeciality = remember { mutableStateOf<Speciality?>(null) }
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
-    val selectedCity = remember { mutableStateOf<String?>(null) }
-    var error = remember { mutableStateOf<String?>(null) }
+    val error = remember { mutableStateOf<String?>(null) }
     val appointments = remember { mutableStateOf<List<Appointment>?>(null) }
-    val locationPermissionGranted = remember { mutableStateOf(false) }
-    val locationPermissionState = rememberPermissionState(
-        Manifest.permission.ACCESS_FINE_LOCATION
-    )
-    var locationFetched by remember { mutableStateOf(false) }
+    var locationFetched = remember { mutableStateOf(false) }
+
+    var selectedCity by remember { mutableStateOf<String?>(null) }
+    var initialCity by remember { mutableStateOf<String?>(null) }
 
     val availableCities = listOf(
         "Warszawa", "Kraków", "Wrocław", "Poznań", "Gdańsk", "Łódź",
@@ -106,145 +101,95 @@ fun HomeScreen(
         "Radom", "Sosnowiec", "Toruń", "Kielce", "Rzeszów", "Olsztyn", "Zielona Góra"
     )
 
-    fun findNearestCity(latitude: Double, longitude: Double): String {
-        val cities = mapOf(
-            "Warszawa" to Pair(52.2297, 21.0122),
-            "Kraków" to Pair(50.0647, 19.9450),
-            "Wrocław" to Pair(51.1079, 17.0385),
-            "Poznań" to Pair(52.4064, 16.9252),
-            "Gdańsk" to Pair(54.3520, 18.6466),
-            "Łódź" to Pair(51.7592, 19.4560)
-        )
+    val locationPermissionState = rememberPermissionState(
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
 
-        fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-            val R = 6371.0 // earth radius in km
-            val dLat = Math.toRadians(lat2 - lat1)
-            val dLon = Math.toRadians(lon2 - lon1)
-            val a =
-                sin(dLat / 2).pow(2) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(
-                    dLon / 2
-                ).pow(
-                    2
-                )
-            val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-            return R * c
-        }
-
-        return cities.minByOrNull { (_, coords) ->
-            haversine(latitude, longitude, coords.first, coords.second)
-        }?.key ?: "Warszawa"
-    }
-    
-    fun fetchLocation(
-        fusedLocationClient: FusedLocationProviderClient,
-        selectedCity: MutableState<String?>,
-        availableCities: List<String>
-    ) {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location ->
-                    location?.let {
-                        val city = findNearestCity(it.latitude, it.longitude)
-                        selectedCity.value = city
-                    } ?: run {
-                        selectedCity.value = availableCities.firstOrNull()
-                    }
-                }
-                .addOnFailureListener {
-                    selectedCity.value = availableCities.firstOrNull()
-                }
-        } else {
-            selectedCity.value = availableCities.firstOrNull()
-        }
-    }
-
-
+    // Fetch user data and appointments - runs once when composable first enters composition
     LaunchedEffect(Unit) {
-        if (SharedPreferencesHelper.shouldRememberChoice(context)) {
-            SharedPreferencesHelper.getCity(context)?.let { savedCity ->
-                selectedCity.value = savedCity
+        try {
+            // Check saved city first
+            if (SharedPreferencesHelper.shouldRememberChoice(context)) {
+                SharedPreferencesHelper.getCity(context)?.let { savedCity ->
+                    selectedCity = savedCity
+                    locationFetched.value = true
+                }
             }
+
+            // Get user data
+            authRepo.getCurrentUserData().getOrNull()?.let { data ->
+                userData.value = data
+
+                // Get appointments
+                authRepo.getAppointments("user").getOrNull()?.let { apps ->
+                    appointments.value = apps
+                        .filter {
+                            it.date.isAfter(LocalDate.now()) ||
+                                    (it.date == LocalDate.now() && it.time >= LocalTime.now())
+                        }
+                        .sortedWith(compareBy({ it.date }, { it.time }))
+                }
+            }
+        } catch (e: Exception) {
+            error.value = e.message
         }
     }
 
-    LaunchedEffect(locationPermissionState.status) {
+    // Handle location permission and fetching - separate effect
+    LaunchedEffect(locationPermissionState.status, locationFetched.value) {
+        if (locationFetched.value) return@LaunchedEffect
+
         when {
-            locationPermissionState.status.isGranted && !locationFetched -> {
-                fetchLocation(fusedLocationClient, selectedCity, availableCities)
-                locationFetched = true
+            locationPermissionState.status.isGranted -> {
+                try {
+                    if (ActivityCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        val lastLocation = try {
+                            fusedLocationClient.lastLocation.await()
+                        } catch (e: Exception) {
+                            null
+                        }
+
+                        lastLocation?.let { loc ->
+                            initialCity = findNearestCity(loc.latitude, loc.longitude)
+                            locationFetched.value = true
+                        } ?: run {
+                            // If last location is null, use default city
+                            selectedCity = availableCities.firstOrNull()
+                            locationFetched.value = true
+                            snackbarController?.showMessage("Couldn't determine your location. Using default city.")
+                        }
+                    }
+                } catch (e: Exception) {
+                    selectedCity = availableCities.firstOrNull()
+                    locationFetched.value = true
+                    snackbarController?.showMessage("Error getting location. Using default city.")
+                }
             }
 
             locationPermissionState.status.shouldShowRationale -> {
                 snackbarController?.showMessage("We need access to location to find the closest doctors")
+                selectedCity = availableCities.firstOrNull()
+                locationFetched.value = true
             }
 
-            !locationPermissionState.status.isGranted && !locationPermissionState.status.shouldShowRationale -> {
+            !locationPermissionState.status.isGranted -> {
                 locationPermissionState.launchPermissionRequest()
+                selectedCity = availableCities.firstOrNull()
+                locationFetched.value = true
             }
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (!locationPermissionState.status.isGranted) {
-            locationPermissionState.launchPermissionRequest()
+    // Show error if any
+    LaunchedEffect(error.value) {
+        error.value?.let { err ->
+            snackbarController?.showMessage(err)
+            error.value = null // Clear error after showing
         }
-    }
-
-    //asking for localizatioon
-    LaunchedEffect(Unit) {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED ||
-            ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            locationPermissionGranted.value = true
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location: Location? ->
-                    location?.let {
-                        val city = findNearestCity(it.latitude, it.longitude)
-                        selectedCity.value = city
-                    } ?: run {
-                        selectedCity.value = availableCities.firstOrNull()
-                    }
-                }
-        } else {
-            // if we dont have a permission we set the default city- Warszawa
-            selectedCity.value = availableCities.firstOrNull()
-        }
-
-        val result = authRepo.getCurrentUserData()
-        if (result.isSuccess) {
-            userData.value = result.getOrNull()
-        } else {
-            error.value = result.exceptionOrNull()?.message
-        }
-        error.value = null
-    }
-
-    LaunchedEffect(userData.value) {
-        val result = authRepo.getAppointments("user")
-        if (result.isFailure) {
-            error.value = result.exceptionOrNull()?.message
-        } else {
-            appointments.value = result.getOrNull() ?: emptyList()
-
-            appointments.value = appointments.value!!.filter {
-                it.date.isAfter(LocalDate.now()) || (it.date == LocalDate.now() && it.time >= LocalTime.now())
-            }
-
-            appointments.value = appointments.value!!.sortedWith(
-                compareBy({ it.date }, { it.time })
-            )
-        }
-        error.value = null
     }
 
     if (userData.value == null) {
@@ -264,6 +209,7 @@ fun HomeScreen(
             snackbarController?.showMessage(
                 message = error.value ?: "An error occurred"
             )
+            error.value = null
         }
         Column(
             modifier = Modifier
@@ -295,15 +241,24 @@ fun HomeScreen(
 
             BookAppointmentSection(
                 specialities = Speciality.entries,
-                selectedCity = selectedCity.value,
+                selectedCity = selectedCity,
+                initialCity = initialCity,
                 availableCities = availableCities,
                 onCitySelected = { city ->
-                    selectedCity.value = city
+                    selectedCity = city
                 },
                 onSpecializationSelected = { specialization ->
                     selectedSpeciality.value = specialization
-                    selectedCity.value?.let { city ->
+                    selectedCity?.let { city ->
                         navController.navigate("services/$city/${specialization.displayName}")
+                    } ?: run {
+                        if (!locationFetched.value) {
+                            snackbarController?.showMessage("Please wait for location to be fetched")
+                        } else if (initialCity != null) {
+                            navController.navigate("services/$initialCity/${specialization.displayName}")
+                        } else {
+                            snackbarController?.showMessage("Please select a city")
+                        }
                     }
                 },
                 context = context
@@ -321,6 +276,35 @@ fun HomeScreen(
             )
         }
     }
+}
+
+fun findNearestCity(latitude: Double, longitude: Double): String {
+    val cities = mapOf(
+        "Warszawa" to Pair(52.2297, 21.0122),
+        "Kraków" to Pair(50.0647, 19.9450),
+        "Wrocław" to Pair(51.1079, 17.0385),
+        "Poznań" to Pair(52.4064, 16.9252),
+        "Gdańsk" to Pair(54.3520, 18.6466),
+        "Łódź" to Pair(51.7592, 19.4560)
+    )
+
+    return cities.minByOrNull { (_, coords) ->
+        haversine(latitude, longitude, coords.first, coords.second)
+    }?.key ?: "Warszawa"
+}
+
+fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val R = 6371.0 // earth radius in km
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+    val a =
+        sin(dLat / 2).pow(2) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(
+            dLon / 2
+        ).pow(
+            2
+        )
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return R * c
 }
 
 
