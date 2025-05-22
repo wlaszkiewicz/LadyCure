@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -179,7 +180,8 @@ fun GenderSelectionScreen(navController: NavController) {
             Text(
                 text = "Welcome to LadyCure!",
                 style = MaterialTheme.typography.displaySmall.copy(
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp
                 ),
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -482,7 +484,7 @@ fun GenderOptionCard(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp),
+            .height(90.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
