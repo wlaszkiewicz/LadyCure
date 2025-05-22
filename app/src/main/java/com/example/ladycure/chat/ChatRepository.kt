@@ -82,4 +82,11 @@ class ChatRepository {
                 onMessagesReceived(messages)
             }
     }
+
+    suspend fun getCurrentUserName(): String {
+        val uid = getCurrentUserId()
+        val snapshot = firestore.collection("users").document(uid).get().await()
+        return snapshot.getString("name") ?: "the user is not found"
+    }
+
 }

@@ -45,11 +45,14 @@ fun DoctorChatScreen(
 
     // Load messages
     LaunchedEffect(chatId) {
-        chatViewModel.initializeChat(chatId, listOf(chatRepository.getCurrentUserId(), doctorName))
+        val userId = chatRepository.getCurrentUserId()
+        val userName = chatRepository.getCurrentUserName()
+        chatViewModel.initializeChat(chatId, listOf(userName, doctorName))
         chatRepository.getMessages(chatId) { messageList ->
             messages = messageList
         }
     }
+
 
     Scaffold(
         topBar = {
@@ -81,8 +84,12 @@ fun DoctorChatScreen(
                         if (messageText.isNotEmpty() || attachmentUri != null) {
                             scope.launch {
                                 try {
+                                    val userId = chatRepository.getCurrentUserId()
+                                    val userName = chatRepository.getCurrentUserName()
+
                                     val message = Message(
-                                        sender = chatRepository.getCurrentUserId(),
+                                        sender = userId,
+                                        senderName = userName,
                                         recipient = doctorName,
                                         text = messageText,
                                         timestamp = Timestamp.now(),
@@ -193,6 +200,14 @@ fun MessageBubble(
             Column(
                 modifier = Modifier.padding(8.dp)
             ) {
+                if (!isCurrentUser) {
+                    Text(
+                        text = message.senderName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
                 Text(text = message.text)
                 message.attachmentUrl?.let { url ->
                     // Display attachment preview or link
