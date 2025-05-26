@@ -9,9 +9,11 @@ class ChatViewModel(private val chatRepository: ChatRepository) : ViewModel() {
 
     fun initializeChat(chatId: String, participants: List<String>) {
         viewModelScope.launch {
-            val result = chatRepository.createChat(chatId, participants)
+            val result = chatRepository.createChatIfNotExists(chatId, participants)
             if (result.isFailure) {
-                Log.e("ChatViewModel", "failed to send message: ${result.exceptionOrNull()?.message}")
+                Log.e("ChatViewModel", "Failed to initiate chat $chatId: ${result.exceptionOrNull()?.message}", result.exceptionOrNull())
+            } else {
+                Log.d("ChatViewModel", "Chat initiated successfully: $chatId")
             }
         }
     }

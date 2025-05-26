@@ -143,8 +143,10 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             } else {
                 DoctorsListView(
                     doctorNames = doctorNames.value,
+
                     onDoctorSelected = { doctorName ->
-                        navController.navigate("chat/$doctorName")
+                        //tu na razie jest dwa razy doctorName, bedzie jego id
+                        navController.navigate("chat/$doctorName/$doctorName")
                     },
                     modifier = Modifier.weight(1f)
                 )
