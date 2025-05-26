@@ -8,6 +8,7 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -344,56 +345,107 @@ private fun DoctorsListView(
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(doctorNames) { doctorName ->
             Card(
                 onClick = { onDoctorSelected(doctorName) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White,
                     contentColor = DefaultOnPrimary
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.1f))
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                border = BorderStroke(0.5.dp, DefaultPrimary.copy(alpha = 0.1f))
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(DefaultPrimary.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(DefaultPrimary.copy(alpha = 0.05f))
+                                .border(
+                                    width = 1.dp,
+                                    color = DefaultPrimary.copy(alpha = 0.2f),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Doctor profile",
+                                tint = DefaultPrimary.copy(alpha = 0.6f),
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = doctorName,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DefaultPrimary
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Available now",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
+                                )
+                            )
+                        }
+
                         Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = "Doctor profile",
-                            tint = DefaultPrimary,
-                            modifier = Modifier.size(32.dp)
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "View chat",
+                            tint = DefaultPrimary.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(start = 8.dp)
                         )
                     }
+                }
+        }
 
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Text(
-                        text = doctorName,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        modifier = Modifier.weight(1f)
-                    )
-
+        if (doctorNames.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "View chat",
-                        tint = DefaultPrimary.copy(alpha = 0.5f)
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "No doctors",
+                        tint = DefaultPrimary.copy(alpha = 0.3f),
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No contacts available",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = "You'll see your doctors/patients here once you have appointments",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DefaultOnPrimary.copy(alpha = 0.4f),
+                        textAlign = TextAlign.Center
                     )
                 }
             }

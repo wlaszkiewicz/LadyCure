@@ -2,6 +2,7 @@ import androidx.compose.ui.graphics.Color
 import com.example.ladycure.data.Appointment.Status
 
 val Black = Color(0xFF000000)
+val Grey = Color(0xFF808080)
 
 val Pink10 = Color(0xFFEEE0E4)
 val Pink20 = Color(0xFFD29CB4)
