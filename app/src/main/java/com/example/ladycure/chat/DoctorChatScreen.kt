@@ -515,8 +515,7 @@ fun ModernAttachmentPreview(
                 }
                 context.startActivity(intent)
             },
-        color = textColor.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, textColor.copy(alpha = 0.2f))
+        color = textColor.copy(alpha = 0.28f),
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
