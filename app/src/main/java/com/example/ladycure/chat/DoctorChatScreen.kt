@@ -25,44 +25,42 @@ import kotlinx.coroutines.launch
 @Composable
 fun DoctorChatScreen(
     navController: NavController,
-    doctorName: String,
+    otherUserId: String,
+    otherUserName: String,
     chatRepository: ChatRepository = ChatRepository(),
     chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
 ) {
-    val chatId = "${chatRepository.getCurrentUserId()}_$doctorName"
+    val currentUserId = chatRepository.getCurrentUserId()
+    val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
+
     var messageText by remember { mutableStateOf("") }
     var attachmentUri by remember { mutableStateOf<Uri?>(null) }
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // File picker launcher
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { attachmentUri = it }
     }
 
-    // Load messages
     LaunchedEffect(chatId) {
-        val userId = chatRepository.getCurrentUserId()
-        val userName = chatRepository.getCurrentUserName()
-        chatViewModel.initializeChat(chatId, listOf(userName, doctorName))
+        chatViewModel.initializeChat(chatId, listOf(currentUserId, otherUserId))
         chatRepository.getMessages(chatId) { messageList ->
             messages = messageList
         }
     }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Chat with Dr. $doctorName") },
+                title = { Text(text = "Chat with $otherUserName") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "back"
                         )
                     }
                 }
@@ -84,13 +82,11 @@ fun DoctorChatScreen(
                         if (messageText.isNotEmpty() || attachmentUri != null) {
                             scope.launch {
                                 try {
-                                    val userId = chatRepository.getCurrentUserId()
                                     val userName = chatRepository.getCurrentUserName()
-
                                     val message = Message(
-                                        sender = userId,
+                                        sender = currentUserId,
                                         senderName = userName,
-                                        recipient = doctorName,
+                                        recipient = otherUserId,
                                         text = messageText,
                                         timestamp = Timestamp.now(),
                                         attachmentUrl = if (attachmentUri != null) {
@@ -103,7 +99,7 @@ fun DoctorChatScreen(
                                     attachmentUri = null
                                 } catch (e: Exception) {
                                     snackbarHostState.showSnackbar(
-                                        "Failed to send message: ${e.message}"
+                                        "Message could not be sent: ${e.message}"
                                     )
                                 }
                             }
@@ -127,7 +123,7 @@ fun DoctorChatScreen(
             items(messages.reversed()) { message ->
                 MessageBubble(
                     message = message,
-                    isCurrentUser = message.sender == chatRepository.getCurrentUserId()
+                    isCurrentUser = message.sender == currentUserId
                 )
             }
         }

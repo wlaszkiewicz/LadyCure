@@ -5,6 +5,7 @@ import SnackbarActionColor
 import SnackbarBackground
 import SnackbarContentColor
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -21,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.ladycure.chat.DoctorChatScreen
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
@@ -274,9 +277,25 @@ fun MainScreen(navController: NavHostController) {
                 composable("appointments") { AppointmentsScreen(navController, snackbarController) }
 
 
-                composable("chat/{doctorName}") { backStackEntry ->
-                    val doctorName = backStackEntry.arguments?.getString("doctorName") ?: ""
-                    DoctorChatScreen(navController, doctorName)
+                composable(
+                    route = "chat/{otherUserId}/{otherUserName}", // Trasa z dwoma argumentami
+                    arguments = listOf(
+                        navArgument("otherUserId") { type = NavType.StringType },
+                        navArgument("otherUserName") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val otherUserId = backStackEntry.arguments?.getString("otherUserId")
+                    val otherUserName = backStackEntry.arguments?.getString("otherUserName")
+                    if (otherUserId != null && otherUserName != null) {
+                        DoctorChatScreen(
+                            navController = navController,
+                            otherUserId = otherUserId,
+                            otherUserName = otherUserName
+                        )
+                    } else {
+                        Log.e("NavHost", "Failed to get chat arguments!")
+                        navController.popBackStack()
+                    }
                 }
             }
         }
