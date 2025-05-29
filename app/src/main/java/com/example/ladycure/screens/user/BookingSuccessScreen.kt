@@ -62,7 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.ladycure.data.Appointment
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.utility.SnackbarController
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -73,7 +73,7 @@ fun BookingSuccessScreen(
     appointmentId: String,
     referralId: String? = null,
     snackbarController: SnackbarController,
-    authRepo: AuthRepository = AuthRepository()
+    appointmentRepo: AppointmentRepository = AppointmentRepository(),
 ) {
     val isLoading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
@@ -82,7 +82,7 @@ fun BookingSuccessScreen(
 
     LaunchedEffect(appointmentId) {
         try {
-            val result = authRepo.getAppointmentById(appointmentId)
+            val result = appointmentRepo.getAppointmentById(appointmentId)
             if (result.isSuccess) {
                 appointment = result.getOrNull()
             } else {

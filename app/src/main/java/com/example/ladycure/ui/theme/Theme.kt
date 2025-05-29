@@ -17,7 +17,7 @@ fun DefaultColorPalette() = lightColorScheme(
     primary = DefaultPrimary,
     primaryContainer = DefaultPrimaryVariant,
     secondary = DefaultSecondary,
-    secondaryContainer = DefaultSecondaryVariant
+    secondaryContainer = DefaultSecondaryVariant,
 )
 
 @Composable
@@ -64,6 +64,7 @@ fun purpleColorPalette() = lightColorScheme(
     secondary = PurpleSecondary,
     secondaryContainer = PurpleSecondaryVariant
 )
+
 
 @Composable
 fun LadyCureTheme(

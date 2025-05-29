@@ -86,6 +86,8 @@ import com.example.ladycure.data.Appointment.Status
 import com.example.ladycure.presentation.home.components.AppointmentDetailItem
 import com.example.ladycure.presentation.home.components.InfoChip
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.AppointmentRepository
+import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,7 +101,9 @@ import java.util.Locale
 fun DoctorHomeScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
-    authRepo: AuthRepository = AuthRepository()
+    authRepo: AuthRepository = AuthRepository(),
+    userRepo: UserRepository = UserRepository(),
+    appointmentsRepo: AppointmentRepository = AppointmentRepository()
 ) {
     val doctorData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var upcomingAppointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
@@ -113,11 +117,11 @@ fun DoctorHomeScreen(
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        val result = authRepo.getCurrentUserData()
+        val result = userRepo.getCurrentUserData()
         if (result.isSuccess) {
             doctorData.value = result.getOrNull()
 
-            val appointmentsResult = authRepo.getAppointments("doctor")
+            val appointmentsResult = appointmentsRepo.getAppointments("doctor")
             if (appointmentsResult.isSuccess) {
                 allAppointments.value = appointmentsResult.getOrNull() ?: emptyList()
 
@@ -333,7 +337,7 @@ fun DoctorHomeScreen(
                                     },
                                     onCommentUpdated = { newComment ->
                                         coroutineScope.launch {
-                                            val result = authRepo.updateAppointmentComment(
+                                            val result = appointmentsRepo.updateAppointmentComment(
                                                 appointment.appointmentId,
                                                 newComment
                                             )
@@ -412,7 +416,7 @@ fun DoctorHomeScreen(
                 onDismiss = { showEditStatusDialog = false },
                 onConfirm = {
                     CoroutineScope(Dispatchers.IO).launch {
-                        val result = authRepo.updateAppointmentStatus(
+                        val result = appointmentsRepo.updateAppointmentStatus(
                             appointmentId = selectedAppointment.value!!.appointmentId,
                             status = Status.CONFIRMED.displayName
                         )

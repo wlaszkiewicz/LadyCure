@@ -1,17 +1,26 @@
 package com.example.ladycure.screens
 
+import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -19,13 +28,19 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,29 +66,36 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.ladycure.R
+import com.example.ladycure.presentation.login.LoginViewModel
+import com.example.ladycure.presentation.login.components.NonWomanWelcomeDialog
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
 fun LoginScreen(navController: NavController, snackbarHostState: SnackbarController) {
     val authRepo = AuthRepository()
-    var error by remember { mutableStateOf("") }
+    val viewModel = viewModel { LoginViewModel(authRepo) }
+    var infoClicked by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(error) {
-        if (error.isNotEmpty()) {
+    LaunchedEffect(viewModel.error) {
+        if (viewModel.error.isNotEmpty()) {
             snackbarHostState.showMessage(
-                message = error
+                message = viewModel.error
             )
-            error = ""
+            viewModel.error = ""
         }
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                color = MaterialTheme.colorScheme.background
+                color = DefaultBackground
             )
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
@@ -122,22 +145,37 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
+
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "Please login to continue",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
 
-                    Spacer(modifier = Modifier.height(30.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "An app designed for women",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Info",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    infoClicked = true
+                                },
+                            tint = DefaultPrimary
+                        )
+                    }
 
-                    val emailState = remember { mutableStateOf("") }
-                    val passwordState = remember { mutableStateOf("") }
-                    val focusManager = LocalFocusManager.current
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     OutlinedTextField(
-                        value = emailState.value,
-                        onValueChange = { emailState.value = it },
+                        value = viewModel.email,
+                        onValueChange = { viewModel.email = it },
                         label = { Text("Email") },
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
                         modifier = Modifier
@@ -145,20 +183,13 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                             .padding(20.dp),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = {
-                            focusManager.moveFocus(
-                                FocusDirection.Down
-                            )
+                            focusManager.moveFocus(FocusDirection.Down)
                         }),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        )
                     )
 
-
                     OutlinedTextField(
-                        value = passwordState.value,
-                        onValueChange = { passwordState.value = it },
+                        value = viewModel.password,
+                        onValueChange = { viewModel.password = it },
                         label = { Text("Password") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -172,45 +203,17 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            if (isValidInput(emailState.value, passwordState.value)) {
-                                authRepo.authenticate(
-                                    email = emailState.value,
-                                    password = passwordState.value,
-                                    navController = navController,
-                                    onSuccess = {
-                                        error = "Login Successful"
-                                    },
-                                    onFailure = { exception ->
-                                        error = exception.message
-                                            ?: "Authentication failed"
-                                    }
-                                )
+                            if (viewModel.isValidInput()) {
+                                viewModel.login(navController, snackbarHostState)
                             }
-                        }),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        )
+                        })
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Button(
                         onClick = {
-                            if (isValidInput(emailState.value, passwordState.value)) {
-                                authRepo.authenticate(
-                                    email = emailState.value,
-                                    password = passwordState.value,
-                                    navController = navController,
-                                    onSuccess = {
-                                        error = "Login Successful"
-                                    },
-                                    onFailure = { exception ->
-                                        error = exception.message
-                                            ?: "Authentication failed"
-                                    }
-                                )
-                            }
+                            viewModel.login(navController, snackbarHostState)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -218,10 +221,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                             .padding(horizontal = 20.dp)
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        enabled = isValidInput(
-                            email = emailState.value,
-                            password = passwordState.value
-                        ),
+                        enabled = viewModel.isValidInput() && !viewModel.isLoading,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -229,11 +229,19 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                             disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
                         )
                     ) {
-                        Text(
-                            text = "Login",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (viewModel.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Login",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -255,10 +263,24 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                 textAlign = TextAlign.Center,
             )
         }
+    }
 
+    if(infoClicked) {
+        NonWomanWelcomeDialog(
+            onContinue = {
+                infoClicked = false
+                navController.navigate("login")
+            },
+            onUninstall = {
+                val packageName = context.packageName
+                val intent = Intent(
+                    Intent.ACTION_DELETE,
+                    Uri.fromParts("package", packageName, null)
+                )
+                context.startActivity(intent)
+            },
+            onDismiss = { infoClicked = false }
+        )
     }
 }
 
-fun isValidInput(email: String, password: String): Boolean {
-    return email.isNotEmpty() && password.isNotEmpty()
-}

@@ -35,7 +35,7 @@ import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 
 import com.example.ladycure.presentation.admin.*
-
+import com.example.ladycure.repository.UserRepository
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +56,7 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
     var editedDoctor by remember { mutableStateOf<Doctor?>(null) }
     var newDoctor by remember { mutableStateOf(Doctor.empty()) }
 
+    val userRepo = UserRepository()
     val authRepo = AuthRepository()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -74,7 +75,7 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
         isLoadingUsers = true
         isLoadingDoctors = true
 
-        val usersResult = authRepo.getUsers()
+        val usersResult = userRepo.getUsers()
         if (usersResult.isSuccess) {
             users = usersResult.getOrNull() ?: emptyList()
         } else {
@@ -196,7 +197,7 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
                         selectedUser?.let { originalUser ->
                             val updates = buildUpdateMap(editedUser!!)
 
-                            val result = authRepo.updateUser(originalUser.id, updates)
+                            val result = userRepo.updateUser(originalUser.id, updates)
 
                             if (result.isSuccess) {
                                 snackbarController.showMessage(
@@ -206,7 +207,7 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
                                         "User updated successfully"
                                 )
                                 showEditUserDialog = false
-                                val refreshResult = authRepo.getUsers()
+                                val refreshResult = userRepo.getUsers()
                                 if (refreshResult.isSuccess) {
                                     users = refreshResult.getOrNull() ?: emptyList()
                                 }
@@ -229,12 +230,12 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
                         coroutineScope.launch {
                             selectedDoctor?.let { doctor ->
                                 val updates = buildUpdateMap(editedDoctor!!)
-                                val result = authRepo.updateUser(doctor.id, updates)
+                                val result = userRepo.updateUser(doctor.id, updates)
                                 if (result.isSuccess) {
                                     snackbarController.showMessage("Doctor updated successfully")
                                     showEditDoctorDialog = false
                                     // Refresh data
-                                    val refreshResult = authRepo.getUsers()
+                                    val refreshResult = userRepo.getUsers()
                                     if (refreshResult.isSuccess) {
                                         users = refreshResult.getOrNull() ?: emptyList()
                                     }
@@ -247,12 +248,12 @@ fun AdminScreen(navController: NavController, snackbarController: SnackbarContro
                         coroutineScope.launch {
                             selectedDoctor?.let { doctor ->
                                 val updates = buildUpdateMap(editedDoctor!! as User)
-                                val result = authRepo.docToUserUpdate(doctor.id, updates)
+                                val result = userRepo.docToUserUpdate(doctor.id, updates)
                                 if (result.isSuccess) {
                                     snackbarController.showMessage("Doctor converted to user successfully")
                                     showEditDoctorDialog = false
                                     // Refresh data
-                                    val refreshResult = authRepo.getUsers()
+                                    val refreshResult = userRepo.getUsers()
                                     if (refreshResult.isSuccess) {
                                         users = refreshResult.getOrNull() ?: emptyList()
                                     }

@@ -57,13 +57,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.data.Role
+import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
 fun ChatScreen(navController: NavHostController, snackbarController: SnackbarController?) {
     var role by remember { mutableStateOf("") }
     val authRepo = AuthRepository()
+    val userRepo = UserRepository()
+    val appointmentRepo = AppointmentRepository()
     var error by remember { mutableStateOf("") }
     var showDoctorsList by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
@@ -74,7 +78,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
     }
 
     LaunchedEffect(Unit) {
-        val result = authRepo.getUserRole()
+        val result = userRepo.getUserRole()
         if (result.isSuccess) {
             role = result.getOrNull() ?: ""
         } else {
@@ -82,14 +86,14 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
         }
 
         if (Role.DOCTOR == Role.fromValue(role)) {
-            val patientsResult = authRepo.getPatientsFromAppointments()
+            val patientsResult = appointmentRepo.getPatientsFromAppointments()
             if (patientsResult.isSuccess) {
                 doctorNames.value = patientsResult.getOrNull()?.distinct() ?: emptyList()
             } else {
                 error = patientsResult.exceptionOrNull()?.message ?: "Failed to load patient names"
             }
         } else if (Role.USER == Role.fromValue(role)) {
-            val doctorsResult = authRepo.getDoctorsFromAppointments()
+            val doctorsResult = appointmentRepo.getDoctorsFromAppointments()
             if (doctorsResult.isSuccess) {
                 doctorNames.value = doctorsResult.getOrNull()?.distinct() ?: emptyList()
             } else {

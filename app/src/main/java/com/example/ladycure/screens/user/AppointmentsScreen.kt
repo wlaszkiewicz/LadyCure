@@ -14,7 +14,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +49,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -87,7 +85,8 @@ import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.CancelConfirmationDialog
 import com.example.ladycure.presentation.home.components.CancelSuccessDialog
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.AppointmentRepository
+import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.screens.doctor.ConfirmAppointmentDialog
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.CoroutineScope
@@ -99,15 +98,14 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalFoundationApi::class,
     ExperimentalAnimationApi::class
 )
 @Composable
 fun AppointmentsScreen(
     navController: NavController,
     snackbarController: SnackbarController?,
-    authRepo: AuthRepository = AuthRepository()
+    userRepo: UserRepository = UserRepository(),
+    appointmentRepo: AppointmentRepository = AppointmentRepository()
 ) {
     // Existing state variables
     var futureAppointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
@@ -186,10 +184,10 @@ fun AppointmentsScreen(
 
     LaunchedEffect(Unit) {
         try {
-            val result = authRepo.getUserRole()
+            val result = userRepo.getUserRole()
             if (result.isSuccess) {
                 role = result.getOrNull()
-                val result = authRepo.getAppointments(role!!)
+                val result = appointmentRepo.getAppointments(role!!)
                 if (result.isSuccess) {
                     val allAppointments = result.getOrNull() ?: emptyList()
                     futureAppointments = allAppointments.filter {
@@ -610,7 +608,7 @@ fun AppointmentsScreen(
             onDismiss = { showEditStatusDialog = false },
             onConfirm = {
                 CoroutineScope(Dispatchers.IO).launch {
-                    val result = authRepo.updateAppointmentStatus(
+                    val result = appointmentRepo.updateAppointmentStatus(
                         appointmentId = selectedAppointment!!.appointmentId,
                         status = Status.CONFIRMED.displayName
                     )
@@ -646,7 +644,7 @@ fun AppointmentsList(
 ) {
     var showCancelSuccessDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val authRepo = AuthRepository()
+    val appointmentRepo = AppointmentRepository()
 
     if (appointments.isEmpty()) {
         EmptyAppointmentsView(message = emptyMessage)
@@ -670,7 +668,7 @@ fun AppointmentsList(
                             coroutineScope.launch {
                                 try {
                                     val result =
-                                        authRepo.cancelAppointment(appointment.appointmentId)
+                                        appointmentRepo.cancelAppointment(appointment.appointmentId)
                                     if (result.isSuccess) {
                                         appointment.status = Status.CANCELLED
                                         showCancelSuccessDialog = true
@@ -684,7 +682,7 @@ fun AppointmentsList(
                         },
                         onCommentUpdated = { appointmentId, newComment ->
                             coroutineScope.launch {
-                                val result = authRepo.updateAppointmentComment(
+                                val result = appointmentRepo.updateAppointmentComment(
                                     appointment.appointmentId,
                                     newComment
                                 )

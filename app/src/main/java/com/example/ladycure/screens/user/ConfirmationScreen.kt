@@ -8,6 +8,12 @@ import Red
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.location.Geocoder
+import android.net.Uri
+import android.provider.OpenableColumns
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,11 +31,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Directions
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,11 +51,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,48 +65,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
+import com.example.ladycure.data.doctor.Referral
+import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.DoctorRepository
+import com.example.ladycure.repository.ReferralRepository
+import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-import androidx.compose.ui.platform.LocalContext
-import android.location.Geocoder
-import android.net.Uri
-import android.provider.OpenableColumns
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MedicalInformation
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Upload
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.text.style.TextOverflow
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -100,13 +95,18 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-import androidx.core.net.toUri
-import com.example.ladycure.data.doctor.Referral
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ConfirmationScreen(
@@ -117,7 +117,11 @@ fun ConfirmationScreen(
     time: String,
     appointmentType: AppointmentType,
     referralId: String? = null,
-    authRepo: AuthRepository = AuthRepository()
+    userRepo: UserRepository = UserRepository(),
+    authRepo: AuthRepository = AuthRepository(),
+    doctorRepo: DoctorRepository = DoctorRepository(),
+    appointmentRepo: AppointmentRepository = AppointmentRepository(),
+    referralRepo: ReferralRepository = ReferralRepository(),
 ) {
 
     val doctorInfo = remember { mutableStateOf<Map<String, Any>?>(null) }
@@ -143,7 +147,7 @@ fun ConfirmationScreen(
                             uploadProgress = 0f
                         }
 
-                        val result = authRepo.replaceReferralInFirestore(
+                        val result = referralRepo.replaceReferralInFirestore(
                             uri = uri,
                             oldUri = referral?.url.toString(),
                             referralId = referralId.toString(),
@@ -159,7 +163,8 @@ fun ConfirmationScreen(
                                 showUploadSuccess = true
                             } else {
                                 snackbarController?.showMessage(
-                                    message = result.exceptionOrNull()?.message ?: "Could not upload PDF"
+                                    message = result.exceptionOrNull()?.message
+                                        ?: "Could not upload PDF"
                                 )
                             }
                         }
@@ -181,7 +186,7 @@ fun ConfirmationScreen(
     if (referralId != null) {
         LaunchedEffect(referralId) {
             try {
-                val result = authRepo.getReferralById(referralId)
+                val result = referralRepo.getReferralById(referralId)
                 if (result.isSuccess) {
                     referral = result.getOrNull()
                 } else {
@@ -194,8 +199,8 @@ fun ConfirmationScreen(
     }
 
     LaunchedEffect(Unit) {
-        userName = authRepo.getUserField("name").getOrNull() + " " +
-                authRepo.getUserField("surname").getOrNull()
+        userName = userRepo.getUserField("name").getOrNull() + " " +
+                userRepo.getUserField("surname").getOrNull()
     }
     // Create an appointment object
     val appointment = Appointment(
@@ -217,7 +222,7 @@ fun ConfirmationScreen(
     // Fetch doctor details
     LaunchedEffect(doctorId) {
         try {
-            val result = authRepo.getDoctorById(doctorId)
+            val result = doctorRepo.getDoctorById(doctorId)
             if (result.isSuccess) {
                 val doctor = result.getOrNull()
                 doctorInfo.value = Doctor.toMap(doctor!!)
@@ -399,14 +404,14 @@ fun ConfirmationScreen(
                             Button(
                                 onClick = {
                                     CoroutineScope(Dispatchers.Main).launch {
-                                        val result = authRepo.bookAppointment(appointment)
+                                        val result = appointmentRepo.bookAppointment(appointment)
                                         if (result.isSuccess) {
                                             snackbarController?.showMessage(
                                                 message = "Appointment booked successfully"
                                             )
                                             if (referralId == null) {
-                                                navController.navigate("booking_success/${result.getOrNull()}")}
-                                            else {
+                                                navController.navigate("booking_success/${result.getOrNull()}")
+                                            } else {
                                                 navController.navigate("booking_success/${result.getOrNull()}/$referralId")
                                             }
                                         } else {
@@ -976,7 +981,8 @@ fun ReferralInfoCard(
                             .fillMaxWidth()
                             .height(6.dp),
                         color = BabyBlue,
-                        trackColor = BabyBlue.copy(alpha = 0.2f))
+                        trackColor = BabyBlue.copy(alpha = 0.2f)
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -1186,6 +1192,7 @@ private fun calculateFileSize(context: Context, uriString: String?): String? {
                     } else null
                 }
             }
+
             "file" -> File(uri.path).length().toString()
             else -> null
         }

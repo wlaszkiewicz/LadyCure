@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material3)
     implementation(libs.play.services.location)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -91,7 +92,7 @@ dependencies {
 
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
     implementation(libs.firebase.storage.ktx)
-
+    implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
@@ -99,6 +100,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.1.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.maps.android:android-maps-utils:2.3.0")
+    implementation("androidx.biometric:biometric-ktx:1.4.0-alpha02")
+    implementation("com.google.android.material:material:1.11.0")
 
 }
 

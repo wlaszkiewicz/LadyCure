@@ -62,6 +62,7 @@ import androidx.navigation.NavController
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.utility.SnackbarController
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.DoctorRepository
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -75,6 +76,7 @@ import kotlin.collections.filter
 @Composable
 fun AvailabilityListScreen(navController: NavController, snackbarController: SnackbarController) {
     val existingAvailabilities = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
+    val doctorRepo = DoctorRepository()
     val authRepo = AuthRepository()
     val isLoading = remember { mutableStateOf(false) }
     val currentMonth = remember { LocalDate.now().withDayOfMonth(1) }
@@ -91,7 +93,7 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
     LaunchedEffect(Unit) {
         isLoading.value = true
         try {
-            val result = authRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
+            val result = doctorRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
             if (result.isSuccess) {
                 val availabilities = result.getOrThrow()
                 existingAvailabilities.value = availabilities

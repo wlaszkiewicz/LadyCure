@@ -57,7 +57,8 @@ import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.AppointmentsSection
 import com.example.ladycure.presentation.home.components.BookAppointmentSection
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.AppointmentRepository
+import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.HealthTips.getDailyTip
 import com.example.ladycure.utility.HealthTips.getRandomTip
 import com.example.ladycure.utility.SharedPreferencesHelper
@@ -82,7 +83,8 @@ fun HomeScreen(
     snackbarController: SnackbarController? = null,
     context: Context = LocalContext.current
 ) {
-    val authRepo = remember { AuthRepository() }
+    val userRepo = UserRepository()
+    val appointmentRepo = AppointmentRepository()
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     // State variables
@@ -114,10 +116,10 @@ fun HomeScreen(
                 }
             }
 
-            authRepo.getCurrentUserData().getOrNull()?.let { data ->
+            userRepo.getCurrentUserData().getOrNull()?.let { data ->
                 userData.value = data
 
-                authRepo.getAppointments("user").getOrNull()?.let { apps ->
+                appointmentRepo.getAppointments("user").getOrNull()?.let { apps ->
                     appointments.value = apps
                 }
             }

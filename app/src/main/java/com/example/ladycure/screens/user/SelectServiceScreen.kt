@@ -63,13 +63,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.Speciality
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.DoctorRepository
+import com.example.ladycure.repository.ReferralRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.let
 
 @Composable
 fun SelectServiceScreen(
@@ -81,7 +81,8 @@ fun SelectServiceScreen(
 ) {
     var doctor by remember { mutableStateOf<Doctor?>(null) }
     var speciality by remember { mutableStateOf<Speciality?>(speciality) }
-    val authRepo = AuthRepository()
+    val referralRepo = ReferralRepository()
+    val doctorRepo = DoctorRepository()
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedService by remember { mutableStateOf<AppointmentType?>(null) }
 
@@ -101,7 +102,7 @@ fun SelectServiceScreen(
                             uploadProgress = 0f
                         }
 
-                        val result = authRepo.uploadReferralToFirestore(
+                        val result = referralRepo.uploadReferralToFirestore(
                             uri,
                             selectedService
                         ) { progress ->
@@ -115,7 +116,8 @@ fun SelectServiceScreen(
                                 showUploadSuccessDialog = true
                             } else {
                                 snackbarController?.showMessage(
-                                    message = result.exceptionOrNull()?.message ?: "Could not upload PDF"
+                                    message = result.exceptionOrNull()?.message
+                                        ?: "Could not upload PDF"
                                 )
                             }
                         }
@@ -135,7 +137,7 @@ fun SelectServiceScreen(
 
     if (doctorId != null) {
         LaunchedEffect(doctorId) {
-            val result = authRepo.getDoctorById(doctorId)
+            val result = doctorRepo.getDoctorById(doctorId)
             if (result.isSuccess) {
                 doctor = result.getOrNull()
                 speciality = doctor?.speciality
@@ -324,7 +326,7 @@ fun SelectServiceScreen(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = "Success",
-                            tint =  Green.copy(alpha = 0.7f),
+                            tint = Green.copy(alpha = 0.7f),
                             modifier = Modifier.size(48.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))

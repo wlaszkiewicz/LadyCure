@@ -62,7 +62,8 @@ import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.data.doctor.Speciality
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.AppointmentRepository
+import com.example.ladycure.repository.DoctorRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -80,7 +81,8 @@ fun RescheduleScreen(
     var appointment by remember { mutableStateOf<Appointment?>(null) }
     val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
     val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
-    val authRepo = AuthRepository()
+    val appointmentRepo = AppointmentRepository()
+    val doctorRepo = DoctorRepository()
     val doctorAvailability = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
     val isLoading = remember { mutableStateOf(true) }
     val doctor = remember { mutableStateOf<Doctor?>(null) }
@@ -101,16 +103,16 @@ fun RescheduleScreen(
         isLoading.value = true
         try {
             // Load appointment
-            val appointmentResult = authRepo.getAppointmentById(appointmentId)
+            val appointmentResult = appointmentRepo.getAppointmentById(appointmentId)
             if (appointmentResult.isSuccess) {
                 appointment = appointmentResult.getOrNull()
 
                 // Load doctor and availability in parallel
                 val doctorDeferred = coroutineScope.async {
-                    authRepo.getDoctorById(appointment!!.doctorId).getOrNull()
+                    doctorRepo.getDoctorById(appointment!!.doctorId).getOrNull()
                 }
                 val availabilityDeferred = coroutineScope.async {
-                    authRepo.getDoctorAvailability(appointment!!.doctorId).getOrNull()
+                    doctorRepo.getDoctorAvailability(appointment!!.doctorId).getOrNull()
                 }
 
                 doctor.value = doctorDeferred.await()
@@ -272,7 +274,7 @@ fun RescheduleScreen(
             onConfirm = {
                 if (selectedDate.value != null && selectedTimeSlot.value != null) {
                     coroutineScope.launch {
-                        val result = authRepo.rescheduleAppointment(
+                        val result = appointmentRepo.rescheduleAppointment(
                             appointmentId,
                             selectedTimeSlot.value!!, selectedDate.value!!
                         )

@@ -76,6 +76,7 @@ import androidx.navigation.NavController
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.Appointment.Status
 import com.example.ladycure.data.doctor.Speciality
+import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
@@ -205,7 +206,7 @@ fun PatientAppointmentCard(
         }
     }
     val coroutineScope = rememberCoroutineScope()
-    val authRepo = AuthRepository()
+    val appointmentRepo = AppointmentRepository()
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     var showCancelSuccessDialog by remember { mutableStateOf(false) }
@@ -348,7 +349,7 @@ fun PatientAppointmentCard(
                 showDetailsDialog.value = false
                 coroutineScope.launch {
                     try {
-                        val result = authRepo.cancelAppointment(appointment.appointmentId)
+                        val result = appointmentRepo.cancelAppointment(appointment.appointmentId)
                         if (result.isSuccess) {
                             appointment.status = Status.CANCELLED
                             onAppointmentChanged(appointment)
