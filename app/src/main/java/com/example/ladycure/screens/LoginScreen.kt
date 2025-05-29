@@ -203,6 +203,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus() // This will hide the keyboard
                             if (viewModel.isValidInput()) {
                                 viewModel.login(navController, snackbarHostState)
                             }

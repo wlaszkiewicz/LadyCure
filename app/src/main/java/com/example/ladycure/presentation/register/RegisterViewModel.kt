@@ -92,4 +92,22 @@ data class RegisterUiState(
                 password == confirmPassword &&
                 selectedDate.isAfter(LocalDate.now().minusYears(18))
     }
+
+
+    fun getFirstInvalidField(): String {
+        return when {
+            email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "email"
+            name.isBlank() -> "firstName"
+            surname.isBlank() -> "lastName"
+         //   selectedDate.isAfter(LocalDate.now().minusYears(18)) -> "dob"
+            password.isBlank() || password.length < 8
+                    || !password.matches(Regex(".*[A-Z].*"))
+                    || !password.matches(Regex(".*[0-9].*"))
+                    || !password.matches(Regex(".*[!@#$%^&*].*")) -> "password"
+            confirmPassword.isBlank() || password != confirmPassword -> "confirmPassword"
+            else -> "valid"
+        }
+    }
+
+
 }
