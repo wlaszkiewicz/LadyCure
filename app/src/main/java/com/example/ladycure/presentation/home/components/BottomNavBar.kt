@@ -6,6 +6,7 @@ import DefaultPrimary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -74,7 +75,6 @@ fun BottomNavBar(navController: NavHostController) {
     NavigationBar(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
             .background(DefaultPrimary.copy(alpha = 0.08f)),
         containerColor = DefaultBackground,
         tonalElevation = 8.dp
@@ -116,7 +116,7 @@ fun BottomNavBar(navController: NavHostController) {
                     unselectedIconColor = DefaultOnPrimary.copy(alpha = 0.6f),
                     unselectedTextColor = DefaultOnPrimary.copy(alpha = 0.6f),
                     indicatorColor = DefaultPrimary.copy(alpha = 0.2f)
-                )
+                ),
             )
         }
     }
