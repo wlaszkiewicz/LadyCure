@@ -80,14 +80,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material3.Text
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.data.doctor.Speciality
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.DoctorRepository
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
@@ -102,7 +101,7 @@ fun BookAppointmentScreen(
     city: String,
     selectedService: AppointmentType,
     referralId: String? = null,
-    authRepo: AuthRepository = AuthRepository(),
+    doctorRepo: DoctorRepository = DoctorRepository(),
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
     // State variables
@@ -121,7 +120,7 @@ fun BookAppointmentScreen(
         isLoading.value = true
         try {
             // Get doctors first
-            val doctorsResult = authRepo.getDoctorsBySpeciality(selectedSpeciality.displayName)
+            val doctorsResult = doctorRepo.getDoctorsBySpeciality(selectedSpeciality.displayName)
             if (doctorsResult.isSuccess) {
                 doctors.value = doctorsResult.getOrNull() ?: emptyList()
 
@@ -132,7 +131,7 @@ fun BookAppointmentScreen(
                 }
 
                 // Then get their availabilities
-                val availabilities = authRepo.getAllDoctorAvailabilitiesBySpeciality(
+                val availabilities = doctorRepo.getAllDoctorAvailabilitiesBySpeciality(
                     selectedSpeciality.displayName, city
                 )
 
@@ -1222,33 +1221,4 @@ fun TimeSlotChip(
     }
 }
 
-@Preview
-@Composable
-fun BookAppointmentScreenPreview() {
-    BookAppointmentScreen(
-        navController = rememberNavController(),
-        null,
-        city = "Wrocław",
-        selectedService = AppointmentType.DENTAL_IMPLANT
-    )
-}
 
-@Preview
-@Composable
-fun DateChipPreview() {
-    DateChip(
-        date = "Today",
-        isSelected = true,
-        onSelect = {}
-    )
-}
-
-@Preview
-@Composable
-fun TimeSlotChipPreview() {
-    TimeSlotChip(
-        time = "10:30 AM",
-        isSelected = false,
-        onSelect = {}
-    )
-}

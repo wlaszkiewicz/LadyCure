@@ -60,12 +60,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.doctor.Doctor
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.DoctorRepository
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
@@ -74,7 +73,7 @@ fun DoctorsListScreen(
     speciality: String,
     snackbarController: SnackbarController
 ) {
-    val repository = AuthRepository()
+    val doctorRepo = DoctorRepository()
     val doctors = remember { mutableStateOf<List<Doctor>>(emptyList()) }
     var selectedDoctor = remember { mutableStateOf<Doctor?>(null) }
 
@@ -83,7 +82,7 @@ fun DoctorsListScreen(
     var swipeableDoctors by remember { mutableStateOf(doctors.value) }
 
     LaunchedEffect(speciality) {
-        val result = repository.getDoctorsBySpeciality(speciality)
+        val result = doctorRepo.getDoctorsBySpeciality(speciality)
         if (result.isSuccess) {
             doctors.value = result.getOrDefault(emptyList())
             isLoading = false
@@ -810,51 +809,3 @@ private fun ExpandedDoctorInfoCard(
 
 }
 
-@Preview
-@Composable
-fun ExpendedDoctorInfoCardPreview() {
-    val sampleDoctor = Doctor.fromMap(
-        mapOf(
-            "name" to "Sarah",
-            "surname" to "Johnson",
-            "speciality" to "Cardiologist",
-            "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
-            "rating" to 4.7,
-            "experience" to 12,
-            "profilePictureUrl" to "",
-            "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
-            "languages" to listOf("English", "Spanish", "French"),
-            "consultationFee" to 150.0
-        )
-    )
-
-    ExpandedDoctorInfoCard(
-        doctor = sampleDoctor,
-        modifier = Modifier.padding(16.dp)
-    )
-}
-
-@Preview
-@Composable
-fun DoctorInfoCardPreview() {
-    val sampleDoctor = Doctor.fromMap(
-        mapOf(
-            "name" to "Sarah",
-            "surname" to "Johnson",
-            "speciality" to "Cardiologist",
-            "address" to "123 Medical Center Drive, Suite 456, New York, NY 10001",
-            "rating" to 4.7,
-            "experience" to 12,
-            "profilePictureUrl" to "",
-            "bio" to "Dr. Johnson is a board-certified cardiologist with over 12 years of experience in treating heart conditions. She specializes in preventive cardiology and non-invasive treatments.",
-            "languages" to listOf("English", "Spanish", "French"),
-            "consultationFee" to 150.0
-        )
-    )
-
-    DoctorInfoCard(
-        doctor = sampleDoctor,
-        onSelect = {},
-        modifier = Modifier.padding(16.dp)
-    )
-}

@@ -60,6 +60,7 @@ import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.R
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.ImageUploader
 import com.example.ladycure.utility.rememberImagePickerLauncher
 import kotlinx.coroutines.CoroutineScope
@@ -70,7 +71,8 @@ import kotlin.let
 @Composable
 fun ProfileScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val repository = AuthRepository()
+    val userRepo = UserRepository()
+    val authRepo = AuthRepository()
     val imageUploader = remember { ImageUploader(context) }
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
@@ -83,12 +85,12 @@ fun ProfileScreen(navController: NavHostController) {
         imageUri = uri
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val userId = repository.getCurrentUserId() ?: return@launch
+                val userId = authRepo.getCurrentUserId() ?: return@launch
                 imageUploader.uploadImage(uri, userId).fold(
                     onSuccess = { downloadUrl ->
-                        repository.updateProfilePicture(downloadUrl)
+                        userRepo.updateProfilePicture(downloadUrl)
                         currentImageUrl = downloadUrl
-                        userData.value = repository.getCurrentUserData().getOrNull()
+                        userData.value = userRepo.getCurrentUserData().getOrNull()
                         errorMessage = ""
                     },
                     onFailure = { e ->
@@ -102,7 +104,7 @@ fun ProfileScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(Unit) {
-        val result = repository.getCurrentUserData()
+        val result = userRepo.getCurrentUserData()
         if (result.isFailure) {
             errorMessage = "Failed to load user data: ${result.exceptionOrNull()?.message}"
         } else {
@@ -265,7 +267,7 @@ fun ProfileScreen(navController: NavHostController) {
             onDismiss = { showAccountSettingsDialog = false },
             onSave = { updatedData ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    val result = repository.updateUserData(updatedData)
+                    val result = userRepo.updateUserData(updatedData)
                     if (result.isSuccess) {
                         userData.value = result.getOrNull() ?: emptyMap()
                     } else {

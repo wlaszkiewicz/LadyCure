@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.UserRepository
 
 sealed class Screen(
     val route: String,
@@ -52,12 +53,12 @@ sealed class Screen(
 
 @Composable
 fun BottomNavBar(navController: NavHostController) {
-    val authRepo = AuthRepository()
+    val userRepo = UserRepository()
     val userRole = remember { mutableStateOf<String?>(null) }
 
     // Fetch user role
     LaunchedEffect(Unit) {
-        val result = authRepo.getUserRole()
+        val result = userRepo.getUserRole()
         if (result.isSuccess) {
             userRole.value = result.getOrNull()
         }

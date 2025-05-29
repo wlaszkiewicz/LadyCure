@@ -51,6 +51,7 @@ import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.DoctorRepository
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
@@ -64,7 +65,7 @@ fun BookAppointmentDirectlyScreen(
     doctorId: String,
     selectedService: AppointmentType,
     referralId: String? = null,
-    authRepo: AuthRepository = AuthRepository()
+    doctorRepo: DoctorRepository = DoctorRepository()
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
     // State variables
@@ -78,10 +79,10 @@ fun BookAppointmentDirectlyScreen(
     val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
 
     LaunchedEffect(doctorId) {
-        val result = authRepo.getDoctorById(doctorId)
+        val result = doctorRepo.getDoctorById(doctorId)
         if (result.isSuccess) {
             doctor.value = result.getOrNull()
-            val availabilityResult = authRepo.getDoctorAvailability(doctorId)
+            val availabilityResult = doctorRepo.getDoctorAvailability(doctorId)
             if (availabilityResult.isSuccess) {
                 doctorAvailability.value = availabilityResult.getOrNull()!!
                 isLoading.value = false
@@ -450,17 +451,5 @@ private fun LoadingView() {
         Spacer(modifier = Modifier.height(16.dp))
         Text("Loading appointment data...", color = DefaultOnPrimary)
     }
-}
-
-@Preview
-@Composable
-fun BookAppointmentDirectlyScreenPreview() {
-    val navController = rememberNavController()
-    BookAppointmentDirectlyScreen(
-        navController = navController,
-        doctorId = "12345",
-        selectedService = AppointmentType.CANCER_SCREENING,
-        snackbarController = null
-    )
 }
 

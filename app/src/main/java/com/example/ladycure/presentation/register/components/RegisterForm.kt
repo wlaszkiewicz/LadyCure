@@ -207,19 +207,3 @@ fun RegisterForm(
     }
 }
 
-
-@Composable
-@Preview
-fun RegisterFormPreview() {
-    RegisterForm(
-        state = RegisterUiState(),
-        onEmailChange = {},
-        onNameChange = {},
-        onSurnameChange = {},
-        onDateSelected = {},
-        onPasswordChange = {},
-        onConfirmPasswordChange = {},
-        onRegisterClick = {}
-    )
-}
-

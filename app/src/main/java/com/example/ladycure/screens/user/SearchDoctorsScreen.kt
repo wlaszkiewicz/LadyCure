@@ -51,20 +51,20 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.Speciality
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.repository.DoctorRepository
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
 fun SearchDoctorsScreen(navController: NavHostController, snackbarController: SnackbarController) {
     val searchQuery = remember { mutableStateOf("") }
-    val authRepo = AuthRepository()
+    val doctorRepo = DoctorRepository()
     var allDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
     var error by remember { mutableStateOf("") }
     var filteredDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
     LaunchedEffect(Unit) {
-        val result = authRepo.getDoctors()
+        val result = doctorRepo.getDoctors()
         if (result.isSuccess) {
-            allDoctors = authRepo.getDoctors().getOrNull()!!
+            allDoctors = result.getOrNull()!!
         } else {
             error = result.exceptionOrNull()?.message ?: "Unknown error"
         }

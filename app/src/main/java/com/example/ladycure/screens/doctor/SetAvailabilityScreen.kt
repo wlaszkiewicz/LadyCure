@@ -48,6 +48,7 @@ import com.example.ladycure.presentation.availability.RecurringPatternDialog
 import com.example.ladycure.presentation.availability.TimeRangePicker
 import com.example.ladycure.presentation.availability.QuickSelectionButtons
 import com.example.ladycure.presentation.availability.SaveButton
+import com.example.ladycure.repository.DoctorRepository
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,7 +56,8 @@ import com.example.ladycure.presentation.availability.SaveButton
 fun SetAvailabilityScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
-    authRepo: AuthRepository = AuthRepository()
+    authRepo: AuthRepository = AuthRepository(),
+    doctorRepo: DoctorRepository = DoctorRepository()
 ) {
     // State management
     val selectedDates = remember { mutableStateOf<Set<LocalDate>>(emptySet()) }
@@ -79,7 +81,7 @@ fun SetAvailabilityScreen(
     LaunchedEffect(Unit) {
         isLoading.value = true
         try {
-            val result = authRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
+            val result = doctorRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
             if (result.isSuccess) {
                 val availabilities = result.getOrThrow()
                 val today = LocalDate.now()
@@ -90,7 +92,7 @@ fun SetAvailabilityScreen(
 
                 // Delete past availabilities from Firestore
                 pastAvailabilities.forEach { pastAvailability ->
-                    authRepo.deleteDoctorAvailability(pastAvailability.doctorId, pastAvailability.date!!)
+                    doctorRepo.deleteDoctorAvailability(pastAvailability.doctorId, pastAvailability.date!!)
                 }
 
                 existingAvailabilities.value = futureAvailabilities
@@ -277,7 +279,7 @@ fun SetAvailabilityScreen(
                 coroutineScope.launch {
                     isLoading.value = true
                     try {
-                        authRepo.updateAvailabilities(
+                        doctorRepo.updateAvailabilities(
                             dates = selectedDates.value.toList(),
                             startTime = startTime.value,
                             endTime = endTime.value
@@ -285,7 +287,7 @@ fun SetAvailabilityScreen(
                         snackbarController.showMessage("Availability saved successfully!")
                         // refresh the screen
                         coroutineScope.launch {
-                            existingAvailabilities.value = authRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString()).getOrThrow()
+                            existingAvailabilities.value = doctorRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString()).getOrThrow()
                         }
                     } catch (e: Exception) {
                         snackbarController.showMessage("Error saving availability: ${e.message}")

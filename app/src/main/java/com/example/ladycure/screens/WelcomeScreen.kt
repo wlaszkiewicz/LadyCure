@@ -5,11 +5,13 @@ import DefaultOnPrimary
 import DefaultPrimary
 import LadyCureTheme
 import YellowOrange
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +28,11 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Woman
@@ -67,72 +72,219 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.R
 import com.example.ladycure.repository.AuthRepository
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.compose.material3.TextField
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ladycure.presentation.welcome.WelcomeViewModel
+import com.example.ladycure.repository.UserRepository
+import java.util.concurrent.Executor
 
 @Composable
 fun WelcomeScreen(navController: NavController) {
     val context = LocalContext.current
-    var isLoading by remember { mutableStateOf(true) }
-    var isLoggedIn by remember { mutableStateOf(false) }
     val authRepo = AuthRepository()
+    val userRepo = UserRepository()
+    val viewModel = viewModel { WelcomeViewModel(authRepo,userRepo) }
 
+    // Initialize biometric authentication
     LaunchedEffect(Unit) {
-        // Check auth state asynchronously
-        Firebase.auth.addAuthStateListener { auth ->
-            isLoggedIn = auth.currentUser != null
-            isLoading = false
+        viewModel.initializeBiometric(context)
+        viewModel.setupAuthListener()
+    }
+
+    // Handle successful authentication
+    LaunchedEffect(viewModel.authenticationSuccess) {
+        if (viewModel.authenticationSuccess && viewModel.currentUser != null) {
+            // Navigate based on role
+            when (viewModel.userRole) {
+                "admin" -> navController.navigate("admin") {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                }
+                "doctor" -> navController.navigate("doctor_main") {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                }
+                else -> navController.navigate("home") {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                }
+            }
+            viewModel.resetAuthState()
         }
     }
 
-    LoadingScreen(isLoading = isLoading)
+    LoadingScreen(isLoading = viewModel.isLoading)
 
-    LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
-            val result = try {
-                authRepo.getUserRole()
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-
-            when {
-                result.isSuccess -> {
-                    val role = result.getOrNull()
-                    when (role) {
-                        "admin" -> navController.navigate("admin") {
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = true
-                            }
-                        }
-
-                        "doctor" -> navController.navigate("doctor_main") {
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = true
-                            }
-                        }
-
-                        else -> navController.navigate("home") {
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = true
-                            }
-                        }
-                    }
-                }
-
-                else -> {
-                    Toast.makeText(
-                        context,
-                        result.exceptionOrNull()?.message ?: "Error fetching user role",
-                        Toast.LENGTH_SHORT
-                    ).show()
+    if (!viewModel.isLoading) {
+        if (viewModel.currentUser != null) {
+            LoggedInWelcomeScreen(
+                user = viewModel.currentUser!!,
+                onContinue = { viewModel.authenticateWithBiometrics(context) },
+                onUseDifferentAccount = { Firebase.auth.signOut() }
+            )
+        } else {
+            // Navigate to login if no user
+            LaunchedEffect(Unit) {
+                navController.navigate("login") {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
                 }
             }
         }
     }
 
-    if (!isLoading && !isLoggedIn) {
-        GenderSelectionScreen(navController)
+    if (viewModel.showBiometricError) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showBiometricError = false },
+            title = { Text("Authentication Failed") },
+            text = { Text("Could not authenticate with biometrics. Please try again or use password.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.showBiometricError = false
+                        viewModel.showPasswordDialog = true
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DefaultPrimary)
+                ) {
+                    Text("Use Password")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { viewModel.showBiometricError = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (viewModel.showPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.showPasswordDialog = false },
+            title = { Text("Enter Password") },
+            text = {
+                Column {
+                    Text("Please enter your password to continue:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = viewModel.password,
+                        onValueChange = { viewModel.password = it },
+                        label = { Text("Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.authenticateWithPassword(navController, context) },
+                    colors = ButtonDefaults.buttonColors(containerColor = DefaultPrimary)
+                ) {
+                    Text("Continue")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { viewModel.showPasswordDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
+@Composable
+fun LoggedInWelcomeScreen(
+    user: FirebaseUser,
+    onContinue: () -> Unit,
+    onUseDifferentAccount: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.icon),
+            contentDescription = "App Logo",
+            modifier = Modifier
+                .size(150.dp)
+                .padding(bottom = 24.dp),
+            contentScale = ContentScale.Fit
+        )
+
+        Text(
+            text = "Welcome back!",
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 32.sp
+            ),
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp),
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = "Logged in as ${user.email?.takeWhile { it != '@' } ?: "User"}",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onContinue,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = DefaultPrimary
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Continue",
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Continue with this account")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onUseDifferentAccount,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Different account",
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Use different account")
+            }
+        }
+    }
+}
+
 
 @Composable
 fun LoadingScreen(isLoading: Boolean) {
@@ -146,403 +298,3 @@ fun LoadingScreen(isLoading: Boolean) {
     }
 }
 
-sealed class GenderSelection {
-    object Woman : GenderSelection()
-    object Man : GenderSelection()
-    object OtherOrPreferNotToSay : GenderSelection()
-}
-
-
-@Composable
-fun GenderSelectionScreen(navController: NavController) {
-    var genderSelected by remember { mutableStateOf<GenderSelection?>(null) }
-    var showNonWomanDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-
-    LadyCureTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-
-            Image(
-                painter = painterResource(id = R.drawable.icon),
-                contentDescription = "App Logo",
-                modifier = Modifier
-                    .fillMaxWidth(0.4f)
-                    .padding(bottom = 24.dp),
-                contentScale = ContentScale.Fit
-            )
-
-            Text(
-                text = "Welcome to LadyCure!",
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
-                ),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "If you feel comfortable telling us, please select:",
-                modifier = Modifier.padding(bottom = 20.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center
-            )
-
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                GenderOptionCard(
-                    icon = Icons.Default.Woman,
-                    title = "Woman",
-                    description = "Primary user experience",
-                    onClick = {
-                        genderSelected = GenderSelection.Woman
-                        showNonWomanDialog = false
-
-                    },
-                    backgroundColor = Color(0xFFFFF0F5),
-                    color = DefaultPrimary,
-                )
-
-                GenderOptionCard(
-                    icon = Icons.Default.RestoreFromTrash,
-                    title = "Man",
-                    description = "Limited functionality",
-                    onClick = {
-                        genderSelected = GenderSelection.Man
-                        showNonWomanDialog = true
-
-                    },
-                    backgroundColor = Color(0xFFF0F8FF),
-                    color = BabyBlue,
-                )
-
-                GenderOptionCard(
-                    icon = Icons.Default.Star,
-                    title = "Other",
-                    description = "Custom experience",
-                    onClick = {
-                        genderSelected = GenderSelection.OtherOrPreferNotToSay
-                        showNonWomanDialog = true
-
-                    },
-                    backgroundColor = Color(0xFFFAFAD2),
-                    color = YellowOrange,
-                )
-            }
-
-            // Subtle "prefer not to say" option
-            TextButton(
-                onClick = {
-                    genderSelected = GenderSelection.OtherOrPreferNotToSay
-                    showNonWomanDialog = true
-                },
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                Text(
-                    text = "I prefer not to say",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = DefaultOnPrimary.copy(alpha = 0.8f)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-    when (genderSelected) {
-        GenderSelection.Woman -> navController.navigate("login")
-        GenderSelection.Man,
-        GenderSelection.OtherOrPreferNotToSay -> {
-            if (showNonWomanDialog) {
-                NonWomanWelcomeDialog(
-                    onContinue = {
-                        showNonWomanDialog = false
-                        navController.navigate("login")
-                    },
-                    onUninstall = {
-                        val packageName = context.packageName
-                        val intent = Intent(
-                            Intent.ACTION_DELETE,
-                            Uri.fromParts("package", packageName, null)
-                        )
-                        context.startActivity(intent)
-                        showNonWomanDialog = false
-                    },
-                    onDismiss = {
-                        showNonWomanDialog = false
-                    },
-                )
-            }
-        }
-
-        null -> Unit
-
-    }
-
-}
-
-@Composable
-fun NonWomanWelcomeDialog(
-    onContinue: () -> Unit,
-    onUninstall: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss, title = {
-            Text(
-                text = "Maybe not for you?",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.akczuali_kapi),
-                        contentDescription = "Welcome illustration",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter)
-                            .zIndex(1f)
-                            .height(170.dp)
-                            .offset(y = (0).dp),
-                        contentScale = ContentScale.Fit
-                    )
-
-                    Card(
-                        modifier = Modifier
-                            .width(280.dp)
-                            .padding(top = 170.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        ),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Text(
-                            text =
-                                "Our app is designed primarily for women's health needs. " +
-                                        "However, if you still find our services helpful, you're welcome to continue.",
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-
-                Button(
-                    onClick = onContinue,
-                    modifier = Modifier.width(200.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Text("Continue to App")
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Continue",
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    onClick = onUninstall,
-                    modifier = Modifier.width(200.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = DefaultPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Text("Not for me")
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "Not for me",
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        modifier = Modifier.wrapContentSize()
-    )
-}
-
-//@Composable
-//fun LoginRegisterScreen(navController: NavController) {
-//    LadyCureTheme {
-//        Surface(
-//            modifier = Modifier.fillMaxSize(),
-//            color = MaterialTheme.colorScheme.background
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(16.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Center
-//            ) {
-//                Image(
-//                    painter = painterResource(id = R.drawable.icon),
-//                    contentDescription = "App Logo",
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(horizontal = 30.dp)
-//                        .padding(bottom = 32.dp),
-//                    contentScale = ContentScale.FillWidth
-//                )
-//                Button(
-//                    onClick = { navController.navigate("login") },
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(horizontal = 32.dp)
-//                        .height(55.dp),
-//                    colors = ButtonDefaults.buttonColors(
-//                        containerColor = MaterialTheme.colorScheme.primary
-//                    )
-//                ) {
-//                    Text(
-//                        text = "Login",
-//                        style = MaterialTheme.typography.titleMedium.copy(
-//                            color = MaterialTheme.colorScheme.onPrimary
-//                        )
-//                    )
-//                }
-//                Spacer(modifier = Modifier.height(16.dp))
-//                OutlinedButton(
-//                    onClick = { navController.navigate("register") },
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(horizontal = 32.dp)
-//                        .height(55.dp),
-//                    colors = ButtonDefaults.outlinedButtonColors(
-//                        contentColor = MaterialTheme.colorScheme.primary
-//                    )
-//                ) {
-//                    Text(
-//                        text = "Register",
-//                        style = MaterialTheme.typography.titleMedium.copy(
-//                            color = MaterialTheme.colorScheme.primary
-//                        )
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
-
-@Composable
-fun GenderOptionCard(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    onClick: () -> Unit,
-    backgroundColor: Color,
-    color: Color
-
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(90.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        ),
-        elevation = CardDefaults.elevatedCardElevation(2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = color.copy(alpha = 0.9f)
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                )
-            }
-
-            Icon(
-                imageVector = Icons.Default.ArrowForward,
-                contentDescription = "Select",
-                tint = color.copy(alpha = 0.9f)
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-fun WelcomeScreenPreview() {
-    val navController = rememberNavController()
-    LadyCureTheme {
-        WelcomeScreen(navController)
-    }
-}
