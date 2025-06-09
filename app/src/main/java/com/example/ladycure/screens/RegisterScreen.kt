@@ -3,7 +3,7 @@ package com.example.ladycure.screens
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
-import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,18 +15,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AppRegistration
 import androidx.compose.material.icons.filled.HealthAndSafety
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,8 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -201,36 +205,105 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
 
     if (showContactUsDialog) {
-        AlertDialog(
-            onDismissRequest = { showContactUsDialog = false },
-            title = { Text("Contact us!") },
-            text = { Text("If you're a doctor and wish to join our team, please send us an email :). We will get back to you as soon as possible!") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showContactUsDialog = false
-                        val intent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = "mailto:ladycure_admin@gmail.com".toUri()
+        Dialog(onDismissRequest = { showContactUsDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = Color.White,
+                shadowElevation = 16.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    // Title
+                    Text(
+                        text = "Apply!",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = DefaultPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Message
+                    Text(
+                        text = "If you're a doctor and wish to join our team, please fill out the application form. After submission, our admin will review your application and get back to you via email.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = DefaultOnPrimary.copy(alpha = 0.8f),
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = " We look forward to having you on board!",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = DefaultOnPrimary,
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showContactUsDialog = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = DefaultPrimary
+                            ),
+                            border = BorderStroke(1.dp, DefaultPrimary)
+                        ) {
+                            Text(
+                                "Go back",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            )
                         }
-                        navController.context.startActivity(intent)
-                    }, colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary.copy(alpha = 0.8f),
-                    )
-                ) {
-                    Text("Send Email", color = Color.White, fontWeight = FontWeight.Bold)
+
+                        Button(
+                            onClick = { navController.navigate("doctor_application") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "Apply",
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.AppRegistration,
+                                    contentDescription = "Apply",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { showContactUsDialog = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                    )
-                ) {
-                    Text("Cancel", color = DefaultPrimary, fontWeight = FontWeight.Bold)
-                }
-            },
-        )
+            }
+        }
     }
 }
 
