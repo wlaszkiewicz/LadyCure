@@ -5,12 +5,12 @@ import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
 
 sealed class Screen(
@@ -42,9 +41,31 @@ sealed class Screen(
     object Doctors : Screen("doctor", Icons.Default.Face, "Doctors", listOf("user"))
     object Chat : Screen("chat", Icons.Default.Call, "Chat")
     object Profile : Screen("profile", Icons.Default.AccountCircle, "Profile")
+    object AdminDashboard : Screen("admin", Icons.Default.Dashboard, "Dashboard", listOf("admin"))
+    object AdminUserManagement : Screen(
+        "admin_user_management",
+        Icons.Default.AccountCircle,
+        "Users",
+        listOf("admin")
+    )
+
+    object AdminDoctorManagement :
+        Screen("admin_doctor_management", Icons.Default.Face, "Doctors", listOf("admin"))
+
+    object AdminAnalytics :
+        Screen("admin_analytics", Icons.Default.Analytics, "Analytics", listOf("admin"))
 
     companion object {
-        val allScreens = listOf(Home, Doctors, Chat, Profile)
+        val allScreens = listOf(
+            Home,
+            Doctors,
+            Chat,
+            Profile,
+            AdminDashboard,
+            AdminUserManagement,
+            AdminDoctorManagement,
+            AdminAnalytics
+        )
 
         fun getRouteForRole(route: String, role: String?): String {
             return if (route == "home" && role == "doctor") "doctor_main" else route

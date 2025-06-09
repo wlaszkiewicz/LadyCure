@@ -324,7 +324,7 @@ fun HealthTipCard(
     onRefreshClick: () -> Unit,
     onTodayClick: () -> Unit
 ) {
-    var setToTodays = remember { mutableStateOf(false) }
+    val setToTodays = remember { mutableStateOf(false) }
 
     setToTodays.value = dailyTip == getDailyTip()
 
@@ -469,14 +469,4 @@ fun Header(
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun HomeScreenPreview() {
-    HomeScreen(
-        navController = rememberNavController(),
-        snackbarController = null,
-        context = LocalContext.current
-    )
 }

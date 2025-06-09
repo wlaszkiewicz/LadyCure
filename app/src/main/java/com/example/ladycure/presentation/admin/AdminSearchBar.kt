@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AdminSearchBar(
+    text: String = "Search...",
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -36,13 +37,13 @@ fun AdminSearchBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
             .height(56.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = 0.9f))
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 12.dp),
@@ -51,7 +52,7 @@ fun AdminSearchBar(
         Icon(
             imageVector = Icons.Default.Search,
             contentDescription = "Search",
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(24.dp)
         )
 
@@ -66,7 +67,7 @@ fun AdminSearchBar(
             textStyle = MaterialTheme.typography.bodyMedium,
             placeholder = {
                 Text(
-                    "Search...",
+                    text = text,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                 )
             },

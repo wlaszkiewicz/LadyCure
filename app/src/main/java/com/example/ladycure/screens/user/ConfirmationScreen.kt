@@ -84,7 +84,7 @@ import com.example.ladycure.data.doctor.Referral
 import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.DoctorRepository
-import com.example.ladycure.repository.ReferralRepository
+import com.example.ladycure.repository.StorageRepository
 import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
 import com.google.android.gms.maps.model.CameraPosition
@@ -121,7 +121,7 @@ fun ConfirmationScreen(
     authRepo: AuthRepository = AuthRepository(),
     doctorRepo: DoctorRepository = DoctorRepository(),
     appointmentRepo: AppointmentRepository = AppointmentRepository(),
-    referralRepo: ReferralRepository = ReferralRepository(),
+    referralRepo: StorageRepository = StorageRepository(),
 ) {
 
     val doctorInfo = remember { mutableStateOf<Map<String, Any>?>(null) }

@@ -64,7 +64,7 @@ import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.repository.DoctorRepository
-import com.example.ladycure.repository.ReferralRepository
+import com.example.ladycure.repository.StorageRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,7 +81,7 @@ fun SelectServiceScreen(
 ) {
     var doctor by remember { mutableStateOf<Doctor?>(null) }
     var speciality by remember { mutableStateOf<Speciality?>(speciality) }
-    val referralRepo = ReferralRepository()
+    val referralRepo = StorageRepository()
     val doctorRepo = DoctorRepository()
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedService by remember { mutableStateOf<AppointmentType?>(null) }

@@ -6,7 +6,6 @@ import SnackbarBackground
 import SnackbarContentColor
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
@@ -34,14 +33,19 @@ import com.example.ladycure.data.AppointmentType
 import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.repository.AuthRepository
-import com.example.ladycure.screens.AdminScreen
+import com.example.ladycure.screens.AdminAnalyticsScreen
+import com.example.ladycure.screens.AdminDashboardScreen
+import com.example.ladycure.screens.AdminDoctorManagementScreen
+import com.example.ladycure.screens.AdminUserManagementScreen
 import com.example.ladycure.screens.ChatScreen
 import com.example.ladycure.screens.LoginScreen
 import com.example.ladycure.screens.ProfileScreen
 import com.example.ladycure.screens.RegisterScreen
 import com.example.ladycure.screens.WelcomeScreen
 import com.example.ladycure.screens.doctor.AvailabilityListScreen
+import com.example.ladycure.screens.doctor.DoctorApplicationScreen
 import com.example.ladycure.screens.doctor.DoctorHomeScreen
+import com.example.ladycure.screens.doctor.DoctorPendingMainScreen
 import com.example.ladycure.screens.doctor.SetAvailabilityScreen
 import com.example.ladycure.screens.user.AppointmentsScreen
 import com.example.ladycure.screens.user.BookAppointmentDirectlyScreen
@@ -77,13 +81,17 @@ fun MainScreen(navController: NavHostController) {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // List of screens where BottomNavBar should be hidden
+    // List of screens where BottomNavBar should be shown
     val showBottomNavRoutes = listOf(
         "home",
         "doctor",
         "chat",
         "profile",
         "doctor_main",
+        "admin",
+        "admin_user_management",
+        "admin_doctor_management",
+        "admin_analytics",
     )
 
     val showBottomNav = currentRoute in showBottomNavRoutes
@@ -132,11 +140,38 @@ fun MainScreen(navController: NavHostController) {
                 composable("doctor") { SearchDoctorsScreen(navController, snackbarController) }
                 composable("chat") { ChatScreen(navController, snackbarController) }
 
-                composable("admin") { AdminScreen(navController, snackbarController) }
+                composable("admin") { AdminDashboardScreen(navController, snackbarController) }
 
                 composable("welcome") { WelcomeScreen(navController) }
                 composable("login") { LoginScreen(navController, snackbarController) }
                 composable("register") { RegisterScreen(navController, snackbarController) }
+
+
+                composable("admin_user_management") {
+                    AdminUserManagementScreen(
+                        snackbarController
+                    )
+                }
+                composable("admin_doctor_management") {
+                    AdminDoctorManagementScreen(
+                        snackbarController
+                    )
+                }
+                composable("admin_analytics") { AdminAnalyticsScreen(navController) }
+
+                composable("doctor_application") {
+                    DoctorApplicationScreen(
+                        navController,
+                        snackbarController
+                    )
+                }
+
+                composable("doctor_pending") {
+                    DoctorPendingMainScreen(
+                        navController,
+                        snackbarController,
+                    )
+                }
 
                 composable("doctor_main") { DoctorHomeScreen(navController, snackbarController) }
                 composable("set_availability") {

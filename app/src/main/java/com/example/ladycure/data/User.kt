@@ -87,6 +87,7 @@ open class User(
 enum class Role(val value: String) {
     DOCTOR("doctor"),
     USER("user"),
+    DOCTOR_PENDING("doctor_pending"),
     ADMIN("admin");
 
     companion object {
