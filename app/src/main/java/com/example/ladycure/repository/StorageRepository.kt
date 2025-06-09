@@ -6,11 +6,14 @@ import com.example.ladycure.data.doctor.Referral
 import com.example.ladycure.utility.PdfUploader
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 
-class ReferralRepository {
+class StorageRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val storage = FirebaseStorage.getInstance()
+    private val storageRef = storage.reference
 
     suspend fun uploadReferralToFirestore(
         uri: Uri,
@@ -116,5 +119,44 @@ class ReferralRepository {
         }
     }
 
+
+    suspend fun uploadFile(
+        uri: Uri,
+        path: String,
+        onProgress: (uploadedBytes: Long, totalBytes: Long) -> Unit
+    ): Result<String> {
+        return try {
+            val userId =
+                auth.currentUser?.uid ?: return Result.failure(Exception("User not authenticated"))
+
+            val fileRef = storage.reference.child(path)
+            val uploadTask = fileRef.putFile(uri)
+
+            // Add progress listener
+            uploadTask.addOnProgressListener { taskSnapshot ->
+                val bytesTransferred = taskSnapshot.bytesTransferred
+                val totalBytes = taskSnapshot.totalByteCount
+                onProgress(bytesTransferred, totalBytes)
+            }
+
+            // Wait for upload to complete
+            val task = uploadTask.await()
+            val downloadUrl = task.storage.downloadUrl.await()
+
+            Result.success(downloadUrl.toString())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteFile(url: String): Result<Boolean> {
+        return try {
+            val storageRef = storage.getReferenceFromUrl(url)
+            storageRef.delete().await()
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
 }

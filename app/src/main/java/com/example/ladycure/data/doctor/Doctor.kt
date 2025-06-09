@@ -5,6 +5,7 @@ import com.example.ladycure.data.Role
 import com.example.ladycure.data.User
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 data class Doctor(
     val speciality: Speciality,
@@ -46,6 +47,28 @@ data class Doctor(
             dateOfBirth = this.dateOfBirth,
             profilePictureUrl = this.profilePictureUrl,
             role = Role.USER
+        )
+    }
+
+    fun toMap(): Map<String, Any> {
+        return mapOf(
+            "speciality" to speciality.displayName,
+            "availability" to availability,
+            "reviews" to reviews,
+            "address" to address,
+            "consultationPrice" to consultationPrice,
+            "rating" to rating,
+            "experience" to experience,
+            "languages" to languages,
+            "city" to city,
+            "phone" to phone,
+            "bio" to bio,
+            "email" to email,
+            "name" to name,
+            "surname" to surname,
+            "dateOfBirth" to dateOfBirth,
+            "profilePictureUrl" to profilePictureUrl,
+            "role" to Role.DOCTOR.value,
         )
     }
 
@@ -137,6 +160,28 @@ data class Doctor(
                 dateOfBirth = doctor["dob"] as? String ?: "Unknown date",
                 profilePictureUrl = doctor["profilePictureUrl"] as? String ?: "No profile picture",
                 id = doctor["id"] as? String ?: "No ID provided",
+            )
+        }
+
+        fun fromApplication(application: DoctorApplication): Doctor {
+            return Doctor(
+                speciality = application.speciality,
+                address = application.address,
+                availability = emptyList(), // Availability not provided in application
+                reviews = emptyList(), // Reviews not provided in application
+                consultationPrice = 100, // Default price, can be adjusted later
+                rating = 0.0, // Default rating, can be adjusted later
+                experience = application.yearsOfExperience,
+                languages = listOf("English"), // Default language, can be adjusted later
+                city = application.city,
+                phone = application.phoneNumber,
+                bio = "New doctor", // Default bio, can be adjusted later
+                email = application.email,
+                name = application.firstName,
+                surname = application.lastName,
+                dateOfBirth = application.dateOfBirth.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                profilePictureUrl = "", // No profile picture in application
+                id = application.userId
             )
         }
 

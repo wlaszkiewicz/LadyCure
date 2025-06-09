@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -32,6 +31,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
+import java.time.Period
 
 sealed class Screen(
     val route: String,
@@ -44,9 +44,32 @@ sealed class Screen(
     object Chat : Screen("chat", Icons.Default.Call, "Chat")
     object PeriodTracker : Screen("period_tracker", Icons.Default.DateRange, "Tracker", listOf("user"))
     object Profile : Screen("profile", Icons.Default.AccountCircle, "Profile")
+    object AdminDashboard : Screen("admin", Icons.Default.Dashboard, "Dashboard", listOf("admin"))
+    object AdminUserManagement : Screen(
+        "admin_user_management",
+        Icons.Default.AccountCircle,
+        "Users",
+        listOf("admin")
+    )
+
+    object AdminDoctorManagement :
+        Screen("admin_doctor_management", Icons.Default.Face, "Doctors", listOf("admin"))
+
+    object AdminAnalytics :
+        Screen("admin_analytics", Icons.Default.Analytics, "Analytics", listOf("admin"))
 
     companion object {
-        val allScreens = listOf(Home, Doctors, Chat, PeriodTracker, Profile)
+        val allScreens = listOf(
+            Home,
+            Doctors,
+            Chat,
+            PeriodTracker,
+            Profile,
+            AdminDashboard,
+            AdminUserManagement,
+            AdminDoctorManagement,
+            AdminAnalytics
+        )
 
         fun getRouteForRole(route: String, role: String?): String {
             return if (route == "home" && role == "doctor") "doctor_main" else route

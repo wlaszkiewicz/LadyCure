@@ -1,25 +1,12 @@
 package com.example.ladycure.repository
 
-import android.net.Uri
 import android.util.Log
 import androidx.navigation.NavController
-import com.example.ladycure.data.Appointment
-import com.example.ladycure.data.AppointmentType
-import com.example.ladycure.data.doctor.Doctor
-import com.example.ladycure.data.doctor.DoctorAvailability
-import com.example.ladycure.data.doctor.Referral
-import com.example.ladycure.utility.PdfUploader
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -44,7 +31,12 @@ class AuthRepository {
                                     when (role) {
                                         "admin" -> navController.navigate("admin")
                                         "doctor" -> navController.navigate("doctor_main")
-                                        else -> navController.navigate("home")
+                                        "doctor_pending" -> navController.navigate("doctor_pending")
+                                        "user" -> navController.navigate("home")
+                                        else -> {
+                                            onFailure(Exception("Unknown user role: $role"))
+                                            return@addOnSuccessListener
+                                        }
                                     }
                                     onSuccess()
                                 } else {
@@ -74,8 +66,9 @@ class AuthRepository {
         name: String,
         surname: String,
         dateOfBirth: String,
-        password: String
-    ): Result<Unit> {
+        password: String,
+        role: String = "user"
+    ): Result<String> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user ?: throw Exception("User registration failed")
@@ -85,13 +78,13 @@ class AuthRepository {
                 "name" to name,
                 "surname" to surname,
                 "dob" to dateOfBirth,
-                "role" to "user"
+                "role" to role
             )
             firestore.collection("users").document(user.uid).set(userData)
                 .addOnSuccessListener { }
                 .addOnFailureListener { throw Exception("User registration failed") }
 
-            Result.success(Unit)
+            Result.success(user.uid)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -100,6 +93,33 @@ class AuthRepository {
 
     fun signOut() {
         Firebase.auth.signOut()
+    }
+
+    suspend fun getAdminStats(): Result<MutableMap<String, Any>> {
+        return try {
+            val stats = mutableMapOf<String, Any>()
+            firestore.collection("users").get().addOnSuccessListener { users ->
+                stats["totalUsers"] = users.size()
+            }.await()
+
+            firestore.collection("users")
+                .whereEqualTo("role", "doctor")
+                .get()
+                .addOnSuccessListener { doctors ->
+                    stats["activeDoctors"] = doctors.size()
+                }.await()
+
+            firestore.collection("applications").whereEqualTo("status", "pending").get()
+                .addOnSuccessListener { applications ->
+                    stats["pendingApplications"] = applications.size()
+                }.await()
+
+
+            Result.success(stats)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Error fetching admin stats: ${e.message}")
+            Result.failure(e)
+        }
     }
 }
 

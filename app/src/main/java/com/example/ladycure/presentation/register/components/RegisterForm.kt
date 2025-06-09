@@ -15,7 +15,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,14 +28,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.ladycure.presentation.register.RegisterUiState
 import java.time.LocalDate
@@ -79,7 +79,9 @@ fun RegisterForm(
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { firstNameFocus.requestFocus() }),
-            modifier = Modifier.fillMaxWidth().focusRequester(emailFocus)
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(emailFocus)
         )
 
         // Name Fields Row
@@ -95,18 +97,22 @@ fun RegisterForm(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { lastNameFocus.requestFocus() }),
-                modifier = Modifier.weight(1f).focusRequester(firstNameFocus)
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(firstNameFocus)
             )
 
             OutlinedTextField(
                 value = state.surname,
                 onValueChange = onSurnameChange,
                 label = { Text("Last name") },
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Surname") },
+                leadingIcon = { Icon(Icons.Default.PersonOutline, contentDescription = "Surname") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
-                modifier = Modifier.weight(1f).focusRequester(lastNameFocus)
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(lastNameFocus)
             )
         }
 
@@ -162,14 +168,21 @@ fun RegisterForm(
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { confirmPasswordFocus.requestFocus() }),
-            modifier = Modifier.fillMaxWidth().focusRequester(passwordFocus)
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(passwordFocus)
         )
 
         OutlinedTextField(
             value = state.confirmPassword,
             onValueChange = onConfirmPasswordChange,
             label = { Text("Confirm Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password") },
+            leadingIcon = {
+                Icon(
+                    Icons.Default.LockReset,
+                    contentDescription = "Confirm Password"
+                )
+            },
             visualTransformation = PasswordVisualTransformation(),
             isError = state.confirmPassword.isNotBlank() && state.password != state.confirmPassword,
             supportingText = {
@@ -178,20 +191,25 @@ fun RegisterForm(
                 }
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = {   if (state.isValid()) {
-                onRegisterClick()
-                focusManager.clearFocus()
-            } else {
-                when (state.getFirstInvalidField()) {
-                    "email" -> emailFocus.requestFocus()
-                    "firstName" -> firstNameFocus.requestFocus()
-                    "lastName" -> lastNameFocus.requestFocus()
-                    "password" -> passwordFocus.requestFocus()
-                    "confirmPassword" -> confirmPasswordFocus.requestFocus()
-                    // For date of birth, you might need special handling
-                    "dob" -> { /* focus on date picker if possible */ }
-                }}}),
-            modifier = Modifier.fillMaxWidth().focusRequester(confirmPasswordFocus)
+            keyboardActions = KeyboardActions(onDone = {
+                if (state.isValid()) {
+                    onRegisterClick()
+                    focusManager.clearFocus()
+                } else {
+                    when (state.getFirstInvalidField()) {
+                        "email" -> emailFocus.requestFocus()
+                        "firstName" -> firstNameFocus.requestFocus()
+                        "lastName" -> lastNameFocus.requestFocus()
+                        "password" -> passwordFocus.requestFocus()
+                        "confirmPassword" -> confirmPasswordFocus.requestFocus()
+                        // For date of birth, you might need special handling
+                        "dob" -> {}
+                    }
+                }
+            }),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(confirmPasswordFocus)
         )
 
         // Register Button
