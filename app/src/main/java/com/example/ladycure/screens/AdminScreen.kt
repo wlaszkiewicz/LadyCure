@@ -39,10 +39,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.WorkOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -70,12 +72,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import androidx.navigation.NavController
@@ -86,6 +92,7 @@ import com.example.ladycure.data.User
 import com.example.ladycure.data.doctor.ApplicationStatus
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorApplication
+import com.example.ladycure.data.doctor.Speciality
 import com.example.ladycure.presentation.admin.AddUserDialog
 import com.example.ladycure.presentation.admin.AdminSearchBar
 import com.example.ladycure.presentation.admin.DeleteConfirmationDialog
@@ -102,6 +109,7 @@ import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -128,9 +136,17 @@ fun AnalyticsSummaryCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "Analytics Overview",
-                    style = MaterialTheme.typography.titleLarge.copy(color = DefaultPrimary)
+                    style = MaterialTheme.typography.titleLarge.copy(color = DefaultOnPrimary)
                 )
             }
+            listOf(
+                Color(0xFFFFF0F5), // light pink
+                Color(0xFFF0F8FF), // light blue
+                Color(0xFFFAFAD2), // light yellow
+                Color(0xFFE9FFEB), // light green
+                Color(0xFFE2DCFA) // light purple
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -144,6 +160,12 @@ fun AnalyticsSummaryCard(
                             "pendingApplications" -> "Pending Apps"
                             else -> key.replaceFirstChar { it.uppercase() }
                         },
+                        color = when (key) {
+                            "totalUsers" -> DefaultPrimary
+                            "activeDoctors" -> BabyBlue
+                            "pendingApplications" -> Yellow
+                            else -> DefaultPrimary
+                        },
                         value = value.toString()
                     )
                 }
@@ -156,7 +178,7 @@ fun AnalyticsSummaryCard(
             )
             TextButton(onClick = onClick) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("View Full Analytics", color = DefaultPrimary)
+                    Text("View Full Analytics", color = DefaultOnPrimary)
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "View Full Analytics",
@@ -169,13 +191,13 @@ fun AnalyticsSummaryCard(
 }
 
 @Composable
-fun StatisticItem(label: String, value: String) {
+fun StatisticItem(label: String, color: Color, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             value,
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
-                color = DefaultPrimary
+                color = color.copy(alpha = 0.9f)
             )
         )
         Text(
@@ -232,81 +254,194 @@ fun ApplicationItemCard(
         ApplicationStatus.NEEDS_MORE_INFO -> BabyBlue
     }
 
+    val gradientColors = listOf(
+        statusColor.copy(alpha = 0.05f),
+        statusColor.copy(alpha = 0.02f),
+        Color.White
+    )
+
     Card(
         modifier = modifier
-            .width(280.dp)
+            .width(300.dp)
             .padding(8.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "${application.firstName} ${application.lastName}",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = DefaultPrimary
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = gradientColors,
+                        startY = 0f,
+                        endY = 100f
                     )
                 )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(statusColor.copy(alpha = 0.1f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                // Header row with name and status
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = application.status.displayName.replace("_", " ")
-                            .replaceFirstChar { it.uppercase() },
+                        "${application.firstName} ${application.lastName}",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = DefaultOnPrimary.copy(alpha = 0.9f)
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(statusColor.copy(alpha = 0.15f))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = application.status.displayName.replace("_", " ")
+                                .replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = statusColor,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(application.speciality.icon),
+                        contentDescription = "Specialty",
+                        tint = DefaultPrimary.copy(alpha = 0.9f),
+                        modifier = Modifier.size(19.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        application.speciality.displayName,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = statusColor
+                            color = DefaultPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     )
                 }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            bottom = 4.dp
+                        ), // the painter of speciality has some additional padding so we add so they can be alligned
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Experience
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.WorkOutline,
+                            contentDescription = "Experience",
+                            tint = DefaultOnPrimary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "${application.yearsOfExperience} yrs exp",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = DefaultOnPrimary.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
+
+                    // Submission date
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = "Submission date",
+                            tint = DefaultOnPrimary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            application.submissionDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = DefaultOnPrimary.copy(alpha = 0.7f),
+                            )
+                        )
+                    }
+                }
+
+                if (application.currentWorkplace.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            application.currentWorkplace,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = DefaultOnPrimary.copy(alpha = 0.6f),
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                application.speciality.displayName,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = DefaultOnPrimary.copy(alpha = 0.7f)
-                )
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    application.submissionDate.format(DateTimeFormatter.ofPattern("MMM dd")),
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                    )
-                )
-
-                Text(
-                    "${application.yearsOfExperience} yrs exp",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                    )
-                )
-            }
         }
     }
 }
+
+@Preview
+@Composable
+fun ApplicationItemCardPreview() {
+    val application = DoctorApplication(
+        userId = "housemd-001",
+        firstName = "Gregory",
+        lastName = "House",
+        email = "house@princetonplainsboro.com",
+        dateOfBirth = LocalDate.of(1959, 6, 11),
+        licenseNumber = "MD42069",
+        licensePhotoUrl = "https://somecdn.com/house/license.jpg",
+        diplomaPhotoUrl = "https://somecdn.com/house/diploma.jpg",
+        speciality = Speciality.OTHER,
+        yearsOfExperience = 25,
+        currentWorkplace = "Princeton-Plainsboro Teaching Hospital",
+        phoneNumber = "+1-555-420-6969",
+        address = "221B Vicodin Lane", // I had to 😈
+        city = "Princeton",
+        status = ApplicationStatus.PENDING,
+        submissionDate = LocalDate.now(),
+        reviewNotes = "Walks with a cane, limps, but diagnoses what no one else can. Slight attitude issue. Genius level intellect. Proceed with caution."
+    )
+
+
+    ApplicationItemCard(
+        application = application,
+        onClick = {}
+    )
+}
+
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -625,7 +760,7 @@ fun ApplicationDetailsDialog(
                         Text(
                             "This application has been approved.",
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Green.copy(alpha = 0.6f)
+                                color = Green.copy(alpha = 0.9f)
                             ),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center

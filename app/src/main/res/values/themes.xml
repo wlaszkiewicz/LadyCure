@@ -2,8 +2,20 @@
 <resources>
 
     <style name="Theme.LadyCure" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">#C281A9</item>
+        <!-- Core Colors -->
+        <item name="colorPrimary">#C281A9</item> <!-- Pink40 -->
+        <item name="colorPrimaryVariant">#C4809E</item> <!-- Pink80 -->
+        <item name="colorSecondary">#9B5575</item> <!-- Pink30 -->
+        <item name="colorSecondaryVariant">#A14E73</item> <!-- Pink90 -->
+        <item name="android:colorBackground">#EEE0E4</item> <!-- Pink10 -->
+        <item name="android:textColorPrimary">#261D1E</item> <!-- Neutral99 -->
+
+        <!-- Status Bar -->
         <item name="android:statusBarColor">#EEE0E4</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- DatePicker, Dialogs, Stuff -->
+        <item name="colorSurface">#EEE0E4</item>
+        <item name="colorOnSurface">#261D1E</item>
     </style>
 </resources>

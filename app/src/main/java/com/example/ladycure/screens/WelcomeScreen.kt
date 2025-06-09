@@ -75,7 +75,7 @@ fun WelcomeScreen(navController: NavController) {
                     popUpTo(navController.graph.startDestinationId) { inclusive = true }
                 }
 
-                else -> navController.navigate("home") {
+                else -> navController.navigate("login") {
                     popUpTo(navController.graph.startDestinationId) { inclusive = true }
                 }
             }
