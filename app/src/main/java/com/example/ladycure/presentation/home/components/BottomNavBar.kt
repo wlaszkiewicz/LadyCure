@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -41,10 +42,11 @@ sealed class Screen(
     object Home : Screen("home", Icons.Default.Home, "Home")
     object Doctors : Screen("doctor", Icons.Default.Face, "Doctors", listOf("user"))
     object Chat : Screen("chat", Icons.Default.Call, "Chat")
+    object PeriodTracker : Screen("period_tracker", Icons.Default.DateRange, "Tracker", listOf("user"))
     object Profile : Screen("profile", Icons.Default.AccountCircle, "Profile")
 
     companion object {
-        val allScreens = listOf(Home, Doctors, Chat, Profile)
+        val allScreens = listOf(Home, Doctors, Chat, PeriodTracker, Profile)
 
         fun getRouteForRole(route: String, role: String?): String {
             return if (route == "home" && role == "doctor") "doctor_main" else route
