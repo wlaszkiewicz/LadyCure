@@ -72,6 +72,7 @@ fun DoctorChatScreen(
     var messageText by remember { mutableStateOf("") }
     var attachmentUri by remember { mutableStateOf<Uri?>(null) }
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
+    var isSending by remember { mutableStateOf(false) } // Dodane stan wysyłania
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -176,7 +177,11 @@ fun DoctorChatScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .imePadding()
+                    .navigationBarsPadding()
+            ) {
                 attachmentUri?.let { uri ->
                     ModernAttachmentPreview(
                         uri = uri,
@@ -188,6 +193,7 @@ fun DoctorChatScreen(
                     onMessageChange = { messageText = it },
                     onSendMessage = {
                         if (messageText.isNotEmpty() || attachmentUri != null) {
+                            isSending = true
                             scope.launch {
                                 try {
                                     val userName = chatRepository.getCurrentUserName()
@@ -209,13 +215,16 @@ fun DoctorChatScreen(
                                     snackbarHostState.showSnackbar(
                                         "Message could not be sent: ${e.message}"
                                     )
+                                } finally {
+                                    isSending = false
                                 }
                             }
                         }
                     },
                     onAttachFile = {
                         filePickerLauncher.launch("*/*")
-                    }
+                    },
+                    isSending = isSending
                 )
             }
         }
@@ -257,6 +266,7 @@ fun ModernMessageInputBar(
     onMessageChange: (String) -> Unit,
     onSendMessage: () -> Unit,
     onAttachFile: () -> Unit,
+    isSending: Boolean, // Dodany parametr stanu wysyłania
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -285,7 +295,8 @@ fun ModernMessageInputBar(
                     ),
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = Color.White
-                )
+                ),
+                enabled = !isSending // Dezaktywacja podczas wysyłania
             ) {
                 Icon(
                     imageVector = Icons.Default.AttachFile,
@@ -322,13 +333,14 @@ fun ModernMessageInputBar(
                         color = Color.White
                     ),
                     maxLines = 3,
+                    enabled = !isSending, // Dezaktywacja podczas wysyłania
                     decorationBox = { innerTextField ->
                         innerTextField()
                     }
                 )
             }
 
-            val sendButtonEnabled by rememberUpdatedState(messageText.isNotEmpty())
+            val sendButtonEnabled by rememberUpdatedState(messageText.isNotEmpty() && !isSending)
             val sendButtonColor by animateColorAsState(
                 if (sendButtonEnabled) Color.White
                 else Color.White.copy(alpha = 0.4f),
@@ -336,23 +348,37 @@ fun ModernMessageInputBar(
                 label = "SendButtonColor"
             )
 
-            IconButton(
-                onClick = onSendMessage,
+            Box(
                 modifier = Modifier
                     .size(48.dp)
                     .background(
-                        color = Color.White,
+                        color = if (sendButtonEnabled) Color.White else Grey.copy(alpha = 0.7f),
                         shape = CircleShape
                     ),
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = DefaultPrimary
-                )
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send message",
-                    modifier = Modifier.size(24.dp)
-                )
+                if (isSending) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = DefaultPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    IconButton(
+                        onClick = onSendMessage,
+                        modifier = Modifier.size(48.dp),
+                        enabled = sendButtonEnabled,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = DefaultPrimary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send message",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
         }
     }
