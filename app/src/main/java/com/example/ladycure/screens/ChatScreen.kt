@@ -62,8 +62,6 @@ import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
 
-// Klasa danych do przechowywania UID (czyli Twojego 'id' z User) i pełnej nazwy uczestnika czatu.
-// Ważne: `uid` tutaj to odzwierciedlenie Firebase User ID (czyli 'id' z Twojej klasy User/Doctor/Patient).
 data class ChatParticipantInfo(
     val uid: String,
     val fullName: String
@@ -79,7 +77,6 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
     var showDoctorsList by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
 
-    // Lista uczestników czatu (lekarzy lub pacjentów), zawierająca ich UID i pełną nazwę.
     val chatParticipants = remember { mutableStateOf<List<ChatParticipantInfo>>(emptyList()) }
 
     BackHandler(enabled = showDoctorsList) {
@@ -94,11 +91,6 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             error = result.exceptionOrNull()?.message ?: "Unknown error"
         }
 
-        // Logika pobierania listy lekarzy/pacjentów
-        // Ważne: Funkcje `getDoctorsFromAppointmentsWithUids()` i `getPatientsFromAppointmentsWithUids()`
-        // w `AppointmentRepository` muszą zwracać `List<ChatParticipantInfo>`.
-        // Te funkcje zostały już zmienione w poprzedniej odpowiedzi, aby to robiły,
-        // pobierając `document.id` z Firestore jako `uid`.
         if (Role.DOCTOR == Role.fromValue(role)) {
             val patientsResult = appointmentRepo.getPatientsFromAppointmentsWithUids()
             if (patientsResult.isSuccess) {
