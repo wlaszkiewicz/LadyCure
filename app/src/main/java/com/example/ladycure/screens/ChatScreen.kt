@@ -62,6 +62,13 @@ import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
 
+// Klasa danych do przechowywania UID (czyli Twojego 'id' z User) i pełnej nazwy uczestnika czatu.
+// Ważne: `uid` tutaj to odzwierciedlenie Firebase User ID (czyli 'id' z Twojej klasy User/Doctor/Patient).
+data class ChatParticipantInfo(
+    val uid: String,
+    val fullName: String
+)
+
 @Composable
 fun ChatScreen(navController: NavHostController, snackbarController: SnackbarController?) {
     var role by remember { mutableStateOf("") }
@@ -71,7 +78,9 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
     var error by remember { mutableStateOf("") }
     var showDoctorsList by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
-    val doctorNames = remember { mutableStateOf<List<String>>(emptyList()) }
+
+    // Lista uczestników czatu (lekarzy lub pacjentów), zawierająca ich UID i pełną nazwę.
+    val chatParticipants = remember { mutableStateOf<List<ChatParticipantInfo>>(emptyList()) }
 
     BackHandler(enabled = showDoctorsList) {
         showDoctorsList = false
@@ -85,17 +94,22 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             error = result.exceptionOrNull()?.message ?: "Unknown error"
         }
 
+        // Logika pobierania listy lekarzy/pacjentów
+        // Ważne: Funkcje `getDoctorsFromAppointmentsWithUids()` i `getPatientsFromAppointmentsWithUids()`
+        // w `AppointmentRepository` muszą zwracać `List<ChatParticipantInfo>`.
+        // Te funkcje zostały już zmienione w poprzedniej odpowiedzi, aby to robiły,
+        // pobierając `document.id` z Firestore jako `uid`.
         if (Role.DOCTOR == Role.fromValue(role)) {
-            val patientsResult = appointmentRepo.getPatientsFromAppointments()
+            val patientsResult = appointmentRepo.getPatientsFromAppointmentsWithUids()
             if (patientsResult.isSuccess) {
-                doctorNames.value = patientsResult.getOrNull()?.distinct() ?: emptyList()
+                chatParticipants.value = patientsResult.getOrNull()?.distinct() ?: emptyList()
             } else {
                 error = patientsResult.exceptionOrNull()?.message ?: "Failed to load patient names"
             }
         } else if (Role.USER == Role.fromValue(role)) {
-            val doctorsResult = appointmentRepo.getDoctorsFromAppointments()
+            val doctorsResult = appointmentRepo.getDoctorsFromAppointmentsWithUids()
             if (doctorsResult.isSuccess) {
-                doctorNames.value = doctorsResult.getOrNull()?.distinct() ?: emptyList()
+                chatParticipants.value = doctorsResult.getOrNull()?.distinct() ?: emptyList()
             } else {
                 error = doctorsResult.exceptionOrNull()?.message ?: "Failed to load doctor names"
             }
@@ -146,12 +160,18 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                     modifier = Modifier.weight(1f)
                 )
             } else {
+                // Przekazujemy listę obiektów ChatParticipantInfo
                 DoctorsListView(
-                    doctorNames = doctorNames.value,
+                    participants = chatParticipants.value,
+                    onParticipantSelected = { participantInfo ->
+                        // Używamy UID (czyli 'id' z Twojego modelu User) i pełnej nazwy z obiektu ChatParticipantInfo
+                        val otherUserId = participantInfo.uid // To jest ID dokumentu Firebase
+                        val otherUserName = participantInfo.fullName
 
-                    onDoctorSelected = { doctorName ->
-                        //tu na razie jest dwa razy doctorName, bedzie jego id
-                        navController.navigate("chat/$doctorName/$doctorName")
+                        // Ważne: Zakoduj URL, aby uniknąć problemów ze spacjami i znakami specjalnymi w nazwie
+                        val encodedOtherUserName = Uri.encode(otherUserName)
+
+                        navController.navigate("chat/$otherUserId/$encodedOtherUserName")
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -309,7 +329,7 @@ private fun InitialChatView(
             ) {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Find doctors",
+                    contentDescription = "Find contacts",
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -344,17 +364,17 @@ private fun InitialChatView(
 
 @Composable
 private fun DoctorsListView(
-    doctorNames: List<String>,
-    onDoctorSelected: (String) -> Unit,
+    participants: List<ChatParticipantInfo>,
+    onParticipantSelected: (ChatParticipantInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(doctorNames) { doctorName ->
+        items(participants) { participant ->
             Card(
-                onClick = { onDoctorSelected(doctorName) },
+                onClick = { onParticipantSelected(participant) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp),
@@ -366,66 +386,65 @@ private fun DoctorsListView(
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 border = BorderStroke(0.5.dp, DefaultPrimary.copy(alpha = 0.1f))
             ) {
-                    Row(
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(DefaultPrimary.copy(alpha = 0.05f))
+                            .border(
+                                width = 1.dp,
+                                color = DefaultPrimary.copy(alpha = 0.2f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(DefaultPrimary.copy(alpha = 0.05f))
-                                .border(
-                                    width = 1.dp,
-                                    color = DefaultPrimary.copy(alpha = 0.2f),
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Doctor profile",
-                                tint = DefaultPrimary.copy(alpha = 0.6f),
-                                modifier = Modifier.size(40.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = doctorName,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = DefaultPrimary
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Available now",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
-                                )
-                            )
-                        }
-
                         Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = "View chat",
-                            tint = DefaultPrimary.copy(alpha = 0.5f),
-                            modifier = Modifier.padding(start = 8.dp)
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "User profile icon",
+                            tint = DefaultPrimary.copy(alpha = 0.6f),
+                            modifier = Modifier.size(40.dp)
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = participant.fullName,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = DefaultPrimary
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Available now", // This might need a real-time status
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = DefaultOnPrimary.copy(alpha = 0.6f)
+                            )
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "View chat",
+                        tint = DefaultPrimary.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
+            }
         }
 
-        if (doctorNames.isEmpty()) {
+        if (participants.isEmpty()) {
             item {
                 Column(
                     modifier = Modifier
@@ -435,7 +454,7 @@ private fun DoctorsListView(
                 ) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "No doctors",
+                        contentDescription = "No contacts",
                         tint = DefaultPrimary.copy(alpha = 0.3f),
                         modifier = Modifier.size(64.dp)
                     )

@@ -1,6 +1,7 @@
 package com.example.ladycure.repository
 
 import com.example.ladycure.data.Appointment
+import com.example.ladycure.screens.ChatParticipantInfo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -334,6 +335,67 @@ class AppointmentRepository {
                 document.getString("patientName")
             }
             Result.success(patientNames)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getPatientsFromAppointmentsWithUids(): Result<List<ChatParticipantInfo>> {
+        return try {
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                ?: return Result.failure(IllegalStateException("User not authenticated"))
+
+            val querySnapshot = firestore.collection("appointments")
+                .whereEqualTo("doctorId", currentUserId)
+                .get()
+                .await()
+
+            val patientUids = querySnapshot.documents.mapNotNull { it.getString("patientId") }.distinct()
+            val patientsInfo = mutableListOf<ChatParticipantInfo>()
+
+            for (uid in patientUids) {
+                val userDoc = firestore.collection("users").document(uid).get().await()
+                val name = userDoc.getString("name") ?: ""
+                val surname = userDoc.getString("surname") ?: ""
+
+                if (name.isNotBlank() || surname.isNotBlank()) {
+                    patientsInfo.add(ChatParticipantInfo(userDoc.id, "$name $surname".trim()))
+                } else if (userDoc.exists()) {
+                    patientsInfo.add(ChatParticipantInfo(userDoc.id, "Unknown User"))
+                }
+            }
+            Result.success(patientsInfo)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getDoctorsFromAppointmentsWithUids(): Result<List<ChatParticipantInfo>> {
+        return try {
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                ?: return Result.failure(IllegalStateException("User not authenticated"))
+
+            val querySnapshot = firestore.collection("appointments")
+                .whereEqualTo("patientId", currentUserId)
+                .get()
+                .await()
+
+            val doctorUids = querySnapshot.documents.mapNotNull { it.getString("doctorId") }.distinct()
+            val doctorsInfo = mutableListOf<ChatParticipantInfo>()
+
+            for (uid in doctorUids) {
+                val userDoc = firestore.collection("users").document(uid).get().await()
+
+                val name = userDoc.getString("name") ?: ""
+                val surname = userDoc.getString("surname") ?: ""
+
+                if (name.isNotBlank() || surname.isNotBlank()) {
+                    doctorsInfo.add(ChatParticipantInfo(userDoc.id, "$name $surname".trim()))
+                } else if (userDoc.exists()) {
+                    doctorsInfo.add(ChatParticipantInfo(userDoc.id, "Unknown Doctor"))
+                }
+            }
+            Result.success(doctorsInfo)
         } catch (e: Exception) {
             Result.failure(e)
         }
