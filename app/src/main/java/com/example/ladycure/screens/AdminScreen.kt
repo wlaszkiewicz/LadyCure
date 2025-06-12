@@ -448,7 +448,7 @@ fun ApplicationItemCardPreview() {
 fun ApplicationDetailsDialog(
     application: DoctorApplication,
     onDismiss: () -> Unit,
-    onStatusChange: (ApplicationStatus, String?) -> Unit,
+    onStatusChange: (ApplicationStatus, String?, Boolean) -> Unit,
     onApprove: () -> Unit,
 ) {
 
@@ -655,7 +655,8 @@ fun ApplicationDetailsDialog(
                                         showEditComment = false
                                         onStatusChange(
                                             application.status,
-                                            editedComment.ifEmpty { null })
+                                            editedComment.ifEmpty { null }, true
+                                        )
                                     },
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
@@ -729,7 +730,8 @@ fun ApplicationDetailsDialog(
                                 onClick = {
                                     onStatusChange(
                                         ApplicationStatus.APPROVED,
-                                        editedComment.ifEmpty { null })
+                                        editedComment.ifEmpty { null }, false
+                                    )
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp),
@@ -842,7 +844,7 @@ fun ApplicationDetailsDialog(
                             }
 
                             else -> {
-                                onStatusChange(newStatus, tempComment.ifEmpty { null })
+                                onStatusChange(newStatus, tempComment.ifEmpty { null }, false)
                             }
                         }
                         showStatusChangeDialog = null
@@ -856,7 +858,10 @@ fun ApplicationDetailsDialog(
                         },
                         contentColor = Color.White
                     ),
-                    enabled = tempComment.isNotEmpty()
+                    enabled = when (newStatus) {
+                        ApplicationStatus.APPROVED -> true
+                        else -> tempComment.isNotEmpty()
+                    } // Ensure comment is provided for REJECTED and NEEDS_MORE_INFO
                 ) {
                     Text(
                         when (newStatus) {
@@ -1215,7 +1220,7 @@ fun AdminDashboardScreen(
         ApplicationDetailsDialog(
             application = selectedApplication!!,
             onDismiss = { showApplicationsDialog = false },
-            onStatusChange = { newStatus, comment ->
+            onStatusChange = { newStatus, comment, justComment ->
                 coroutineScope.launch {
                     val result = applicationRepo.updateApplicationStatus(
                         selectedApplication!!.userId,
@@ -1223,7 +1228,11 @@ fun AdminDashboardScreen(
                         comment ?: selectedApplication!!.reviewNotes ?: ""
                     )
                     if (result.isSuccess) {
-                        snackbarController.showMessage("Application status changed to ${newStatus.displayName} successfully.")
+                        if (justComment == true) {
+                            snackbarController.showMessage("Comment updated successfully.")
+                        } else {
+                            snackbarController.showMessage("Application status changed to ${newStatus.displayName} successfully.")
+                        }
                         showApplicationsDialog = false
                         refreshApplications(
                             applicationRepo,
