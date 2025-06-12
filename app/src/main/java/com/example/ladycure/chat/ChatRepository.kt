@@ -1,7 +1,8 @@
 package com.example.ladycure.chat
 
 import android.net.Uri
-import android.util.Log // Dodaj import Log
+import android.util.Log
+import android.webkit.MimeTypeMap
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -48,23 +49,28 @@ class ChatRepository {
     }
 
     suspend fun uploadFile(uri: Uri): String {
-        val storageRef = storage.reference
-        val fileRef = storageRef.child("chat_attachments/${UUID.randomUUID()}")
-        val uploadTask = fileRef.putFile(uri).await()
-        return fileRef.downloadUrl.await().toString()
+        val fileExtension = MimeTypeMap.getSingleton().getExtensionFromMimeType(
+            null
+        )
+        val fileName = "${UUID.randomUUID()}${if (fileExtension != null) ".$fileExtension" else ""}"
+        val storageRef = storage.reference.child("chat_attachments/$fileName")
+        val uploadTask = storageRef.putFile(uri).await()
+        return storageRef.downloadUrl.await().toString()
     }
 
-    fun sendMessage(chatId: String, message: Message) {
-        firestore.collection("chats")
-            .document(chatId)
-            .collection("messages")
-            .add(message.toMap())
-            .addOnSuccessListener {
-                Log.d("ChatRepository", "Message sent successfully to $chatId")
-            }
-            .addOnFailureListener { e ->
-                Log.e("ChatRepository", "Error sending message to $chatId", e)
-            }
+    suspend fun sendMessage(chatId: String, message: Message): Result<Unit> {
+        return try {
+            firestore.collection("chats")
+                .document(chatId)
+                .collection("messages")
+                .add(message.toMap())
+                .await()
+            Log.d("ChatRepository", "Message sent successfully to $chatId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error sending message to $chatId", e)
+            Result.failure(e)
+        }
     }
 
     fun getMessages(chatId: String, onMessagesReceived: (List<Message>) -> Unit) {
@@ -113,9 +119,11 @@ class ChatRepository {
             if (document.exists()) {
                 Result.success(document.data)
             } else {
-                Result.failure(Exception("User document does not exist"))
+                Log.d("ChatRepository", "User document for $userId does not exist.")
+                Result.success(null)
             }
         } catch (e: Exception) {
+            Log.e("ChatRepository", "Error fetching specific user data for $userId", e)
             Result.failure(e)
         }
     }
