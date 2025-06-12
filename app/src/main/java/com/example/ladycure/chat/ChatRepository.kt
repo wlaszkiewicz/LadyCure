@@ -30,7 +30,7 @@ class ChatRepository {
                 val snapshot = transaction.get(chatRef)
                 if (!snapshot.exists()) {
                     val chatData = mapOf(
-                        "participants" to participantsWithNames,
+                        "participants" to participants,
                         "createdAt" to System.currentTimeMillis()
                     )
                     transaction.set(chatRef, chatData)
