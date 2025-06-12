@@ -53,7 +53,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.ladycure.R
 import com.example.ladycure.data.doctor.Doctor
-import com.example.ladycure.repository.UserRepository // Import UserRepository
+import com.example.ladycure.repository.UserRepository
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -67,11 +67,13 @@ fun DoctorChatScreen(
     otherUserId: String,
     otherUserName: String,
     chatRepository: ChatRepository = ChatRepository(),
-    chatViewModel: ChatViewModel = ChatViewModel(chatRepository)
+    chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
+    userRepository: UserRepository = UserRepository() // Inject UserRepository
 ) {
     val currentUserId = chatRepository.getCurrentUserId()
     val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
     val context = LocalContext.current
+
 
     var messageText by remember { mutableStateOf("") }
     var attachmentUri by remember { mutableStateOf<Uri?>(null) }
@@ -83,6 +85,8 @@ fun DoctorChatScreen(
     var otherUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
     var currentUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
     var otherUserPhoneNumber by remember { mutableStateOf<String?>(null) }
+    var otherUserRole by remember { mutableStateOf<String?>(null) }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -94,21 +98,21 @@ fun DoctorChatScreen(
         chatRepository.getMessages(chatId) { messageList ->
             messages = messageList
         }
-        // Fetching profile pictiures
+        // Fetching profile pictures
         otherUserProfilePictureUrl = chatRepository.getUserProfilePicture(otherUserId)
         currentUserProfilePictureUrl = chatRepository.getUserProfilePicture(currentUserId)
 
         // Fetch phone number
         chatRepository.getSpecificUserData(otherUserId).onSuccess { userData ->
             otherUserPhoneNumber = userData?.get("phone") as? String
+            otherUserRole = userData?.get("role") as? String
         }.onFailure { e ->
-            snackbarHostState.showSnackbar("Failed to load doctor's phone number: ${e.message}")
+            snackbarHostState.showSnackbar("Failed to load user data: ${e.message}")
         }
     }
 
     Scaffold(
         topBar = {
-            // Modern header with doctor info
             Surface(
                 color = DefaultPrimary,
                 tonalElevation = 4.dp,
@@ -191,7 +195,7 @@ fun DoctorChatScreen(
                             )
                         )
                         Text(
-                            text = "Doctor",
+                            text = otherUserRole?.capitalize(Locale.getDefault()) ?: "User",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = Color.White.copy(alpha = 0.8f)
                             )
@@ -216,7 +220,7 @@ fun DoctorChatScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Phone,
-                                contentDescription = "Call Doctor",
+                                contentDescription = "Call ${otherUserName}",
                                 tint = Color.White
                             )
                         }
@@ -254,6 +258,10 @@ fun DoctorChatScreen(
                                         } ?: "Attachment"
                                     } else null
 
+                                    val attachmentMimeType = if (attachmentUri != null) {
+                                        context.contentResolver.getType(attachmentUri!!)
+                                    } else null
+
                                     val message = Message(
                                         sender = currentUserId,
                                         senderName = userName,
@@ -263,7 +271,8 @@ fun DoctorChatScreen(
                                         attachmentUrl = if (attachmentUri != null) {
                                             chatRepository.uploadFile(attachmentUri!!)
                                         } else null,
-                                        attachmentFileName = attachmentFileName
+                                        attachmentFileName = attachmentFileName,
+                                        attachmentMimeType = attachmentMimeType
                                     )
 
                                     chatRepository.sendMessage(chatId, message)
@@ -469,6 +478,7 @@ fun ModernMessageBubble(
 
     val senderDisplayName = if (isCurrentUser) "Me" else message.senderName
     val profilePictureSize = 36.dp
+    val context = LocalContext.current
 
     Row(
         modifier = modifier
@@ -555,12 +565,33 @@ fun ModernMessageBubble(
 
                         targetMessage.attachmentUrl?.let { url ->
                             val fileName = targetMessage.attachmentFileName ?: "Attachment"
-                            ModernAttachmentPreview(
-                                url = url,
-                                fileName = fileName,
-                                textColor = textColor,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
+                            val mimeType = targetMessage.attachmentMimeType
+
+                            if (mimeType?.startsWith("image/") == true) {
+                                AsyncImage(
+                                    model = url,
+                                    contentDescription = "Attached image",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(150.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                data = Uri.parse(url)
+                                                type = mimeType
+                                            }
+                                            context.startActivity(intent)
+                                        },
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                ModernAttachmentPreview(
+                                    url = url,
+                                    fileName = fileName,
+                                    textColor = textColor,
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
                         }
 
                         Text(

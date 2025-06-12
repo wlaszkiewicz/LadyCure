@@ -11,6 +11,7 @@ data class Message(
     val timestamp: Timestamp = Timestamp.now(),
     val attachmentUrl: String? = null,
     val attachmentFileName: String? = null,
+    val attachmentMimeType: String? = null
 ) {
 
     fun toMap(): Map<String, Any?> {
@@ -21,7 +22,8 @@ data class Message(
             "text" to text,
             "timestamp" to timestamp,
             "attachmentUrl" to attachmentUrl,
-            "attachmentFileName" to attachmentFileName
+            "attachmentFileName" to attachmentFileName,
+            "attachmentMimeType" to attachmentMimeType
         )
     }
 
@@ -34,7 +36,8 @@ data class Message(
                 text = map["text"] as? String ?: "",
                 timestamp = map["timestamp"] as? Timestamp ?: Timestamp.now(),
                 attachmentUrl = map["attachmentUrl"] as? String,
-                attachmentFileName = map["attachmentFileName"] as? String
+                attachmentFileName = map["attachmentFileName"] as? String,
+                attachmentMimeType = map["attachmentMimeType"] as? String
             )
         }
     }
