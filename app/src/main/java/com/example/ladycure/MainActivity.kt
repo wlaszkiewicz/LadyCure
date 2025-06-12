@@ -47,6 +47,7 @@ import com.example.ladycure.screens.doctor.DoctorApplicationScreen
 import com.example.ladycure.screens.doctor.DoctorHomeScreen
 import com.example.ladycure.screens.doctor.DoctorPendingMainScreen
 import com.example.ladycure.screens.doctor.SetAvailabilityScreen
+import com.example.ladycure.screens.user.PeriodTrackerScreen
 import com.example.ladycure.screens.user.AppointmentsScreen
 import com.example.ladycure.screens.user.BookAppointmentDirectlyScreen
 import com.example.ladycure.screens.user.BookAppointmentScreen
@@ -87,6 +88,7 @@ fun MainScreen(navController: NavHostController) {
         "doctor",
         "chat",
         "profile",
+        "period_tracker",
         "doctor_main",
         "admin",
         "admin_user_management",
@@ -139,6 +141,7 @@ fun MainScreen(navController: NavHostController) {
                 composable("profile") { ProfileScreen(navController) }
                 composable("doctor") { SearchDoctorsScreen(navController, snackbarController) }
                 composable("chat") { ChatScreen(navController, snackbarController) }
+                composable("period_tracker") { PeriodTrackerScreen(navController)}
 
                 composable("admin") { AdminDashboardScreen(navController, snackbarController) }
 

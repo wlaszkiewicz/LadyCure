@@ -103,6 +103,9 @@ dependencies {
     implementation("androidx.biometric:biometric-ktx:1.4.0-alpha02")
     implementation("com.google.android.material:material:1.11.0")
 
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+    implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
+
 }
 
 apply(plugin = "com.google.gms.google-services")
