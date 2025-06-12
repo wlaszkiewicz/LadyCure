@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,13 +69,18 @@ fun DoctorChatScreen(
 ) {
     val currentUserId = chatRepository.getCurrentUserId()
     val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
+    val context = LocalContext.current
 
     var messageText by remember { mutableStateOf("") }
     var attachmentUri by remember { mutableStateOf<Uri?>(null) }
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
-    var isSending by remember { mutableStateOf(false) } // Dodane stan wysyłania
+    var isSending by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var otherUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
+    var currentUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
+
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -87,6 +93,9 @@ fun DoctorChatScreen(
         chatRepository.getMessages(chatId) { messageList ->
             messages = messageList
         }
+        // Fetching profile pictiures
+        otherUserProfilePictureUrl = chatRepository.getUserProfilePicture(otherUserId)
+        currentUserProfilePictureUrl = chatRepository.getUserProfilePicture(currentUserId)
     }
 
     Scaffold(
@@ -125,19 +134,28 @@ fun DoctorChatScreen(
                             .background(DefaultBackground),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = "Profile",
-                            modifier = Modifier.size(50.dp),
-                            tint = DefaultOnPrimary.copy(alpha = 0.6f)
-                        )
+                        if (otherUserProfilePictureUrl != null) {
+                            AsyncImage(
+                                model = otherUserProfilePictureUrl,
+                                contentDescription = "Other user profile picture",
+                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile",
+                                modifier = Modifier.size(50.dp),
+                                tint = DefaultOnPrimary.copy(alpha = 0.6f)
+                            )
+                        }
 
                         // Online status indicator
                         Box(
                             modifier = Modifier
                                 .size(16.dp)
                                 .align(Alignment.BottomEnd)
-                                .background(Color.White, shape = CircleShape)
+                                .background(Color.Green, shape = CircleShape)
                                 .padding(2.dp)
                         ) {
                             Box(
@@ -197,6 +215,14 @@ fun DoctorChatScreen(
                             scope.launch {
                                 try {
                                     val userName = chatRepository.getCurrentUserName()
+                                    val attachmentFileName = if (attachmentUri != null) {
+                                        context.contentResolver.query(attachmentUri!!, null, null, null, null)?.use { cursor ->
+                                            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                                            cursor.moveToFirst()
+                                            cursor.getString(nameIndex)
+                                        } ?: "Attachment"
+                                    } else null
+
                                     val message = Message(
                                         sender = currentUserId,
                                         senderName = userName,
@@ -205,7 +231,8 @@ fun DoctorChatScreen(
                                         timestamp = Timestamp.now(),
                                         attachmentUrl = if (attachmentUri != null) {
                                             chatRepository.uploadFile(attachmentUri!!)
-                                        } else null
+                                        } else null,
+                                        attachmentFileName = attachmentFileName
                                     )
 
                                     chatRepository.sendMessage(chatId, message)
@@ -247,12 +274,18 @@ fun DoctorChatScreen(
                     .fillMaxSize(),
                 reverseLayout = true,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)
             ) {
                 items(messages.reversed()) { message ->
+                    val senderProfilePictureUrl = if (message.sender == currentUserId) {
+                        currentUserProfilePictureUrl
+                    } else {
+                        otherUserProfilePictureUrl
+                    }
                     ModernMessageBubble(
                         message = message,
-                        isCurrentUser = message.sender == currentUserId
+                        isCurrentUser = message.sender == currentUserId,
+                        profilePictureUrl = senderProfilePictureUrl
                     )
                 }
             }
@@ -266,7 +299,7 @@ fun ModernMessageInputBar(
     onMessageChange: (String) -> Unit,
     onSendMessage: () -> Unit,
     onAttachFile: () -> Unit,
-    isSending: Boolean, // Dodany parametr stanu wysyłania
+    isSending: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -296,7 +329,7 @@ fun ModernMessageInputBar(
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = Color.White
                 ),
-                enabled = !isSending // Dezaktywacja podczas wysyłania
+                enabled = !isSending
             ) {
                 Icon(
                     imageVector = Icons.Default.AttachFile,
@@ -333,7 +366,7 @@ fun ModernMessageInputBar(
                         color = Color.White
                     ),
                     maxLines = 3,
-                    enabled = !isSending, // Dezaktywacja podczas wysyłania
+                    enabled = !isSending,
                     decorationBox = { innerTextField ->
                         innerTextField()
                     }
@@ -389,6 +422,7 @@ fun ModernMessageInputBar(
 fun ModernMessageBubble(
     message: Message,
     isCurrentUser: Boolean,
+    profilePictureUrl: String?,
     modifier: Modifier = Modifier
 ) {
     val bubbleColor by animateColorAsState(
@@ -402,67 +436,142 @@ fun ModernMessageBubble(
         label = "Text color"
     )
 
-    Column(
+    val senderDisplayName = if (isCurrentUser) "Me" else message.senderName
+    val profilePictureSize = 36.dp
+
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
+            .padding(vertical = 4.dp),
+        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom
     ) {
         if (!isCurrentUser) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(profilePictureSize)
+                    .clip(CircleShape)
+                    .background(DefaultBackground),
+                contentAlignment = Alignment.Center
+            ) {
+                if (profilePictureUrl != null) {
+                    AsyncImage(
+                        model = profilePictureUrl,
+                        contentDescription = "Receiver profile picture",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Receiver profile picture",
+                        modifier = Modifier.size(profilePictureSize),
+                        tint = DefaultOnPrimary.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+
+        Column(
+            horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
+        ) {
             Text(
-                text = message.senderName,
+                text = senderDisplayName,
                 style = MaterialTheme.typography.labelMedium.copy(
                     color = DefaultPrimary,
                     fontWeight = FontWeight.SemiBold
                 ),
-                modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)
+                modifier = Modifier.padding(
+                    start = 4.dp,
+                    end = 4.dp,
+                    bottom = 4.dp
+                )
             )
-        }
 
-        // Animated message bubble
-        AnimatedContent(
-            targetState = message,
-            transitionSpec = {
-                fadeIn() with fadeOut()
-            },
-            label = "Message bubble animation"
-        ) { targetMessage ->
-            Card(
-                shape = RoundedCornerShape(
-                    topStart = if (isCurrentUser) 16.dp else 4.dp,
-                    topEnd = 16.dp,
-                    bottomStart = 16.dp,
-                    bottomEnd = if (isCurrentUser) 4.dp else 16.dp
-                ),
-                colors = CardDefaults.cardColors(containerColor = bubbleColor),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.animateContentSize()
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            AnimatedContent(
+                targetState = message,
+                transitionSpec = {
+                    fadeIn() with fadeOut()
+                },
+                label = "Message bubble animation"
+            ) { targetMessage ->
+                Card(
+                    shape = RoundedCornerShape(
+                        topStart = if (isCurrentUser) 16.dp else 4.dp,
+                        topEnd = 16.dp,
+                        bottomStart = 16.dp,
+                        bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+                    ),
+                    colors = CardDefaults.cardColors(containerColor = bubbleColor),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    modifier = Modifier
+                        .animateContentSize()
+                        .widthIn(max = 280.dp)
                 ) {
-                    Text(
-                        text = targetMessage.text,
-                        style = MaterialTheme.typography.bodyLarge.copy(color = textColor)
-                    )
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        if (targetMessage.text.isNotEmpty()) {
+                            Text(
+                                text = targetMessage.text,
+                                style = MaterialTheme.typography.bodyLarge.copy(color = textColor)
+                            )
+                        }
 
-                    targetMessage.attachmentUrl?.let { url ->
-                        ModernAttachmentPreview(
-                            url = url,
-                            textColor = textColor,
-                            modifier = Modifier.padding(top = 8.dp)
+                        targetMessage.attachmentUrl?.let { url ->
+                            val fileName = targetMessage.attachmentFileName ?: "Attachment"
+                            ModernAttachmentPreview(
+                                url = url,
+                                fileName = fileName,
+                                textColor = textColor,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+
+                        Text(
+                            text = targetMessage.timestamp.toDate().formatTime(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = textColor.copy(alpha = 0.6f)
+                            ),
+                            modifier = Modifier.align(Alignment.End)
                         )
                     }
+                }
+            }
+        }
 
-                    Text(
-                        text = targetMessage.timestamp.toDate().formatTime(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = textColor.copy(alpha = 0.6f)
-                        ),
-                        modifier = Modifier.align(Alignment.End)
+        if (isCurrentUser) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(profilePictureSize)
+                    .clip(CircleShape)
+                    .background(DefaultBackground),
+                contentAlignment = Alignment.Center
+            ) {
+                if (profilePictureUrl != null) {
+                    AsyncImage(
+                        model = profilePictureUrl,
+                        contentDescription = "My profile picture",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "My profile picture",
+                        modifier = Modifier.size(profilePictureSize),
+                        tint = DefaultOnPrimary.copy(alpha = 0.6f)
                     )
                 }
             }
+            Spacer(modifier = Modifier.width(4.dp))
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
@@ -473,6 +582,15 @@ fun ModernAttachmentPreview(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val fileName = remember(uri) {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            cursor.moveToFirst()
+            cursor.getString(nameIndex)
+        } ?: "Attachment"
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -499,7 +617,7 @@ fun ModernAttachmentPreview(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = uri.lastPathSegment ?: "Attachment",
+                    text = fileName,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
@@ -526,6 +644,7 @@ fun ModernAttachmentPreview(
 @Composable
 fun ModernAttachmentPreview(
     url: String,
+    fileName: String,
     textColor: Color,
     modifier: Modifier = Modifier
 ) {
@@ -554,8 +673,10 @@ fun ModernAttachmentPreview(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "View Attachment",
-                style = MaterialTheme.typography.bodyMedium.copy(color = textColor)
+                text = fileName,
+                style = MaterialTheme.typography.bodyMedium.copy(color = textColor),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

@@ -9,7 +9,8 @@ data class Message(
     val recipient: String = "",
     val text: String = "",
     val timestamp: Timestamp = Timestamp.now(),
-    val attachmentUrl: String? = null
+    val attachmentUrl: String? = null,
+    val attachmentFileName: String? = null,
 ) {
 
     fun toMap(): Map<String, Any?> {
@@ -19,7 +20,8 @@ data class Message(
             "recipient" to recipient,
             "text" to text,
             "timestamp" to timestamp,
-            "attachmentUrl" to attachmentUrl
+            "attachmentUrl" to attachmentUrl,
+            "attachmentFileName" to attachmentFileName
         )
     }
 
@@ -31,7 +33,8 @@ data class Message(
                 recipient = map["recipient"] as? String ?: "",
                 text = map["text"] as? String ?: "",
                 timestamp = map["timestamp"] as? Timestamp ?: Timestamp.now(),
-                attachmentUrl = map["attachmentUrl"] as? String
+                attachmentUrl = map["attachmentUrl"] as? String,
+                attachmentFileName = map["attachmentFileName"] as? String
             )
         }
     }

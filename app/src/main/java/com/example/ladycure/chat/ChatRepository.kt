@@ -96,4 +96,14 @@ class ChatRepository {
         else if (name.isNotBlank()) name
         else "the user is not found"
     }
+
+    suspend fun getUserProfilePicture(userId: String): String? {
+        return try {
+            val snapshot = firestore.collection("users").document(userId).get().await()
+            snapshot.getString("profilePictureUrl")
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error fetching profile picture for user $userId", e)
+            null
+        }
+    }
 }
