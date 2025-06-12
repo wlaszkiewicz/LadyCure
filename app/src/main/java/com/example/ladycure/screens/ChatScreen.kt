@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,7 +28,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -35,10 +38,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,129 +68,378 @@ import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
+import kotlinx.coroutines.launch
 
 data class ChatParticipantInfo(
     val uid: String,
     val fullName: String
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(navController: NavHostController, snackbarController: SnackbarController?) {
     var role by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
+    var isLoadingAdditional by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf("") }
+    var showParticipantsView by remember { mutableStateOf(false) }
+    var showSupportDialog by remember { mutableStateOf(false) }
+
+    val activeParticipants = remember { mutableStateOf<List<ChatParticipantInfo>>(emptyList()) }
+    val allPossibleParticipants =
+        remember { mutableStateOf<List<ChatParticipantInfo>>(emptyList()) }
+
+    val context = LocalContext.current
+
     val authRepo = AuthRepository()
     val userRepo = UserRepository()
     val appointmentRepo = AppointmentRepository()
-    var error by remember { mutableStateOf("") }
-    var showDoctorsList by remember { mutableStateOf(false) }
-    var showSupportDialog by remember { mutableStateOf(false) }
 
-    val chatParticipants = remember { mutableStateOf<List<ChatParticipantInfo>>(emptyList()) }
+    val loadPossibleParticipants = remember(role) {
+        suspend {
+            isLoadingAdditional = true
+            try {
+                val result = if (Role.DOCTOR == Role.fromValue(role)) {
+                    appointmentRepo.getPatientsFromAppointmentsWithUids()
+                } else {
+                    appointmentRepo.getDoctorsFromAppointmentsWithUids()
+                }
 
-    BackHandler(enabled = showDoctorsList) {
-        showDoctorsList = false
+                if (result.isSuccess) {
+                    allPossibleParticipants.value = result.getOrNull()?.distinct() ?: emptyList()
+                } else {
+                    error = result.exceptionOrNull()?.message ?: "Failed to load participants"
+                }
+            } finally {
+                isLoadingAdditional = false
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
-        val result = userRepo.getUserRole()
-        if (result.isSuccess) {
-            role = result.getOrNull() ?: ""
+        val roleResult = userRepo.getUserRole()
+        if (roleResult.isSuccess) {
+            role = roleResult.getOrNull() ?: ""
         } else {
-            error = result.exceptionOrNull()?.message ?: "Unknown error"
+            error = roleResult.exceptionOrNull()?.message ?: "Unknown error"
+        }
+        val activeResult = appointmentRepo.getActiveChatParticipants()
+        if (activeResult.isSuccess) {
+            activeParticipants.value = activeResult.getOrNull() ?: emptyList()
+        } else {
+            error = activeResult.exceptionOrNull()?.message ?: "Failed to load active chats"
         }
 
-        if (Role.DOCTOR == Role.fromValue(role)) {
-            val patientsResult = appointmentRepo.getPatientsFromAppointmentsWithUids()
-            if (patientsResult.isSuccess) {
-                chatParticipants.value = patientsResult.getOrNull()?.distinct() ?: emptyList()
-            } else {
-                error = patientsResult.exceptionOrNull()?.message ?: "Failed to load patient names"
-            }
-        } else if (Role.USER == Role.fromValue(role)) {
-            val doctorsResult = appointmentRepo.getDoctorsFromAppointmentsWithUids()
-            if (doctorsResult.isSuccess) {
-                chatParticipants.value = doctorsResult.getOrNull()?.distinct() ?: emptyList()
-            } else {
-                error = doctorsResult.exceptionOrNull()?.message ?: "Failed to load doctor names"
-            }
+        isLoading = false
+    }
+
+    LaunchedEffect(showParticipantsView, role) {
+        if (showParticipantsView && allPossibleParticipants.value.isEmpty() && !isLoadingAdditional) {
+            loadPossibleParticipants()
         }
     }
 
     LaunchedEffect(error) {
         if (error.isNotEmpty()) {
             snackbarController?.showMessage(error)
+            error = ""
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DefaultBackground)
-    ) {
-        // Header
-        Surface(
-            color = DefaultBackground,
-            modifier = Modifier.fillMaxWidth(),
+    BackHandler(enabled = showParticipantsView) {
+        showParticipantsView = false
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DefaultBackground)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Health Chat",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = DefaultPrimary
+            Surface(
+                color = DefaultBackground,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Health Chat",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = DefaultPrimary
+                            )
+                        )
+                        Text(
+                            text = if (Role.USER == Role.fromValue(role))
+                                "Connect with medical professionals"
+                            else "Contact your patients",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DefaultOnPrimary.copy(alpha = 0.8f)
+                        )
+                    }
+
+                    if (!isLoading && (activeParticipants.value.isNotEmpty() || showParticipantsView)) {
+                        IconButton(
+                            onClick = { showParticipantsView = true },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(DefaultPrimary.copy(alpha = 0.1f))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add conversation",
+                                tint = DefaultPrimary
+                            )
+                        }
+                    }
+                }
+            }
+
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = DefaultPrimary)
+                    }
+                }
+
+                showParticipantsView -> {
+                    ParticipantsFullScreenView(
+                        role = role,
+                        participants = allPossibleParticipants.value.filter { allParticipant ->
+                            activeParticipants.value.none { it.uid == allParticipant.uid }
+                        },
+                        isLoading = isLoadingAdditional,
+                        onBack = { showParticipantsView = false },
+                        onParticipantSelected = { participant ->
+                            showParticipantsView = false
+                            val encodedName = Uri.encode(participant.fullName)
+                            navController.navigate("chat/${participant.uid}/$encodedName")
+                        },
+                        modifier = Modifier.fillMaxSize()
                     )
-                )
-                Text(
-                    text = if (Role.USER == Role.fromValue(role))
-                        "Connect with medical professionals"
-                    else "Contact your patients",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = DefaultOnPrimary.copy(alpha = 0.8f)
-                )
+                }
+
+                activeParticipants.value.isNotEmpty() -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(activeParticipants.value) { participant ->
+                            ChatParticipantItem(
+                                participant = participant,
+                                onClick = {
+                                    val encodedName = Uri.encode(participant.fullName)
+                                    navController.navigate("chat/${participant.uid}/$encodedName")
+                                }
+                            )
+                        }
+                    }
+                }
+
+                else -> {
+                    InitialChatView(
+                        role = role,
+                        onFindDoctorsClick = { showParticipantsView = true },
+                        onUrgentHelpClick = { showSupportDialog = true },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 
-        // Main Content
-        if (role.isNotEmpty()) {
-            if (!showDoctorsList) {
-                InitialChatView(
-                    role = role,
-                    onFindDoctorsClick = { showDoctorsList = true },
-                    onUrgentHelpClick = { showSupportDialog = true },
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                // Przekazujemy listę obiektów ChatParticipantInfo
-                DoctorsListView(
-                    participants = chatParticipants.value,
-                    onParticipantSelected = { participantInfo ->
-                        // Używamy UID (czyli 'id' z Twojego modelu User) i pełnej nazwy z obiektu ChatParticipantInfo
-                        val otherUserId = participantInfo.uid // To jest ID dokumentu Firebase
-                        val otherUserName = participantInfo.fullName
+        if (showSupportDialog) {
+            SupportDialog(
+                onDismiss = { showSupportDialog = false },
+                navController = navController
+            )
+        }
+    }
+}
 
-                        // Ważne: Zakoduj URL, aby uniknąć problemów ze spacjami i znakami specjalnymi w nazwie
-                        val encodedOtherUserName = Uri.encode(otherUserName)
-
-                        navController.navigate("chat/$otherUserId/$encodedOtherUserName")
-                    },
-                    modifier = Modifier.weight(1f)
+@Composable
+private fun ParticipantsFullScreenView(
+    role: String,
+    participants: List<ChatParticipantInfo>,
+    isLoading: Boolean,
+    onBack: () -> Unit,
+    onParticipantSelected: (ChatParticipantInfo) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(DefaultBackground)
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = DefaultPrimary
                 )
             }
-        } else {
+
+            Text(
+                text = if (Role.USER == Role.fromValue(role))
+                    "Select Doctor"
+                else "Select Patient",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = DefaultPrimary,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.width(48.dp))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (isLoading) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = DefaultPrimary)
             }
+        } else {
+            if (participants.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "No contacts",
+                            tint = DefaultPrimary.copy(alpha = 0.3f),
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = if (Role.USER == Role.fromValue(role))
+                                "No available doctors"
+                            else "No available patients",
+                            color = DefaultOnPrimary.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(participants) { participant ->
+                        ChatParticipantItem(
+                            participant = participant,
+                            onClick = { onParticipantSelected(participant) },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+                }
+            }
         }
     }
+}
 
-    // Support Dialog
-    if (showSupportDialog) {
-        SupportDialog(
-            onDismiss = { showSupportDialog = false },
-            navController = navController
-        )
+
+@Composable
+private fun ChatParticipantItem(
+    participant: ChatParticipantInfo,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White,
+            contentColor = DefaultOnPrimary
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(0.5.dp, DefaultPrimary.copy(alpha = 0.1f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(DefaultPrimary.copy(alpha = 0.05f))
+                    .border(
+                        width = 1.dp,
+                        color = DefaultPrimary.copy(alpha = 0.2f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "User profile icon",
+                    tint = DefaultPrimary.copy(alpha = 0.6f),
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = participant.fullName,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = DefaultPrimary
+                    )
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Available now",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = DefaultOnPrimary.copy(alpha = 0.6f)
+                    )
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "View chat",
+                tint = DefaultPrimary.copy(alpha = 0.5f),
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
     }
 }
 
@@ -305,7 +561,7 @@ private fun InitialChatView(
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                onClick = onFindDoctorsClick,
+                onClick = onFindDoctorsClick as () -> Unit,
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .height(56.dp),
@@ -431,36 +687,6 @@ private fun DoctorsListView(
                         contentDescription = "View chat",
                         tint = DefaultPrimary.copy(alpha = 0.5f),
                         modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-            }
-        }
-
-        if (participants.isEmpty()) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "No contacts",
-                        tint = DefaultPrimary.copy(alpha = 0.3f),
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No contacts available",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = "You'll see your doctors/patients here once you have appointments",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = DefaultOnPrimary.copy(alpha = 0.4f),
-                        textAlign = TextAlign.Center
                     )
                 }
             }

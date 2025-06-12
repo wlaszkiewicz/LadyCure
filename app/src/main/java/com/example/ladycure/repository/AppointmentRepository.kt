@@ -400,4 +400,43 @@ class AppointmentRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun getActiveChatParticipants(): Result<List<ChatParticipantInfo>> {
+        return try {
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+                ?: return Result.failure(IllegalStateException("User not authenticated"))
+
+            val chatsCollection = FirebaseFirestore.getInstance("telecure").collection("chats")
+            val querySnapshot = chatsCollection
+                .whereArrayContains("participants", currentUserId)
+                .get()
+                .await()
+
+            val participantIds = querySnapshot.documents.flatMap { doc ->
+                (doc.get("participants") as? List<String>)?.filter { it != currentUserId } ?: emptyList()
+            }.distinct()
+
+            val participantsInfo = mutableListOf<ChatParticipantInfo>()
+            for (uid in participantIds) {
+                val userDoc = FirebaseFirestore.getInstance("telecure")
+                    .collection("users")
+                    .document(uid)
+                    .get()
+                    .await()
+
+                val name = userDoc.getString("name") ?: ""
+                val surname = userDoc.getString("surname") ?: ""
+                val fullName = if (name.isNotBlank() || surname.isNotBlank()) {
+                    "$name $surname".trim()
+                } else {
+                    "Unknown User"
+                }
+                participantsInfo.add(ChatParticipantInfo(uid, fullName))
+            }
+
+            Result.success(participantsInfo)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
