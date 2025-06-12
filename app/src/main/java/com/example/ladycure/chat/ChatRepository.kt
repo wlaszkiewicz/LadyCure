@@ -106,4 +106,17 @@ class ChatRepository {
             null
         }
     }
+
+    suspend fun getSpecificUserData(userId: String): Result<Map<String, Any>?> {
+        return try {
+            val document = firestore.collection("users").document(userId).get().await()
+            if (document.exists()) {
+                Result.success(document.data)
+            } else {
+                Result.failure(Exception("User document does not exist"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
