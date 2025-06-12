@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Phone // Import Phone icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,6 +53,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.ladycure.R
 import com.example.ladycure.data.doctor.Doctor
+import com.example.ladycure.repository.UserRepository // Import UserRepository
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -65,7 +67,7 @@ fun DoctorChatScreen(
     otherUserId: String,
     otherUserName: String,
     chatRepository: ChatRepository = ChatRepository(),
-    chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
+    chatViewModel: ChatViewModel = ChatViewModel(chatRepository)
 ) {
     val currentUserId = chatRepository.getCurrentUserId()
     val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
@@ -80,8 +82,7 @@ fun DoctorChatScreen(
 
     var otherUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
     var currentUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
-
-
+    var otherUserPhoneNumber by remember { mutableStateOf<String?>(null) }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -96,6 +97,13 @@ fun DoctorChatScreen(
         // Fetching profile pictiures
         otherUserProfilePictureUrl = chatRepository.getUserProfilePicture(otherUserId)
         currentUserProfilePictureUrl = chatRepository.getUserProfilePicture(currentUserId)
+
+        // Fetch phone number
+        chatRepository.getSpecificUserData(otherUserId).onSuccess { userData ->
+            otherUserPhoneNumber = userData?.get("phone") as? String
+        }.onFailure { e ->
+            snackbarHostState.showSnackbar("Failed to load doctor's phone number: ${e.message}")
+        }
     }
 
     Scaffold(
@@ -150,7 +158,6 @@ fun DoctorChatScreen(
                             )
                         }
 
-                        // Online status indicator
                         Box(
                             modifier = Modifier
                                 .size(16.dp)
@@ -189,6 +196,30 @@ fun DoctorChatScreen(
                                 color = Color.White.copy(alpha = 0.8f)
                             )
                         )
+                    }
+
+                    if (otherUserPhoneNumber != null) {
+                        IconButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_DIAL).apply {
+                                    data = Uri.parse("tel:${otherUserPhoneNumber}")
+                                }
+                                if (intent.resolveActivity(context.packageManager) != null) {
+                                    context.startActivity(intent)
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("No app found to handle calls.")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Phone,
+                                contentDescription = "Call Doctor",
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }
