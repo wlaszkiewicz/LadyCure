@@ -456,7 +456,7 @@ fun ApplicationDetailsDialog(
     var showLicense by remember { mutableStateOf(false) }
     var showDiploma by remember { mutableStateOf(false) }
 
-    var editedComment by remember { mutableStateOf(application.reviewNotes ?: "") }
+    var editedComment by remember { mutableStateOf(application.reviewNotes ?: "No notes") }
     var showEditComment by remember { mutableStateOf(false) }
     var showStatusChangeDialog by remember { mutableStateOf<ApplicationStatus?>(null) }
 
@@ -610,7 +610,7 @@ fun ApplicationDetailsDialog(
                         exit = fadeOut()
                     ) {
                         Text(
-                            text = application.reviewNotes?.ifEmpty { "No notes" } ?: "No notes",
+                            text = editedComment,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 4.dp)
                         )
@@ -1060,7 +1060,6 @@ fun AdminDashboardScreen(
         if (result.isSuccess) {
             doctorApplications.clear()
             doctorApplications.addAll(result.getOrNull() as List<DoctorApplication>)
-            snackbarController.showMessage("Applications refreshed successfully.")
             setLoading(false)
         } else {
             snackbarController.showMessage("Failed to refresh applications: ${result.exceptionOrNull()?.message}")
@@ -1232,8 +1231,8 @@ fun AdminDashboardScreen(
                             snackbarController.showMessage("Comment updated successfully.")
                         } else {
                             snackbarController.showMessage("Application status changed to ${newStatus.displayName} successfully.")
+                            showApplicationsDialog = false
                         }
-                        showApplicationsDialog = false
                         refreshApplications(
                             applicationRepo,
                             doctorApplications,
