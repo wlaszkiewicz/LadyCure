@@ -5,6 +5,9 @@ import DefaultOnPrimary
 import DefaultPrimary
 import Grey
 import Pink10
+import android.annotation.SuppressLint
+import android.app.DownloadManager
+import android.content.Context
 import android.content.Intent
 import androidx.compose.material3.TextFieldDefaults
 import android.net.Uri
@@ -34,6 +37,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Phone // Import Phone icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,12 +53,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.ladycure.R
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.repository.UserRepository
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -457,13 +464,16 @@ fun ModernMessageInputBar(
     }
 }
 
+@SuppressLint("ServiceCast")
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ModernMessageBubble(
     message: Message,
     isCurrentUser: Boolean,
     profilePictureUrl: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    scope: CoroutineScope = rememberCoroutineScope()
 ) {
     val bubbleColor by animateColorAsState(
         if (isCurrentUser) DefaultPrimary
@@ -479,6 +489,8 @@ fun ModernMessageBubble(
     val senderDisplayName = if (isCurrentUser) "Me" else message.senderName
     val profilePictureSize = 36.dp
     val context = LocalContext.current
+    var showImageDialog by remember { mutableStateOf(false) }
+    var currentImageUrl by remember { mutableStateOf("") }
 
     Row(
         modifier = modifier
@@ -568,22 +580,28 @@ fun ModernMessageBubble(
                             val mimeType = targetMessage.attachmentMimeType
 
                             if (mimeType?.startsWith("image/") == true) {
-                                AsyncImage(
-                                    model = url,
-                                    contentDescription = "Attached image",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(150.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                                data = Uri.parse(url)
-                                                type = mimeType
-                                            }
-                                            context.startActivity(intent)
-                                        },
-                                    contentScale = ContentScale.Crop
-                                )
+                                Column {
+                                    AsyncImage(
+                                        model = url,
+                                        contentDescription = "Attached image",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(150.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                currentImageUrl = url
+                                                showImageDialog = true
+                                            },
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    Text(
+                                        text = "Tap to view/download",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = textColor.copy(alpha = 0.6f)
+                                        ),
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    )
+                                }
                             } else {
                                 ModernAttachmentPreview(
                                     url = url,
@@ -634,6 +652,84 @@ fun ModernMessageBubble(
             Spacer(modifier = Modifier.width(4.dp))
         } else {
             Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+
+    if (showImageDialog) {
+        Dialog(
+            onDismissRequest = { showImageDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.9f),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Black.copy(alpha = 0.7f)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    AsyncImage(
+                        model = currentImageUrl,
+                        contentDescription = "Full image preview",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    IconButton(
+                        onClick = {
+                            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                            val request = DownloadManager.Request(Uri.parse(currentImageUrl))
+                                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                .setTitle("Downloading image")
+                                .setDescription("Image from chat")
+
+                            downloadManager.enqueue(request)
+                            showImageDialog = false
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Download started")
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(15.dp)
+                            .size(48.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                shape = CircleShape
+                            ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Download,
+                            contentDescription = "Download",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { showImageDialog = false },
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(15.dp)
+                            .size(48.dp)
+                            .background(
+                                color = Color.Gray.copy(alpha = 0.6f),
+                                shape = CircleShape
+                            ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
