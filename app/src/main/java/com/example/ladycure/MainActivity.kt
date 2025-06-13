@@ -47,7 +47,6 @@ import com.example.ladycure.screens.doctor.DoctorApplicationScreen
 import com.example.ladycure.screens.doctor.DoctorHomeScreen
 import com.example.ladycure.screens.doctor.DoctorPendingMainScreen
 import com.example.ladycure.screens.doctor.SetAvailabilityScreen
-import com.example.ladycure.screens.user.PeriodTrackerScreen
 import com.example.ladycure.screens.user.AppointmentsScreen
 import com.example.ladycure.screens.user.BookAppointmentDirectlyScreen
 import com.example.ladycure.screens.user.BookAppointmentScreen
@@ -55,6 +54,7 @@ import com.example.ladycure.screens.user.BookingSuccessScreen
 import com.example.ladycure.screens.user.ConfirmationScreen
 import com.example.ladycure.screens.user.DoctorsListScreen
 import com.example.ladycure.screens.user.HomeScreen
+import com.example.ladycure.screens.user.PeriodTrackerScreen
 import com.example.ladycure.screens.user.RescheduleScreen
 import com.example.ladycure.screens.user.SearchDoctorsScreen
 import com.example.ladycure.screens.user.SelectServiceScreen
@@ -141,7 +141,7 @@ fun MainScreen(navController: NavHostController) {
                 composable("profile") { ProfileScreen(navController) }
                 composable("doctor") { SearchDoctorsScreen(navController, snackbarController) }
                 composable("chat") { ChatScreen(navController, snackbarController) }
-                composable("period_tracker") { PeriodTrackerScreen(navController)}
+                composable("period_tracker") { PeriodTrackerScreen(navController) }
 
                 composable("admin") { AdminDashboardScreen(navController, snackbarController) }
 
@@ -160,7 +160,12 @@ fun MainScreen(navController: NavHostController) {
                         snackbarController
                     )
                 }
-                composable("admin_analytics") { AdminAnalyticsScreen(navController) }
+                composable("admin_analytics") {
+                    AdminAnalyticsScreen(
+                        navController,
+                        snackbarController
+                    )
+                }
 
                 composable("doctor_application") {
                     DoctorApplicationScreen(

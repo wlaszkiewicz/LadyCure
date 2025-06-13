@@ -18,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 class DoctorApplicationViewModel(
     private val authRepository: AuthRepository = AuthRepository(),
@@ -74,7 +73,7 @@ class DoctorApplicationViewModel(
                     password = password,
                     name = firstName,
                     surname = lastName,
-                    dateOfBirth = dateOfBirth.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    dateOfBirth = dateOfBirth.toString(),
                     role = Role.DOCTOR_PENDING.value
                 )
 

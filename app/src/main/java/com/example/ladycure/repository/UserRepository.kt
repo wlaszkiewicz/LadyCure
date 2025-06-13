@@ -1,21 +1,19 @@
 package com.example.ladycure.repository
 
 import android.util.Log
-import com.example.ladycure.data.doctor.Doctor
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
-import java.util.*
 
-class UserRepository{
+class UserRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance("telecure")
 
     suspend fun updateProfilePicture(imageUrl: String): Result<Unit> {
         return try {
-            val currentUser = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
+            val currentUser =
+                auth.currentUser ?: return Result.failure(Exception("User not logged in"))
             firestore.collection("users").document(currentUser.uid)
                 .update("profilePictureUrl", imageUrl)
                 .await()
@@ -131,8 +129,6 @@ class UserRepository{
     }
 
 
-
-
     suspend fun updateUserData(updatedData: Map<String, String>): Result<Map<String, Any>?> {
         return try {
             val user = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
@@ -174,5 +170,6 @@ class UserRepository{
             Result.failure(e)
         }
     }
+
 
 }

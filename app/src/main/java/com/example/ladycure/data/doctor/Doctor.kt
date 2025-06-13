@@ -3,6 +3,7 @@ package com.example.ladycure.data.doctor
 import com.example.ladycure.R
 import com.example.ladycure.data.Role
 import com.example.ladycure.data.User
+import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -25,7 +26,8 @@ data class Doctor(
     override val surname: String,
     override val dateOfBirth: String,
     override val profilePictureUrl: String,
-    override val role: Role = Role.DOCTOR
+    override val role: Role = Role.DOCTOR,
+    override val joinedAt: Timestamp,
 ) : User(
     id = id,
     email = email,
@@ -33,7 +35,8 @@ data class Doctor(
     surname = surname,
     dateOfBirth = dateOfBirth,
     role = Role.DOCTOR,
-    profilePictureUrl = profilePictureUrl
+    profilePictureUrl = profilePictureUrl,
+    joinedAt = joinedAt
 ) {
 
 
@@ -46,7 +49,8 @@ data class Doctor(
             email = this.email,
             dateOfBirth = this.dateOfBirth,
             profilePictureUrl = this.profilePictureUrl,
-            role = Role.USER
+            role = Role.USER,
+            joinedAt = this.joinedAt
         )
     }
 
@@ -66,9 +70,10 @@ data class Doctor(
             "email" to email,
             "name" to name,
             "surname" to surname,
-            "dateOfBirth" to dateOfBirth,
+            "dob" to dateOfBirth,
             "profilePictureUrl" to profilePictureUrl,
             "role" to Role.DOCTOR.value,
+            "joinedAt" to joinedAt,
         )
     }
 
@@ -91,6 +96,7 @@ data class Doctor(
         city: String = this.city,
         phone: String = this.phone,
         bio: String = this.bio,
+        joinedAt: Timestamp = this.joinedAt
     ): Doctor {
         return Doctor(
             speciality = speciality,
@@ -110,7 +116,8 @@ data class Doctor(
             surname = surname,
             dateOfBirth = dateOfBirth,
             profilePictureUrl = profilePictureUrl,
-            role = role
+            role = role,
+            joinedAt = joinedAt
         )
     }
 
@@ -160,6 +167,7 @@ data class Doctor(
                 dateOfBirth = doctor["dob"] as? String ?: "Unknown date",
                 profilePictureUrl = doctor["profilePictureUrl"] as? String ?: "No profile picture",
                 id = doctor["id"] as? String ?: "No ID provided",
+                joinedAt = doctor["joinedAt"] as? Timestamp ?: Timestamp.now()
             )
         }
 
@@ -167,10 +175,10 @@ data class Doctor(
             return Doctor(
                 speciality = application.speciality,
                 address = application.address,
-                availability = emptyList(), // Availability not provided in application
-                reviews = emptyList(), // Reviews not provided in application
-                consultationPrice = 100, // Default price, can be adjusted later
-                rating = 0.0, // Default rating, can be adjusted later
+                availability = emptyList(),
+                reviews = emptyList(),
+                consultationPrice = 100,
+                rating = 0.0,
                 experience = application.yearsOfExperience,
                 languages = listOf("English"), // Default language, can be adjusted later
                 city = application.city,
@@ -179,9 +187,10 @@ data class Doctor(
                 email = application.email,
                 name = application.firstName,
                 surname = application.lastName,
-                dateOfBirth = application.dateOfBirth.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                dateOfBirth = application.dateOfBirth.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                 profilePictureUrl = "", // No profile picture in application
-                id = application.userId
+                id = application.userId,
+                joinedAt = Timestamp.now()
             )
         }
 
@@ -204,33 +213,10 @@ data class Doctor(
                 "dateOfBirth" to doctor.dateOfBirth,
                 "profilePictureUrl" to doctor.profilePictureUrl,
                 "role" to doctor.role.value,
-                "id" to doctor.id
+                "id" to doctor.id,
+                "joinedAt" to doctor.joinedAt
             )
         }
-
-
-        fun empty(): Doctor {
-            return Doctor(
-                speciality = Speciality.OTHER,
-                address = "",
-                availability = emptyList(),
-                reviews = emptyList(),
-                consultationPrice = 100,
-                rating = 0.0,
-                experience = 0,
-                languages = listOf("English"),
-                city = "",
-                phone = "",
-                bio = "New doctor",
-                email = "",
-                name = "",
-                surname = "",
-                dateOfBirth = "",
-                profilePictureUrl = "",
-                id = ""
-            )
-        }
-
 
     }
 }

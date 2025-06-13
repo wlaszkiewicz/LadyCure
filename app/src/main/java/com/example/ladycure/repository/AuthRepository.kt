@@ -1,8 +1,8 @@
 package com.example.ladycure.repository
 
-import android.util.Log
 import androidx.navigation.NavController
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -78,7 +78,8 @@ class AuthRepository {
                 "name" to name,
                 "surname" to surname,
                 "dob" to dateOfBirth,
-                "role" to role
+                "role" to role,
+                "joinedAt" to Timestamp.now()
             )
             firestore.collection("users").document(user.uid).set(userData)
                 .addOnSuccessListener { }
@@ -95,31 +96,5 @@ class AuthRepository {
         Firebase.auth.signOut()
     }
 
-    suspend fun getAdminStats(): Result<MutableMap<String, Any>> {
-        return try {
-            val stats = mutableMapOf<String, Any>()
-            firestore.collection("users").get().addOnSuccessListener { users ->
-                stats["totalUsers"] = users.size()
-            }.await()
-
-            firestore.collection("users")
-                .whereEqualTo("role", "doctor")
-                .get()
-                .addOnSuccessListener { doctors ->
-                    stats["activeDoctors"] = doctors.size()
-                }.await()
-
-            firestore.collection("applications").whereEqualTo("status", "pending").get()
-                .addOnSuccessListener { applications ->
-                    stats["pendingApplications"] = applications.size()
-                }.await()
-
-
-            Result.success(stats)
-        } catch (e: Exception) {
-            Log.e("AuthRepository", "Error fetching admin stats: ${e.message}")
-            Result.failure(e)
-        }
-    }
 }
 

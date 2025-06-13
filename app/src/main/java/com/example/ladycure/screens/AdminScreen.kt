@@ -104,6 +104,7 @@ import com.example.ladycure.presentation.admin.LoadingView
 import com.example.ladycure.presentation.admin.UserList
 import com.example.ladycure.presentation.admin.buildUpdateMap
 import com.example.ladycure.presentation.home.components.Screen.AdminAnalytics
+import com.example.ladycure.repository.AdminRepository
 import com.example.ladycure.repository.ApplicationRepository
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
@@ -172,7 +173,7 @@ fun AnalyticsSummaryCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "More detailed charts and metrics will be displayed here.",
+                "More detailed charts and metrics are available in the full analytics section.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.7f)
             )
@@ -1029,6 +1030,7 @@ fun AdminDashboardScreen(
 ) {
     val applicationRepo = ApplicationRepository()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val adminRepo = remember { AdminRepository() }
     val authRepo = remember { AuthRepository() }
 
     val coroutineScope = rememberCoroutineScope()
@@ -1068,7 +1070,7 @@ fun AdminDashboardScreen(
     }
 
     LaunchedEffect(Unit) {
-        var result = authRepo.getAdminStats()
+        var result = adminRepo.getAdminStats()
         if (result.isSuccess) {
             stats = (result.getOrNull() ?: mapOf(
                 "totalUsers" to 0,
@@ -1655,49 +1657,6 @@ fun AdminDoctorManagementScreen(
 //                        showDeleteDoctorDialog = false
 //                    }
             }
-        )
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AdminAnalyticsScreen(navController: NavController) {
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-
-        ) {
-            Text(
-                text = "Admin Analytics",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = DefaultPrimary
-            )
-            Icon(
-                Icons.Filled.Analytics,
-                contentDescription = "Analytics",
-                tint = DefaultPrimary,
-                modifier = Modifier.size(30.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Analytics will be displayed here.",
-            style = MaterialTheme.typography.bodyLarge.copy(color = DefaultOnPrimary)
         )
     }
 }

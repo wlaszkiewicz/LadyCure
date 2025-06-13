@@ -1,5 +1,4 @@
 import androidx.compose.ui.graphics.Color
-import com.example.ladycure.data.Appointment.Status
 
 val Black = Color(0xFF000000)
 val Grey = Color(0xFF808080)
@@ -11,14 +10,15 @@ val Pink40 = Color(0xFFC281A9)
 val Pink80 = Color(0xFFC4809E)
 val Pink90 = Color(0xFFA14E73)
 
+val Purple = Color(0xFF7860A6)
 val BabyBlue = Color(0xFF5DB4EF)
 val Neutral99 = Color(0xFF261D1E)
 
 val DefaultBackground = Pink10
 val DefaultPrimary = Pink40
-val DefaultPrimaryVariant =Pink80
-val DefaultSecondary =Pink30
-val DefaultSecondaryVariant =Pink90
+val DefaultPrimaryVariant = Pink80
+val DefaultSecondary = Pink30
+val DefaultSecondaryVariant = Pink90
 val DefaultOnPrimary = Neutral99
 
 //Snackbar Colors
@@ -31,11 +31,10 @@ val SnackbarActionColor = Color(0xFF261D1E)
 
 // Status colors
 
-val Red =  Color(0xFFF44336)
-val Green =  Color(0xFF4CAF50)
-val Yellow =  Color(0xFFFFC107)
-val YellowOrange =  Color(0xFFFFA000)
-
+val Red = Color(0xFFF44336)
+val Green = Color(0xFF4CAF50)
+val Yellow = Color(0xFFFFC107)
+val YellowOrange = Color(0xFFFFA000)
 
 
 //// Default PINK Theme Colors
