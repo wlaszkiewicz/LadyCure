@@ -38,7 +38,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Phone // Import Phone icon
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,7 +59,9 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.ladycure.R
 import com.example.ladycure.data.doctor.Doctor
+import com.example.ladycure.repository.DoctorRepository
 import com.example.ladycure.repository.UserRepository
+import com.example.ladycure.screens.user.DoctorInfoCard
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -75,7 +77,8 @@ fun DoctorChatScreen(
     otherUserName: String,
     chatRepository: ChatRepository = ChatRepository(),
     chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
-    userRepository: UserRepository = UserRepository() // Inject UserRepository
+    doctorRepository: DoctorRepository = DoctorRepository(),
+    userRepository: UserRepository = UserRepository()
 ) {
     val currentUserId = chatRepository.getCurrentUserId()
     val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
@@ -93,6 +96,9 @@ fun DoctorChatScreen(
     var currentUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
     var otherUserPhoneNumber by remember { mutableStateOf<String?>(null) }
     var otherUserRole by remember { mutableStateOf<String?>(null) }
+
+    var showDoctorProfile by remember { mutableStateOf(false) }
+    var currentDoctor by remember { mutableStateOf<Doctor?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -115,6 +121,26 @@ fun DoctorChatScreen(
             otherUserRole = userData?.get("role") as? String
         }.onFailure { e ->
             snackbarHostState.showSnackbar("Failed to load user data: ${e.message}")
+        }
+    }
+
+    fun fetchDoctorProfile() {
+        scope.launch {
+            val result = doctorRepository.getDoctors()
+            result.onSuccess { doctors ->
+                currentDoctor = doctors.find { it.id == otherUserId }
+                showDoctorProfile = true
+            }.onFailure {
+                snackbarHostState.showSnackbar("Failed to load doctor profile")
+            }
+        }
+    }
+
+    fun onProfileClick() {
+        if (currentDoctor != null) {
+            showDoctorProfile = true
+        } else {
+            fetchDoctorProfile()
         }
     }
 
@@ -145,12 +171,12 @@ fun DoctorChatScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Profile picture with online status
                     Box(
                         modifier = Modifier
                             .size(45.dp)
                             .clip(CircleShape)
-                            .background(DefaultBackground),
+                            .background(DefaultBackground)
+                            .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         if (otherUserProfilePictureUrl != null) {
@@ -192,7 +218,9 @@ fun DoctorChatScreen(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Column(
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onProfileClick() }
                     ) {
                         Text(
                             text = otherUserName,
@@ -332,10 +360,21 @@ fun DoctorChatScreen(
                     ModernMessageBubble(
                         message = message,
                         isCurrentUser = message.sender == currentUserId,
-                        profilePictureUrl = senderProfilePictureUrl
+                        profilePictureUrl = senderProfilePictureUrl,
+                        onProfileClick = ::onProfileClick
                     )
                 }
             }
+        }
+        if (showDoctorProfile && currentDoctor != null) {
+            DoctorProfileDialog(
+                doctor = currentDoctor!!,
+                onDismiss = { showDoctorProfile = false },
+                onBookAppointment = {
+                    showDoctorProfile = false
+                    navController.navigate("services/${currentDoctor!!.id}")
+                }
+            )
         }
     }
 }
@@ -473,7 +512,8 @@ fun ModernMessageBubble(
     profilePictureUrl: String?,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    scope: CoroutineScope = rememberCoroutineScope()
+    scope: CoroutineScope = rememberCoroutineScope(),
+    onProfileClick: () -> Unit
 ) {
     val bubbleColor by animateColorAsState(
         if (isCurrentUser) DefaultPrimary
@@ -505,7 +545,8 @@ fun ModernMessageBubble(
                 modifier = Modifier
                     .size(profilePictureSize)
                     .clip(CircleShape)
-                    .background(DefaultBackground),
+                    .background(DefaultBackground)
+                    .clickable(onClick = onProfileClick),
                 contentAlignment = Alignment.Center
             ) {
                 if (profilePictureUrl != null) {
@@ -839,6 +880,36 @@ fun ModernAttachmentPreview(
         }
     }
 }
+
+@Composable
+fun DoctorProfileDialog(
+    doctor: Doctor,
+    onDismiss: () -> Unit,
+    onBookAppointment: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = DefaultBackground
+        ) {
+            Column {
+                DoctorInfoCard(
+                    doctor = doctor,
+                    onSelect = onBookAppointment,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+    }
+}
+
 
 fun Date.formatTime(): String {
     val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
