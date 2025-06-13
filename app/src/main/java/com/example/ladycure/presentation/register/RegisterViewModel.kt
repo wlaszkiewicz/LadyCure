@@ -89,8 +89,13 @@ data class RegisterUiState(
                 name.isNotBlank() &&
                 surname.isNotBlank() &&
                 password.isNotBlank() &&
+                password.length >= 8 &&
+                password.matches(Regex(".*[A-Z].*")) &&
+                password.matches(Regex(".*[0-9].*")) &&
+                password.matches(Regex(".*[!@#$%^&*].*")) &&
+                confirmPassword.isNotBlank() &&
                 password == confirmPassword &&
-                selectedDate.isAfter(LocalDate.now().minusYears(18))
+                !selectedDate.isAfter(LocalDate.now().minusYears(18))
     }
 
 
@@ -99,11 +104,12 @@ data class RegisterUiState(
             email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "email"
             name.isBlank() -> "firstName"
             surname.isBlank() -> "lastName"
-         //   selectedDate.isAfter(LocalDate.now().minusYears(18)) -> "dob"
+            //   selectedDate.isAfter(LocalDate.now().minusYears(18)) -> "dob"
             password.isBlank() || password.length < 8
                     || !password.matches(Regex(".*[A-Z].*"))
                     || !password.matches(Regex(".*[0-9].*"))
                     || !password.matches(Regex(".*[!@#$%^&*].*")) -> "password"
+
             confirmPassword.isBlank() || password != confirmPassword -> "confirmPassword"
             else -> "valid"
         }

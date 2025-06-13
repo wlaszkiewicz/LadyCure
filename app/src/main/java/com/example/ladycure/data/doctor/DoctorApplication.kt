@@ -28,7 +28,7 @@ data class DoctorApplication(
             "firstName" to firstName,
             "lastName" to lastName,
             "email" to email,
-            "dateOfBirth" to dateOfBirth.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+            "dateOfBirth" to dateOfBirth.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
             "licenseNumber" to licenseNumber,
             "licensePhotoUrl" to licensePhotoUrl,
             "diplomaPhotoUrl" to diplomaPhotoUrl,
@@ -53,8 +53,7 @@ data class DoctorApplication(
                 email = map["email"] as String,
                 dateOfBirth = map["dateOfBirth"].let { date ->
                     if (date is String) LocalDate.parse(
-                        date,
-                        DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        date, DateTimeFormatter.ofPattern("yyyy-MM-dd")
                     )
                     else throw IllegalArgumentException("Invalid date format")
                 },
