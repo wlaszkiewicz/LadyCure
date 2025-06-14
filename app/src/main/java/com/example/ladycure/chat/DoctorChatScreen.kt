@@ -144,6 +144,51 @@ fun DoctorChatScreen(
         }
     }
 
+    fun sendMessage() {
+        if (messageText.isNotEmpty() || attachmentUri != null) {
+            isSending = true
+            scope.launch {
+                try {
+                    val userName = chatRepository.getCurrentUserName()
+                    val attachmentFileName = if (attachmentUri != null) {
+                        context.contentResolver.query(attachmentUri!!, null, null, null, null)?.use { cursor ->
+                            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                            cursor.moveToFirst()
+                            cursor.getString(nameIndex)
+                        } ?: "Attachment"
+                    } else null
+
+                    val attachmentMimeType = if (attachmentUri != null) {
+                        context.contentResolver.getType(attachmentUri!!)
+                    } else null
+
+                    val message = Message(
+                        sender = currentUserId,
+                        senderName = userName,
+                        recipient = otherUserId,
+                        text = messageText,
+                        timestamp = Timestamp.now(),
+                        attachmentUrl = if (attachmentUri != null) {
+                            chatRepository.uploadFile(attachmentUri!!)
+                        } else null,
+                        attachmentFileName = attachmentFileName,
+                        attachmentMimeType = attachmentMimeType
+                    )
+
+                    chatRepository.sendMessage(chatId, message)
+                    messageText = ""
+                    attachmentUri = null
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar(
+                        "Message could not be sent: ${e.message}"
+                    )
+                } finally {
+                    isSending = false
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             Surface(
@@ -270,64 +315,22 @@ fun DoctorChatScreen(
                     .imePadding()
                     .navigationBarsPadding()
             ) {
-                attachmentUri?.let { uri ->
+               if (attachmentUri != null) {
                     ModernAttachmentPreview(
-                        uri = uri,
+                        uri = attachmentUri!!,
                         onRemove = { attachmentUri = null }
                     )
                 }
                 ModernMessageInputBar(
-                    messageText = messageText,
-                    onMessageChange = { messageText = it },
-                    onSendMessage = {
-                        if (messageText.isNotEmpty() || attachmentUri != null) {
-                            isSending = true
-                            scope.launch {
-                                try {
-                                    val userName = chatRepository.getCurrentUserName()
-                                    val attachmentFileName = if (attachmentUri != null) {
-                                        context.contentResolver.query(attachmentUri!!, null, null, null, null)?.use { cursor ->
-                                            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                                            cursor.moveToFirst()
-                                            cursor.getString(nameIndex)
-                                        } ?: "Attachment"
-                                    } else null
-
-                                    val attachmentMimeType = if (attachmentUri != null) {
-                                        context.contentResolver.getType(attachmentUri!!)
-                                    } else null
-
-                                    val message = Message(
-                                        sender = currentUserId,
-                                        senderName = userName,
-                                        recipient = otherUserId,
-                                        text = messageText,
-                                        timestamp = Timestamp.now(),
-                                        attachmentUrl = if (attachmentUri != null) {
-                                            chatRepository.uploadFile(attachmentUri!!)
-                                        } else null,
-                                        attachmentFileName = attachmentFileName,
-                                        attachmentMimeType = attachmentMimeType
-                                    )
-
-                                    chatRepository.sendMessage(chatId, message)
-                                    messageText = ""
-                                    attachmentUri = null
-                                } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar(
-                                        "Message could not be sent: ${e.message}"
-                                    )
-                                } finally {
-                                    isSending = false
-                                }
-                            }
-                        }
-                    },
-                    onAttachFile = {
-                        filePickerLauncher.launch("*/*")
-                    },
-                    isSending = isSending
-                )
+                messageText = messageText,
+                onMessageChange = { messageText = it },
+                onSendMessage = { sendMessage() },
+                onAttachFile = {
+                    filePickerLauncher.launch("*/*")
+                },
+                isSending = isSending,
+                hasAttachment = attachmentUri != null
+            )
             }
         }
     ) { paddingValues ->
@@ -386,6 +389,7 @@ fun ModernMessageInputBar(
     onSendMessage: () -> Unit,
     onAttachFile: () -> Unit,
     isSending: Boolean,
+    hasAttachment: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -437,7 +441,7 @@ fun ModernMessageInputBar(
             ) {
                 if (messageText.isEmpty()) {
                     Text(
-                        text = "Type your message...",
+                        text = if (hasAttachment) "Add message (optional)" else "Type your message...",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -459,12 +463,8 @@ fun ModernMessageInputBar(
                 )
             }
 
-            val sendButtonEnabled by rememberUpdatedState(messageText.isNotEmpty() && !isSending)
-            val sendButtonColor by animateColorAsState(
-                if (sendButtonEnabled) Color.White
-                else Color.White.copy(alpha = 0.4f),
-                animationSpec = tween(durationMillis = 200),
-                label = "SendButtonColor"
+            val sendButtonEnabled by rememberUpdatedState(
+                (messageText.isNotEmpty() || hasAttachment) && !isSending
             )
 
             Box(
