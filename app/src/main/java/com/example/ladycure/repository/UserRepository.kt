@@ -138,6 +138,7 @@ class UserRepository {
             updatedData["name"]?.let { updateMap["name"] = it }
             updatedData["surname"]?.let { updateMap["surname"] = it }
             updatedData["dob"]?.let { updateMap["dob"] = it }
+            updatedData["phone"]?.let { updateMap["phone"] = it }
 
             // Update Firestore document
             try {
