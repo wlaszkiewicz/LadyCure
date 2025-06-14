@@ -40,12 +40,17 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -115,6 +120,10 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
     val userRepo = UserRepository()
     val appointmentRepo = AppointmentRepository()
 
+    var filter by remember { mutableStateOf("All") }
+    val filters = listOf("All", "Online", "Offline", "Unread")
+    var searchQuery by remember { mutableStateOf("") }
+
     val loadPossibleParticipants = remember(role) {
         suspend {
             isLoadingAdditional = true
@@ -181,39 +190,46 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                 color = DefaultBackground,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Health Chat",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = DefaultPrimary
+                Column {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Health Chat",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = DefaultPrimary
+                                )
                             )
-                        )
-                        Text(
-                            text = if (Role.USER == Role.fromValue(role))
-                                "Connect with medical professionals"
-                            else "Contact your patients",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = DefaultOnPrimary.copy(alpha = 0.8f)
-                        )
+                            Text(
+                                text = if (Role.USER == Role.fromValue(role))
+                                    "Connect with medical professionals"
+                                else "Contact your patients",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DefaultOnPrimary.copy(alpha = 0.8f)
+                            )
+                        }
                     }
 
-                    if (!isLoading && (activeParticipants.value.isNotEmpty() || showParticipantsView)) {
-                        IconButton(
-                            onClick = { showParticipantsView = true },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(DefaultPrimary.copy(alpha = 0.1f))
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add conversation",
-                                tint = DefaultPrimary
+                    SearchBar(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        filters.forEach { filterOption ->
+                            DateFilterChip(
+                                label = filterOption,
+                                selected = filter == filterOption,
+                                onSelected = { filter = filterOption }
                             )
                         }
                     }
@@ -248,21 +264,49 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                 }
 
                 activeParticipants.value.isNotEmpty() -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .weight(1f)
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(activeParticipants.value) { participant ->
-                            ChatParticipantItem(
-                                participant = participant,
-                                onClick = {
-                                    val encodedName = Uri.encode(participant.fullName)
-                                    navController.navigate("chat/${participant.uid}/$encodedName")
-                                }
+                    val filteredParticipants = activeParticipants.value
+                        .filter { participant ->
+                            (searchQuery.isEmpty() ||
+                                    participant.fullName.contains(searchQuery, ignoreCase = true)) &&
+                                    when (filter) {
+                                        "Online" -> participant.isOnline
+                                        "Offline" -> !participant.isOnline
+                                        "Unread" -> participant.unreadCount > 0
+                                        else -> true // "All"
+                                    }
+                        }
+                        .sortedByDescending { it.lastMessageTime ?: 0 }
+
+                    if (filteredParticipants.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No matching conversations",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DefaultOnPrimary.copy(alpha = 0.6f)
                             )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(filteredParticipants) { participant ->
+                                ChatParticipantItem(
+                                    participant = participant,
+                                    onClick = {
+                                        val encodedName = Uri.encode(participant.fullName)
+                                        navController.navigate("chat/${participant.uid}/$encodedName")
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -273,6 +317,28 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                         onFindDoctorsClick = { showParticipantsView = true },
                         onUrgentHelpClick = { showSupportDialog = true },
                         modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        if (!isLoading && !showParticipantsView) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 52.dp, end = 36.dp),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                FloatingActionButton(
+                    onClick = { showParticipantsView = true },
+                    containerColor = DefaultPrimary,
+                    contentColor = Color.White,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "New chat",
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -810,6 +876,85 @@ private fun DoctorsListView(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SearchBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = DefaultBackground,
+            unfocusedContainerColor = DefaultBackground,
+            focusedIndicatorColor = DefaultPrimary,
+            unfocusedIndicatorColor = DefaultPrimary.copy(alpha = 0.3f),
+            focusedTextColor = DefaultOnPrimary,
+            unfocusedTextColor = DefaultOnPrimary
+        ),
+        placeholder = {
+            Text(
+                "Search conversations...",
+                color = DefaultOnPrimary.copy(alpha = 0.5f)
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+                tint = DefaultOnPrimary,
+                modifier = Modifier.size(24.dp)
+            )
+        },
+        trailingIcon = {
+            if (value.isNotEmpty()) {
+                IconButton(
+                    onClick = { onValueChange("") }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Clear",
+                        tint = DefaultOnPrimary.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        },
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyLarge
+    )
+}
+
+@Composable
+fun DateFilterChip(
+    label: String,
+    selected: Boolean,
+    onSelected: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) DefaultPrimary else DefaultPrimary.copy(alpha = 0.1f),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) DefaultPrimary else DefaultPrimary.copy(alpha = 0.3f)
+        ),
+        onClick = onSelected
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) Color.White else DefaultOnPrimary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
     }
 }
 
