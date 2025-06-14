@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
@@ -126,5 +127,20 @@ class ChatRepository {
             Log.e("ChatRepository", "Error fetching specific user data for $userId", e)
             Result.failure(e)
         }
+    }
+
+    fun listenForUserStatus(userId: String, onStatusChanged: (Boolean) -> Unit) {
+        firestore.collection("users").document(userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("ChatRepository", "Listen failed", error)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && snapshot.exists()) {
+                    val isOnline = snapshot.getBoolean("isOnline") ?: false
+                    onStatusChanged(isOnline)
+                }
+            }
     }
 }

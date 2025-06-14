@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,23 +57,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import com.example.ladycure.chat.ChatRepository
 import com.example.ladycure.data.Role
 import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class ChatParticipantInfo(
     val uid: String,
-    val fullName: String
+    val fullName: String,
+    val specialty: String? = null,
+    val isOnline: Boolean = false,
+    val lastSeen: Long? = null,
+    val lastMessage: String? = null,
+    val lastMessageTime: Long? = null,
+    val lastMessageSender: String? = null,
+    val unreadCount: Int = 0,
+    val lastMessageSenderName: String? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,11 +145,12 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
         }
         val activeResult = appointmentRepo.getActiveChatParticipants()
         if (activeResult.isSuccess) {
-            activeParticipants.value = activeResult.getOrNull() ?: emptyList()
+            activeParticipants.value = activeResult.getOrNull()
+                ?.sortedByDescending { it.lastMessageTime ?: 0 }
+                ?: emptyList()
         } else {
             error = activeResult.exceptionOrNull()?.message ?: "Failed to load active chats"
         }
-
         isLoading = false
     }
 
@@ -372,6 +393,30 @@ private fun ChatParticipantItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val chatRepository = remember { ChatRepository() }
+    var currentUserId by remember { mutableStateOf<String?>(null) }
+    var profilePictureUrl by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var isOnline by remember { mutableStateOf(participant.isOnline) }
+
+    LaunchedEffect(participant.uid) {
+        isLoading = true
+        try {
+            currentUserId = try {
+                chatRepository.getCurrentUserId()
+            } catch (e: Exception) {
+                null
+            }
+
+            profilePictureUrl = chatRepository.getUserProfilePicture(participant.uid)
+            chatRepository.listenForUserStatus(participant.uid) { onlineStatus ->
+                isOnline = onlineStatus
+            }
+        } finally {
+            isLoading = false
+        }
+    }
+
     Card(
         onClick = onClick,
         modifier = modifier
@@ -391,56 +436,130 @@ private fun ChatParticipantItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(DefaultPrimary.copy(alpha = 0.05f))
-                    .border(
-                        width = 1.dp,
-                        color = DefaultPrimary.copy(alpha = 0.2f),
-                        shape = CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "User profile icon",
-                    tint = DefaultPrimary.copy(alpha = 0.6f),
-                    modifier = Modifier.size(40.dp)
+            Box(modifier = Modifier.size(56.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(DefaultPrimary.copy(alpha = 0.05f))
+                        .border(
+                            width = 1.dp,
+                            color = DefaultPrimary.copy(alpha = 0.2f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = DefaultPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else if (profilePictureUrl != null) {
+                        AsyncImage(
+                            model = profilePictureUrl,
+                            contentDescription = "Profile picture",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Profile icon",
+                            tint = DefaultPrimary.copy(alpha = 0.6f),
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .align(Alignment.BottomEnd)
+                        .background(
+                            color = if (isOnline) Color.Green else Color.Red,
+                            shape = CircleShape
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = Color.White,
+                            shape = CircleShape
+                        )
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = participant.fullName,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = DefaultPrimary
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = participant.fullName,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = DefaultPrimary
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Available now",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                    )
-                )
-            }
+                }
 
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "View chat",
-                tint = DefaultPrimary.copy(alpha = 0.5f),
-                modifier = Modifier.padding(start = 8.dp)
-            )
+                participant.specialty?.let { specialty ->
+                    Text(
+                        text = specialty,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = DefaultOnPrimary.copy(alpha = 0.7f)
+                        ),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                participant.lastMessage?.let { message ->
+                    Row(
+                        modifier = Modifier.padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val timeText = participant.lastMessageTime?.let { time ->
+                            formatMessageTimeWithDate(time)
+                        } ?: ""
+
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(style = SpanStyle(
+                                    color = DefaultPrimary,
+                                    fontWeight = FontWeight.SemiBold
+                                )) {
+                                    append("${participant.lastMessageSender}: ")
+                                }
+                                append(message)
+                                withStyle(style = SpanStyle(
+                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
+                                )) {
+                                    append(" • $timeText")
+                                }
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
         }
     }
+}
+
+private fun formatMessageTimeWithDate(timestamp: Long): String {
+    val date = Date(timestamp)
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val dayFormat = SimpleDateFormat("d", Locale.getDefault())
+    val monthNameFormat = SimpleDateFormat("MMM", Locale.ENGLISH)
+
+    return "${timeFormat.format(date)}, ${dayFormat.format(date)} ${monthNameFormat.format(date)}"
 }
 
 @Composable

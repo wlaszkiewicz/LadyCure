@@ -4,6 +4,7 @@ import com.example.ladycure.data.Appointment
 import com.example.ladycure.screens.ChatParticipantInfo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.LocalTime
@@ -406,35 +407,67 @@ class AppointmentRepository {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
                 ?: return Result.failure(IllegalStateException("User not authenticated"))
 
-            val chatsCollection = FirebaseFirestore.getInstance("telecure").collection("chats")
-            val querySnapshot = chatsCollection
+            val snapshot = firestore.collection("chats")
                 .whereArrayContains("participants", currentUserId)
                 .get()
                 .await()
 
-            val participantIds = querySnapshot.documents.flatMap { doc ->
-                (doc.get("participants") as? List<String>)?.filter { it != currentUserId } ?: emptyList()
-            }.distinct()
+            val participants = mutableListOf<ChatParticipantInfo>()
 
-            val participantsInfo = mutableListOf<ChatParticipantInfo>()
-            for (uid in participantIds) {
-                val userDoc = FirebaseFirestore.getInstance("telecure")
-                    .collection("users")
-                    .document(uid)
+            for (chatDoc in snapshot.documents) {
+                val participantsList = chatDoc.get("participants") as? List<String> ?: continue
+                val otherUserId = participantsList.first { it != currentUserId }
+
+                val userDoc = firestore.collection("users").document(otherUserId).get().await()
+                val userData = userDoc.data ?: continue
+
+                val lastMessageDoc = firestore.collection("chats")
+                    .document(chatDoc.id)
+                    .collection("messages")
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .limit(1)
                     .get()
                     .await()
+                    .documents
+                    .firstOrNull()
 
-                val name = userDoc.getString("name") ?: ""
-                val surname = userDoc.getString("surname") ?: ""
-                val fullName = if (name.isNotBlank() || surname.isNotBlank()) {
-                    "$name $surname".trim()
-                } else {
-                    "Unknown User"
+                val lastMessage = lastMessageDoc?.getString("text")
+                val lastMessageSenderId = lastMessageDoc?.getString("sender")
+
+                var lastMessageSenderName: String? = null
+                lastMessageSenderId?.let { senderId ->
+                    if (senderId == currentUserId) {
+                        lastMessageSenderName = "You"
+                    } else {
+                        val senderDoc = firestore.collection("users").document(senderId).get().await()
+                        val senderData = senderDoc.data
+                        lastMessageSenderName = "${senderData?.get("name")} ${senderData?.get("surname")}"
+                    }
                 }
-                participantsInfo.add(ChatParticipantInfo(uid, fullName))
+
+                val unreadCount = firestore.collection("chats")
+                    .document(chatDoc.id)
+                    .collection("messages")
+                    .whereEqualTo("isRead", false)
+                    .whereEqualTo("sender", otherUserId)
+                    .get()
+                    .await()
+                    .size()
+
+                participants.add(ChatParticipantInfo(
+                    uid = otherUserId,
+                    fullName = "${userData["name"]} ${userData["surname"]}",
+                    specialty = userData["speciality"] as? String,
+                    isOnline = userData["isOnline"] as? Boolean ?: false,
+                    lastSeen = userData["lastSeen"] as? Long,
+                    lastMessage = lastMessage,
+                    lastMessageSender = if (lastMessageSenderId == currentUserId) "Ty" else "${userData["name"]} ${userData["surname"]}",
+                    lastMessageTime = lastMessageDoc?.getTimestamp("timestamp")?.seconds?.times(1000),
+                    unreadCount = unreadCount
+                ))
             }
 
-            Result.success(participantsInfo)
+            Result.success(participants)
         } catch (e: Exception) {
             Result.failure(e)
         }
