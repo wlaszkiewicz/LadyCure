@@ -371,6 +371,7 @@ fun AccountSettingsDialog(
     var name by remember { mutableStateOf(TextFieldValue((userData?.get("name") as? String) ?: "")) }
     var surname by remember { mutableStateOf(TextFieldValue((userData?.get("surname") as? String) ?: "")) }
     var dob by remember { mutableStateOf(TextFieldValue((userData?.get("dob") as? String) ?: "")) }
+    var phone by remember { mutableStateOf(TextFieldValue((userData?.get("phone") as? String) ?: "")) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -401,6 +402,14 @@ fun AccountSettingsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("YYYY-MM-DD") }
                 )
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Phone Number") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("+48 123 456 789") }
+                )
             }
         },
         confirmButton = {
@@ -409,7 +418,8 @@ fun AccountSettingsDialog(
                     val updatedData = mapOf(
                         "name" to name.text,
                         "surname" to surname.text,
-                        "dob" to dob.text
+                        "dob" to dob.text,
+                        "phone" to phone.text
                     )
                     onSave(updatedData)
                 },

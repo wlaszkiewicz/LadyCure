@@ -12,7 +12,8 @@ open class User(
     open val dateOfBirth: String,
     open val role: Role,
     open val profilePictureUrl: String,
-    open val joinedAt: Timestamp
+    open val joinedAt: Timestamp,
+    open val phone: String,
 ) {
 
 
@@ -24,9 +25,10 @@ open class User(
         dateOfBirth: String = this.dateOfBirth,
         role: Role = this.role,
         profilePictureUrl: String = this.profilePictureUrl,
-        joinedAt: Timestamp = this.joinedAt
+        joinedAt: Timestamp = this.joinedAt,
+        phone: String = this.phone
     ): User {
-        return User(id, email, name, surname, dateOfBirth, role, profilePictureUrl, joinedAt)
+        return User(id, email, name, surname, dateOfBirth, role, profilePictureUrl, joinedAt, phone)
     }
 
     fun toDoctor(
@@ -71,8 +73,9 @@ open class User(
             val role = Role.fromValue(user["role"] as? String? ?: "user")
             val profilePictureUrl = user["profilePictureUrl"] as? String? ?: ""
             val joinedAt = user["joinedAt"] as? Timestamp ?: Timestamp.now()
+            val phone = user["phone"] as? String? ?: "Unknown"
 
-            return User(id, email, name, surname, dateOfBirth, role, profilePictureUrl, joinedAt)
+            return User(id, email, name, surname, dateOfBirth, role, profilePictureUrl, joinedAt, phone)
         }
 
         fun empty(): User {
@@ -84,7 +87,8 @@ open class User(
                 dateOfBirth = "",
                 role = Role.USER,
                 profilePictureUrl = "",
-                joinedAt = Timestamp.now()
+                joinedAt = Timestamp.now(),
+                phone = ""
             )
         }
     }

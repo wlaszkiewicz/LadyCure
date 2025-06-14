@@ -18,7 +18,7 @@ data class Doctor(
     val experience: Int = 5,
     val languages: List<String> = listOf("English"),
     val city: String,
-    val phone: String,
+    override val phone: String,
     val bio: String,
     override val id: String,
     override val email: String,
@@ -36,7 +36,8 @@ data class Doctor(
     dateOfBirth = dateOfBirth,
     role = Role.DOCTOR,
     profilePictureUrl = profilePictureUrl,
-    joinedAt = joinedAt
+    joinedAt = joinedAt,
+    phone = phone
 ) {
 
 
@@ -50,7 +51,8 @@ data class Doctor(
             dateOfBirth = this.dateOfBirth,
             profilePictureUrl = this.profilePictureUrl,
             role = Role.USER,
-            joinedAt = this.joinedAt
+            joinedAt = this.joinedAt,
+            phone = this.phone
         )
     }
 
