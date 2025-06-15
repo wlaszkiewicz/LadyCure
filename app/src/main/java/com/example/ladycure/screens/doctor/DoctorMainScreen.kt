@@ -301,6 +301,13 @@ fun DoctorHomeScreen(
                                 it
                             }
                         }
+                        allAppointments.value = allAppointments.value.map {
+                            if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
+                                it.copy(comments = newComment)
+                            } else {
+                                it
+                            }
+                        }
                     }
                 }
             },
