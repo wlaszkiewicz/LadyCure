@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -194,7 +195,7 @@ fun AdminAnalyticsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             TimePeriod.entries.forEach { period ->
                 OutlinedButton(
@@ -460,7 +461,8 @@ fun SummaryCard(
                 title,
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = DefaultOnPrimary.copy(alpha = 0.7f)
-                )
+                ),
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -473,14 +475,6 @@ fun BarChart(
     modifier: Modifier = Modifier
 ) {
     val maxValue = data.maxOfOrNull { it.second }?.toFloat() ?: 1f
-
-//    val reducedData = if (data.size > 10) {
-//        val top10 = data.sortedByDescending { it.second }.take(9)
-//        val othersSum = data.sortedByDescending { it.second }.drop(9).sumOf { it.second }
-//        top10 + ("Others" to othersSum)
-//    } else {
-//        data
-//    }
 
     Row(
         modifier = modifier

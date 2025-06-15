@@ -1,16 +1,20 @@
 package com.example.ladycure.repository
 
 import android.util.Log
+import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.doctor.Doctor
 import com.example.ladycure.data.doctor.DoctorAvailability
+import com.example.ladycure.screens.TimePeriod
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalAdjusters
 
 class DoctorRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -23,7 +27,8 @@ class DoctorRepository {
                 .whereEqualTo("role", "doctor")
                 .get()
                 .await()
-            val doctors = querySnapshot.documents.map { Doctor.fromMap(it.data!!.plus("id" to it.id)) }
+            val doctors =
+                querySnapshot.documents.map { Doctor.fromMap(it.data!!.plus("id" to it.id)) }
             Result.success(doctors)
         } catch (e: Exception) {
             Log.e("AuthRepository", "Error fetching doctors", e)
@@ -268,6 +273,143 @@ class DoctorRepository {
 
             docRef.delete().await()
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+    suspend fun getEarningsData(timePeriod: TimePeriod): Result<List<Pair<String, Double>>> {
+        return try {
+            val currentDoctorId =
+                auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+
+            val appointmentsSnapshot = firestore.collection("appointments")
+                .whereEqualTo("doctorId", currentDoctorId)
+                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .get()
+                .await()
+
+            val formatter = when (timePeriod) {
+                TimePeriod.DAILY -> DateTimeFormatter.ofPattern("MMM dd")
+                TimePeriod.WEEKLY -> DateTimeFormatter.ofPattern("yy 'W'ww")
+                TimePeriod.MONTHLY -> DateTimeFormatter.ofPattern("MMM yyyy")
+                TimePeriod.YEARLY -> DateTimeFormatter.ofPattern("yyyy")
+            }
+
+            val grouped = appointmentsSnapshot.documents
+                .groupBy { appointment ->
+                    // Parse date string (format: "yyyy-MM-dd")
+                    val dateStr = appointment.getString("date") ?: "1970-01-01"
+                    val date = try {
+                        LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    } catch (e: Exception) {
+                        LocalDate.of(1970, 1, 1)
+                    }
+
+                    // Group by time period
+                    when (timePeriod) {
+                        TimePeriod.DAILY -> date.format(DateTimeFormatter.ofPattern("MMM dd"))
+                        TimePeriod.WEEKLY -> date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                            .format(DateTimeFormatter.ofPattern("yy 'W'ww"))
+
+                        TimePeriod.MONTHLY -> date.withDayOfMonth(1)
+                            .format(DateTimeFormatter.ofPattern("MMM yyyy"))
+
+                        TimePeriod.YEARLY -> date.withDayOfYear(1)
+                            .format(DateTimeFormatter.ofPattern("yyyy"))
+                    }
+                }
+                .mapValues { entry ->
+                    entry.value.sumOf { it.getDouble("price") ?: 0.0 }
+                }
+                .toList()
+                .sortedBy { it.first }
+
+            Result.success(grouped)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getEarningsByAppointmentType(): Result<Map<String, Double>> {
+        return try {
+            val currentDoctorId =
+                auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+
+            val appointmentsSnapshot = firestore.collection("appointments")
+                .whereEqualTo("doctorId", currentDoctorId)
+                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .get()
+                .await()
+
+            val earningsByType = appointmentsSnapshot.documents
+                .groupingBy { it.getString("type") ?: "Other" }
+                .fold(0.0) { acc, doc -> acc + (doc.getDouble("price") ?: 0.0) }
+
+            Result.success(earningsByType)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getEarningsStats(): Result<Map<String, Any>> {
+        return try {
+            val currentDoctorId =
+                auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+
+            val appointmentsSnapshot = firestore.collection("appointments")
+                .whereEqualTo("doctorId", currentDoctorId)
+                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .get()
+                .await()
+
+            val totalEarnings = appointmentsSnapshot.documents
+                .sumOf { it.getDouble("price") ?: 0.0 }
+
+            val thisMonth = LocalDate.now().withDayOfMonth(1)
+            val thisMonthEarnings = appointmentsSnapshot.documents
+                .filter { doc ->
+                    val dateStr = doc.getString("date") ?: "1970-01-01"
+                    val date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    date.isAfter(thisMonth.minusDays(1)) && date.isBefore(
+                        LocalDate.now().plusDays(1)
+                    )
+                }
+                .sumOf { it.getDouble("price") ?: 0.0 }
+
+            val stats = mapOf(
+                "totalEarnings" to totalEarnings,
+                "totalAppointments" to appointmentsSnapshot.size(),
+                "thisMonthEarnings" to thisMonthEarnings
+            )
+
+            Result.success(stats)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getMostPopularAppointmentType(): Result<Pair<String, Int>> {
+        return try {
+            val currentDoctorId =
+                auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+
+            val appointmentsSnapshot = firestore.collection("appointments")
+                .whereEqualTo("doctorId", currentDoctorId)
+                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .get()
+                .await()
+
+            val typeCounts = appointmentsSnapshot.documents
+                .groupingBy { it.getString("type") ?: "Other" }
+                .eachCount()
+
+            val mostPopular = typeCounts.maxByOrNull { it.value }
+                ?.let { it.key to it.value }
+                ?: ("None" to 0)
+
+            Result.success(mostPopular)
         } catch (e: Exception) {
             Result.failure(e)
         }

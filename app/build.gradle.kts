@@ -106,6 +106,9 @@ dependencies {
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
     implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
 
+    implementation("com.google.accompanist:accompanist-pager:0.28.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.28.0")
+
 }
 
 apply(plugin = "com.google.gms.google-services")

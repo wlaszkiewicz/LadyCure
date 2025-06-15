@@ -87,7 +87,8 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
         val date = availability.date
         val today = LocalDate.now()
         date != null && date.isAfter(today.minusDays(1)) && // Exclude past dates
-                (date != today || availability.availableSlots.any { it.isAfter(LocalTime.now()) }) // Exclude past time slots for today
+                (date != today || availability.availableSlots.any { it.isAfter(LocalTime.now()) }) && // Exclude past time slots for today
+                (date.month == chosenMonth.month && date.year == chosenMonth.year) // Only include dates in the chosen month
     }.groupBy { it.date }
 
     LaunchedEffect(Unit) {
