@@ -6,13 +6,13 @@ The application should support multiple user roles, each with specific functiona
 ### User Roles:
 
 - **Administrator**:  
-  Responsible for managing the entire system, 	~~including adding and removing doctors, modifying doctor profiles,~~ **updating their availability schedules**, ~~and managing patient/user data.~~
+  ~~Responsible for managing the entire system~~, 	~~including adding and removing doctors, modifying doctor profiles,~~ **updating their availability schedules**, ~~and managing patient/user data.~~
 
 - **Doctor**:  
- ~~A medical professional who can update their profile information, set their availability for appointments, view scheduled consultations,~~ and interact with patients via chat during e-consultations.
+ ~~A medical professional who can update their profile information, set their availability for appointments, view scheduled consultations,~~ ~~and interact with patients via chat during e-consultations~~.
 
 - **Patient/User**:  
-  ~~A general user who can register for an account, browse available doctors, book appointments,~~ **attend e-consultations via chat**, ~~view past consultations in their medical history~~, and ~~upload~~/download medical documents such as prescriptions**.
+  ~~A general user who can register for an account, browse available doctors, book appointments,~~ ~~attend e-consultations via chat~~, ~~view past consultations in their medical history~~, and ~~upload~~/download medical documents such as prescriptions**.
 
 ---
 
@@ -26,8 +26,8 @@ The application should support multiple user roles, each with specific functiona
     - Doctors should be able to modify their schedules.~~
 
 3. **E-Consultation via Chat**:
-    - Real-time chat functionality for online consultations.
-    - Users should be able to send files (e.g., images, prescriptions) via chat.
+    - ~~Real-time chat functionality for online consultations.~~
+    - ~~Users should be able to send files (e.g., images, prescriptions) via chat.~~
     - *Support for QR-code generation for prescriptions (optional)*.
 
 ~~4. **Cloud-Based Storage**:

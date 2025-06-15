@@ -44,6 +44,7 @@ import com.example.ladycure.screens.RegisterScreen
 import com.example.ladycure.screens.WelcomeScreen
 import com.example.ladycure.screens.doctor.AvailabilityListScreen
 import com.example.ladycure.screens.doctor.DoctorApplicationScreen
+import com.example.ladycure.screens.doctor.DoctorEarningsScreen
 import com.example.ladycure.screens.doctor.DoctorHomeScreen
 import com.example.ladycure.screens.doctor.DoctorPendingMainScreen
 import com.example.ladycure.screens.doctor.SetAvailabilityScreen
@@ -94,6 +95,8 @@ fun MainScreen(navController: NavHostController) {
         "admin_user_management",
         "admin_doctor_management",
         "admin_analytics",
+        "set_availability",
+        "earnings",
     )
 
     val showBottomNav = currentRoute in showBottomNavRoutes
@@ -187,6 +190,10 @@ fun MainScreen(navController: NavHostController) {
                         navController,
                         snackbarController
                     )
+                }
+
+                composable("earnings") {
+                    DoctorEarningsScreen(navController, snackbarController)
                 }
 
                 composable("availabilityList") {
