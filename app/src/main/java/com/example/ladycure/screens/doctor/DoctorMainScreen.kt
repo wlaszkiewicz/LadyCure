@@ -4,6 +4,7 @@ import BabyBlue
 import DefaultOnPrimary
 import DefaultPrimary
 import Green
+import Purple
 import Red
 import Yellow
 import androidx.compose.animation.AnimatedVisibility
@@ -12,9 +13,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -53,7 +56,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -63,6 +65,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,7 +79,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -122,6 +125,8 @@ fun DoctorHomeScreen(
     remember { mutableStateOf(false) }
     var showEditStatusDialog by remember { mutableStateOf(false) }
     val selectedAppointment = remember { mutableStateOf<Appointment?>(null) }
+    var showDetailsDialog by remember { mutableStateOf(false) }
+
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -187,8 +192,7 @@ fun DoctorHomeScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                QuickStatsRow(
-                    upcomingCount = upcomingAppointments.value.size,
+                StatsRow(
                     todaysCount = allAppointments.value.count { it.date == LocalDate.now() },
                     completedCount = allAppointments.value.count {
                         it.date == LocalDate.now() && it.time.isBefore(currentTime)
@@ -197,7 +201,11 @@ fun DoctorHomeScreen(
 
                 TodaysSchedule(
                     allAppointments = allAppointments,
-                    //  currentTime = currentTime
+                    currentTime = currentTime,
+                    onSelectAppointment = { appointment ->
+                        selectedAppointment.value = appointment
+                        showDetailsDialog = true
+                    },
                 )
 
 
@@ -207,8 +215,14 @@ fun DoctorHomeScreen(
                     onShowEditStatusDialog = { showEditStatusDialog = true },
                     onViewAll = {
                         navController.navigate("doctor_appointments")
+                    },
+                    onShowDetailsDialog = { appointment ->
+                        selectedAppointment.value = appointment
+                        showDetailsDialog = true
                     }
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // In your DoctorHomeScreen, replace the news section with:
                 NewsCarousel(
@@ -239,51 +253,114 @@ fun DoctorHomeScreen(
                                 it
                             }
                         }
+
+                        allAppointments.value = allAppointments.value.map {
+                            if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
+                                it.copy(status = Status.CONFIRMED)
+                            } else {
+                                it
+                            }
+                        }
+
+                        selectedAppointment.value = selectedAppointment.value?.copy(status = Status.CONFIRMED)
+
+                        snackbarController.showMessage("Appointment confirmed successfully")
                     }
                 }
-            }
+            },
+        )
+    }
+
+
+    if (showDetailsDialog) {
+        DetailsDialog(
+            appointment = selectedAppointment.value!!,
+            onDismiss = { showDetailsDialog = false },
+            onClickStatus = {
+                showEditStatusDialog = true
+            },
+            onMessage = {},
+            onCommentUpdated = { newComment ->
+                coroutineScope.launch {
+                    val result = appointmentsRepo.updateAppointmentComment(
+                        appointmentId = selectedAppointment.value!!.appointmentId,
+                        newComment
+                    )
+                    if (result.isFailure) {
+                        snackbarController.showMessage(
+                            result.exceptionOrNull()?.message
+                                ?: "Failed to update comment"
+                        )
+                    } else {
+                        // Update the comment in the selected appointment
+                        selectedAppointment.value = selectedAppointment.value?.copy(comments = newComment)
+                        upcomingAppointments.value = upcomingAppointments.value.map {
+                            if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
+                                it.copy(comments = newComment)
+                            } else {
+                                it
+                            }
+                        }
+                    }
+                }
+            },
         )
     }
 }
 
+val BookedColor =  BabyBlue.copy(alpha = 0.6f) // A distinct color for booked slots
+val AvailableColor = Purple.copy(alpha = 0.4f) // A lighter color for available slots
+val PastColor = Color(0xFFD6A6C2)
+val CurrentTimeColor = Purple
+
 @Composable
 fun TodaysSchedule(
-    allAppointments: androidx.compose.runtime.State<List<Appointment>>,
-    currentTime: LocalTime = LocalTime.of(16, 0) // Default to noon for testing
+    allAppointments: State<List<Appointment>>,
+    currentTime: LocalTime = LocalTime.now(),
+    startOfWorkday: LocalTime = LocalTime.of(9, 0) ,
+    endOfWorkday: LocalTime = LocalTime.of(17, 0),
+    onSelectAppointment: (Appointment) -> Unit
 ) {
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.6f)
+            containerColor = Color.White
         )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // ... Header Row with date and countdown remains the same ...
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = LocalDate.now()
-                        .format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
+                    text = "Today's Schedule",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = DefaultOnPrimary
                     )
                 )
 
-                // Dynamic countdown to end of workday
-                var timeRemaining by remember { mutableStateOf(calculateTimeRemaining()) }
-
+                var timeRemaining by remember { mutableStateOf(calculateTimeRemaining(
+                    now = currentTime,
+                    startOfWorkday = startOfWorkday,
+                    endOfWorkday = endOfWorkday
+                )) }
                 LaunchedEffect(Unit) {
                     while (true) {
-                        delay(60_000) // Update every minute
-                        timeRemaining = calculateTimeRemaining()
+                        delay(60_000)
+                        timeRemaining = calculateTimeRemaining(
+                            now = currentTime,
+                            startOfWorkday = startOfWorkday,
+                            endOfWorkday = endOfWorkday
+                        )
                     }
                 }
 
@@ -312,262 +389,117 @@ fun TodaysSchedule(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
 
-            val todaysAppointments = allAppointments.value
-                .filter { it.date == LocalDate.now().minusDays(1) } // TESTING Change to .now latr
-                .sortedBy { it.time }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            if (todaysAppointments.isEmpty()) {
-                Box(
+            Column(modifier = Modifier.fillMaxWidth()) {
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    contentAlignment = Alignment.Center
+                        .height(24.dp)
+                        .clip(RoundedCornerShape(12.dp))
                 ) {
-                    Text(
-                        text = "No appointments scheduled today",
-                        color = DefaultOnPrimary.copy(alpha = 0.6f)
-                    )
-                }
-            } else {
-                val workDayStart = LocalTime.of(9, 0)
-                val workDayEnd = LocalTime.of(17, 0)
-                val totalMinutes = ChronoUnit.MINUTES.between(workDayStart, workDayEnd).toFloat()
+                    val timelineWidth = this.maxWidth
+                    var lastTime = LocalTime.of(9, 0)
+                    val workDayStart = lastTime
+                    val totalWorkdayMinutes = ChronoUnit.MINUTES.between(workDayStart, LocalTime.of(17, 0))
 
-                // Calculate progress
-                val progress = if (currentTime.isBefore(workDayStart)) {
-                    0f
-                } else if (currentTime.isAfter(workDayEnd)) {
-                    1f
-                } else {
-                    ChronoUnit.MINUTES.between(workDayStart, currentTime).toFloat() / totalMinutes
-                }
+                    // Layer 1: Base schedule
+                    val todaysAppointments = allAppointments.value
+                        .filter { it.date == LocalDate.now() }
+                        .sortedBy { it.time }
 
+                    todaysAppointments.forEach { appointment ->
+                        val appointmentStart = appointment.time
+                        val appointmentEnd = appointment.time.plusMinutes(appointment.type.durationInMinutes.toLong())
 
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // Timeline visualization
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .padding(vertical = 8.dp)
-                    ) {
-                        // Progress indicator background
-                        LinearProgressIndicator(
-                            progress = { 1f },
+                        // Draw AVAILABLE slot
+                        val freeTimeMinutes = ChronoUnit.MINUTES.between(lastTime, appointmentStart)
+                        if (freeTimeMinutes > 0) {
+                            val freeSlotWidth = timelineWidth * (freeTimeMinutes.toFloat() / totalWorkdayMinutes)
+                            val freeSlotOffset = timelineWidth * (ChronoUnit.MINUTES.between(workDayStart, lastTime).toFloat() / totalWorkdayMinutes)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .width(freeSlotWidth)
+                                    .offset(x = freeSlotOffset)
+                                    .background(AvailableColor)
+                                    .border(width = 1.dp, color = Color.White) // ADD BORDER
+                            )
+                        }
+
+                        // Draw BOOKED slot
+                        val bookedSlotWidth = timelineWidth * (appointment.type.durationInMinutes.toFloat() / totalWorkdayMinutes)
+                        val bookedSlotOffset = timelineWidth * (ChronoUnit.MINUTES.between(workDayStart, appointmentStart).toFloat() / totalWorkdayMinutes)
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.CenterStart),
-                            color = Color.LightGray.copy(alpha = 0.3f),
-                            trackColor = Color.Transparent,
+                                .fillMaxHeight()
+                                .width(bookedSlotWidth)
+                                .offset(x = bookedSlotOffset)
+                                .background(BookedColor)
+                                .clickable {
+                                    onSelectAppointment(appointment)
+                                }
+                                .border(width = 1.dp, color = Color.White) // ADD BORDER
                         )
+                        lastTime = appointmentEnd
+                    }
 
-                        // Current progress indicator
-                        LinearProgressIndicator(
-                            progress = { progress },
+                    // Draw final AVAILABLE slot
+                    val remainingMinutes = ChronoUnit.MINUTES.between(lastTime, LocalTime.of(17, 0))
+                    if (remainingMinutes > 0) {
+                        val freeSlotWidth = timelineWidth * (remainingMinutes.toFloat() / totalWorkdayMinutes)
+                        val freeSlotOffset = timelineWidth * (ChronoUnit.MINUTES.between(workDayStart, lastTime).toFloat() / totalWorkdayMinutes)
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.CenterStart),
-                            color = DefaultPrimary,
-                            trackColor = Color.Transparent
-                        )
-
-                        // Appointment time markers
-                        todaysAppointments.forEach { appointment ->
-                            val appointmentPosition = ChronoUnit.MINUTES.between(
-                                workDayStart,
-                                appointment.time
-                            ).toFloat() / totalMinutes
-
-                            if (appointmentPosition in 0f..1f) {
-                                // Vertical line for appointment time
-                                Box(
-                                    modifier = Modifier
-                                        .width(1.dp)
-                                        .fillMaxHeight()
-                                        .offset(x = (appointmentPosition * (LocalDensity.current.density * 360)).dp)
-                                        .background(BabyBlue)
-                                        .align(Alignment.CenterStart)
-                                )
-
-                                // Time label above the line
-                                Text(
-                                    text = appointment.time.format(DateTimeFormatter.ofPattern("HH:mm")),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = BabyBlue,
-                                    modifier = Modifier
-                                        .offset(
-                                            x = (appointmentPosition * (LocalDensity.current.density * 360)).dp,
-                                            y = (-16).dp
-                                        )
-                                        .align(Alignment.TopStart)
-                                )
-                            }
-                        }
-                    }
-
-                    // Time markers
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            workDayStart.format(DateTimeFormatter.ofPattern("h a")),
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                        Text(
-                            workDayEnd.format(DateTimeFormatter.ofPattern("h a")),
-                            style = MaterialTheme.typography.labelSmall
+                                .fillMaxHeight()
+                                .width(freeSlotWidth)
+                                .offset(x = freeSlotOffset)
+                                .background(AvailableColor)
+                                .border(width = 1.dp, color = Color.White) // ADD BORDER
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // ... Layer 2 (Past Overlay) and Layer 3 (Current Time) remain the same ...
+                    if (currentTime.isAfter(workDayStart)) {
+                        val minutesIntoDay = ChronoUnit.MINUTES.between(workDayStart, currentTime).coerceAtMost(totalWorkdayMinutes)
+                        val pastWidth = timelineWidth * (minutesIntoDay.toFloat() / totalWorkdayMinutes)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(pastWidth)
+                                .background(PastColor)
+                                .align(Alignment.CenterStart)
+                        )
+                    }
 
-//                    // Appointment details (similar to availability screen)
-//                    appointmentsByHour.forEach { (hour, hourAppointments) ->
-//                        val hourText =
-//                            LocalTime.of(hour, 0).format(DateTimeFormatter.ofPattern("h a"))
-//
-//                        Column(
-//                            modifier = Modifier.fillMaxWidth()
-//                        ) {
-//                            Text(
-//                                text = hourText,
-//                                style = MaterialTheme.typography.labelMedium.copy(
-//                                    fontWeight = FontWeight.Bold,
-//                                    color = DefaultPrimary.copy(alpha = 0.8f)
-//                                ),
-//                                modifier = Modifier.padding(vertical = 4.dp)
-//                            )
-//
-//                            FlowRow(
-//                                modifier = Modifier.fillMaxWidth(),
-//                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-//                                verticalArrangement = Arrangement.spacedBy(8.dp)
-//                            ) {
-//                                hourAppointments.forEach { appointment ->
-//                                    val isCompleted = appointment.time.isBefore(currentTime)
-//                                    val isCurrent =
-//                                        appointment.time.truncatedTo(ChronoUnit.HOURS) ==
-//                                                currentTime.truncatedTo(ChronoUnit.HOURS)
-//
-//                                    Box(
-//                                        modifier = Modifier
-//                                            .clip(RoundedCornerShape(4.dp))
-//                                            .background(
-//                                                when {
-//                                                    isCurrent -> Red.copy(alpha = 0.1f)
-//                                                    isCompleted -> DefaultPrimary.copy(alpha = 0.1f)
-//                                                    else -> Color.White
-//                                                }
-//                                            )
-//                                            .border(
-//                                                1.dp,
-//                                                when {
-//                                                    isCurrent -> Red
-//                                                    isCompleted -> DefaultPrimary
-//                                                    else -> DefaultPrimary.copy(alpha = 0.5f)
-//                                                },
-//                                                RoundedCornerShape(4.dp)
-//                                            )
-//                                            .clickable { /* Handle click */ }
-//                                    ) {
-//                                        Row(
-//                                            modifier = Modifier.padding(8.dp),
-//                                            verticalAlignment = Alignment.CenterVertically
-//                                        ) {
-//                                            Column {
-//                                                Text(
-//                                                    appointment.time.format(
-//                                                        DateTimeFormatter.ofPattern(
-//                                                            "h:mm a"
-//                                                        )
-//                                                    ),
-//                                                    style = MaterialTheme.typography.bodySmall.copy(
-//                                                        fontWeight = FontWeight.Bold,
-//                                                        color = when {
-//                                                            isCurrent -> Red
-//                                                            isCompleted -> DefaultPrimary
-//                                                            else -> DefaultOnPrimary
-//                                                        }
-//                                                    )
-//                                                )
-//                                                Text(
-//                                                    appointment.patientName ?: "Patient",
-//                                                    style = MaterialTheme.typography.labelSmall.copy(
-//                                                        color = DefaultOnPrimary.copy(alpha = 0.7f)
-//                                                    )
-//                                                )
-//                                            }
-//
-//                                            Spacer(modifier = Modifier.width(8.dp))
-//
-//                                            Icon(
-//                                                imageVector = when {
-//                                                    isCurrent -> Icons.Default.Schedule
-//                                                    isCompleted -> Icons.Default.CheckCircle
-//                                                    else -> Icons.Default.Person
-//                                                },
-//                                                contentDescription = "Status",
-//                                                tint = when {
-//                                                    isCurrent -> Red
-//                                                    isCompleted -> DefaultPrimary
-//                                                    else -> DefaultPrimary.copy(alpha = 0.7f)
-//                                                },
-//                                                modifier = Modifier.size(16.dp)
-//                                            )
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-
-                    // Stats at the bottom
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "${todaysAppointments.count { it.time.isBefore(currentTime) }} completed",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = BabyBlue
-                                )
-                            )
-                            Text(
-                                text = "${todaysAppointments.size} total",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DefaultOnPrimary.copy(alpha = 0.6f)
-                            )
-                        }
-
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                        ) {
-                            Text(
-                                text = "${todaysAppointments.count { !it.time.isBefore(currentTime) }} remaining",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Yellow
-                                )
-                            )
-                            Text(
-                                text = "Next: ${
-                                    todaysAppointments.firstOrNull { !it.time.isBefore(currentTime) }?.time?.format(
-                                        DateTimeFormatter.ofPattern("h:mm a")
-                                    ) ?: "None"
-                                }",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DefaultOnPrimary.copy(alpha = 0.6f)
-                            )
-                        }
+                    if (currentTime.isAfter(workDayStart) && currentTime.isBefore(LocalTime.of(17, 0))) {
+                        val minutesFromStart = ChronoUnit.MINUTES.between(workDayStart, currentTime)
+                        val currentPosition = timelineWidth * (minutesFromStart.toFloat() / totalWorkdayMinutes)
+                        Box(
+                            modifier = Modifier
+                                .width(2.dp)
+                                .fillMaxHeight()
+                                .offset(x = currentPosition)
+                                .background(CurrentTimeColor)
+                        )
                     }
                 }
+
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(startOfWorkday.format(DateTimeFormatter.ofPattern("h a")), style = MaterialTheme.typography.labelSmall)
+                    Text(endOfWorkday.format(DateTimeFormatter.ofPattern("h a")), style = MaterialTheme.typography.labelSmall)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                TimelineLegend()
+
             }
         }
     }
@@ -575,11 +507,45 @@ fun TodaysSchedule(
 
 
 @Composable
+private fun TimelineLegend() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        LegendItem(color = BookedColor, label = "Booked")
+        LegendItem(color = AvailableColor, label = "Available")
+        LegendItem(color = PastColor, label = "Past")
+        LegendItem(color = CurrentTimeColor, label = "Current Time")
+    }
+}
+
+@Composable
+private fun LegendItem(color: Color, label: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(color, shape = CircleShape)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium
+        )
+    }
+}
+@Composable
 fun NextAppointmentCard(
-    upcomingAppointments: androidx.compose.runtime.State<List<Appointment>>,
-    selectedAppointment: androidx.compose.runtime.MutableState<Appointment?>,
+    upcomingAppointments: State<List<Appointment>>,
+    selectedAppointment: MutableState<Appointment?>,
     onShowEditStatusDialog: () -> Unit,
     onViewAll: () -> Unit,
+    onShowDetailsDialog: (Appointment) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -605,6 +571,12 @@ fun NextAppointmentCard(
                 )
             )
 
+            TextButton(
+                onClick = onViewAll,
+            ) {
+                Text("View All", color = DefaultPrimary)
+            }
+
         }
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -628,10 +600,7 @@ fun NextAppointmentCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        selectedAppointment.value = nearestAppointment
-                        if (nearestAppointment.status == Status.PENDING) {
-                            onShowEditStatusDialog()
-                        }
+                        onShowDetailsDialog(nearestAppointment)
                     },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -770,6 +739,12 @@ fun NextAppointmentCard(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(statusColor.copy(alpha = 0.1f))
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .clickable(onClick = {
+                                        selectedAppointment.value = nearestAppointment
+                                        if (nearestAppointment.status == Status.PENDING) {
+                                            onShowEditStatusDialog()
+                                        }
+                                    })
                             ) {
                                 Text(
                                     text = nearestAppointment.status.displayName,
@@ -797,19 +772,14 @@ fun NextAppointmentCard(
                 }
             }
         }
-        TextButton(
-            onClick = onViewAll,
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text("View All Appointments", color = DefaultPrimary)
-        }
+
     }
+
 }
 
 
 @Composable
-private fun QuickStatsRow(
-    upcomingCount: Int,
+private fun StatsRow(
     todaysCount: Int,
     completedCount: Int
 ) {
@@ -818,19 +788,20 @@ private fun QuickStatsRow(
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
     ) {
-        // Upcoming Appointments
+        // Appointments Today
         StatCard(
-            value = (todaysCount - completedCount).toString(),
-            label = "Upcoming",
+            value = todaysCount.toString(),
+            label = "Today",
+
             icon = Icons.Default.Schedule,
             colorIcon = DefaultPrimary,
             modifier = Modifier.weight(1f)
         )
 
-        // Today's Appointments
+        // Upcoming Appointments
         StatCard(
-            value = todaysCount.toString(),
-            label = "Today",
+            value = (todaysCount - completedCount).toString(),
+            label = "Upcoming",
             icon = Icons.Default.CalendarToday,
             colorIcon = BabyBlue,
             modifier = Modifier.weight(1f)
@@ -887,7 +858,8 @@ private fun DoctorHeader(
                     Icon(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Notifications",
-                        tint = DefaultPrimary
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(30.dp)
                     )
                 }
             }
@@ -941,10 +913,10 @@ private fun DoctorHeader(
 
 
 // Helper function for countdown
-fun calculateTimeRemaining(): String {
-    val endOfWorkday = LocalTime.of(17, 0) // 5 PM
-    val now = LocalTime.of(12, 0) // Replace with LocalTime.now() in production
-
+fun calculateTimeRemaining(now: LocalTime, startOfWorkday: LocalTime, endOfWorkday: LocalTime): String {
+    if (now.isBefore(startOfWorkday)) {
+        return "Workday hasn't started yet"
+    }
     return if (now.isAfter(endOfWorkday)) {
         "Day completed"
     } else {
@@ -1214,7 +1186,7 @@ private fun StatCard(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.9f)
+            containerColor = Color.White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -1254,152 +1226,6 @@ private fun StatCard(
     }
 }
 
-@Composable
-private fun DoctorAppointmentCard(
-    appointment: Appointment,
-    onClickStatus: () -> Unit = {},
-    onCommentUpdated: (String) -> Unit = {}
-) {
-    var showDetailsDialog by remember { mutableStateOf(false) }
-
-    val statusColor = when (appointment.status) {
-        Status.CONFIRMED -> Color(0xFF4CAF50)
-        Status.PENDING -> Color(0xFFFFC107)
-        else -> Color(0xFFF44336)
-    }
-
-    Card(
-        modifier = Modifier
-            .width(280.dp)
-            .padding(vertical = 4.dp)
-            .clickable { showDetailsDialog = true },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.9f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
-        ) {
-            // Header with doctor info
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(DefaultPrimary.copy(alpha = 0.1f))
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Patient",
-                        tint = DefaultPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
-                Column {
-                    Text(
-                        text = appointment.patientName ?: "Patient",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                    Text(
-                        text = appointment.type.displayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Date and time
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        "Date",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Gray
-                    )
-                    Text(
-                        appointment.date.format(DateTimeFormatter.ofPattern("MMM dd yyyy")),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "Time",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Gray
-                    )
-                    Text(
-                        appointment.time.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.US)),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Footer with status and price
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(statusColor.copy(alpha = 0.1f))
-                        .clickable(onClick = onClickStatus)
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = appointment.status.name.lowercase()
-                            .replaceFirstChar { it.uppercase() },
-                        color = statusColor,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-
-                Text(
-                    text = "$${"%.2f".format(appointment.price)}",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = DefaultPrimary
-                    )
-                )
-            }
-        }
-    }
-
-    // Details Dialog
-    if (showDetailsDialog) {
-        DetailsDialog(
-            appointment = appointment,
-            onDismiss = { showDetailsDialog = false },
-            onClickStatus = {
-                onClickStatus()
-            },
-            onMessage = {},
-            onCommentUpdated = {
-                onCommentUpdated(it)
-                appointment.comments = it
-            }
-        )
-    }
-}
 
 @Composable
 fun DetailsDialog(
@@ -1407,7 +1233,7 @@ fun DetailsDialog(
     onDismiss: () -> Unit,
     onClickStatus: () -> Unit,
     onMessage: () -> Unit,
-    onCommentUpdated: (String) -> Unit
+    onCommentUpdated: (String) -> Unit,
 ) {
     var editedComment by remember { mutableStateOf(appointment.comments) }
     var showEditComment by remember { mutableStateOf(false) }
@@ -1755,87 +1581,3 @@ fun DetailsDialog(
     }
 
 }
-
-@Composable
-private fun ActionButton(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = DefaultPrimary,
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = DefaultPrimary
-            )
-        }
-    }
-}
-
-@Composable
-private fun ActivityItem(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    time: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(DefaultPrimary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = DefaultPrimary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = DefaultOnPrimary.copy(alpha = 0.6f)
-            )
-        }
-        Text(
-            text = time,
-            style = MaterialTheme.typography.labelSmall,
-            color = DefaultOnPrimary.copy(alpha = 0.5f)
-        )
-    }
-}
-
