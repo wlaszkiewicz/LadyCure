@@ -592,39 +592,45 @@ fun NextAppointmentCard(
 
                         Spacer(modifier = Modifier.height(4.dp))
 
+                        // Replace the current chip section with this:
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Time chip
+                            // Time chip - fixed width since time format is consistent
                             Box(
                                 modifier = Modifier
+                                    .width(90.dp) // Fixed width for time
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(DefaultPrimary.copy(alpha = 0.1f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = nearestAppointment.time.format(
-                                        DateTimeFormatter.ofPattern(
-                                            "h:mm a"
-                                        )
-                                    ),
+                                    text = nearestAppointment.time.format(DateTimeFormatter.ofPattern("h:mm a")),
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = DefaultPrimary
+                                    color = DefaultPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
-                            // Type chip
+                            // Type chip - flexible width with max constraints
                             Box(
                                 modifier = Modifier
+                                    .weight(1f, fill = false) // Takes remaining space but doesn't expand
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(BabyBlue.copy(alpha = 0.2f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = nearestAppointment.type.displayName,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = BabyBlue
+                                    color = BabyBlue,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
