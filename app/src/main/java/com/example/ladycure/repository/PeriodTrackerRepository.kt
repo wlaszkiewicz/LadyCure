@@ -19,8 +19,7 @@ class PeriodTrackerRepository {
     // FirebaseAuth instance to get the current user's ID
     private val auth = FirebaseAuth.getInstance()
 
-    // FirebaseFirestore instance, initialized with the "telecure" app name
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
     // The base collection path for user-specific period tracker data
     private fun getUserPeriodTrackerCollection() = firestore.collection("users")

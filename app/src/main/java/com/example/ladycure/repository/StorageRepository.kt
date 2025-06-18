@@ -11,7 +11,7 @@ import kotlinx.coroutines.tasks.await
 
 class StorageRepository {
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
     private val storage = FirebaseStorage.getInstance()
     private val storageRef = storage.reference
 

@@ -18,7 +18,7 @@ import java.time.temporal.TemporalAdjusters
 
 class DoctorRepository {
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
 
     suspend fun getDoctors(): Result<List<Doctor>> {

@@ -113,8 +113,6 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.firebase:firebase-analytics")
 
-
-
 }
 
 apply(plugin = "com.google.gms.google-services")

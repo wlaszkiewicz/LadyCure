@@ -1,16 +1,18 @@
 package com.example.ladycure.repository
 
+import android.util.Log
 import androidx.navigation.NavController
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
     fun authenticate(
         email: String,
@@ -38,7 +40,46 @@ class AuthRepository {
                                             return@addOnSuccessListener
                                         }
                                     }
-                                    onSuccess()
+
+                                    // NOW fetch the token *after* navigating
+                                    FirebaseMessaging.getInstance().token
+                                        .addOnCompleteListener { tokenTask ->
+                                            if (tokenTask.isSuccessful) {
+                                                val token = tokenTask.result
+                                                val uid =
+                                                    FirebaseAuth.getInstance().currentUser?.uid
+                                                if (uid != null) {
+                                                    firestore
+                                                        .collection("users")
+                                                        .document(uid)
+                                                        .update("fcmToken", token)
+                                                        .addOnSuccessListener {
+                                                            Log.d("FCM", "Token updated for $uid")
+                                                            onSuccess()
+                                                        }
+                                                        .addOnFailureListener { e ->
+                                                            Log.e(
+                                                                "FCM",
+                                                                "Failed to update token",
+                                                                e
+                                                            )
+                                                            onFailure(
+                                                                Exception("Failed to update FCM token: ${e.message}")
+                                                            )
+                                                        }
+                                                }
+                                            } else {
+                                                Log.e(
+                                                    "FCM",
+                                                    "Failed to get FCM token",
+                                                    tokenTask.exception
+                                                )
+                                                onFailure(
+                                                    Exception("Failed to get FCM token: ${tokenTask.exception?.message}")
+                                                )
+                                            }
+                                        }
+
                                 } else {
                                     onFailure(Exception("User document does not exist"))
                                 }
@@ -57,9 +98,13 @@ class AuthRepository {
     }
 
 
+
     fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
     }
+
+
+
 
     suspend fun register(
         email: String,

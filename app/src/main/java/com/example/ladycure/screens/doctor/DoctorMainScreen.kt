@@ -67,6 +67,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,12 +85,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.Appointment
 import com.example.ladycure.data.Appointment.Status
 import com.example.ladycure.presentation.home.components.AppointmentDetailItem
 import com.example.ladycure.presentation.home.components.InfoChip
+import com.example.ladycure.presentation.viewmodels.DoctorHomeViewModel
 import com.example.ladycure.repository.AppointmentRepository
 import com.example.ladycure.repository.AuthRepository
 import com.example.ladycure.repository.UserRepository
@@ -113,62 +116,22 @@ import kotlin.math.absoluteValue
 fun DoctorHomeScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
-    authRepo: AuthRepository = AuthRepository(),
-    userRepo: UserRepository = UserRepository(),
-    appointmentsRepo: AppointmentRepository = AppointmentRepository()
+    viewModel: DoctorHomeViewModel = viewModel()
 ) {
-    val doctorData = remember { mutableStateOf<Map<String, Any>?>(null) }
-    var upcomingAppointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
-    val isLoading = remember { mutableStateOf(true) }
-    val allAppointments = remember { mutableStateOf<List<Appointment>>(emptyList()) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-    remember { mutableStateOf(false) }
-    var showEditStatusDialog by remember { mutableStateOf(false) }
-    val selectedAppointment = remember { mutableStateOf<Appointment?>(null) }
-    var showDetailsDialog by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsState()
+    val selectedAppointment by viewModel.selectedAppointment
+    val showEditStatusDialog by viewModel.showEditStatusDialog
+    val showDetailsDialog by viewModel.showDetailsDialog
 
-
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(Unit) {
-        val result = userRepo.getCurrentUserData()
-        if (result.isSuccess) {
-            doctorData.value = result.getOrNull()
-
-            val appointmentsResult = appointmentsRepo.getAppointments("doctor")
-            if (appointmentsResult.isSuccess) {
-                allAppointments.value = appointmentsResult.getOrNull() ?: emptyList()
-
-                upcomingAppointments.value = allAppointments.value.filter {
-                    it.date.isAfter(LocalDate.now()) || (it.date == LocalDate.now() && it.time >= LocalTime.now())
-                }
-
-                upcomingAppointments.value = upcomingAppointments.value.sortedWith(
-                    compareBy({ it.date }, { it.time })
-                )
-
-            }
-            isLoading.value = false
-        } else {
-            errorMessage.value = result.exceptionOrNull()?.message
-            isLoading.value = false
+    // Show error message if any
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { error ->
+            snackbarController.showMessage(error)
+            viewModel.clearErrorMessage()
         }
     }
 
-    var currentTime by remember { mutableStateOf(LocalTime.now()) }
-    LaunchedEffect(Unit) {
-        val now = LocalTime.now()
-        val initialDelay =
-            (60_000 - (now.second * 1000 + now.nano / 1_000_000)).toLong()
-        delay(initialDelay)
-        while (true) {
-            currentTime = LocalTime.now()
-            delay(60_000)
-        }
-    }
-
-
-    if (isLoading.value) {
+    if (uiState.isLoading) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -179,9 +142,8 @@ fun DoctorHomeScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-
             DoctorHeader(
-                doctorData = doctorData,
+                doctorData = uiState.doctorData,
                 navController = navController
             )
 
@@ -193,38 +155,34 @@ fun DoctorHomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 StatsRow(
-                    todaysCount = allAppointments.value.count { it.date == LocalDate.now() },
-                    completedCount = allAppointments.value.count {
-                        it.date == LocalDate.now() && it.time.isBefore(currentTime)
+                    todaysCount = uiState.allAppointments.count { it.date == LocalDate.now() },
+                    completedCount = uiState.allAppointments.count {
+                        it.date == LocalDate.now() && it.time.isBefore(uiState.currentTime)
                     }
                 )
 
                 TodaysSchedule(
-                    allAppointments = allAppointments,
-                    currentTime = currentTime,
+                    allAppointments = uiState.allAppointments,
+                    currentTime = uiState.currentTime,
                     onSelectAppointment = { appointment ->
-                        selectedAppointment.value = appointment
-                        showDetailsDialog = true
+                        viewModel.selectAppointment(appointment)
+                        viewModel.setShowDetailsDialog(true)
                     },
                 )
 
-
                 NextAppointmentCard(
-                    upcomingAppointments = upcomingAppointments,
+                    upcomingAppointments = uiState.upcomingAppointments,
                     selectedAppointment = selectedAppointment,
-                    onShowEditStatusDialog = { showEditStatusDialog = true },
-                    onViewAll = {
-                        navController.navigate("doctor_appointments")
-                    },
+                    onShowEditStatusDialog = { viewModel.setShowEditStatusDialog(true) },
+                    onViewAll = { navController.navigate("doctor_appointments") },
                     onShowDetailsDialog = { appointment ->
-                        selectedAppointment.value = appointment
-                        showDetailsDialog = true
+                        viewModel.selectAppointment(appointment)
+                        viewModel.setShowDetailsDialog(true)
                     }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // In your DoctorHomeScreen, replace the news section with:
                 NewsCarousel(
                     navController = navController,
                     modifier = Modifier.fillMaxWidth()
@@ -235,83 +193,27 @@ fun DoctorHomeScreen(
 
     if (showEditStatusDialog) {
         ConfirmAppointmentDialog(
-            onDismiss = { showEditStatusDialog = false },
-            onConfirm = {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val result = appointmentsRepo.updateAppointmentStatus(
-                        appointmentId = selectedAppointment.value!!.appointmentId,
-                        status = Status.CONFIRMED.displayName
-                    )
-                    if (result.isFailure) {
-                        errorMessage.value = result.exceptionOrNull()?.message
-                    } else {
-                        // Change the status of the appointment in the list
-                        upcomingAppointments.value = upcomingAppointments.value.map {
-                            if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
-                                it.copy(status = Status.CONFIRMED)
-                            } else {
-                                it
-                            }
-                        }
-
-                        allAppointments.value = allAppointments.value.map {
-                            if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
-                                it.copy(status = Status.CONFIRMED)
-                            } else {
-                                it
-                            }
-                        }
-
-                        selectedAppointment.value = selectedAppointment.value?.copy(status = Status.CONFIRMED)
-
-                        snackbarController.showMessage("Appointment confirmed successfully")
-                    }
-                }
-            },
+            onDismiss = { viewModel.setShowEditStatusDialog(false) },
+            onConfirm = { viewModel.confirmAppointment() }
         )
     }
 
-
-    if (showDetailsDialog) {
-        DetailsDialog(
-            appointment = selectedAppointment.value!!,
-            onDismiss = { showDetailsDialog = false },
-            onClickStatus = {
-                showEditStatusDialog = true
-            },
-            onMessage = {},
-            onCommentUpdated = { newComment ->
-                coroutineScope.launch {
-                    val result = appointmentsRepo.updateAppointmentComment(
-                        appointmentId = selectedAppointment.value!!.appointmentId,
-                        newComment
-                    )
-                    if (result.isFailure) {
-                        snackbarController.showMessage(
-                            result.exceptionOrNull()?.message
-                                ?: "Failed to update comment"
-                        )
-                    } else {
-                        // Update the comment in the selected appointment
-                        selectedAppointment.value = selectedAppointment.value?.copy(comments = newComment)
-                        upcomingAppointments.value = upcomingAppointments.value.map {
-                            if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
-                                it.copy(comments = newComment)
-                            } else {
-                                it
-                            }
-                        }
-                        allAppointments.value = allAppointments.value.map {
-                            if (it.appointmentId == selectedAppointment.value!!.appointmentId) {
-                                it.copy(comments = newComment)
-                            } else {
-                                it
-                            }
-                        }
+    selectedAppointment?.let { appointment ->
+        if (showDetailsDialog) {
+            DetailsDialog(
+                appointment = appointment,
+                onDismiss = { viewModel.setShowDetailsDialog(false) },
+                onClickStatus = {
+                    if (appointment.status == Status.PENDING) {
+                        viewModel.setShowEditStatusDialog(true)
                     }
-                }
-            },
-        )
+                },
+                onMessage = {},
+                onCommentUpdated = { newComment ->
+                    viewModel.updateAppointmentComment(newComment)
+                },
+            )
+        }
     }
 }
 
@@ -322,7 +224,7 @@ val CurrentTimeColor = Purple
 
 @Composable
 fun TodaysSchedule(
-    allAppointments: State<List<Appointment>>,
+    allAppointments: List<Appointment>,
     currentTime: LocalTime = LocalTime.now(),
     startOfWorkday: LocalTime = LocalTime.of(9, 0) ,
     endOfWorkday: LocalTime = LocalTime.of(17, 0),
@@ -341,7 +243,6 @@ fun TodaysSchedule(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // ... Header Row with date and countdown remains the same ...
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -412,7 +313,7 @@ fun TodaysSchedule(
                     val totalWorkdayMinutes = ChronoUnit.MINUTES.between(workDayStart, LocalTime.of(17, 0))
 
                     // Layer 1: Base schedule
-                    val todaysAppointments = allAppointments.value
+                    val todaysAppointments = allAppointments
                         .filter { it.date == LocalDate.now() }
                         .sortedBy { it.time }
 
@@ -548,8 +449,8 @@ private fun LegendItem(color: Color, label: String) {
 }
 @Composable
 fun NextAppointmentCard(
-    upcomingAppointments: State<List<Appointment>>,
-    selectedAppointment: MutableState<Appointment?>,
+    upcomingAppointments: List<Appointment>,
+    selectedAppointment: Appointment?,
     onShowEditStatusDialog: () -> Unit,
     onViewAll: () -> Unit,
     onShowDetailsDialog: (Appointment) -> Unit
@@ -558,8 +459,8 @@ fun NextAppointmentCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         // Find the nearest appointment
-        val nearestAppointment = remember(upcomingAppointments.value) {
-            upcomingAppointments.value.minByOrNull {
+        val nearestAppointment = remember(upcomingAppointments) {
+            upcomingAppointments.minByOrNull {
                 ChronoUnit.DAYS.between(LocalDate.now(), it.date).absoluteValue
             }
         }
@@ -747,7 +648,6 @@ fun NextAppointmentCard(
                                     .background(statusColor.copy(alpha = 0.1f))
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                                     .clickable(onClick = {
-                                        selectedAppointment.value = nearestAppointment
                                         if (nearestAppointment.status == Status.PENDING) {
                                             onShowEditStatusDialog()
                                         }
@@ -828,7 +728,7 @@ private fun StatsRow(
 
 @Composable
 private fun DoctorHeader(
-    doctorData: androidx.compose.runtime.State<Map<String, Any>?>,
+    doctorData: Map<String, Any>?,
     navController: NavHostController
 ) {
     Row(
@@ -840,7 +740,7 @@ private fun DoctorHeader(
     ) {
         Column {
             Text(
-                text = "Welcome Dr. ${doctorData.value?.get("name") ?: ""}",
+                text = "Welcome Dr. ${doctorData?.get("name") ?: ""}",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -882,7 +782,7 @@ private fun DoctorHeader(
                     .clickable { navController.navigate("profile") },
                 contentAlignment = Alignment.Center
             ) {
-                val profileUrl = doctorData.value?.get("profilePictureUrl") as? String
+                val profileUrl = doctorData?.get("profilePictureUrl") as? String
                 if (profileUrl != null) {
                     SubcomposeAsyncImage(
                         model = profileUrl,
