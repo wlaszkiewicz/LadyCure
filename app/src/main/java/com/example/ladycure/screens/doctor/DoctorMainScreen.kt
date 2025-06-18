@@ -122,6 +122,7 @@ fun DoctorHomeScreen(
     val selectedAppointment by viewModel.selectedAppointment
     val showEditStatusDialog by viewModel.showEditStatusDialog
     val showDetailsDialog by viewModel.showDetailsDialog
+    val nearestAppointment by viewModel.nearestAppointment
 
     // Show error message if any
     LaunchedEffect(uiState.errorMessage) {
@@ -171,8 +172,7 @@ fun DoctorHomeScreen(
                 )
 
                 NextAppointmentCard(
-                    upcomingAppointments = uiState.upcomingAppointments,
-                    selectedAppointment = selectedAppointment,
+                    nearestAppointment = nearestAppointment,
                     onShowEditStatusDialog = { viewModel.setShowEditStatusDialog(true) },
                     onViewAll = { navController.navigate("doctor_appointments") },
                     onShowDetailsDialog = { appointment ->
@@ -449,28 +449,17 @@ private fun LegendItem(color: Color, label: String) {
 }
 @Composable
 fun NextAppointmentCard(
-    upcomingAppointments: List<Appointment>,
-    selectedAppointment: Appointment?,
+    nearestAppointment: Appointment?,
     onShowEditStatusDialog: () -> Unit,
     onViewAll: () -> Unit,
     onShowDetailsDialog: (Appointment) -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        // Find the nearest appointment
-        val nearestAppointment = remember(upcomingAppointments) {
-            upcomingAppointments.minByOrNull {
-                ChronoUnit.DAYS.between(LocalDate.now(), it.date).absoluteValue
-            }
-        }
-
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Title
             Text(
                 text = "Next Appointment",
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -479,209 +468,268 @@ fun NextAppointmentCard(
                 )
             )
 
-            TextButton(
-                onClick = onViewAll,
-            ) {
+            TextButton(onClick = onViewAll) {
                 Text("View All", color = DefaultPrimary)
             }
-
         }
+
         Spacer(modifier = Modifier.height(8.dp))
 
         if (nearestAppointment == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No upcoming appointments scheduled",
-                    color = DefaultOnPrimary.copy(alpha = 0.6f)
-                )
-            }
+            EmptyState()
         } else {
-            val isToday = nearestAppointment.date == LocalDate.now()
-            val isTomorrow = nearestAppointment.date == LocalDate.now().plusDays(1)
+            AppointmentCardContent(
+                appointment = nearestAppointment,
+                onShowEditStatusDialog = onShowEditStatusDialog,
+                onShowDetailsDialog = onShowDetailsDialog
+            )
+        }
+    }
+}
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onShowDetailsDialog(nearestAppointment)
-                    },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                ),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
+@Composable
+private fun AppointmentCardContent(
+    appointment: Appointment,
+    onShowEditStatusDialog: () -> Unit,
+    onShowDetailsDialog: (Appointment) -> Unit
+) {
+    val isToday = appointment.date == LocalDate.now()
+    val isTomorrow = appointment.date == LocalDate.now().plusDays(1)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onShowDetailsDialog(appointment) },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Calendar date box (unchanged)
+            DateBox(appointment.date)
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Main content column
+            Column(modifier = Modifier.weight(1f)) {
+                // Patient name and price
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Calendar date box
+                    Text(
+                        text = appointment.patientName ?: "Patient",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Text(
+                        text = "$${"%.2f".format(appointment.price)}",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = DefaultPrimary
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Time and appointment type - now in a cleaner row format
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Time with icon
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Time",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = appointment.time.format(DateTimeFormatter.ofPattern("h:mm a")),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    // Divider
                     Box(
                         modifier = Modifier
-                            .width(60.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(DefaultPrimary.copy(alpha = 0.1f))
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = nearestAppointment.date.format(
-                                    DateTimeFormatter.ofPattern(
-                                        "MMM"
-                                    )
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DefaultPrimary
-                            )
-                            Text(
-                                text = nearestAppointment.date.format(
-                                    DateTimeFormatter.ofPattern(
-                                        "dd"
-                                    )
-                                ),
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = DefaultPrimary
-                            )
-                            Text(
-                                text = nearestAppointment.date.format(
-                                    DateTimeFormatter.ofPattern(
-                                        "EEE"
-                                    )
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DefaultPrimary
-                            )
-                        }
-                    }
+                            .height(16.dp)
+                            .width(1.dp)
+                            .background(Color.LightGray)
+                    )
 
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // Appointment details
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = nearestAppointment.patientName ?: "Patient",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Text(
-                                text = "$${"%.2f".format(nearestAppointment.price)}",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = DefaultPrimary
-                                )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            // Time chip
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(DefaultPrimary.copy(alpha = 0.1f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = nearestAppointment.time.format(
-                                        DateTimeFormatter.ofPattern(
-                                            "h:mm a"
-                                        )
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = DefaultPrimary
-                                )
-                            }
-
-                            // Type chip
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(BabyBlue.copy(alpha = 0.2f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = nearestAppointment.type.displayName,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = BabyBlue
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Status and relative time
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            val statusColor = when (nearestAppointment.status) {
-                                Status.CONFIRMED -> Green
-                                Status.PENDING -> Yellow
-                                else -> Red
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(statusColor.copy(alpha = 0.1f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .clickable(onClick = {
-                                        if (nearestAppointment.status == Status.PENDING) {
-                                            onShowEditStatusDialog()
-                                        }
-                                    })
-                            ) {
-                                Text(
-                                    text = nearestAppointment.status.displayName,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = statusColor
-                                )
-                            }
-
-                            Text(
-                                text = when {
-                                    isToday -> "Today"
-                                    isTomorrow -> "Tomorrow"
-                                    else -> "In ${
-                                        ChronoUnit.DAYS.between(
-                                            LocalDate.now(),
-                                            nearestAppointment.date
-                                        )
-                                    } days"
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = DefaultOnPrimary.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
+                    // Appointment type
+                    Text(
+                        text = appointment.type.displayName,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = BabyBlue,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Status and relative time
+                StatusRow(
+                    status = appointment.status,
+                    isToday = isToday,
+                    isTomorrow = isTomorrow,
+                    appointmentDate = appointment.date,
+                    onClick = {
+                        if (appointment.status == Status.PENDING) {
+                            onShowEditStatusDialog()
+                        }
+                    }
+                )
             }
         }
+    }
+}
 
+@Composable
+private fun DateBox(date: LocalDate) {
+    Box(
+        modifier = Modifier
+            .width(60.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(DefaultPrimary.copy(alpha = 0.1f))
+            .border(
+                width = 1.dp,
+                color = DefaultPrimary,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = date.format(
+                    DateTimeFormatter.ofPattern(
+                        "MMM"
+                    )
+                ),
+                style = MaterialTheme.typography.labelSmall,
+                color = DefaultPrimary
+            )
+            Text(
+                text = date.format(
+                    DateTimeFormatter.ofPattern(
+                        "dd"
+                    )
+                ),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = DefaultPrimary
+            )
+            Text(
+                text = date.format(
+                    DateTimeFormatter.ofPattern(
+                        "EEE"
+                    )
+                ),
+                style = MaterialTheme.typography.labelSmall,
+                color = DefaultPrimary
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun StatusRow(
+    status: Status,
+    isToday: Boolean,
+    isTomorrow: Boolean,
+    appointmentDate: LocalDate,
+    onClick: () -> Unit
+) {
+    val statusColor = when (status) {
+        Status.CONFIRMED -> Green
+        Status.PENDING -> Yellow
+        else -> Red
     }
 
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Status indicator
+
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(statusColor.copy(alpha = 0.1f))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clickable(onClick = onClick),
+                ) {
+                    Text(
+                        text = status.displayName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = statusColor
+                    )
+                }
+
+
+        // Relative time
+        Text(
+            text = when {
+                isToday -> "Today"
+                isTomorrow -> "Tomorrow"
+                else -> "In ${ChronoUnit.DAYS.between(LocalDate.now(), appointmentDate)} days"
+            },
+            style = MaterialTheme.typography.labelMedium,
+            color = when {
+                isToday -> Purple
+                isTomorrow -> Purple.copy(alpha = 0.8f)
+                else -> DefaultOnPrimary.copy(alpha = 0.6f)
+            }
+        )
+    }
+}
+
+@Composable
+private fun EmptyState() {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = null,
+                tint = DefaultPrimary.copy(alpha = 0.3f),
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "No upcoming appointments",
+                style = MaterialTheme.typography.bodyMedium,
+                color = DefaultOnPrimary.copy(alpha = 0.6f)
+            )
+        }
+    }
 }
 
 

@@ -40,6 +40,9 @@ class DoctorHomeViewModel(
     private val _showDetailsDialog = mutableStateOf(false)
     val showDetailsDialog: State<Boolean> = _showDetailsDialog
 
+    private val _nearestAppointment = mutableStateOf<Appointment?>(null)
+    val nearestAppointment: State<Appointment?> = _nearestAppointment
+
     init {
         loadData()
         startTimeUpdates()
@@ -57,6 +60,8 @@ class DoctorHomeViewModel(
                     it.date.isAfter(LocalDate.now()) ||
                             (it.date == LocalDate.now() && it.time >= LocalTime.now())
                 }.sortedWith(compareBy({ it.date }, { it.time }))
+
+                _nearestAppointment.value = findNearestAppointment(upcomingAppointments)
 
                 _uiState.update {
                     it.copy(
@@ -76,6 +81,22 @@ class DoctorHomeViewModel(
                 }
             }
         }
+    }
+
+    private fun findNearestAppointment(appointments: List<Appointment>): Appointment? {
+        if (appointments.isEmpty()) return null
+
+        val now = LocalDate.now()
+        val currentTime = LocalTime.now()
+
+        // First try to find today's next appointment
+        val todaysNext = appointments.firstOrNull {
+            it.date == now && it.time.isAfter(currentTime)
+        }
+        if (todaysNext != null) return todaysNext
+
+        // If none today, find the earliest future appointment
+        return appointments.firstOrNull { it.date.isAfter(now) } ?: appointments.firstOrNull()
     }
 
     private fun startTimeUpdates() {
