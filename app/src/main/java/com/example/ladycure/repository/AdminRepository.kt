@@ -15,7 +15,7 @@ import java.time.temporal.TemporalAdjusters
 
 class AdminRepository {
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
 
     suspend fun getUserGrowthData(timePeriod: TimePeriod): Result<List<Pair<String, Int>>> {

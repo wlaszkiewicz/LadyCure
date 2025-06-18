@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "866721863227",
-    "project_id": "telecure-6bbb6",
-    "storage_bucket": "telecure-6bbb6.firebasestorage.app"
+    "project_number": "1047691916115",
+    "project_id": "ladycure",
+    "storage_bucket": "ladycure.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:866721863227:android:be8e4148eead7c785c2e1e",
+        "mobilesdk_app_id": "1:1047691916115:android:8e5544488cfe9e0b6b27a6",
         "android_client_info": {
           "package_name": "com.example.ladycure"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCwbdF-ZyZ4imANDTKYQBNw-jhJ7WsSSbM"
+          "current_key": "AIzaSyBDOhKs8pcAwF_krTIjy4RMWaf80BpAd0Y"
         }
       ],
       "services": {

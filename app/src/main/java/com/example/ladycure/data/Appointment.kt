@@ -52,7 +52,13 @@ data class Appointment(
                 ),
                 status = Status.fromDisplayName(map["status"] as String),
                 type = AppointmentType.fromDisplayName(map["type"] as String),
-                price = map["price"] as Double,
+                price = when (val p = map["price"]) {
+                    is Double -> p
+                    is Long -> p.toDouble()
+                    is Int -> p.toDouble()
+                    is String -> p.toDoubleOrNull() ?: 0.0
+                    else -> 0.0
+                },
                 address = map["address"] as String,
                 doctorName = map["doctorName"] as String,
                 patientName = map["patientName"] as String,

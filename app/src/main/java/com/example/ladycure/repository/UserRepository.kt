@@ -8,7 +8,7 @@ import kotlinx.coroutines.tasks.await
 
 class UserRepository {
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
     suspend fun updateProfilePicture(imageUrl: String): Result<Unit> {
         return try {

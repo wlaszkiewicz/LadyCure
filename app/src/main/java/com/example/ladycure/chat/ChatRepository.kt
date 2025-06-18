@@ -13,8 +13,7 @@ import java.util.*
 class ChatRepository {
     private val auth = FirebaseAuth.getInstance()
     private val storage = FirebaseStorage.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
-    private val usersFirestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
     fun getCurrentUserId(): String {
         return auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")

@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit
 
 class AppointmentRepository {
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
 
     suspend fun bookAppointment(
@@ -113,6 +113,7 @@ class AppointmentRepository {
             Result.failure(e)
         }
     }
+
 
     suspend fun updateAppointmentComment(appointmentId: String, comment: String): Result<Unit> {
         return try {

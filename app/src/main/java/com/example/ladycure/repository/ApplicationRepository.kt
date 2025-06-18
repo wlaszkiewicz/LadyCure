@@ -8,7 +8,7 @@ import kotlinx.coroutines.tasks.await
 
 class ApplicationRepository {
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance("telecure")
+    private val firestore = FirebaseFirestore.getInstance()
 
     suspend fun submitApplication(application: DoctorApplication): Result<Unit> {
         var appMap = application.toMap()

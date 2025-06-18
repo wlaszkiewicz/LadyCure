@@ -4,17 +4,23 @@ import LadyCureTheme
 import SnackbarActionColor
 import SnackbarBackground
 import SnackbarContentColor
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,6 +66,10 @@ import com.example.ladycure.screens.user.RescheduleScreen
 import com.example.ladycure.screens.user.SearchDoctorsScreen
 import com.example.ladycure.screens.user.SelectServiceScreen
 import com.example.ladycure.utility.SnackbarController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.google.firebase.FirebaseApp
 
 class MainActivity : AppCompatActivity() {
@@ -105,6 +115,10 @@ fun MainScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
 
     val snackbarController = remember { SnackbarController(scope, snackbarHostState) }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        RequestNotificationPermissionDialog()
+    }
 
     Scaffold(
         snackbarHost = {
@@ -350,6 +364,54 @@ fun MainScreen(navController: NavHostController) {
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun PermissionDialog(onRequestPermission: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text("Permission Needed") },
+        text = { Text("We need notification permission to keep you updated! 💌") },
+        confirmButton = {
+            TextButton(onClick = onRequestPermission) {
+                Text("Allow")
+            }
+        }
+    )
+}
+
+@Composable
+fun RationaleDialog() {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text("Why We Need This?") },
+        text = { Text("To send you reminders, health tips, and doctor's messages! ") },
+        confirmButton = {
+            TextButton(onClick = {
+                val intent = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                }
+                context.startActivity(intent)
+            }) {
+                Text("OK")
+            }
+        }
+    )
+}
+
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun RequestNotificationPermissionDialog() {
+    val permissionState = rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+
+    if (!permissionState.status.isGranted) {
+        if (permissionState.status.shouldShowRationale) RationaleDialog()
+        else PermissionDialog { permissionState.launchPermissionRequest() }
     }
 }
 

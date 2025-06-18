@@ -62,6 +62,23 @@ import com.example.ladycure.screens.SummaryCard
 import com.example.ladycure.screens.TimePeriod
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.async
+import org.w3c.dom.Text
+
+
+// Define this at the top of your file with other color definitions
+val appointmentTypeColors = listOf(
+    Purple,
+    BabyBlue,
+    DefaultPrimary,
+    Yellow.copy(alpha = 0.7f),
+    Purple.copy(alpha = 0.5f),
+    DefaultPrimary.copy(alpha = 0.5f),
+    BabyBlue.copy(alpha = 0.5f),
+)
+
+fun getColorForAppointmentType(index: Int): Color {
+    return appointmentTypeColors[index % appointmentTypeColors.size]
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -237,7 +254,6 @@ fun DoctorEarningsScreen(
                         if (earningsData.isNotEmpty()) {
                             BarChart(
                                 data = earningsData.map { it.first to it.second.toInt() },
-                                color = DefaultPrimary,
                                 isCurrency = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -289,6 +305,8 @@ fun DoctorEarningsScreen(
 
 
                 // Earnings by Type Bar Chart
+                // In your DoctorEarningsScreen, update the second bar chart section:
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -304,14 +322,26 @@ fun DoctorEarningsScreen(
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
                         if (earningsByType.isNotEmpty()) {
+                            val earningsByTypeList = earningsByType.map { it.key to it.value.toInt() }
+                            val totalEarningsByType = earningsByType.values.sum()
+
+                            // Use the same colors as the pie chart
                             BarChart(
-                                data = earningsByType.map { it.key to it.value.toInt() },
-                                color = BabyBlue,
+                                data = earningsByTypeList,
                                 isCurrency = true,
+                                useTypeColors = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(180.dp)
                                     .padding(top = 8.dp)
+                            )
+
+                            // Add the legend below the chart
+                            AppointmentTypeLegend(
+                                data = earningsByTypeList,
+                                showPercentage = false,
+                                total = totalEarningsByType.toDouble(),
+                                modifier = Modifier.padding(top = 8.dp)
                             )
                         } else {
                             Text(
@@ -335,6 +365,48 @@ fun DoctorEarningsScreen(
     }
 }
 
+
+@Composable
+fun AppointmentTypeLegend(
+    data: List<Pair<String, Int>>,
+    modifier: Modifier = Modifier,
+    showPercentage: Boolean = false,
+    total: Double? = null
+) {
+    val sortedData = data.sortedByDescending { it.second }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        sortedData.forEachIndexed { index, (label, value) ->
+            val color = getColorForAppointmentType(index)
+            val percentageText = if (showPercentage && total != null) {
+                val percentage = (value.toDouble() / total * 100).toInt()
+                " ($percentage%)"
+            } else ""
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(color, shape = MaterialTheme.shapes.small)
+                )
+                Text(
+                    text = "$label$percentageText",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun PieChart(
     data: Map<String, Double>,
@@ -349,16 +421,6 @@ fun PieChart(
             Text("No earnings data available")
         }
     }
-
-    // Fixed color palette
-    val colorPalette = listOf(
-        Purple,
-        BabyBlue,
-        DefaultPrimary,
-        Yellow,
-        Purple.copy(alpha = 0.5f),
-        DefaultPrimary.copy(alpha = 0.5f)
-    )
 
     Column(
         modifier = modifier,
@@ -376,7 +438,7 @@ fun PieChart(
 
             data.entries.forEachIndexed { index, (_, value) ->
                 val sweepAngle = ((value / total) * 360f).toFloat().coerceAtMost(360f)
-                val color = colorPalette[index % colorPalette.size]
+                val color = getColorForAppointmentType(index)
 
                 drawArc(
                     color = color,
@@ -390,121 +452,107 @@ fun PieChart(
             }
         }
 
-        // Vertical Legend - shows all types, scrollable if more than 3
-        val sortedEntries = data.entries.sortedByDescending { it.value }
-        val showScroll = sortedEntries.size > 3
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (showScroll) Modifier.verticalScroll(rememberScrollState())
-                    else Modifier
-                )
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            sortedEntries.forEachIndexed { index, (label, value) ->
-                val percentage = (value / total * 100).toInt()
-                val color = colorPalette[index % colorPalette.size]
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(color, shape = MaterialTheme.shapes.small)
-                    )
-                    Text(
-                        text = "$label ($percentage%)", // Full name displayed
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-            }
-        }
+        // Use the shared legend component
+        val dataList = data.map { it.key to it.value.toInt() }
+        AppointmentTypeLegend(
+            data = dataList,
+            showPercentage = true,
+            total = total,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
 @Composable
 fun BarChart(
     data: List<Pair<String, Int>>,
-    color: Color,
     isCurrency: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useTypeColors: Boolean = false // Add this parameter
 ) {
     val maxValue = data.maxOfOrNull { it.second }?.toFloat() ?: 1f
 
-    Row(
-        modifier = modifier
-            .padding(bottom = 16.dp)
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        val context = LocalContext.current
-        val density = LocalDensity.current
-        val barSpacing = with(density) { 8.dp.toPx() }
-        val canvasHeight = with(density) { 200.dp.toPx() }
-        val minBarWidth = with(density) { 32.dp.toPx() }
-        val totalSpacing = barSpacing * (data.size - 1)
-        val horizontalPaddingPx = with(density) { 30.dp.toPx() } * 2
-        val screenWidthPx = context.resources.displayMetrics.widthPixels
-        val availableWidth = (screenWidthPx - horizontalPaddingPx).toFloat()
-        val barWidthPx = if (data.isNotEmpty()) {
-            ((availableWidth - totalSpacing) / data.size).coerceAtLeast(minBarWidth)
-        } else {
-            minBarWidth
-        }
-        val canvasWidth = barWidthPx * data.size + totalSpacing + with(density) { 8.dp.toPx() }
-
-        Canvas(
+    Column(modifier = modifier) {
+        // The chart itself
+        Row(
             modifier = Modifier
-                .width(with(LocalDensity.current) { canvasWidth.toDp() })
-                .height(with(LocalDensity.current) { canvasHeight.toDp() })
+                .padding(bottom = 16.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.Center
         ) {
-            val maxBarHeight = size.height * 0.8f
+            val context = LocalContext.current
+            val density = LocalDensity.current
+            val barSpacing = with(density) { 8.dp.toPx() }
+            val canvasHeight = with(density) { 200.dp.toPx() }
+            val minBarWidth = with(density) { 32.dp.toPx() }
+            val totalSpacing = barSpacing * (data.size - 1)
+            val horizontalPaddingPx = with(density) { 30.dp.toPx() } * 2
+            val screenWidthPx = context.resources.displayMetrics.widthPixels
+            val availableWidth = (screenWidthPx - horizontalPaddingPx).toFloat()
+            val barWidthPx = if (data.isNotEmpty()) {
+                ((availableWidth - totalSpacing) / data.size).coerceAtLeast(minBarWidth)
+            } else {
+                minBarWidth
+            }
+            val canvasWidth = barWidthPx * data.size + totalSpacing + with(density) { 8.dp.toPx() }
 
-            data.forEachIndexed { index, (label, value) ->
-                val barHeight = (value.toFloat() / maxValue) * maxBarHeight
-                val left = index * (barWidthPx + barSpacing) + 4.dp.toPx()
-                val top = size.height - barHeight
+            Canvas(
+                modifier = Modifier
+                    .width(with(LocalDensity.current) { canvasWidth.toDp() })
+                    .height(with(LocalDensity.current) { canvasHeight.toDp() })
+            ) {
+                val maxBarHeight = size.height * 0.8f
 
-                // Draw bar
-                drawRoundRect(
-                    color = color.copy(alpha = 0.7f),
-                    topLeft = Offset(left, top),
-                    size = Size(barWidthPx, barHeight),
-                    cornerRadius = CornerRadius(4.dp.toPx()),
-                )
+                data.forEachIndexed { index, (label, value) ->
+                    val barHeight = (value.toFloat() / maxValue) * maxBarHeight
+                    val left = index * (barWidthPx + barSpacing) + 4.dp.toPx()
+                    val top = size.height - barHeight
 
-                drawContext.canvas.nativeCanvas.apply {
-                    val displayValue = if (isCurrency) "$$value" else value.toString()
-                    drawText(
-                        displayValue,
-                        left + barWidthPx / 2,
-                        top - 8.dp.toPx(),
-                        Paint().apply {
-                            this.color = color.toArgb()
-                            textSize = 12.sp.toPx()
-                            textAlign = Paint.Align.CENTER
-                        }
+                    // Use type-specific color if requested, otherwise use default
+                    val barColor = if (useTypeColors) {
+                        getColorForAppointmentType(index)
+                    } else {
+                       DefaultPrimary.copy(alpha = 0.7f)
+                    }
+
+                    // Draw bar
+                    drawRoundRect(
+                        color = barColor,
+                        topLeft = Offset(left, top),
+                        size = Size(barWidthPx, barHeight),
+                        cornerRadius = CornerRadius(4.dp.toPx()),
                     )
-                }
 
-                // Draw time label below the bar, centered
-                drawContext.canvas.nativeCanvas.apply {
-                    drawText(
-                        label,
-                        left + barWidthPx / 2,
-                        size.height + 20.dp.toPx(),
-                        Paint().apply {
-                            this.color = DefaultOnPrimary.toArgb()
-                            textSize = 10.sp.toPx()
-                            textAlign = Paint.Align.CENTER
+                    drawContext.canvas.nativeCanvas.apply {
+                        val displayValue = if (isCurrency) "$$value" else value.toString()
+                        drawText(
+                            displayValue,
+                            left + barWidthPx / 2,
+                            top - 8.dp.toPx(),
+                            Paint().apply {
+                                this.color = barColor.toArgb()
+                                textSize = 12.sp.toPx()
+                                textAlign = Paint.Align.CENTER
+                            }
+                        )
+                    }
+
+                    if (!useTypeColors) { // If not using type colors, draw the label below the bar
+
+                        // Draw time label below the bar, centered
+                        drawContext.canvas.nativeCanvas.apply {
+                            drawText(
+                                label,
+                                left + barWidthPx / 2,
+                                size.height + 20.dp.toPx(),
+                                Paint().apply {
+                                    this.color = DefaultOnPrimary.toArgb()
+                                    textSize = 10.sp.toPx()
+                                    textAlign = Paint.Align.CENTER
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
