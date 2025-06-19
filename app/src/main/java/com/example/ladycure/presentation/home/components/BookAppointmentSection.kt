@@ -55,7 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.ladycure.data.doctor.Speciality
+import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.utility.SharedPreferencesHelper
 
 @Composable
@@ -68,7 +68,12 @@ fun BookAppointmentSection(
     onSpecializationSelected: (Speciality) -> Unit,
     context: Context = LocalContext.current
 ) {
+
     val lastFetchedCity = remember(initialCity) { mutableStateOf<String?>(initialCity) }
+
+    if (initialCity == "Detecting City...") {
+        lastFetchedCity.value = availableCities.firstOrNull() ?: "No available cities"
+    }
 
     var showLocationDropdown by remember { mutableStateOf(false) }
     var selectedLocation = remember(selectedCity, initialCity) {
@@ -86,7 +91,7 @@ fun BookAppointmentSection(
                 selectedCity != initialCity
     }
 
-    LaunchedEffect(selectedCity, initialCity) {
+    LaunchedEffect(selectedCity, initialCity, lastFetchedCity.value) {
         selectedCity?.let {
             selectedLocation = it
         } ?: run {

@@ -73,11 +73,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-import com.example.ladycure.data.Appointment
-import com.example.ladycure.data.Appointment.Status
-import com.example.ladycure.data.doctor.Speciality
-import com.example.ladycure.repository.AppointmentRepository
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.data.repository.AppointmentRepository
+import com.example.ladycure.domain.model.Appointment
+import com.example.ladycure.domain.model.Appointment.Status
+import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 import java.time.LocalDate

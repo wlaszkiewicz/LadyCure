@@ -1,8 +1,6 @@
 package com.example.ladycure.utility
 
-import android.content.ContentResolver
 import android.content.Context
-import android.util.Log
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -19,7 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.data.repository.AuthRepository
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.tasks.await
@@ -82,6 +80,7 @@ fun rememberImagePickerLauncher(
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
                 android.Manifest.permission.READ_MEDIA_IMAGES
             }
+
             else -> {
                 android.Manifest.permission.READ_EXTERNAL_STORAGE
             }

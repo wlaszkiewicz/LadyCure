@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.ladycure.repository.UserRepository
+import com.example.ladycure.data.repository.UserRepository
 
 sealed class Screen(
     val route: String,
