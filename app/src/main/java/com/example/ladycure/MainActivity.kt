@@ -71,6 +71,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.firebase.FirebaseApp
+import com.google.firebase.Timestamp
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -233,35 +234,45 @@ fun MainScreen(navController: NavHostController) {
                     DoctorsListScreen(navController, speciality, snackbarController)
                 }
 
-                composable("confirmation/{doctorId}/{date}/{time}/{appointmentType}") { backStackEntry ->
+                composable("confirmation/{doctorId}/{timestampSeconds}/{timestampNanoseconds}/{appointmentType}") { backStackEntry ->
                     val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
-                    val time = backStackEntry.arguments?.getString("time") ?: ""
-                    val date = backStackEntry.arguments?.getString("date") ?: ""
+                    val timestampSeconds =
+                        backStackEntry.arguments?.getString("timestampSeconds")?.toLongOrNull()
+                            ?: 0L
+                    val timestampNanoseconds =
+                        backStackEntry.arguments?.getString("timestampNanoseconds")?.toIntOrNull()
+                            ?: 0
                     val appointmentType = backStackEntry.arguments?.getString("appointmentType")
+
+                    val timestamp = Timestamp(timestampSeconds, timestampNanoseconds)
 
                     ConfirmationScreen(
                         navController,
                         snackbarController,
                         doctorId,
-                        date,
-                        time,
+                        timestamp,
                         AppointmentType.fromDisplayName(appointmentType!!)
                     )
                 }
 
-                composable("confirmation/{doctorId}/{date}/{time}/{appointmentType}/{referral}") { backStackEntry ->
+                composable("confirmation/{doctorId}/{timestampSeconds}/{timestampNanoseconds}/{appointmentType}/{referral}") { backStackEntry ->
                     val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
-                    val time = backStackEntry.arguments?.getString("time") ?: ""
-                    val date = backStackEntry.arguments?.getString("date") ?: ""
+                    val timestampSeconds =
+                        backStackEntry.arguments?.getString("timestampSeconds")?.toLongOrNull()
+                            ?: 0L
+                    val timestampNanoseconds =
+                        backStackEntry.arguments?.getString("timestampNanoseconds")?.toIntOrNull()
+                            ?: 0
                     val appointmentType = backStackEntry.arguments?.getString("appointmentType")
                     val referral = backStackEntry.arguments?.getString("referral")
+
+                    val timestamp = Timestamp(timestampSeconds, timestampNanoseconds)
 
                     ConfirmationScreen(
                         navController,
                         snackbarController,
                         doctorId,
-                        date,
-                        time,
+                        timestamp,
                         AppointmentType.fromDisplayName(appointmentType!!),
                         referral
                     )

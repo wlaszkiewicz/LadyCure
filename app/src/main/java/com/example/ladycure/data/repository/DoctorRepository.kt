@@ -58,25 +58,10 @@ class DoctorRepository {
                 .await()
                 .documents
                 .map { doc ->
-                    DoctorAvailability(
+                    DoctorAvailability.fromMap(
+                        doc.data ?: emptyMap(),
                         doctorId = doctor.id,
-                        date = LocalDate.parse(doc.id, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                        startTime = LocalTime.parse(
-                            doc.getString("startTime"),
-                            DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                        ),
-                        endTime = LocalTime.parse(
-                            doc.getString("endTime"),
-                            DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                        ),
-                        availableSlots = (doc.get("availableSlots") as? List<String>)
-                            ?.map { slot ->
-                                LocalTime.parse(
-                                    slot,
-                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                )
-                            }
-                            ?.toMutableList() ?: mutableListOf()
+                        documentId = doc.id
                     )
                 }
             allAvailabilities.addAll(availabilities)
@@ -95,29 +80,10 @@ class DoctorRepository {
 
             val availabilities = snapshot.documents.mapNotNull { doc ->
                 try {
-                    DoctorAvailability(
+                    DoctorAvailability.fromMap(
+                        doc.data ?: emptyMap(),
                         doctorId = doctorId,
-                        date = LocalDate.parse(doc.id, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                        startTime = doc.getString("startTime")?.let {
-                            LocalTime.parse(
-                                it,
-                                DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                            )
-                        },
-                        endTime = doc.getString("endTime")?.let {
-                            LocalTime.parse(
-                                it,
-                                DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                            )
-                        },
-                        availableSlots = (doc.get("availableSlots") as? List<String>)
-                            ?.map { slot ->
-                                LocalTime.parse(
-                                    slot,
-                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                )
-                            }
-                            ?.toMutableList() ?: mutableListOf()
+                        documentId = doc.id
                     )
                 } catch (e: Exception) {
                     null
@@ -196,7 +162,6 @@ class DoctorRepository {
 
                     // Update the document
                     val availabilityData = hashMapOf(
-                        "doctorId" to doctorId,
                         "startTime" to startTime.format(timeFormatter),
                         "endTime" to endTime.format(timeFormatter),
                         "availableSlots" to mergedSlots.map { it.format(timeFormatter) }
@@ -206,7 +171,6 @@ class DoctorRepository {
                 } else {
                     // No existing document - just create new availability
                     val availabilityData = hashMapOf(
-                        "doctorId" to doctorId,
                         "startTime" to startTime.format(timeFormatter),
                         "endTime" to endTime.format(timeFormatter),
                         "availableSlots" to newSlots.map { it.format(timeFormatter) }
@@ -300,13 +264,11 @@ class DoctorRepository {
 
             val grouped = appointmentsSnapshot.documents
                 .groupBy { appointment ->
-                    // Parse date string (format: "yyyy-MM-dd")
-                    val dateStr = appointment.getString("date") ?: "1970-01-01"
-                    val date = try {
-                        LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    } catch (e: Exception) {
-                        LocalDate.of(1970, 1, 1)
-                    }
+                    val date = appointment.getTimestamp("dateTime")?.toDate()?.toInstant()
+                        ?.atZone(java.time.ZoneId.systemDefault())
+                        ?.toLocalDate()
+                        ?: LocalDate.now()
+
 
                     // Group by time period
                     when (timePeriod) {
@@ -371,8 +333,10 @@ class DoctorRepository {
             val thisMonth = LocalDate.now().withDayOfMonth(1)
             val thisMonthEarnings = appointmentsSnapshot.documents
                 .filter { doc ->
-                    val dateStr = doc.getString("date") ?: "1970-01-01"
-                    val date = LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    val timestamp = doc.getTimestamp("dateTime")
+                    val date =
+                        timestamp?.toDate()?.toInstant()?.atZone(java.time.ZoneId.systemDefault())
+                            ?.toLocalDate() ?: LocalDate.MIN
                     date.isAfter(thisMonth.minusDays(1)) && date.isBefore(
                         LocalDate.now().plusDays(1)
                     )

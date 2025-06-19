@@ -3,12 +3,14 @@ package com.example.ladycure.presentation.home
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import Purple
 import SwipeCard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +47,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -151,7 +154,7 @@ fun DoctorsListScreen(
                     )
                 }
             } else {
-                TextButton(
+                OutlinedButton(
                     onClick = {
                         showSwipingScreen = !showSwipingScreen; swipeableDoctors =
                         doctors.value.shuffled()
@@ -159,8 +162,13 @@ fun DoctorsListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp),
-                    colors = ButtonDefaults.textButtonColors(
-                        containerColor = DefaultPrimary.copy(alpha = 0.1f) // Example background color
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = Purple.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Purple
                     )
                 ) {
                     Text(
@@ -170,7 +178,7 @@ fun DoctorsListScreen(
                             "Go back to the list."
                         },
                         style = MaterialTheme.typography.labelLarge,
-                        color = DefaultPrimary
+                        color = Purple
                     )
                 }
 
@@ -180,7 +188,7 @@ fun DoctorsListScreen(
                 Text(
                     text = "Swipe to select a doctor",
                     style = MaterialTheme.typography.titleLarge,
-                    color = DefaultOnPrimary,
+                    color = DefaultOnPrimary.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )

@@ -9,11 +9,11 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.location.Geocoder
-import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,11 +53,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,35 +71,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
-import com.example.ladycure.data.repository.AppointmentRepository
-import com.example.ladycure.data.repository.AuthRepository
-import com.example.ladycure.data.repository.DoctorRepository
-import com.example.ladycure.data.repository.StorageRepository
-import com.example.ladycure.data.repository.UserRepository
-import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.AppointmentType
-import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Referral
 import com.example.ladycure.utility.SnackbarController
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.Timestamp
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -113,130 +102,52 @@ fun ConfirmationScreen(
     navController: NavController,
     snackbarController: SnackbarController?,
     doctorId: String,
-    date: String,
-    time: String,
+    timestamp: Timestamp,
     appointmentType: AppointmentType,
     referralId: String? = null,
-    userRepo: UserRepository = UserRepository(),
-    authRepo: AuthRepository = AuthRepository(),
-    doctorRepo: DoctorRepository = DoctorRepository(),
-    appointmentRepo: AppointmentRepository = AppointmentRepository(),
-    referralRepo: StorageRepository = StorageRepository(),
+    viewModel: ConfirmationViewModel = viewModel()
 ) {
+    // Collect state from ViewModel
+    val isLoading = viewModel.isLoading
+    val errorMessage = viewModel.errorMessage
+    val doctorInfo = viewModel.doctorInfo
+    val referral = viewModel.referral
+    val isUploading = viewModel.isUploading
+    val showUploadSuccess = viewModel.showUploadSuccess
+    val uploadProgress = viewModel.uploadProgress
 
-    val doctorInfo = remember { mutableStateOf<Map<String, Any>?>(null) }
-    val isLoading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
+    // Initialize data loading
+    LaunchedEffect(Unit) {
+        viewModel.loadInitialData(doctorId, timestamp, referralId)
+    }
 
-    var userName by remember { mutableStateOf("Patient unavailable") }
+    // Handle errors
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { err ->
+            snackbarController?.showMessage(err)
+            viewModel.errorMessage = null
+        }
+    }
 
-    var referral by remember { mutableStateOf<Referral?>(null) }
-
-    var isUploading by remember { mutableStateOf(false) }
-    var showUploadSuccess by remember { mutableStateOf(false) }
-    var uploadProgress by remember { mutableFloatStateOf(0f) }
-
+    // PDF upload launcher
     val pdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             uri?.let {
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        withContext(Dispatchers.Main) {
-                            isUploading = true
-                            uploadProgress = 0f
-                        }
-
-                        val result = referralRepo.replaceReferralInFirestore(
-                            uri = uri,
-                            oldUri = referral?.url.toString(),
-                            referralId = referralId.toString(),
-                            service = appointmentType.displayName,
-                        ) { progress ->
-                            uploadProgress = progress.progress
-                        }
-
-                        withContext(Dispatchers.Main) {
-                            isUploading = false
-                            if (result.isSuccess) {
-                                referral = referral?.copy(url = result.getOrNull() ?: "")
-                                showUploadSuccess = true
-                            } else {
-                                snackbarController?.showMessage(
-                                    message = result.exceptionOrNull()?.message
-                                        ?: "Could not upload PDF"
-                                )
-                            }
-                        }
-                    } catch (e: Exception) {
-                        withContext(Dispatchers.Main) {
-                            isUploading = false
-                            snackbarController?.showMessage(
-                                message = e.message ?: "Upload failed"
-                            )
-                        }
+                viewModel.uploadReferral(
+                    uri = it,
+                    referralId = referralId.toString(),
+                    appointmentType = appointmentType,
+                    onSuccess = { /* Success handled in ViewModel */ },
+                    onError = { message ->
+                        snackbarController?.showMessage(message)
                     }
-                }
+                )
             }
         }
     )
 
-
-
-    if (referralId != null) {
-        LaunchedEffect(referralId) {
-            try {
-                val result = referralRepo.getReferralById(referralId)
-                if (result.isSuccess) {
-                    referral = result.getOrNull()
-                } else {
-                    errorMessage.value = "Failed to load referral document"
-                }
-            } catch (e: Exception) {
-                errorMessage.value = "Error: ${e.message}"
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        userName = userRepo.getUserField("name").getOrNull() + " " +
-                userRepo.getUserField("surname").getOrNull()
-    }
-    // Create an appointment object
-    val appointment = Appointment(
-        appointmentId = "",
-        doctorId = doctorId,
-        date = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-        time = LocalTime.parse(time, DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
-        patientId = authRepo.getCurrentUserId().toString(),
-        status = Appointment.Status.PENDING,
-        type = appointmentType,
-        price = appointmentType.price,
-        address = doctorInfo.value?.get("address") as? String ?: "Address unavailable",
-        doctorName = (doctorInfo.value?.get("name") as? String + " " +
-                doctorInfo.value?.get("surname") as? String),
-        patientName = userName,
-        comments = "",
-    )
-
-    // Fetch doctor details
-    LaunchedEffect(doctorId) {
-        try {
-            val result = doctorRepo.getDoctorById(doctorId)
-            if (result.isSuccess) {
-                val doctor = result.getOrNull()
-                doctorInfo.value = Doctor.toMap(doctor!!)
-            } else {
-                errorMessage.value = "Failed to load doctor details"
-            }
-            isLoading.value = false
-        } catch (e: Exception) {
-            errorMessage.value = "Error: ${e.message}"
-            isLoading.value = false
-        }
-    }
-
-    if (isLoading.value) {
+    if (isLoading) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -245,16 +156,13 @@ fun ConfirmationScreen(
         ) {
             LoadingView()
         }
-
     } else {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
                 .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
-
-            ) {
+        ) {
             // Header with back button
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -281,14 +189,7 @@ fun ConfirmationScreen(
             }
 
             when {
-                errorMessage.value != null -> snackbarController?.showMessage(
-                    message = errorMessage.value ?: "Unknown error"
-                )
-
-                doctorInfo.value == null -> snackbarController?.showMessage(
-                    message = "Doctor info is unavailable"
-                )
-
+                doctorInfo == null -> snackbarController?.showMessage("Doctor info is unavailable")
                 else -> {
                     Column(
                         modifier = Modifier
@@ -322,7 +223,7 @@ fun ConfirmationScreen(
                                 ) {
                                     Text("Date:", style = MaterialTheme.typography.bodyMedium)
                                     Text(
-                                        text = formatConfirmationDate(date),
+                                        text = viewModel.formattedDate,
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = DefaultOnPrimary,
                                         fontWeight = FontWeight.SemiBold
@@ -337,7 +238,7 @@ fun ConfirmationScreen(
                                 ) {
                                     Text("Time:", style = MaterialTheme.typography.bodyMedium)
                                     Text(
-                                        text = formatConfirmationTime(time),
+                                        text = viewModel.formattedTime,
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = DefaultOnPrimary,
                                         fontWeight = FontWeight.SemiBold
@@ -367,16 +268,16 @@ fun ConfirmationScreen(
 
                         // Doctor information card
                         DoctorConfirmationCard(
-                            doctor = doctorInfo.value!!,
+                            doctor = doctorInfo,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
                         LocationCard(
-                            doctor = doctorInfo.value!!,
+                            doctor = doctorInfo,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-                        // Payment information card (optional)
+                        // Payment information card
                         PaymentCard(
                             modifier = Modifier.padding(bottom = 24.dp),
                             appointmentType = appointmentType
@@ -389,13 +290,14 @@ fun ConfirmationScreen(
                                 .padding(bottom = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Button(
+                            OutlinedButton(
                                 onClick = { navController.popBackStack() },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.LightGray,
-                                    contentColor = DefaultOnPrimary
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = DefaultOnPrimary,
                                 ),
+                                border = BorderStroke(1.dp, DefaultOnPrimary),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text("Cancel")
@@ -403,23 +305,24 @@ fun ConfirmationScreen(
 
                             Button(
                                 onClick = {
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        val result = appointmentRepo.bookAppointment(appointment)
-                                        if (result.isSuccess) {
+                                    viewModel.bookAppointment(
+                                        doctorId = doctorId,
+                                        timestamp = timestamp,
+                                        appointmentType = appointmentType,
+                                        onSuccess = { appointmentId ->
                                             snackbarController?.showMessage(
-                                                message = "Appointment booked successfully"
+                                                "Appointment booked successfully"
                                             )
                                             if (referralId == null) {
-                                                navController.navigate("booking_success/${result.getOrNull()}")
+                                                navController.navigate("booking_success/$appointmentId")
                                             } else {
-                                                navController.navigate("booking_success/${result.getOrNull()}/$referralId")
+                                                navController.navigate("booking_success/$appointmentId/$referralId")
                                             }
-                                        } else {
-                                            snackbarController?.showMessage(
-                                                message = "Failed to book appointment: ${result.exceptionOrNull()?.message}"
-                                            )
+                                        },
+                                        onError = { message ->
+                                            snackbarController?.showMessage(message)
                                         }
-                                    }
+                                    )
                                 },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
@@ -434,6 +337,24 @@ fun ConfirmationScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LoadingView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator(color = DefaultPrimary)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Loading appointment details...", color = DefaultOnPrimary)
         }
     }
 }
@@ -1181,7 +1102,7 @@ private fun calculateFileSize(context: Context, uriString: String?): String? {
     if (uriString == null) return null
 
     return try {
-        val uri = Uri.parse(uriString)
+        val uri = uriString.toUri()
         val file = when (uri.scheme) {
             "content" -> {
                 val cursor = context.contentResolver.query(uri, null, null, null, null)
@@ -1193,7 +1114,7 @@ private fun calculateFileSize(context: Context, uriString: String?): String? {
                 }
             }
 
-            "file" -> File(uri.path).length().toString()
+            "file" -> File(uri.path!!).length().toString()
             else -> null
         }
 
@@ -1213,7 +1134,7 @@ private fun calculateFileSize(context: Context, uriString: String?): String? {
 private fun openPdf(context: Context, pdfUrl: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(Uri.parse(pdfUrl), "application/pdf")
+            setDataAndType(pdfUrl.toUri(), "application/pdf")
             setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NO_HISTORY)
         }
         context.startActivity(intent)
@@ -1242,30 +1163,3 @@ fun formatConfirmationTime(timeString: String): String {
     }
 }
 
-@Composable
-private fun LoadingView() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(color = DefaultPrimary)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Loading appointment details...", color = DefaultOnPrimary)
-    }
-}
-
-
-@Preview
-@Composable
-fun ConfirmationScreenPreview() {
-    val navController = rememberNavController()
-    ConfirmationScreen(
-        navController = navController,
-        snackbarController = null,
-        doctorId = "123",
-        date = "2023-12-25",
-        time = "4:30 PM",
-        appointmentType = AppointmentType.ECHOCARDIOGRAM
-    )
-}

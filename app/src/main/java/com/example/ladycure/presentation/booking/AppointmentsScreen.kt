@@ -78,161 +78,57 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.ladycure.data.repository.AppointmentRepository
-import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Appointment.Status
-import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.doctor.ConfirmAppointmentDialog
 import com.example.ladycure.presentation.home.components.CancelConfirmationDialog
 import com.example.ladycure.presentation.home.components.CancelSuccessDialog
 import com.example.ladycure.utility.SnackbarController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(
-    ExperimentalAnimationApi::class
-)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppointmentsScreen(
     navController: NavController,
     snackbarController: SnackbarController?,
-    userRepo: UserRepository = UserRepository(),
-    appointmentRepo: AppointmentRepository = AppointmentRepository()
+    viewModel: AppointmentViewModel = viewModel()
 ) {
-    // Existing state variables
-    var futureAppointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
-    var pastAppointments by remember { mutableStateOf<List<Appointment>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
 
-    var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
-    var showEditStatusDialog by remember { mutableStateOf(false) }
+    val isLoading = viewModel.isLoading
+    val error = viewModel.error
+    val selectedAppointment = viewModel.selectedAppointment
+    val showEditStatusDialog = viewModel.showEditStatusDialog
+    val showFilters = viewModel.showFilters
+    val role = viewModel.role
 
-    // New filter state variables
-    var showFilters by remember { mutableStateOf(false) }
-    var selectedSpecialization by remember { mutableStateOf<String?>(null) }
-    var selectedDoctor by remember { mutableStateOf<String?>(null) }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedTypes by remember { mutableStateOf<AppointmentType?>(null) }
-    var selectedPatient by remember { mutableStateOf<String?>(null) }
-    var role by remember { mutableStateOf<String?>(null) }
-
-    // Get unique specializations and doctors for filters
-    val allSpecializations = remember(futureAppointments + pastAppointments) {
-        (futureAppointments + pastAppointments).map { it.type.speciality }.distinct()
-    }
-
-    val allDoctors = remember(futureAppointments + pastAppointments) {
-        (futureAppointments + pastAppointments).map { it.doctorName }.distinct()
-    }
-
-    val allPatients = remember(futureAppointments + pastAppointments) {
-        (futureAppointments + pastAppointments).map { it.patientName }.distinct()
-    }
-
-    val allTypes = remember(futureAppointments + pastAppointments) {
-        (futureAppointments + pastAppointments).map { it.type }.distinct()
-    }
-
-
-    // Filtered appointments
-    val filteredFutureAppointments =
-        if (role == "user") {
-            remember(futureAppointments, selectedSpecialization, selectedDoctor, selectedDate) {
-                futureAppointments.filter { appointment ->
-                    (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
-                            (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
-                            (selectedDate == null || appointment.date == selectedDate)
-                }
-            }
-        } else {
-            remember(futureAppointments, selectedTypes, selectedPatient, selectedDate) {
-                futureAppointments.filter { appointment ->
-                    (selectedTypes == null || appointment.type == selectedTypes) &&
-                            (selectedPatient == null || appointment.patientName == selectedPatient) &&
-                            (selectedDate == null || appointment.date == selectedDate)
-                }
-            }
-        }
-
-    val filteredPastAppointments = if (role == "user") {
-        remember(pastAppointments, selectedSpecialization, selectedDoctor, selectedDate) {
-            pastAppointments.filter { appointment ->
-                (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
-                        (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
-                        (selectedDate == null || appointment.date == selectedDate)
-            }
-        }
-    } else {
-        remember(pastAppointments, selectedTypes, selectedPatient, selectedDate) {
-            pastAppointments.filter { appointment ->
-                (selectedTypes == null || appointment.type == selectedTypes) &&
-                        (selectedPatient == null || appointment.patientName == selectedPatient) &&
-                        (selectedDate == null || appointment.date == selectedDate)
-            }
-        }
-    }
-
-
-    LaunchedEffect(Unit) {
-        try {
-            val result = userRepo.getUserRole()
-            if (result.isSuccess) {
-                role = result.getOrNull()
-                val result = appointmentRepo.getAppointments(role!!)
-                if (result.isSuccess) {
-                    val allAppointments = result.getOrNull() ?: emptyList()
-                    futureAppointments = allAppointments.filter {
-                        it.date.isAfter(LocalDate.now()) ||
-                                (it.date == LocalDate.now() && it.time.isAfter(LocalTime.now()))
-                    }.sortedWith(compareBy({ it.date }, { it.time }))
-
-                    pastAppointments = allAppointments.filter {
-                        (it.date.isBefore(LocalDate.now()) ||
-                                (it.date == LocalDate.now() && it.time.isBefore(LocalTime.now())))
-                        //       && it.status != Status.PENDING
-                    }.sortedWith(compareBy({ it.date }, { it.time })).reversed()
-                } else {
-                    error = result.exceptionOrNull()?.message ?: "Failed to load appointments"
-                }
-                isLoading = false
-            } else {
-                error = result.exceptionOrNull()?.message ?: "Failed to load user role"
-            }
-        } catch (e: Exception) {
-            error = e.message ?: "An error occurred loading appointments"
-            isLoading = false
-        }
-    }
-
-
+    // Handle errors
     LaunchedEffect(error) {
-        error?.let {
-            snackbarController!!.showMessage(it)
-            error = null
+        error?.let { err ->
+            snackbarController?.showMessage(err)
+            viewModel.updateError(null)
         }
     }
 
     val tabs = listOf("Upcoming", "History")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     )
     {
+        // Header and filter toggle (same as before)
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -260,9 +156,8 @@ fun AppointmentsScreen(
                 )
             }
 
-            // Add filter toggle button
             IconButton(
-                onClick = { showFilters = !showFilters },
+                onClick = { viewModel.toggleFilters(!showFilters) },
                 modifier = Modifier
                     .width(80.dp)
                     .padding(8.dp),
@@ -272,8 +167,7 @@ fun AppointmentsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()
-                )
-                {
+                ) {
                     Text(
                         text = "Filter",
                         style = MaterialTheme.typography.labelLarge,
@@ -289,7 +183,7 @@ fun AppointmentsScreen(
             }
         }
 
-        // Add filter panel
+        // Filter panel (updated to use ViewModel)
         AnimatedVisibility(
             visible = showFilters,
             enter = fadeIn() + expandVertically(),
@@ -301,7 +195,6 @@ fun AppointmentsScreen(
                     .padding(vertical = 8.dp)
                     .background(DefaultBackground, RoundedCornerShape(8.dp))
             ) {
-                // Specialization filter
                 if (role == "user") {
                     Text(
                         text = "Specialization",
@@ -315,19 +208,20 @@ fun AppointmentsScreen(
                         modifier = Modifier.padding(horizontal = 8.dp),
                         contentPadding = PaddingValues(8.dp)
                     ) {
-                        items(allSpecializations.size) { specialization ->
+                        items(viewModel.allSpecializations.size) { specialization ->
                             FilterChip(
-                                label = allSpecializations[specialization],
-                                selected = selectedSpecialization == allSpecializations[specialization],
+                                label = viewModel.allSpecializations[specialization],
+                                selected = viewModel.selectedSpecialization == viewModel.allSpecializations[specialization],
                                 onSelected = {
-                                    selectedSpecialization =
-                                        if (selectedSpecialization == allSpecializations[specialization]) null else allSpecializations[specialization]
+                                    viewModel.setSpecializationFilter(
+                                        if (viewModel.selectedSpecialization == viewModel.allSpecializations[specialization])
+                                            null else viewModel.allSpecializations[specialization]
+                                    )
                                 }
                             )
                         }
                     }
 
-                    // Doctor filter
                     Text(
                         text = "Doctor",
                         modifier = Modifier.padding(start = 16.dp, top = 8.dp),
@@ -340,13 +234,15 @@ fun AppointmentsScreen(
                         modifier = Modifier.padding(horizontal = 8.dp),
                         contentPadding = PaddingValues(8.dp)
                     ) {
-                        items(allDoctors.size) { doctor ->
+                        items(viewModel.allDoctors.size) { doctor ->
                             FilterChip(
-                                label = allDoctors[doctor],
-                                selected = selectedDoctor == allDoctors[doctor],
+                                label = viewModel.allDoctors[doctor],
+                                selected = viewModel.selectedDoctor == viewModel.allDoctors[doctor],
                                 onSelected = {
-                                    selectedDoctor =
-                                        if (selectedDoctor == allDoctors[doctor]) null else allDoctors[doctor]
+                                    viewModel.setDoctorFilter(
+                                        if (viewModel.selectedDoctor == viewModel.allDoctors[doctor])
+                                            null else viewModel.allDoctors[doctor]
+                                    )
                                 }
                             )
                         }
@@ -364,19 +260,20 @@ fun AppointmentsScreen(
                         modifier = Modifier.padding(horizontal = 8.dp),
                         contentPadding = PaddingValues(8.dp)
                     ) {
-                        items(allTypes.size) { type ->
+                        items(viewModel.allTypes.size) { type ->
                             FilterChip(
-                                label = allTypes[type].displayName,
-                                selected = selectedTypes == allTypes[type],
+                                label = viewModel.allTypes[type].displayName,
+                                selected = viewModel.selectedTypes == viewModel.allTypes[type],
                                 onSelected = {
-                                    selectedTypes =
-                                        if (selectedTypes == allTypes[type]) null else allTypes[type]
+                                    viewModel.setTypeFilter(
+                                        if (viewModel.selectedTypes == viewModel.allTypes[type])
+                                            null else viewModel.allTypes[type]
+                                    )
                                 }
                             )
                         }
                     }
 
-                    // Doctor filter
                     Text(
                         text = "Patient",
                         modifier = Modifier.padding(start = 16.dp, top = 8.dp),
@@ -389,21 +286,21 @@ fun AppointmentsScreen(
                         modifier = Modifier.padding(horizontal = 8.dp),
                         contentPadding = PaddingValues(8.dp)
                     ) {
-                        items(allPatients.size) { patient ->
+                        items(viewModel.allPatients.size) { patient ->
                             FilterChip(
-                                label = allPatients[patient],
-                                selected = selectedPatient == allPatients[patient],
+                                label = viewModel.allPatients[patient],
+                                selected = viewModel.selectedPatient == viewModel.allPatients[patient],
                                 onSelected = {
-                                    selectedPatient =
-                                        if (selectedPatient == allPatients[patient]) null else allPatients[patient]
+                                    viewModel.setPatientFilter(
+                                        if (viewModel.selectedPatient == viewModel.allPatients[patient])
+                                            null else viewModel.allPatients[patient]
+                                    )
                                 }
                             )
                         }
                     }
-
                 }
 
-                // Date filter
                 Text(
                     text = "Date",
                     modifier = Modifier.padding(start = 16.dp, top = 8.dp),
@@ -419,41 +316,40 @@ fun AppointmentsScreen(
                 ) {
                     FilterChip(
                         label = "Today",
-                        selected = selectedDate == LocalDate.now(),
+                        selected = viewModel.selectedDate == LocalDate.now(),
                         onSelected = {
-                            selectedDate =
-                                if (selectedDate == LocalDate.now()) null else LocalDate.now()
+                            viewModel.setDateFilter(
+                                if (viewModel.selectedDate == LocalDate.now())
+                                    null else LocalDate.now()
+                            )
                         }
                     )
 
                     FilterChip(
                         label = "Tomorrow",
-                        selected = selectedDate == LocalDate.now().plusDays(1),
+                        selected = viewModel.selectedDate == LocalDate.now().plusDays(1),
                         onSelected = {
-                            selectedDate = if (selectedDate == LocalDate.now()
-                                    .plusDays(1)
-                            ) null else LocalDate.now().plusDays(1)
+                            viewModel.setDateFilter(
+                                if (viewModel.selectedDate == LocalDate.now().plusDays(1))
+                                    null else LocalDate.now().plusDays(1)
+                            )
                         }
                     )
 
                     FilterChip(
                         label = "Pick date",
-                        selected = selectedDate != null &&
-                                selectedDate != LocalDate.now() &&
-                                selectedDate != LocalDate.now().plusDays(1),
+                        selected = viewModel.selectedDate != null &&
+                                viewModel.selectedDate != LocalDate.now() &&
+                                viewModel.selectedDate != LocalDate.now().plusDays(1),
                         onSelected = {
-                            //  implement a date picker dialog here
-                            selectedDate = null
+                            // Implement date picker dialog here
+                            viewModel.setDateFilter(null)
                         }
                     )
                 }
 
                 Button(
-                    onClick = {
-                        selectedSpecialization = null
-                        selectedDoctor = null
-                        selectedDate = null
-                    },
+                    onClick = { viewModel.clearAllFilters() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
@@ -470,33 +366,34 @@ fun AppointmentsScreen(
 
         ActiveFiltersRow(
             selectedSpecialization = if (role == "user") {
-                selectedSpecialization
+                viewModel.selectedSpecialization
             } else {
-                selectedTypes?.displayName
+                viewModel.selectedTypes?.displayName
             },
             selectedDoctor = if (role == "user") {
-                selectedDoctor
+                viewModel.selectedDoctor
             } else {
-                selectedPatient
+                viewModel.selectedPatient
             },
-            selectedDate = selectedDate,
+            selectedDate = viewModel.selectedDate,
             onRemoveSpecialization = {
                 if (role == "user") {
-                    selectedSpecialization = null
+                    viewModel.setSpecializationFilter(null)
                 } else {
-                    selectedTypes = null
+                    viewModel.setTypeFilter(null)
                 }
             },
             onRemoveDoctor = {
                 if (role == "user") {
-                    selectedDoctor = null
+                    viewModel.setDoctorFilter(null)
                 } else {
-                    selectedPatient = null
+                    viewModel.setPatientFilter(null)
                 }
             },
-            onRemoveDate = { selectedDate = null },
+            onRemoveDate = { viewModel.setDateFilter(null) },
             modifier = Modifier.padding(top = 8.dp)
         )
+
         Spacer(modifier = Modifier.height(20.dp))
 
         TabRow(
@@ -561,75 +458,49 @@ fun AppointmentsScreen(
                     isLoading -> LoadingView()
                     targetPage == 0 -> AppointmentsList(
                         role = role!!,
-                        appointments = filteredFutureAppointments, // Use filtered list
+                        appointments = viewModel.filteredFutureAppointments,
                         emptyMessage = "No upcoming appointments",
                         navController = navController,
                         snackbarController = snackbarController!!,
                         onClickStatus = { appointment ->
-                            selectedAppointment = appointment
+                            viewModel.selectAppointment(appointment)
                             if (appointment.status == Status.PENDING) {
-                                showEditStatusDialog = true
+                                viewModel.toggleEditStatusDialog(true)
                             }
                         },
                         onCommentUpdated = { appointmentId, newComment ->
-                            futureAppointments = futureAppointments.map {
-                                if (it.appointmentId == appointmentId) {
-                                    it.copy(comments = newComment)
-                                } else {
-                                    it
-                                }
-                            }
+                            viewModel.updateAppointmentComment(appointmentId, newComment)
+                        },
+                        onCancelAppointment = { appointmentId ->
+                            viewModel.cancelAppointment(appointmentId)
                         }
                     )
 
                     else -> AppointmentsList(
                         role = role!!,
-                        appointments = filteredPastAppointments, // Use filtered list
+                        appointments = viewModel.filteredPastAppointments,
                         emptyMessage = "No past appointments",
                         navController = navController,
                         snackbarController = snackbarController!!,
                         onClickStatus = {},
                         onCommentUpdated = { appointmentId, newComment ->
-                            futureAppointments = futureAppointments.map {
-                                if (it.appointmentId == appointmentId) {
-                                    it.copy(comments = newComment)
-                                } else {
-                                    it
-                                }
-                            }
-                        }
+                            viewModel.updateAppointmentComment(appointmentId, newComment)
+                        },
+                        onCancelAppointment = { /* Not applicable for past appointments */ }
                     )
                 }
             }
         }
     }
+
     if (showEditStatusDialog) {
         ConfirmAppointmentDialog(
-            onDismiss = { showEditStatusDialog = false },
+            onDismiss = { viewModel.toggleEditStatusDialog(false) },
             onConfirm = {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val result = appointmentRepo.updateAppointmentStatus(
-                        appointmentId = selectedAppointment!!.appointmentId,
-                        status = Status.CONFIRMED.displayName
-                    )
-                    if (result.isFailure) {
-                        snackbarController!!.showMessage(result.exceptionOrNull()?.message!!)
-                    } else {
-                        // Change the status of the appointment in the list
-                        futureAppointments = futureAppointments.map {
-                            if (it.appointmentId == selectedAppointment!!.appointmentId) {
-                                it.copy(status = Status.CONFIRMED)
-                            } else {
-                                it
-                            }
-                        }
-                    }
-                }
-                showEditStatusDialog = false
+                viewModel.updateAppointmentStatus(Status.CONFIRMED)
             }
         )
     }
-
 }
 
 @Composable
@@ -640,11 +511,10 @@ fun AppointmentsList(
     navController: NavController,
     snackbarController: SnackbarController,
     onClickStatus: (Appointment) -> Unit,
-    onCommentUpdated: (String, String) -> Unit
+    onCommentUpdated: (String, String) -> Unit,
+    onCancelAppointment: (String) -> Unit
 ) {
     var showCancelSuccessDialog by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-    val appointmentRepo = AppointmentRepository()
 
     if (appointments.isEmpty()) {
         EmptyAppointmentsView(message = emptyMessage)
@@ -665,36 +535,11 @@ fun AppointmentsList(
                         appointment = appointment,
                         navController = navController,
                         onCancel = {
-                            coroutineScope.launch {
-                                try {
-                                    val result =
-                                        appointmentRepo.cancelAppointment(appointment.appointmentId)
-                                    if (result.isSuccess) {
-                                        appointment.status = Status.CANCELLED
-                                        showCancelSuccessDialog = true
-                                    } else {
-                                        snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")
-                                    }
-                                } catch (e: Exception) {
-                                    snackbarController.showMessage("Error: ${e.message}")
-                                }
-                            }
+                            onCancelAppointment(appointment.appointmentId)
+                            showCancelSuccessDialog = true
                         },
                         onCommentUpdated = { appointmentId, newComment ->
-                            coroutineScope.launch {
-                                val result = appointmentRepo.updateAppointmentComment(
-                                    appointment.appointmentId,
-                                    newComment
-                                )
-                                if (result.isFailure) {
-                                    snackbarController.showMessage(
-                                        result.exceptionOrNull()?.message
-                                            ?: "Failed to update comment"
-                                    )
-                                } else {
-                                    onCommentUpdated(appointment.appointmentId, newComment)
-                                }
-                            }
+                            onCommentUpdated(appointmentId, newComment)
                         },
                         onClickStatus = {
                             onClickStatus(appointment)
@@ -857,10 +702,7 @@ fun AppointmentCard(
                     )
                     Text(
                         text = appointment.time.format(
-                            DateTimeFormatter.ofPattern(
-                                "h:mm a",
-                                Locale.US
-                            )
+                            DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary.copy(alpha = 0.7f)

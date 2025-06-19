@@ -16,7 +16,6 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +34,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -79,10 +77,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
 import coil.compose.SubcomposeAsyncImage
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.DoctorAvailability
@@ -101,75 +99,27 @@ fun BookAppointmentScreen(
     city: String,
     selectedService: AppointmentType,
     referralId: String? = null,
-    doctorRepo: DoctorRepository = DoctorRepository(),
+    viewModel: BookingViewModel = viewModel()
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
-    // State variables
-    val isLoading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-    val doctors = remember { mutableStateOf(emptyList<Doctor>()) }
-    val doctorAvailabilities = remember { mutableStateOf(emptyList<DoctorAvailability>()) }
 
-    // UI state
-    val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
-    val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
-    val showDoctorsForSlot = remember { mutableStateOf(false) }
+    // Collect state from ViewModel
+    val isLoading = viewModel.isLoading
+    val errorMessage = viewModel.errorMessage
+    val showDoctorsForSlot = viewModel.showDoctorsForSlot
 
-    // Fetch doctors by specialization
+    // Initialize data loading
     LaunchedEffect(selectedSpeciality) {
-        isLoading.value = true
-        try {
-            // Get doctors first
-            val doctorsResult = doctorRepo.getDoctorsBySpeciality(selectedSpeciality.displayName)
-            if (doctorsResult.isSuccess) {
-                doctors.value = doctorsResult.getOrNull() ?: emptyList()
-
-                // Filter doctors by city
-                doctors.value = doctors.value.filter { doctor ->
-                    val doctorCity = doctor.city
-                    doctorCity == city
-                }
-
-                // Then get their availabilities
-                val availabilities = doctorRepo.getAllDoctorAvailabilitiesBySpeciality(
-                    selectedSpeciality.displayName, city
-                )
-
-                doctorAvailabilities.value = availabilities
-            }
-            isLoading.value = false
-        } catch (e: Exception) {
-            errorMessage.value = "Failed to load data: ${e.message}"
-            isLoading.value = false
-        }
+        viewModel.loadDoctorsBySpeciality(selectedSpeciality, city)
     }
 
-    // Get unique available dates from filtered availabilities
-    val availableDates = doctorAvailabilities.value
-        .map { it.date }
-        .filter { it != null && (it.isAfter(LocalDate.now()) || it.isEqual(LocalDate.now())) }
-        .distinct()
-        .sortedBy { it }
-
-    // Generate time slots for selected date
-    val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailabilities.value) {
-        if (selectedDate.value == null) emptyList() else {
-            filerTimeSlotsForDate(selectedDate.value!!, doctorAvailabilities.value)
+    // Handle errors
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { err ->
+            snackbarController?.showMessage(err)
+            viewModel.errorMessage = null
         }
     }
-
-    // Filter doctors for selected time slot
-    val availableDoctorsForSlot =
-        remember(selectedTimeSlot.value, doctors.value, doctorAvailabilities.value) {
-            if (selectedTimeSlot.value == null) emptyList() else {
-                filterAvailableDoctors(
-                    doctors.value,
-                    selectedDate.value!!,
-                    selectedTimeSlot.value!!,
-                    doctorAvailabilities.value
-                )
-            }
-        }
 
     Column(
         modifier = Modifier
@@ -178,75 +128,50 @@ fun BookAppointmentScreen(
     ) {
         // Header
         AppointmentHeader(
-            showDoctorsForSlot = showDoctorsForSlot.value,
+            showDoctorsForSlot = showDoctorsForSlot,
             onBackClick = {
-                if (showDoctorsForSlot.value) {
-                    showDoctorsForSlot.value = false
+                if (showDoctorsForSlot) {
+                    viewModel.toggleShowDoctorsForSlot(false)
                 } else {
                     navController.popBackStack()
                 }
             }
         )
 
-        LaunchedEffect(errorMessage.value) {
-            errorMessage.value?.let {
-                snackbarController?.showMessage(it)
-            }
-        }
-
         when {
-            isLoading.value -> LoadingView()
-            !showDoctorsForSlot.value -> DateAndTimeSelectionView(
+            isLoading -> LoadingView()
+            !showDoctorsForSlot -> DateAndTimeSelectionView(
                 city = city,
                 selectedSpeciality = selectedSpeciality,
                 selectedService = selectedService,
-                availableDates = availableDates.map { it!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
-                selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                onDateSelected = {
-                    selectedDate.value =
-                        LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                },
-                timeSlots = timeSlotsForSelectedDate,
-                selectedTimeSlot = selectedTimeSlot.value?.format(
-                    DateTimeFormatter.ofPattern(
-                        "h:mm a",
-                        Locale.US
+                availableDates = viewModel.availableDates,
+                selectedDate = viewModel.selectedDate,
+                onDateSelected = { date -> viewModel.selectDate(date) },
+                timeSlots = viewModel.getTimeSlotsForSelectedDate(),
+                selectedTimeSlot = viewModel.selectedTimeSlot,
+                onTimeSlotSelected = { time ->
+                    var time = LocalTime.parse(
+                        time,
+                        DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
                     )
-                ),
-                onTimeSlotSelected = {
-                    selectedTimeSlot.value = LocalTime.parse(
-                        it,
-                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                    )
-                    showDoctorsForSlot.value = true
-                })
+                    viewModel.selectTimeSlot(time)
+                }
+            )
 
             else -> DoctorSelectionView(
-                selectedDate = selectedDate.value!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                selectedTimeSlot = selectedTimeSlot.value!!.format(
-                    DateTimeFormatter.ofPattern(
-                        "h:mm a",
-                        Locale.US
-                    )
-                ),
-                doctors = availableDoctorsForSlot,
-                onBackClick = { showDoctorsForSlot.value = false },
+                selectedDate = viewModel.selectedDate!!,
+                selectedTimeSlot = viewModel.selectedTimeSlot!!,
+                doctors = viewModel.getAvailableDoctorsForSlot(),
+                onBackClick = { viewModel.toggleShowDoctorsForSlot(false) },
                 onDoctorSelected = { doctorId ->
+                    val timestamp = viewModel.createTimestamp()
                     if (referralId == null) {
                         navController.navigate(
-                            "confirmation/$doctorId/${selectedDate.value}/${
-                                selectedTimeSlot.value!!.format(
-                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                )
-                            }/${selectedService.displayName}"
+                            "confirmation/$doctorId/${timestamp.seconds}/${timestamp.nanoseconds}/${selectedService.displayName}"
                         )
                     } else {
                         navController.navigate(
-                            "confirmation/$doctorId/${selectedDate.value}/${
-                                selectedTimeSlot.value!!.format(
-                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                )
-                            }/${selectedService.displayName}/$referralId"
+                            "confirmation/$doctorId/${timestamp.seconds}/${timestamp.nanoseconds}/${selectedService.displayName}/$referralId"
                         )
                     }
                 }
@@ -292,70 +217,6 @@ private fun AppointmentHeader(
     }
 }
 
-@Composable
-private fun DateAndTimeSelectionView(
-    city: String,
-    selectedSpeciality: Speciality,
-    selectedService: AppointmentType,
-    availableDates: List<String>,
-    selectedDate: String?,
-    onDateSelected: (String) -> Unit,
-    timeSlots: List<String>,
-    selectedTimeSlot: String?,
-    onTimeSlotSelected: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-    ) {
-        // Service info chip
-        ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = 16.dp))
-
-        // Location and specialty
-        LocationSpecialtyRow(city, selectedSpeciality)
-
-        // Date selection
-        Text(
-            text = "Select Date",
-            style = MaterialTheme.typography.titleMedium,
-            color = DefaultOnPrimary,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
-        )
-
-        // Enhanced date selector
-        DateSelector(
-            availableDates = availableDates,
-            selectedDate = selectedDate,
-            onDateSelected = onDateSelected,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        // Time slots
-        if (selectedDate != null) {
-            Text(
-                text = "Available Time Slots",
-                style = MaterialTheme.typography.titleMedium,
-                color = DefaultOnPrimary,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            if (timeSlots.isEmpty()) {
-                EmptyTimeSlotsView()
-            } else {
-                TimeSlotGrid(
-                    timeSlots = timeSlots,
-                    selectedTimeSlot = selectedTimeSlot,
-                    onTimeSlotSelected = onTimeSlotSelected
-                )
-            }
-        } else if (availableDates.isNotEmpty()) {
-            PromptToSelectDate()
-        }
-    }
-}
 
 @Composable
 fun ServiceInfoChip(
@@ -397,7 +258,7 @@ fun ServiceInfoChip(
 }
 
 @Composable
-private fun LocationSpecialtyRow(
+internal fun LocationSpecialtyRow(
     city: String,
     speciality: Speciality
 ) {
@@ -433,58 +294,22 @@ private fun LocationSpecialtyRow(
     }
 }
 
-@Composable
-private fun DateSelector(
-    availableDates: List<String>,
-    selectedDate: String?,
-    onDateSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val scrollState = rememberScrollState()
-
-    Column(modifier = modifier) {
-        if (availableDates.isEmpty()) {
-            Text(
-                text = "We are sorry, there's no available dates for this speciality",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DefaultOnPrimary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(scrollState),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                availableDates.forEach { date ->
-                    DateCard(
-                        date = date,
-                        isSelected = date == selectedDate,
-                        onSelect = { onDateSelected(date) },
-                        modifier = Modifier.width(80.dp)
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun DateCard(
-    date: String,
+    date: LocalDate,
     isSelected: Boolean,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val formattedDate = formatDateForDisplay(date)
     val dayOfWeek = try {
-        LocalDate.parse(date).dayOfWeek.toString().take(3)
+        date.dayOfWeek.toString().take(3)
     } catch (e: Exception) {
         "error: ${e.message}"
     }
     val dayOfMonth = try {
-        LocalDate.parse(date).dayOfMonth.toString()
+        date.dayOfMonth.toString()
     } catch (e: Exception) {
         "error: ${e.message}"
     }
@@ -641,23 +466,22 @@ fun PromptToSelectDate() {
 }
 
 // Helper function for date formatting
-fun formatDateForDisplay(dateString: String): String {
+fun formatDateForDisplay(date: LocalDate): String {
     return try {
-        val date = LocalDate.parse(dateString)
         when (date) {
             LocalDate.now() -> "Today"
             LocalDate.now().plusDays(1) -> "Tomorrow"
-            else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
+            else -> date.format(DateTimeFormatter.ofPattern("dd MMMM", Locale.getDefault()))
         }
     } catch (e: Exception) {
-        dateString + " (${e.message})"
+        date.toString() + " (${e.message})"
     }
 }
 
 @Composable
 private fun DoctorSelectionView(
-    selectedDate: String,
-    selectedTimeSlot: String,
+    selectedDate: LocalDate,
+    selectedTimeSlot: LocalTime,
     doctors: List<Doctor>,
     onBackClick: () -> Unit,
     onDoctorSelected: (String) -> Unit
@@ -703,8 +527,8 @@ private fun DoctorSelectionView(
 
 @Composable
 private fun SelectedTimeInfo(
-    date: String,
-    time: String,
+    date: LocalDate,
+    time: LocalTime,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -777,7 +601,12 @@ private fun SelectedTimeInfo(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = time,
+                        text = time.format(
+                            DateTimeFormatter.ofPattern(
+                                "h:mm a",
+                                Locale.getDefault()
+                            )
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = DefaultOnPrimary

@@ -5,6 +5,7 @@ import com.google.firebase.Timestamp
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 data class Doctor(
     val speciality: Speciality,
@@ -256,4 +257,23 @@ data class DoctorAvailability(
     val startTime: LocalTime?,
     val endTime: LocalTime?,
     val availableSlots: MutableList<LocalTime>
-)
+) {
+    companion object {
+        fun fromMap(
+            map: Map<String, Any>,
+            doctorId: String,
+            documentId: String
+        ): DoctorAvailability {
+            val formatter = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+            return DoctorAvailability(
+                doctorId = doctorId,
+                date = LocalDate.parse(documentId, DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                startTime = (map["startTime"] as? String)?.let { LocalTime.parse(it, formatter) },
+                endTime = (map["endTime"] as? String)?.let { LocalTime.parse(it, formatter) },
+                availableSlots = (map["availableSlots"] as? List<String>)?.map {
+                    LocalTime.parse(it, formatter)
+                }?.toMutableList() ?: mutableListOf()
+            )
+        }
+    }
+}

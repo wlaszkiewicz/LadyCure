@@ -4,14 +4,8 @@ import BabyBlue
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import Purple
 import YellowOrange
-import android.content.Intent
-import android.provider.CalendarContract
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,41 +25,35 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.ThumbUpAlt
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.ladycure.data.repository.AppointmentRepository
-import com.example.ladycure.domain.model.Appointment
+import com.example.ladycure.R
 import com.example.ladycure.utility.SnackbarController
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @Composable
 fun BookingSuccessScreen(
@@ -73,93 +61,29 @@ fun BookingSuccessScreen(
     appointmentId: String,
     referralId: String? = null,
     snackbarController: SnackbarController,
-    appointmentRepo: AppointmentRepository = AppointmentRepository(),
+    viewModel: BookingSuccessViewModel = viewModel()
 ) {
-    val isLoading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-
-    var appointment by remember { mutableStateOf<Appointment?>(null) }
-
-    LaunchedEffect(appointmentId) {
-        try {
-            val result = appointmentRepo.getAppointmentById(appointmentId)
-            if (result.isSuccess) {
-                appointment = result.getOrNull()
-            } else {
-                errorMessage.value =
-                    "Failed to load appointment details: ${result.exceptionOrNull()?.message}"
-            }
-            isLoading.value = false
-        } catch (e: Exception) {
-            errorMessage.value = "Error loading appointment details: ${e.message}"
-            isLoading.value = false
-        }
-    }
-    // Animation states
-    var animationPlayed by remember { mutableStateOf(false) }
-    val transition = rememberInfiniteTransition()
-    val pulse by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    errorMessage.value?.let {
-        snackbarController.showMessage(it)
-    }
-
-
+    // Collect state from ViewModel
+    val isLoading = viewModel.isLoading
+    val errorMessage = viewModel.errorMessage
+    val appointment = viewModel.appointment
     val context = LocalContext.current
 
-    fun parseDateTimeToMillis(dateStr: String, timeStr: String): Long {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-        val dateTimeStr = "$dateStr ${timeStr.substring(0, 5)}"
-        return dateFormat.parse(dateTimeStr)?.time ?: System.currentTimeMillis()
+    // Initialize data loading
+    LaunchedEffect(appointmentId) {
+        viewModel.loadAppointment(appointmentId)
     }
 
-    // Function to add event to calendar
-    fun addToCalendar() {
-        val appointment = appointment ?: return
-
-        try {
-            val intent = Intent(Intent.ACTION_INSERT)
-                .setData(CalendarContract.Events.CONTENT_URI)
-                .putExtra(
-                    CalendarContract.Events.TITLE,
-                    "Appointment with Dr. ${appointment.doctorName}"
-                )
-                .putExtra(
-                    CalendarContract.Events.DESCRIPTION,
-                    "Appointment for ${appointment.type.displayName} at LadyCure Clinic"
-                )
-                .putExtra(
-                    CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                    parseDateTimeToMillis(appointment.date.toString(), appointment.time.toString())
-                )
-                .putExtra(
-                    CalendarContract.EXTRA_EVENT_END_TIME,
-                    parseDateTimeToMillis(
-                        appointment.date.toString(),
-                        appointment.time.toString()
-                    ) + appointment.type.durationInMinutes * 60 * 1000
-                )
-                .putExtra(CalendarContract.Events.EVENT_LOCATION, appointment.address)
-                .putExtra(
-                    CalendarContract.Events.AVAILABILITY,
-                    CalendarContract.Events.AVAILABILITY_BUSY
-                )
-
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            snackbarController.showMessage("Failed to open calendar: ${e.message}")
+    // Handle errors
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarController.showMessage(it)
+            viewModel.errorMessage = null
         }
     }
 
-    if (isLoading.value || appointment == null) {
-        // Show loading indicator
+
+    if (isLoading || appointment == null) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -176,48 +100,62 @@ fun BookingSuccessScreen(
                     color = DefaultOnPrimary.copy(alpha = 0.8f)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-
                 CircularProgressIndicator()
             }
-
         }
-
     } else {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 32.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Animated checkmark
             Box(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(DefaultPrimary.copy(alpha = 0.1f))
-                    .scale(if (animationPlayed) pulse else 1f),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .height(180.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.EventAvailable,
-                    contentDescription = "Success",
-                    tint = DefaultPrimary,
-                    modifier = Modifier.size(80.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(170.dp)
+                        .align(Alignment.Center)
+                        .clip(CircleShape)
+                        .background(DefaultPrimary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.kapi_happi),
+                        contentDescription = "Success Icon",
+                        modifier = Modifier.size(150.dp),
+                        tint = Color.Unspecified
+                    )
+                }
+
+                IconButton(
+                    onClick = { navController.navigate("home") },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = DefaultOnPrimary.copy(alpha = 0.8f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Appointment Confirmed!",
+                text = "Appointment Booked!",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = DefaultPrimary,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 15.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -226,262 +164,241 @@ fun BookingSuccessScreen(
                 text = "Your appointment has been successfully booked",
                 style = MaterialTheme.typography.bodyLarge,
                 color = DefaultOnPrimary.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 15.dp)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
 
-            // Appointment summary card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                ),
-                elevation = CardDefaults.cardElevation(4.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Service:",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = appointment?.type!!.displayName,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = DefaultPrimary
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Date:",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = formatConfirmationDate(appointment!!.date.toString()),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Time:",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = formatConfirmationTime(appointment!!.time.toString()),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Doctor:",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "Dr. ${appointment!!.doctorName}",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Divider(color = Color.LightGray, thickness = 1.dp)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Total:",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "$${"%.2f".format(appointment?.type!!.price * 1.09)}", // Price + 9% tax
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = DefaultPrimary
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    if (appointment?.type!!.needsReferral && referralId == null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PriorityHigh,
-                                contentDescription = "Referral",
-                                modifier = Modifier.size(20.dp),
-                                tint = YellowOrange
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Don't forget to bring your referral letter!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = YellowOrange
-                            )
-                        }
-                    } else if (referralId != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ThumbUpAlt,
-                                contentDescription = "Referral",
-                                modifier = Modifier.size(20.dp),
-                                tint = BabyBlue
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Referral letter uploaded successfully!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = BabyBlue
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Reminder card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = DefaultPrimary.copy(alpha = 0.1f),
-                    contentColor = DefaultPrimary
-                ),
-                elevation = CardDefaults.cardElevation(0.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Reminder",
-                            modifier = Modifier.size(20.dp),
-                            tint = DefaultPrimary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Reminder",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = DefaultPrimary
-                        )
-                    }
-                    Text(
-                        text = "• Arrive 15 minutes before your appointment\n" +
-                                "• Bring your insurance card if applicable\n" +
-                                "• ${appointment?.type!!.preparationInstructions}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = DefaultOnPrimary.copy(alpha = 0.8f),
-                    )
-
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Action buttons
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(DefaultBackground)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 15.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Button(
-                    onClick = {
-                        navController.popBackStack()
-                        navController.navigate("home")
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary.copy(alpha = 0.8f),
-                        contentColor = Color.White
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Appointment summary card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
                     ),
-                    shape = RoundedCornerShape(17.dp)
+                    elevation = CardDefaults.cardElevation(4.dp),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(
-                        text = "Back to Home",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Service:",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = appointment.type.displayName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Purple
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Date:",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = viewModel.formattedDate,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Time:",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = viewModel.formattedTime,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Doctor:",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Dr. ${appointment.doctorName}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Divider(color = Color.LightGray, thickness = 1.dp)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Total:",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "$${"%.2f".format(appointment.type.price * 1.09)}", // Price + 9% tax
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = DefaultPrimary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        if (appointment.type.needsReferral && referralId == null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PriorityHigh,
+                                    contentDescription = "Referral",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = YellowOrange
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Don't forget to bring your referral letter!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = YellowOrange
+                                )
+                            }
+                        } else if (referralId != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ThumbUpAlt,
+                                    contentDescription = "Referral",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = BabyBlue
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Referral letter uploaded successfully!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = BabyBlue
+                                )
+                            }
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                OutlinedButton(
-                    onClick = {
-                        addToCalendar()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    border = BorderStroke(1.dp, DefaultPrimary),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = DefaultPrimary,
-                        containerColor = Color.Transparent
-                    ), shape = RoundedCornerShape(17.dp)
-
+                // Reminder card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.9f),
+                    ),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = "Add to calendar",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Add to Calendar",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "Reminder",
+                                modifier = Modifier.size(20.dp),
+                                tint = Purple
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Reminder",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Purple
+                            )
+                        }
+                        Text(
+                            text = "• Arrive 15 minutes before your appointment\n" +
+                                    "• Bring your insurance card if applicable\n" +
+                                    "• ${appointment.type.preparationInstructions}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
             }
-
-            Spacer(modifier = Modifier.height(40.dp))
+            OutlinedButton(
+                onClick = { viewModel.addToCalendar(context) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .padding(horizontal = 15.dp),
+                shape = RoundedCornerShape(30.dp),
+                border = BorderStroke(1.dp, DefaultPrimary),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = DefaultPrimary
+                ),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = "Add to calendar",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Add to Calendar",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
         }
     }
 }

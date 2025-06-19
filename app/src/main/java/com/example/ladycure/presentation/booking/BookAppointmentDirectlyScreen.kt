@@ -31,8 +31,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,13 +39,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
 import coil.compose.AsyncImage
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
-import com.example.ladycure.domain.model.DoctorAvailability
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
@@ -62,52 +59,29 @@ fun BookAppointmentDirectlyScreen(
     doctorId: String,
     selectedService: AppointmentType,
     referralId: String? = null,
-    doctorRepo: DoctorRepository = DoctorRepository()
+    viewModel: BookingViewModel = viewModel()
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
-    // State variables
-    val isLoading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-    var doctor = remember { mutableStateOf<Doctor?>(null) }
-    val doctorAvailability = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
 
-    // UI state
-    val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
-    val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
+    // Collect state from ViewModel
+    val isLoading = viewModel.isLoading
+    val errorMessage = viewModel.errorMessage
+    val doctors = viewModel.doctors
 
+    // Initialize data loading
     LaunchedEffect(doctorId) {
-        val result = doctorRepo.getDoctorById(doctorId)
-        if (result.isSuccess) {
-            doctor.value = result.getOrNull()
-            val availabilityResult = doctorRepo.getDoctorAvailability(doctorId)
-            if (availabilityResult.isSuccess) {
-                doctorAvailability.value = availabilityResult.getOrNull()!!
-                isLoading.value = false
-            } else {
-                errorMessage.value = availabilityResult.exceptionOrNull()?.message
-            }
-        } else {
-            errorMessage.value = result.exceptionOrNull()?.message
+        viewModel.loadDoctorById(doctorId)
+    }
+
+    // Handle errors
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { err ->
+            snackbarController?.showMessage(err)
+            viewModel.errorMessage = null
         }
     }
 
-    // Get unique available dates from filtered availabilities
-    val availableDates = doctorAvailability.value
-        .map { it.date }
-        .filter { it != null && (it.isAfter(LocalDate.now()) || it.isEqual(LocalDate.now())) }
-        .distinct()
-        .sortedBy { it }
-
-
-    // Generate time slots for selected date
-    val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailability.value) {
-        if (selectedDate.value == null) emptyList() else {
-            filerTimeSlotsForDate(selectedDate.value!!, doctorAvailability.value)
-        }
-    }
-
-
-    if (doctor.value == null) {
+    if (doctors.isEmpty()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -118,75 +92,53 @@ fun BookAppointmentDirectlyScreen(
             Text("Loading doctor data...", color = DefaultOnPrimary)
         }
     } else {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
         ) {
-
             AppointmentHeader(
-                onBackClick = {
-                    navController.popBackStack()
-                }
+                onBackClick = { navController.popBackStack() }
             )
 
             DoctorInfoHeader(
-                doctor = doctor.value!!,
+                doctor = doctors.first(),
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onClick = {
                     navController.popBackStack(
                         "doctors/${selectedSpeciality.displayName}",
                         false
-                    ) // go back to doctor list
+                    )
                 }
             )
 
-            LaunchedEffect(errorMessage.value) {
-                errorMessage.value?.let {
-                    snackbarController?.showMessage(it)
-                }
-            }
-
             when {
-                isLoading.value -> LoadingView()
-                !isLoading.value -> DateAndTimeSelectionView(
+                isLoading -> LoadingView()
+                !isLoading -> DateAndTimeSelectionView(
                     selectedService = selectedService,
-                    availableDates = availableDates.map { it!!.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
-                    selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                    onDateSelected = {
-                        selectedDate.value =
-                            LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    },
-                    timeSlots = timeSlotsForSelectedDate,
-                    selectedTimeSlot = selectedTimeSlot.value?.format(
-                        DateTimeFormatter.ofPattern(
-                            "h:mm a",
-                            Locale.US
+                    availableDates = viewModel.availableDates,
+                    selectedDate = viewModel.selectedDate,
+                    onDateSelected = { date -> viewModel.selectDate(date) },
+                    timeSlots = viewModel.getTimeSlotsForSelectedDate(),
+                    selectedTimeSlot = viewModel.selectedTimeSlot,
+                    onTimeSlotSelected = { time ->
+                        var time = LocalTime.parse(
+                            time,
+                            DateTimeFormatter.ofPattern("h:mm a", Locale.US)
                         )
-                    ),
-                    onTimeSlotSelected = {
-                        selectedTimeSlot.value =
-                            LocalTime.parse(it, DateTimeFormatter.ofPattern("h:mm a", Locale.US))
+                        viewModel.selectTimeSlot(time)
+                        val timestamp = viewModel.createTimestamp()
                         if (referralId == null) {
                             navController.navigate(
-                                "confirmation/$doctorId/${selectedDate.value}/${
-                                    selectedTimeSlot.value!!.format(
-                                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                    )
-                                }/${selectedService.displayName}"
+                                "confirmation/$doctorId/${timestamp.seconds}/${timestamp.nanoseconds}/${selectedService.displayName}"
                             )
                         } else {
                             navController.navigate(
-                                "confirmation/$doctorId/${selectedDate.value}/${
-                                    selectedTimeSlot.value!!.format(
-                                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                    )
-                                }/${selectedService.displayName}/$referralId"
+                                "confirmation/$doctorId/${timestamp.seconds}/${timestamp.nanoseconds}/${selectedService.displayName}/$referralId"
                             )
                         }
-                    })
-
+                    }
+                )
             }
         }
     }
@@ -229,22 +181,29 @@ private fun AppointmentHeader(
 }
 
 @Composable
-private fun DateAndTimeSelectionView(
+internal fun DateAndTimeSelectionView(
+    city: String? = null,
+    selectedSpeciality: Speciality? = null,
     selectedService: AppointmentType,
-    availableDates: List<String>,
-    selectedDate: String?,
-    onDateSelected: (String) -> Unit,
+    availableDates: List<LocalDate>,
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
     timeSlots: List<String>,
-    selectedTimeSlot: String?,
+    selectedTimeSlot: LocalTime?,
     onTimeSlotSelected: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         // Service info chip
         ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = 16.dp))
+
+        // Location and specialty if available
+        if (city != null && selectedSpeciality != null) {
+            LocationSpecialtyRow(city, selectedSpeciality)
+        }
 
         // Date selection
         Text(
@@ -274,12 +233,13 @@ private fun DateAndTimeSelectionView(
             )
 
             if (timeSlots.isEmpty()) {
-                PromptToSelectDate()
-                //  EmptyTimeSlotsView()
+                EmptyTimeSlotsView()
             } else {
                 TimeSlotGrid(
                     timeSlots = timeSlots,
-                    selectedTimeSlot = selectedTimeSlot,
+                    selectedTimeSlot = selectedTimeSlot?.format(
+                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                    ),
                     onTimeSlotSelected = onTimeSlotSelected
                 )
             }
@@ -288,6 +248,44 @@ private fun DateAndTimeSelectionView(
         }
     }
 }
+
+@Composable
+private fun DateSelector(
+    availableDates: List<LocalDate>,
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+
+    Column(modifier = modifier) {
+        if (availableDates.isEmpty()) {
+            Text(
+                text = "We are sorry, there's no available dates",
+                style = MaterialTheme.typography.bodyMedium,
+                color = DefaultOnPrimary.copy(alpha = 0.9f),
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(scrollState),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                availableDates.forEach { date ->
+                    DateCard(
+                        date = date,
+                        isSelected = date == selectedDate,
+                        onSelect = { onDateSelected(date) },
+                        modifier = Modifier.width(80.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun DoctorInfoHeader(
@@ -394,43 +392,6 @@ private fun DoctorInfoHeader(
                     contentDescription = "Change doctor",
                     tint = DefaultPrimary
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DateSelector(
-    availableDates: List<String>,
-    selectedDate: String?,
-    onDateSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val scrollState = rememberScrollState()
-
-    Column(modifier = modifier) {
-        if (availableDates.isEmpty()) {
-            Text(
-                text = "We are sorry, there's no available dates for this doctor",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DefaultOnPrimary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(scrollState),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                availableDates.forEach { date ->
-                    DateCard(
-                        date = date,
-                        isSelected = date == selectedDate,
-                        onSelect = { onDateSelected(date) },
-                        modifier = Modifier.width(80.dp)
-                    )
-                }
             }
         }
     }

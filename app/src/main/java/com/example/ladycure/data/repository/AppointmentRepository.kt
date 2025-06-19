@@ -2,14 +2,18 @@ package com.example.ladycure.data.repository
 
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.presentation.chat.ChatParticipantInfo
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Date
 import java.util.Locale
 
 class AppointmentRepository {
@@ -31,10 +35,12 @@ class AppointmentRepository {
             // make the timeslot unavailable
 
             val doctorId = appointment.doctorId
-            val date = appointment.date
             val startTime = appointment.time
+
+            val date = appointment.date
             val endTime =
                 startTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
+
 
             // Fetch the current available slots
             val docRef = firestore.collection("users")
@@ -142,10 +148,12 @@ class AppointmentRepository {
                 )
 
                 val doctorId = appointment.doctorId
-                val date = appointment.date
                 val startTime = appointment.time
+
+                val date = appointment.date
                 val endTime =
                     startTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
+
 
                 val availableSlots = mutableSetOf<LocalTime>()
                 var currentTime = startTime
@@ -209,23 +217,25 @@ class AppointmentRepository {
             )
 
             val doctorId = appointment.doctorId
+
             val oldDate = appointment.date
             val oldStartTime = appointment.time
+
             val oldEndTime =
                 oldStartTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
 
             val newEndTime =
                 newTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
 
+
             // Update the appointment with the new date and time
             val updatedAppointmentData = mapOf(
-                "date" to newDate.format(
-                    DateTimeFormatter.ofPattern(
-                        "yyyy-MM-dd",
-                        Locale.US
+                "dateTime" to Timestamp(
+                    Date.from(
+                        LocalDateTime.of(newDate, newTime)
+                            .atZone(ZoneId.systemDefault()).toInstant()
                     )
-                ),
-                "time" to newTime.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US))
+                )
             )
 
             appointmentRef.update(updatedAppointmentData).await()
@@ -316,32 +326,6 @@ class AppointmentRepository {
         }
     }
 
-
-    suspend fun getDoctorsFromAppointments(): Result<List<String>> {
-        return try {
-            val appointmentsCollection = firestore.collection("appointments")
-            val snapshot = appointmentsCollection.get().await()
-            val doctorNames = snapshot.documents.mapNotNull { document ->
-                document.getString("doctorName")
-            }
-            Result.success(doctorNames)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getPatientsFromAppointments(): Result<List<String>> {
-        return try {
-            val appointmentsCollection = firestore.collection("appointments")
-            val snapshot = appointmentsCollection.get().await()
-            val patientNames = snapshot.documents.mapNotNull { document ->
-                document.getString("patientName")
-            }
-            Result.success(patientNames)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 
     suspend fun getPatientsFromAppointmentsWithUids(): Result<List<ChatParticipantInfo>> {
         return try {

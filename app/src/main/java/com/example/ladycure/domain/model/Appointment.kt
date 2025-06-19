@@ -1,16 +1,16 @@
 package com.example.ladycure.domain.model
 
+import com.google.firebase.Timestamp
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.time.ZoneId
 
 data class Appointment(
     val appointmentId: String,
     val doctorId: String,
     val patientId: String,
-    val date: LocalDate,
-    val time: LocalTime,
+    val dateTime: Timestamp,
     var status: Status,
     val type: AppointmentType,
     val price: Double,
@@ -19,13 +19,28 @@ data class Appointment(
     val patientName: String = "",
     var comments: String = "",
 ) {
+
+    val date: LocalDate
+        get() = dateTime.toDate().toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+
+    val time: LocalTime
+        get() = dateTime.toDate().toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalTime()
+
+    val localDateTime: LocalDateTime
+        get() = dateTime.toDate().toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime()
+
     fun toMap(appointment: Appointment): Map<String, Any> {
         return mapOf(
             "appointmentId" to appointment.appointmentId,
             "doctorId" to appointment.doctorId,
             "patientId" to appointment.patientId,
-            "date" to appointment.date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-            "time" to appointment.time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)),
+            "dateTime" to appointment.dateTime,
             "status" to appointment.status.displayName,
             "type" to appointment.type.displayName,
             "price" to appointment.price,
@@ -42,14 +57,7 @@ data class Appointment(
                 appointmentId = map["appointmentId"] as String,
                 doctorId = map["doctorId"] as String,
                 patientId = map["patientId"] as String,
-                date = LocalDate.parse(
-                    map["date"] as String?,
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                ),
-                time = LocalTime.parse(
-                    map["time"] as String?,
-                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                ),
+                dateTime = map["dateTime"] as Timestamp,
                 status = Status.fromDisplayName(map["status"] as String),
                 type = AppointmentType.fromDisplayName(map["type"] as String),
                 price = when (val p = map["price"]) {

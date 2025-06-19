@@ -6,6 +6,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
@@ -41,7 +42,6 @@ class AuthRepository {
                                         }
                                     }
 
-                                    // NOW fetch the token *after* navigating
                                     FirebaseMessaging.getInstance().token
                                         .addOnCompleteListener { tokenTask ->
                                             if (tokenTask.isSuccessful) {
@@ -135,6 +135,20 @@ class AuthRepository {
 
 
     fun signOut() {
+        FirebaseMessaging.getInstance().deleteToken()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("FCM", "FCM token deleted successfully")
+                } else {
+                    Log.e("FCM", "Failed to delete FCM token", task.exception)
+                }
+            }
+        val currentUserId = getCurrentUserId() ?: return
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(currentUserId)
+            .update("fcmToken", FieldValue.delete())
+
         Firebase.auth.signOut()
     }
 

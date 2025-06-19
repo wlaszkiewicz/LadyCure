@@ -36,14 +36,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,18 +51,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
 import coil.compose.SubcomposeAsyncImage
-import com.example.ladycure.data.repository.AppointmentRepository
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Doctor
-import com.example.ladycure.domain.model.DoctorAvailability
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.utility.SnackbarController
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -76,58 +68,31 @@ import java.util.Locale
 fun RescheduleScreen(
     appointmentId: String,
     navController: NavController,
-    snackbarController: SnackbarController
+    snackbarController: SnackbarController,
+    viewModel: RescheduleViewModel = viewModel()
 ) {
-    var appointment by remember { mutableStateOf<Appointment?>(null) }
-    val selectedDate = remember { mutableStateOf<LocalDate?>(null) }
-    val selectedTimeSlot = remember { mutableStateOf<LocalTime?>(null) }
-    val appointmentRepo = AppointmentRepository()
-    val doctorRepo = DoctorRepository()
-    val doctorAvailability = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
-    val isLoading = remember { mutableStateOf(true) }
-    val doctor = remember { mutableStateOf<Doctor?>(null) }
-    var error by remember { mutableStateOf("") }
-    var showRescheduleSuccessDialog by remember { mutableStateOf(false) }
+    // Collect state from ViewModel
+    val isLoading = viewModel.isLoading
+    val error = viewModel.error
+    val appointment = viewModel.appointment
+    val doctor = viewModel.doctor
+    val showRescheduleDialog = viewModel.showRescheduleDialog
+    val showRescheduleSuccessDialog = viewModel.showRescheduleSuccessDialog
 
-    val coroutineScope = rememberCoroutineScope()
-    var showRescheduleDialog by remember { mutableStateOf(false) }
+    // Initialize data loading
+    LaunchedEffect(appointmentId) {
+        viewModel.loadAppointmentData(appointmentId)
+    }
 
+    // Handle errors
     LaunchedEffect(error) {
         if (error.isNotEmpty()) {
             snackbarController.showMessage(error)
-            error = ""
+            viewModel.error = ""
         }
     }
 
-    LaunchedEffect(appointmentId) {
-        isLoading.value = true
-        try {
-            // Load appointment
-            val appointmentResult = appointmentRepo.getAppointmentById(appointmentId)
-            if (appointmentResult.isSuccess) {
-                appointment = appointmentResult.getOrNull()
-
-                // Load doctor and availability in parallel
-                val doctorDeferred = coroutineScope.async {
-                    doctorRepo.getDoctorById(appointment!!.doctorId).getOrNull()
-                }
-                val availabilityDeferred = coroutineScope.async {
-                    doctorRepo.getDoctorAvailability(appointment!!.doctorId).getOrNull()
-                }
-
-                doctor.value = doctorDeferred.await()
-                doctorAvailability.value = availabilityDeferred.await() ?: emptyList()
-            } else {
-                error = appointmentResult.exceptionOrNull()?.message ?: "Failed to load appointment"
-            }
-        } catch (e: Exception) {
-            error = e.message ?: "An error occurred"
-        } finally {
-            isLoading.value = false
-        }
-    }
-
-    if (isLoading.value) {
+    if (isLoading) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -137,7 +102,7 @@ fun RescheduleScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Text("Loading appointment data...", color = DefaultOnPrimary)
         }
-    } else if (appointment == null || doctor.value == null) {
+    } else if (appointment == null || doctor == null) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -146,18 +111,6 @@ fun RescheduleScreen(
             Text("Failed to load appointment data", color = DefaultOnPrimary)
         }
     } else {
-        val availableDates = doctorAvailability.value
-            .mapNotNull { it.date }
-            .filter { it.isAfter(LocalDate.now()) || it.isEqual(LocalDate.now()) }
-            .distinct()
-            .sorted()
-
-        val timeSlotsForSelectedDate = remember(selectedDate.value, doctorAvailability.value) {
-            if (selectedDate.value == null) emptyList() else {
-                filerTimeSlotsForDate(selectedDate.value!!, doctorAvailability.value)
-            }
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -191,15 +144,15 @@ fun RescheduleScreen(
 
             // Doctor info
             AppointmentInfoHeader(
-                doctor = doctor.value!!,
-                appointment = appointment!!,
+                doctor = doctor,
+                appointment = appointment,
                 modifier = Modifier.padding(horizontal = 0.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Date selection
-            if (availableDates.isNotEmpty()) {
+            if (viewModel.availableDates.isNotEmpty()) {
                 Text(
                     text = "Select New Date",
                     style = MaterialTheme.typography.titleMedium,
@@ -208,19 +161,15 @@ fun RescheduleScreen(
                     modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
                 )
 
-                DateSelector(
-                    availableDates = availableDates.map { it.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) },
-                    selectedDate = selectedDate.value?.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                    onDateSelected = {
-                        selectedDate.value =
-                            LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        selectedTimeSlot.value = null
-                    },
+                DateSelectorRes(
+                    availableDates = viewModel.availableDates,
+                    selectedDate = viewModel.selectedDate,
+                    onDateSelected = { date -> viewModel.selectDate(date) },
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
                 // Time slots - only show if we have a selected date
-                selectedDate.value?.let {
+                viewModel.selectedDate?.let {
                     Text(
                         text = "Available Time Slots",
                         style = MaterialTheme.typography.titleMedium,
@@ -229,7 +178,8 @@ fun RescheduleScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    if (timeSlotsForSelectedDate.isEmpty()) {
+                    val timeSlots = viewModel.getTimeSlotsForSelectedDate()
+                    if (timeSlots.isEmpty()) {
                         Text(
                             text = "No available time slots for selected date",
                             style = MaterialTheme.typography.bodyMedium,
@@ -237,20 +187,19 @@ fun RescheduleScreen(
                         )
                     } else {
                         TimeSlotGrid(
-                            timeSlots = timeSlotsForSelectedDate.map {
-                                it.format(
-                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                                )
+                            timeSlots = timeSlots.map { time ->
+                                time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US))
                             },
-                            selectedTimeSlot = selectedTimeSlot.value?.format(
+                            selectedTimeSlot = viewModel.selectedTimeSlot?.format(
                                 DateTimeFormatter.ofPattern("h:mm a", Locale.US)
                             ),
                             onTimeSlotSelected = { timeStr ->
-                                selectedTimeSlot.value = LocalTime.parse(
-                                    timeStr,
-                                    DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                viewModel.selectTimeSlot(
+                                    LocalTime.parse(
+                                        timeStr,
+                                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                                    )
                                 )
-                                showRescheduleDialog = true
                             }
                         )
                     }
@@ -266,53 +215,52 @@ fun RescheduleScreen(
         }
     }
 
-    if (showRescheduleDialog) {
+    if (showRescheduleDialog && viewModel.selectedDate != null && viewModel.selectedTimeSlot != null) {
         RescheduleConfirmationDialog(
             oldAppointment = appointment!!,
-            newDate = selectedDate.value!!,
-            newTime = selectedTimeSlot.value!!,
+            newDate = viewModel.selectedDate!!,
+            newTime = viewModel.selectedTimeSlot!!,
             onConfirm = {
-                if (selectedDate.value != null && selectedTimeSlot.value != null) {
-                    coroutineScope.launch {
-                        val result = appointmentRepo.rescheduleAppointment(
-                            appointmentId,
-                            selectedTimeSlot.value!!, selectedDate.value!!
-                        )
-                        if (result.isSuccess) {
-                            showRescheduleDialog = false
-                            showRescheduleSuccessDialog = true
-                        } else {
-                            error = result.exceptionOrNull()?.message!!
-                        }
+                viewModel.rescheduleAppointment(
+                    appointmentId = appointmentId,
+                    onSuccess = {
+                        // Success handled in ViewModel
+                    },
+                    onError = { errorMessage ->
+                        snackbarController.showMessage(errorMessage)
                     }
-                }
+                )
             },
-            onDismiss = { showRescheduleDialog = false }
+            onDismiss = { viewModel.dismissRescheduleDialog() }
         )
     }
 
-    if (showRescheduleSuccessDialog) {
+    if (showRescheduleSuccessDialog && viewModel.selectedDate != null && viewModel.selectedTimeSlot != null) {
         RescheduleSuccessDialog(
             onDismiss = {
-                showRescheduleSuccessDialog = false
+                viewModel.dismissSuccessDialog()
                 navController.popBackStack()
             },
-            newDate = selectedDate.value!!.format(DateTimeFormatter.ofPattern("MMM dd")),
-            newTime = selectedTimeSlot.value!!.format(
-                DateTimeFormatter.ofPattern(
-                    "h:mm a",
-                    Locale.US
-                )
+            onViewAppointments = {
+                viewModel.dismissSuccessDialog()
+                navController.navigate("appointments") {
+                    popUpTo("home") { inclusive = false }
+                    launchSingleTop = true
+                }
+            },
+            newDate = viewModel.selectedDate!!.format(DateTimeFormatter.ofPattern("MMM dd")),
+            newTime = viewModel.selectedTimeSlot!!.format(
+                DateTimeFormatter.ofPattern("h:mm a", Locale.US)
             )
         )
     }
 }
 
 @Composable
-private fun DateSelector(
-    availableDates: List<String>,
-    selectedDate: String?,
-    onDateSelected: (String) -> Unit,
+private fun DateSelectorRes(
+    availableDates: List<LocalDate>,
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -516,6 +464,7 @@ private fun AppointmentInfoHeader(
 @Composable
 fun RescheduleSuccessDialog(
     onDismiss: () -> Unit,
+    onViewAppointments: () -> Unit,
     newDate: String,
     newTime: String
 ) {
@@ -613,13 +562,13 @@ fun RescheduleSuccessDialog(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Action button
-                Button(
-                    onClick = onDismiss,
+                OutlinedButton(
+                    onClick = onViewAppointments,
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary,
-                        contentColor = Color.White
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = DefaultPrimary
                     ),
+                    border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.9f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
@@ -627,7 +576,8 @@ fun RescheduleSuccessDialog(
                     Text(
                         "View Appointments",
                         style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = DefaultPrimary,
                         )
                     )
                 }
