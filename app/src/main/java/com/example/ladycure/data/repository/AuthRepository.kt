@@ -2,8 +2,10 @@ package com.example.ladycure.data.repository
 
 import android.util.Log
 import androidx.navigation.NavController
+import com.example.ladycure.utility.SharedPreferencesHelper
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.app
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
@@ -135,6 +137,7 @@ class AuthRepository {
 
 
     fun signOut() {
+        val context = Firebase.app.applicationContext
         FirebaseMessaging.getInstance().deleteToken()
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -148,6 +151,9 @@ class AuthRepository {
             .collection("users")
             .document(currentUserId)
             .update("fcmToken", FieldValue.delete())
+
+        // Clear all other preferences if needed
+        SharedPreferencesHelper.clearPreferences(context)
 
         Firebase.auth.signOut()
     }

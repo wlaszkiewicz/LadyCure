@@ -148,11 +148,9 @@ fun MainScreen(navController: NavHostController) {
                 startDestination = "welcome"
             ) {
                 composable("home") {
-                    val context = LocalContext.current
                     HomeScreen(
                         navController = navController,
                         snackbarController = snackbarController,
-                        context = context
                     )
                 }
 

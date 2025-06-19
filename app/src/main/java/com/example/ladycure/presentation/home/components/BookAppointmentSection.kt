@@ -68,7 +68,12 @@ fun BookAppointmentSection(
     onSpecializationSelected: (Speciality) -> Unit,
     context: Context = LocalContext.current
 ) {
+
     val lastFetchedCity = remember(initialCity) { mutableStateOf<String?>(initialCity) }
+
+    if (initialCity == "Detecting City...") {
+        lastFetchedCity.value = availableCities.firstOrNull() ?: "No available cities"
+    }
 
     var showLocationDropdown by remember { mutableStateOf(false) }
     var selectedLocation = remember(selectedCity, initialCity) {
@@ -86,7 +91,7 @@ fun BookAppointmentSection(
                 selectedCity != initialCity
     }
 
-    LaunchedEffect(selectedCity, initialCity) {
+    LaunchedEffect(selectedCity, initialCity, lastFetchedCity.value) {
         selectedCity?.let {
             selectedLocation = it
         } ?: run {

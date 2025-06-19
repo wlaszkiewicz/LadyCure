@@ -379,4 +379,22 @@ class DoctorRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun getAvailableCities(): Result<List<String>> {
+        return try {
+            val querySnapshot = firestore.collection("users")
+                .whereEqualTo("role", "doctor")
+                .get()
+                .await()
+
+            val cities = querySnapshot.documents.mapNotNull { doc ->
+                doc.getString("city")
+            }.distinct()
+
+            Result.success(cities)
+        } catch (e: Exception) {
+            Log.e("DoctorRepository", "Error fetching cities", e)
+            Result.failure(e)
+        }
+    }
 }

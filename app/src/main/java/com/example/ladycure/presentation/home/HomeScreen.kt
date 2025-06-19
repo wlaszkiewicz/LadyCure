@@ -4,9 +4,6 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
-import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +24,8 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,11 +33,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,161 +50,71 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
-import com.example.ladycure.data.repository.AppointmentRepository
-import com.example.ladycure.data.repository.UserRepository
-import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.home.components.AppointmentsSection
 import com.example.ladycure.presentation.home.components.BookAppointmentSection
 import com.example.ladycure.utility.HealthTips.getDailyTip
 import com.example.ladycure.utility.HealthTips.getRandomTip
-import com.example.ladycure.utility.SharedPreferencesHelper
 import com.example.ladycure.utility.SnackbarController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.tasks.await
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     navController: NavHostController,
     snackbarController: SnackbarController? = null,
-    context: Context = LocalContext.current
+    homeViewModel: HomeViewModel = viewModel()
 ) {
-    val userRepo = UserRepository()
-    val appointmentRepo = AppointmentRepository()
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
-    // State variables
-    val selectedSpeciality = remember { mutableStateOf<Speciality?>(null) }
-    val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
-    val error = remember { mutableStateOf<String?>(null) }
-    val appointments = remember { mutableStateOf<List<Appointment>?>(null) }
-    var locationFetched = remember { mutableStateOf(false) }
-
-    var selectedCity by remember { mutableStateOf<String?>(null) }
-    var initialCity by remember { mutableStateOf<String?>(null) }
-
-    val availableCities = listOf(
-        "Warszawa", "Kraków", "Wrocław", "Poznań", "Gdańsk", "Łódź",
-        "Szczecin", "Bydgoszcz", "Lublin", "Katowice", "Białystok", "Gdynia", "Częstochowa",
-        "Radom", "Sosnowiec", "Toruń", "Kielce", "Rzeszów", "Olsztyn", "Zielona Góra"
-    )
+    // Observe the state from the ViewModel
+    val uiState by homeViewModel.uiState.collectAsState()
 
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
+
     )
 
-    LaunchedEffect(Unit) {
-        try {
-            if (SharedPreferencesHelper.shouldRememberChoice(context)) {
-                SharedPreferencesHelper.getCity(context)?.let { savedCity ->
-                    selectedCity = savedCity
-                    locationFetched.value = true
-                }
-            }
+    var showRationaleDialog by rememberSaveable { mutableStateOf(false) }
+    var showPermissionExplanationDialog by rememberSaveable { mutableStateOf(false) }
 
-            userRepo.getCurrentUserData().getOrNull()?.let { data ->
-                userData.value = data
-
-                appointmentRepo.getAppointments("user").getOrNull()?.let { apps ->
-                    appointments.value = apps
-                }
-            }
-        } catch (e: Exception) {
-            error.value = e.message
-        }
-    }
-
-    LaunchedEffect(locationPermissionState.status, locationFetched.value) {
-        if (locationFetched.value) return@LaunchedEffect
-
+    LaunchedEffect(locationPermissionState.status) {
         when {
             locationPermissionState.status.isGranted -> {
-                try {
-                    if (ActivityCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.ACCESS_FINE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
-                        var lastLocation: Location? = null
-                        try {
-                            lastLocation = fusedLocationClient.lastLocation.await()
-                        } catch (e: Exception) {
-                            error.value = "Error fetching location: ${e.message}"
-                        }
-
-                        if (lastLocation == null) {
-                            try {
-                                LocationRequest.create().apply {
-                                    setPriority(
-                                        LocationRequest.PRIORITY_HIGH_ACCURACY
-                                    )
-                                    setNumUpdates(1)
-                                    setInterval(10000)
-                                    setFastestInterval(5000)
-                                }
-
-                                lastLocation = fusedLocationClient.getCurrentLocation(
-                                    LocationRequest.PRIORITY_HIGH_ACCURACY,
-                                    null
-                                ).await()
-                            } catch (e: Exception) {
-                                error.value = "Error getting fresh location: ${e.message}"
-                            }
-                        }
-
-                        lastLocation?.let { loc ->
-                            initialCity = findNearestCity(loc.latitude, loc.longitude)
-                            locationFetched.value = true
-                        } ?: run {
-                            initialCity = availableCities.firstOrNull()
-                            locationFetched.value = true
-                            snackbarController?.showMessage("Couldn't determine your location. Using default city.")
-                        }
-                    }
-                } catch (e: Exception) {
-                    initialCity = availableCities.firstOrNull()
-                    locationFetched.value = true
-                    snackbarController?.showMessage("Error getting location: $e. Using default city.")
-                }
+                homeViewModel.onPermissionResult(isGranted = true)
             }
 
             locationPermissionState.status.shouldShowRationale -> {
-                snackbarController?.showMessage("We need access to location to find the closest doctors")
-                initialCity = availableCities.firstOrNull()
-                locationFetched.value = true
+                showRationaleDialog = true
             }
 
             !locationPermissionState.status.isGranted -> {
-                locationPermissionState.launchPermissionRequest()
-                initialCity = availableCities.firstOrNull()
-                locationFetched.value = true
+                if (!uiState.locationFetched) {
+                    showPermissionExplanationDialog = true
+                }
             }
         }
     }
 
-    // Show error if any
-    LaunchedEffect(error.value) {
-        error.value?.let { err ->
-            snackbarController?.showMessage(err)
-            error.value = null
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            snackbarController?.showMessage(it)
+            homeViewModel.clearError()
         }
     }
 
-    if (userData.value == null) {
+
+    if (uiState.userData == null) {
         Column(
             modifier = Modifier
                 .fillMaxSize(),
@@ -215,12 +127,6 @@ fun HomeScreen(
             )
         }
     } else {
-        if (error.value != null) {
-            snackbarController?.showMessage(
-                message = error.value ?: "An error occurred"
-            )
-            error.value = null
-        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -231,53 +137,44 @@ fun HomeScreen(
         ) {
 
             Header(
-                userData = userData.value ?: emptyMap(),
+                userData = uiState.userData ?: emptyMap(),
                 onProfileClick = { navController.navigate("profile") },
                 onNotificationClick = { /* TODO: Handle notification click */ }
             )
 
-            // Health tips card
             var dailyTip by remember { mutableStateOf(getDailyTip()) }
 
             HealthTipCard(
                 dailyTip = dailyTip,
-                onRefreshClick = {
-                    dailyTip = getRandomTip()
-                },
-                onTodayClick = {
-                    dailyTip = getDailyTip()
-                },
+                onRefreshClick = { dailyTip = getRandomTip() },
+                onTodayClick = { dailyTip = getDailyTip() }
             )
 
             BookAppointmentSection(
                 specialities = Speciality.entries,
-                selectedCity = selectedCity,
-                initialCity = initialCity,
-                availableCities = availableCities,
+                selectedCity = uiState.selectedCity,
+                initialCity = uiState.initialCity,
+                availableCities = uiState.availableCities,
                 onCitySelected = { city ->
-                    selectedCity = city
+                    homeViewModel.onCitySelected(city) // Send event to ViewModel
                 },
                 onSpecializationSelected = { specialization ->
-                    selectedSpeciality.value = specialization
-                    selectedCity?.let { city ->
-                        navController.navigate("services/$city/${specialization.displayName}")
-                    } ?: run {
-                        if (!locationFetched.value) {
-                            snackbarController?.showMessage("Please wait for location to be fetched")
-                        } else if (initialCity != null) {
-                            navController.navigate("services/$initialCity/${specialization.displayName}")
-                        } else {
-                            snackbarController?.showMessage("Please select a city")
-                        }
+                    val cityToUse = uiState.selectedCity ?: uiState.initialCity
+                    if (cityToUse != null) {
+                        navController.navigate("services/$cityToUse/${specialization.displayName}")
+                    } else if (!uiState.locationFetched) {
+                        snackbarController?.showMessage("Please wait for location to be fetched")
+                    } else {
+                        snackbarController?.showMessage("Please select a city")
                     }
                 },
-                context = context
+                context = LocalContext.current
             )
 
             AppointmentsSection(
-                appointments = appointments.value,
+                appointments = uiState.appointments,
                 onAppointmentChanged = { updatedAppointment ->
-                    appointments.value = appointments.value?.map {
+                    uiState.appointments = uiState.appointments?.map {
                         if (it.appointmentId == updatedAppointment.appointmentId) updatedAppointment else it
                     }
                 },
@@ -286,7 +183,111 @@ fun HomeScreen(
             )
         }
     }
+
+
+
+
+    if (showRationaleDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showRationaleDialog = false
+                homeViewModel.handlePermissionDenied()
+            },
+            title = {
+                Text(
+                    text = "Why do we need your location?",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            },
+            text = {
+                Text(
+                    text = "We need access to your location to find the doctors near you. This helps us provide a better experience by showing relevant services based on your location.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRationaleDialog = false
+                        locationPermissionState.launchPermissionRequest()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = DefaultPrimary
+                    )
+                ) {
+                    Text("Make Sense!")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRationaleDialog = false
+                        homeViewModel.handlePermissionDenied()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
+                ) {
+                    Text("No, Thanks")
+                }
+            },
+            shape = RoundedCornerShape(12.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp
+        )
+    }
+
+    if (showPermissionExplanationDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showPermissionExplanationDialog = false
+                homeViewModel.handlePermissionDenied()
+            },
+            title = {
+                Text(
+                    text = "Permission Needed \uD83D\uDCCD",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            },
+            text = {
+                Text(
+                    text = "To provide you with the best experience, we need access to your location to find nearby doctors.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionExplanationDialog = false
+                        locationPermissionState.launchPermissionRequest()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = DefaultPrimary
+                    )
+                ) {
+                    Text("Sure!")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionExplanationDialog = false
+                        homeViewModel.handlePermissionDenied()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = DefaultOnPrimary.copy(alpha = 0.8f)
+                    )
+                ) {
+                    Text("Not now")
+                }
+            },
+            shape = RoundedCornerShape(12.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp
+        )
+    }
 }
+
 
 fun findNearestCity(latitude: Double, longitude: Double): String {
     val cities = mapOf(
