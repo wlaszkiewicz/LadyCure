@@ -1,6 +1,6 @@
 package com.example.ladycure.domain
 
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.data.repository.AuthRepository
 
 class RegisterUseCase(private val authRepository: AuthRepository) {
     suspend operator fun invoke(

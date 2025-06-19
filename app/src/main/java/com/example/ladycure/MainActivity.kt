@@ -34,37 +34,37 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.ladycure.chat.DoctorChatScreen
-import com.example.ladycure.data.AppointmentType
-import com.example.ladycure.data.doctor.Speciality
+import com.example.ladycure.data.repository.AuthRepository
+import com.example.ladycure.domain.model.AppointmentType
+import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.presentation.admin.AdminAnalyticsScreen
+import com.example.ladycure.presentation.admin.AdminDashboardScreen
+import com.example.ladycure.presentation.admin.AdminDoctorManagementScreen
+import com.example.ladycure.presentation.admin.AdminUserManagementScreen
+import com.example.ladycure.presentation.applications.DoctorApplicationScreen
+import com.example.ladycure.presentation.applications.DoctorPendingMainScreen
+import com.example.ladycure.presentation.availability.AvailabilityListScreen
+import com.example.ladycure.presentation.availability.SetAvailabilityScreen
+import com.example.ladycure.presentation.booking.AppointmentsScreen
+import com.example.ladycure.presentation.booking.BookAppointmentDirectlyScreen
+import com.example.ladycure.presentation.booking.BookAppointmentScreen
+import com.example.ladycure.presentation.booking.BookingSuccessScreen
+import com.example.ladycure.presentation.booking.ConfirmationScreen
+import com.example.ladycure.presentation.booking.RescheduleScreen
+import com.example.ladycure.presentation.booking.SelectServiceScreen
+import com.example.ladycure.presentation.chat.ChatScreen
+import com.example.ladycure.presentation.chat.DoctorChatScreen
+import com.example.ladycure.presentation.doctor.DoctorEarningsScreen
+import com.example.ladycure.presentation.doctor.DoctorHomeScreen
+import com.example.ladycure.presentation.home.DoctorsListScreen
+import com.example.ladycure.presentation.home.HomeScreen
+import com.example.ladycure.presentation.home.PeriodTrackerScreen
+import com.example.ladycure.presentation.home.ProfileScreen
+import com.example.ladycure.presentation.home.SearchDoctorsScreen
 import com.example.ladycure.presentation.home.components.BottomNavBar
-import com.example.ladycure.repository.AuthRepository
-import com.example.ladycure.screens.AdminAnalyticsScreen
-import com.example.ladycure.screens.AdminDashboardScreen
-import com.example.ladycure.screens.AdminDoctorManagementScreen
-import com.example.ladycure.screens.AdminUserManagementScreen
-import com.example.ladycure.screens.ChatScreen
-import com.example.ladycure.screens.LoginScreen
-import com.example.ladycure.screens.ProfileScreen
-import com.example.ladycure.screens.RegisterScreen
-import com.example.ladycure.screens.WelcomeScreen
-import com.example.ladycure.screens.doctor.AvailabilityListScreen
-import com.example.ladycure.screens.doctor.DoctorApplicationScreen
-import com.example.ladycure.screens.doctor.DoctorEarningsScreen
-import com.example.ladycure.screens.doctor.DoctorHomeScreen
-import com.example.ladycure.screens.doctor.DoctorPendingMainScreen
-import com.example.ladycure.screens.doctor.SetAvailabilityScreen
-import com.example.ladycure.screens.user.AppointmentsScreen
-import com.example.ladycure.screens.user.BookAppointmentDirectlyScreen
-import com.example.ladycure.screens.user.BookAppointmentScreen
-import com.example.ladycure.screens.user.BookingSuccessScreen
-import com.example.ladycure.screens.user.ConfirmationScreen
-import com.example.ladycure.screens.user.DoctorsListScreen
-import com.example.ladycure.screens.user.HomeScreen
-import com.example.ladycure.screens.user.PeriodTrackerScreen
-import com.example.ladycure.screens.user.RescheduleScreen
-import com.example.ladycure.screens.user.SearchDoctorsScreen
-import com.example.ladycure.screens.user.SelectServiceScreen
+import com.example.ladycure.presentation.login.LoginScreen
+import com.example.ladycure.presentation.register.RegisterScreen
+import com.example.ladycure.presentation.welcome.WelcomeScreen
 import com.example.ladycure.utility.SnackbarController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -391,9 +391,14 @@ fun RationaleDialog() {
         text = { Text("To send you reminders, health tips, and doctor's messages! ") },
         confirmButton = {
             TextButton(onClick = {
-                val intent = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                    putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
-                }
+                val intent =
+                    android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .apply {
+                            putExtra(
+                                android.provider.Settings.EXTRA_APP_PACKAGE,
+                                context.packageName
+                            )
+                        }
                 context.startActivity(intent)
             }) {
                 Text("OK")
@@ -407,7 +412,8 @@ fun RationaleDialog() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun RequestNotificationPermissionDialog() {
-    val permissionState = rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+    val permissionState =
+        rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
 
     if (!permissionState.status.isGranted) {
         if (permissionState.status.shouldShowRationale) RationaleDialog()

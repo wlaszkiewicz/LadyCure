@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 
