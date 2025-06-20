@@ -72,23 +72,23 @@ exports.sendChatNotification = functions
 
       let notificationBody = text;
 
-      if (!text && attachmentMimeType?.startsWith("image/")) {
-        notificationBody = "🖼️ Image attached";
-      } else if (!text && attachmentFileName) {
-        notificationBody = "📎 ${attachmentFileName}";
-      } else if (text && attachmentMimeType?.startsWith("image/")) {
-        notificationBody = "${text} (🖼️ Image attached)";
-      } else if (text && attachmentFileName) {
-        notificationBody = "${text} (📎 ${attachmentFileName})";
-      } else {
-        notificationBody = text ?? "New message";
-      }
+       if (!text && attachmentMimeType?.startsWith("image/")) {
+         notificationBody = `🖼️ Image attached`;
+       } else if (!text && attachmentFileName) {
+         notificationBody = `📎 ${attachmentFileName}`;
+       } else if (text && attachmentMimeType?.startsWith("image/")) {
+         notificationBody = `${text} (🖼️ ${attachmentFileName})`;
+       } else if (text && attachmentFileName) {
+         notificationBody = `${text} (📎 ${attachmentFileName})`;
+       } else {
+         notificationBody = text ?? "New message";
+       }
 
 
       const payload: admin.messaging.TokenMessage = {
         token: fcmToken,
         notification: {
-          title: "💬 Message from ${senderName}",
+          title: `💬 Message from ${senderName}`,
           body: notificationBody.length > 50 ? notificationBody.substring(0, 50) + "..." : notificationBody,
           ...(attachmentUrl && attachmentMimeType?.startsWith("image/")
             ? { image: attachmentUrl }
@@ -106,55 +106,92 @@ exports.sendChatNotification = functions
   });
 
 
+exports.sendUpcomingAppointmentReminders = functions.pubsub
+  .schedule("every 5 minutes")
+  .timeZone("Europe/Warsaw")
+  .onRun(async (context) => {
+    const now = admin.firestore.Timestamp.now();
+    const nowMs = now.toMillis();
 
-  exports.sendUpcomingAppointmentReminders = functions.pubsub
-    .schedule("every 5 minutes")
-    .timeZone("Europe/Warsaw")
-    .onRun(async (context) => {
-      const now = admin.firestore.Timestamp.now();
-      const tenMinFromNow = admin.firestore.Timestamp.fromMillis(now.toMillis() + 10 * 60 * 1000);
-      const fiveMinFromNow = admin.firestore.Timestamp.fromMillis(now.toMillis() + 5 * 60 * 1000);
+    const fiveMinFromNow = admin.firestore.Timestamp.fromMillis(nowMs + 5 * 60 * 1000);
+    const tenMinFromNow = admin.firestore.Timestamp.fromMillis(nowMs + 10 * 60 * 1000);
+    const fiftyFiveMinFromNow = admin.firestore.Timestamp.fromMillis(nowMs + 55 * 60 * 1000);
+    const sixtyFiveMinFromNow = admin.firestore.Timestamp.fromMillis(nowMs + 65 * 60 * 1000);
 
-      const snapshot = await admin.firestore()
-        .collection("appointments")
-        .where("status", "==", "Confirmed")
-        .where("dateTime", ">=", fiveMinFromNow)
-        .where("dateTime", "<=", tenMinFromNow)
-        .get();
+    const snapshotOneHour = await admin.firestore()
+      .collection("appointments")
+      .where("status", "==", "Confirmed")
+      .where("dateTime", ">=", fiftyFiveMinFromNow)
+      .where("dateTime", "<=", sixtyFiveMinFromNow)
+      .get();
 
-      if (snapshot.empty) {
-        console.log("No upcoming appointments");
-        return null;
-      }
+    const snapshotFiveMin = await admin.firestore()
+      .collection("appointments")
+      .where("status", "==", "Confirmed")
+      .where("dateTime", ">=", fiveMinFromNow)
+      .where("dateTime", "<=", tenMinFromNow)
+      .get();
 
-      const promises = snapshot.docs.map(async (doc) => {
+    const sendReminders = async (
+      docs: FirebaseFirestore.QueryDocumentSnapshot[],
+      type: "hour" | "five"
+    ) => {
+      const promises = docs.map(async (doc) => {
         const data = doc.data();
         const patientId = data.patientId;
+        const doctorId = data.doctorId;
         const doctorName = data.doctorName || "the doctor";
+        const patientName = data.patientName || "the patient";
 
-        const userDoc = await admin.firestore().collection("users").doc(patientId).get();
-        const fcmToken = userDoc.get("fcmToken");
+        const patientDoc = await admin.firestore().collection("users").doc(patientId).get();
+        const doctorDoc = await admin.firestore().collection("users").doc(doctorId).get();
 
-        if (!fcmToken) {
-          console.log(`❌ No FCM token for ${patientId}`);
-          return;
+        const patientToken = patientDoc.get("fcmToken");
+        const doctorToken = doctorDoc.get("fcmToken");
+
+        const tasks = [];
+
+        if (patientToken) {
+          const patientPayload = {
+            notification: {
+              title: type === "hour" ? "⏳ Upcoming Appointment" : "⏰ Appointment Starting Soon",
+              body:
+                type === "hour"
+                  ? `Reminder: Your appointment with Dr. ${doctorName} is in 1 hour.`
+                  : `Your appointment with Dr. ${doctorName} is starting soon!`,
+            },
+            token: patientToken,
+          };
+
+          tasks.push(admin.messaging().send(patientPayload));
+          console.log(`✅ ${type} reminder sent to patient ${patientId}`);
         }
 
-        const payload = {
-          notification: {
-            title: `Upcoming Appointment ⏰`,
-            body: `Your appointment with Dr. ${doctorName} is starting soon!`,
-          },
-          token: fcmToken,
-        };
+        if (type === "five" && doctorToken) {
+          const doctorPayload = {
+            notification: {
+              title: "👩‍⚕️ Appointment Starting Soon",
+              body: `Upcoming appointment with ${patientName} is starting in a few minutes!`,
+            },
+            token: doctorToken,
+          };
 
-        await admin.messaging().send(payload);
-        console.log(`✅ Reminder sent to ${patientId}`);
+          tasks.push(admin.messaging().send(doctorPayload));
+          console.log(`✅ ${type} reminder sent to doctor ${doctorId}`);
+        }
+
+        await Promise.all(tasks);
       });
 
       await Promise.all(promises);
-      return null;
-    });
+    };
+
+    if (!snapshotOneHour.empty) await sendReminders(snapshotOneHour.docs, "hour");
+    if (!snapshotFiveMin.empty) await sendReminders(snapshotFiveMin.docs, "five");
+
+    return null;
+  });
+
 
 
 exports.sendAppointmentCancelledNotification = functions
@@ -186,7 +223,7 @@ exports.sendAppointmentCancelledNotification = functions
 
       const message = {
         notification: {
-          title: "❌ Appointment Cancelled",
+          title: "Appointment Cancelled ❌",
           body: `${patientName} just cancelled a confirmed appointment.`,
         },
         token: fcmToken,

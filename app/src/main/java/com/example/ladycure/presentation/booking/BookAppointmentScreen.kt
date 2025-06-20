@@ -147,7 +147,7 @@ fun BookAppointmentScreen(
                 availableDates = viewModel.availableDates,
                 selectedDate = viewModel.selectedDate,
                 onDateSelected = { date -> viewModel.selectDate(date) },
-                timeSlots = viewModel.getTimeSlotsForSelectedDate(),
+                timeSlots = viewModel.getTimeSlotsForSelectedDate(selectedService.durationInMinutes),
                 selectedTimeSlot = viewModel.selectedTimeSlot,
                 onTimeSlotSelected = { time ->
                     var time = LocalTime.parse(
@@ -161,7 +161,7 @@ fun BookAppointmentScreen(
             else -> DoctorSelectionView(
                 selectedDate = viewModel.selectedDate!!,
                 selectedTimeSlot = viewModel.selectedTimeSlot!!,
-                doctors = viewModel.getAvailableDoctorsForSlot(),
+                doctors = viewModel.getAvailableDoctorsForSlot(selectedService.durationInMinutes),
                 onBackClick = { viewModel.toggleShowDoctorsForSlot(false) },
                 onDoctorSelected = { doctorId ->
                     val timestamp = viewModel.createTimestamp()

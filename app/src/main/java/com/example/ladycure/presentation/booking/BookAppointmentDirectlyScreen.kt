@@ -119,7 +119,7 @@ fun BookAppointmentDirectlyScreen(
                     availableDates = viewModel.availableDates,
                     selectedDate = viewModel.selectedDate,
                     onDateSelected = { date -> viewModel.selectDate(date) },
-                    timeSlots = viewModel.getTimeSlotsForSelectedDate(),
+                    timeSlots = viewModel.getTimeSlotsForSelectedDate(selectedService.durationInMinutes),
                     selectedTimeSlot = viewModel.selectedTimeSlot,
                     onTimeSlotSelected = { time ->
                         var time = LocalTime.parse(

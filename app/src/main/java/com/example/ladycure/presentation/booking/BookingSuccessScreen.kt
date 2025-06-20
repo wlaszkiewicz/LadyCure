@@ -108,7 +108,7 @@ fun BookingSuccessScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .padding(horizontal = 32.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -381,7 +381,7 @@ fun BookingSuccessScreen(
                     .fillMaxWidth()
                     .height(50.dp)
                     .padding(horizontal = 15.dp),
-                shape = RoundedCornerShape(30.dp),
+                shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.dp, DefaultPrimary),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = Color.Transparent,

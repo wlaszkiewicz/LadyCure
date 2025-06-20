@@ -53,7 +53,6 @@ class StorageRepository {
                 .firstOrNull()?.id
 
 
-
             Result.success(referralId ?: throw Exception("Referral ID not found"))
         } catch (e: Exception) {
             Result.failure(e)
