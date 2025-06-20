@@ -54,7 +54,9 @@ class DoctorHomeViewModel(
             try {
                 val doctorData = userRepo.getCurrentUserData().getOrNull()
                 val allAppointments =
-                    appointmentsRepo.getAppointments("doctor").getOrNull() ?: emptyList()
+                    (appointmentsRepo.getAppointments("doctor").getOrNull() ?: emptyList()).filter {
+                        it.status != Status.CANCELLED
+                    }
 
                 val upcomingAppointments = allAppointments.filter {
                     it.date.isAfter(LocalDate.now()) ||
@@ -91,12 +93,13 @@ class DoctorHomeViewModel(
 
         //  find today's next appointment
         val todaysNext = appointments.firstOrNull {
-            it.date == now && it.time.isAfter(currentTime)
+            it.date == now && it.time.isAfter(currentTime) && it.status != Status.CANCELLED
         }
         if (todaysNext != null) return todaysNext
 
         // If none today, find the earliest future appointment
-        return appointments.firstOrNull { it.date.isAfter(now) } ?: appointments.firstOrNull()
+        return appointments.firstOrNull { it.date.isAfter(now) && it.status != Status.CANCELLED }
+            ?: appointments.firstOrNull()
     }
 
     private fun startTimeUpdates() {

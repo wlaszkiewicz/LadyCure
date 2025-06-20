@@ -31,12 +31,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
@@ -304,6 +304,7 @@ fun ConfirmationScreen(
                             }
 
                             Button(
+                                enabled = !isUploading, // Disable if uploading
                                 onClick = {
                                     viewModel.bookAppointment(
                                         doctorId = doctorId,
@@ -771,7 +772,7 @@ private fun DoctorConfirmationCard(
                     },
                     error = {
                         Icon(
-                            imageVector = Icons.Default.Error,
+                            imageVector = Icons.Default.AccountCircle,
                             contentDescription = "Doctor $name",
                             modifier = Modifier
                                 .size(80.dp)

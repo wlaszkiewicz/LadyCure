@@ -40,6 +40,7 @@ class BookingViewModel(
     var showDoctorsForSlot by mutableStateOf(false)
         private set
 
+
     fun loadDoctorsBySpeciality(speciality: Speciality, city: String) {
         viewModelScope.launch(Dispatchers.IO) {
             isLoading = true
@@ -111,19 +112,20 @@ class BookingViewModel(
             .distinct()
             .sorted()
 
-    fun getTimeSlotsForSelectedDate(): List<String> {
+    fun getTimeSlotsForSelectedDate(appointmentDuration: Int): List<String> {
         return if (selectedDate == null) emptyList() else {
-            filterTimeSlotsForDate(selectedDate!!, doctorAvailabilities)
+            filterTimeSlotsForDate(selectedDate!!, doctorAvailabilities, appointmentDuration)
         }
     }
 
-    fun getAvailableDoctorsForSlot(): List<Doctor> {
+    fun getAvailableDoctorsForSlot(appointmentDuration: Int): List<Doctor> {
         return if (selectedTimeSlot == null || selectedDate == null) emptyList() else {
             filterAvailableDoctors(
                 doctors,
                 selectedDate!!,
                 selectedTimeSlot!!,
-                doctorAvailabilities
+                doctorAvailabilities,
+                appointmentDuration
             )
         }
     }
@@ -137,27 +139,82 @@ class BookingViewModel(
 
     private fun filterTimeSlotsForDate(
         date: LocalDate,
-        availabilities: List<DoctorAvailability>
+        availabilities: List<DoctorAvailability>,
+        appointmentDuration: Int
     ): List<String> {
         val now = LocalTime.now()
-        return availabilities
-            .filter { it.date == date }
+        val validDoctorIds = getDoctorsWithEnoughSlots(date, appointmentDuration, availabilities)
+
+        // Get all slots only from valid doctors
+        val validSlots = availabilities
+            .filter { it.date == date && it.doctorId in validDoctorIds }
             .flatMap { it.availableSlots }
             .filter { date != LocalDate.now() || it.isAfter(now) }
             .distinct()
             .sorted()
-            .map { it.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US)) }
+
+        val requiredSlots = appointmentDuration / 15
+        val availableStartSlots = mutableListOf<LocalTime>()
+
+        // Now check which start slots have enough consecutive slots
+        // within individual doctor's availabilities
+        for (doctorId in validDoctorIds) {
+            val doctorSlots = availabilities
+                .filter { it.doctorId == doctorId && it.date == date }
+                .flatMap { it.availableSlots }
+                .sorted()
+
+            for (i in 0..(doctorSlots.size - requiredSlots)) {
+                val startSlot = doctorSlots[i]
+                var hasConsecutive = true
+
+                for (j in 1 until requiredSlots) {
+                    val expectedSlot = startSlot.plusMinutes((15 * j).toLong())
+                    if (doctorSlots.getOrNull(i + j) != expectedSlot) {
+                        hasConsecutive = false
+                        break
+                    }
+                }
+
+                if (hasConsecutive && !availableStartSlots.contains(startSlot)) {
+                    availableStartSlots.add(startSlot)
+                }
+            }
+        }
+
+        return availableStartSlots.sorted()
+            .map { it.format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())) }
     }
 
     private fun filterAvailableDoctors(
         doctors: List<Doctor>,
         date: LocalDate,
         timeSlot: LocalTime,
-        availabilities: List<DoctorAvailability>
+        availabilities: List<DoctorAvailability>,
+        appointmentDuration: Int
     ): List<Doctor> {
+        val requiredSlots = appointmentDuration / 15
+
         val availableDoctorIds = availabilities
             .filter { availability ->
-                availability.date == date && availability.availableSlots.contains(timeSlot)
+                availability.date == date &&
+                        availability.availableSlots.contains(timeSlot)
+            }
+            .filter { availability ->
+                // Check if this doctor has all required slots
+                val doctorSlots = availabilities
+                    .filter { it.doctorId == availability.doctorId && it.date == date }
+                    .flatMap { it.availableSlots }
+                    .sorted()
+
+                val startIndex = doctorSlots.indexOf(timeSlot)
+                if (startIndex == -1 || startIndex + requiredSlots > doctorSlots.size) {
+                    false
+                } else {
+                    (1 until requiredSlots).all { i ->
+                        doctorSlots[startIndex + i] == timeSlot.plusMinutes((15 * i).toLong())
+                    }
+                }
             }
             .map { it.doctorId }
             .toSet()
@@ -165,5 +222,49 @@ class BookingViewModel(
         return doctors.filter { doctor ->
             availableDoctorIds.contains(doctor.id)
         }
+    }
+
+    private fun getDoctorsWithEnoughSlots(
+        date: LocalDate,
+        appointmentDuration: Int,
+        availabilities: List<DoctorAvailability>
+    ): Set<String> {
+        val requiredSlots = appointmentDuration / 15
+        val validDoctorIds = mutableSetOf<String>()
+
+        // Group availabilities by doctor
+        val availabilitiesByDoctor = availabilities
+            .filter { it.date == date }
+            .groupBy { it.doctorId }
+
+        // Check each doctor's slots
+        for ((doctorId, doctorAvailabilities) in availabilitiesByDoctor) {
+            // Get all slots for this doctor on this date
+            val allSlots = doctorAvailabilities
+                .flatMap { it.availableSlots }
+                .sorted()
+
+            // Check for consecutive slots
+            for (i in 0..(allSlots.size - requiredSlots)) {
+                val startSlot = allSlots[i]
+                var hasConsecutive = true
+
+                // Check next slots - using toLong() for minutes
+                for (j in 1 until requiredSlots) {
+                    val expectedSlot = startSlot.plusMinutes((15 * j).toLong())
+                    if (allSlots.getOrNull(i + j) != expectedSlot) {
+                        hasConsecutive = false
+                        break
+                    }
+                }
+
+                if (hasConsecutive) {
+                    validDoctorIds.add(doctorId)
+                    break // Doctor is valid if they have at least one valid block
+                }
+            }
+        }
+
+        return validDoctorIds
     }
 }

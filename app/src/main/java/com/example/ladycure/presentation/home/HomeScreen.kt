@@ -262,7 +262,8 @@ fun HomeScreen(
                         locationPermissionState.launchPermissionRequest()
                     },
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = DefaultPrimary
+                        contentColor = DefaultPrimary,
+                        containerColor = Color.Transparent
                     )
                 ) {
                     Text("Sure!")
@@ -275,6 +276,7 @@ fun HomeScreen(
                         homeViewModel.handlePermissionDenied()
                     },
                     colors = ButtonDefaults.textButtonColors(
+                        containerColor = Color.Transparent,
                         contentColor = DefaultOnPrimary.copy(alpha = 0.8f)
                     )
                 ) {
