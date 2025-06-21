@@ -58,6 +58,8 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.presentation.booking.components.DateCard
+import com.example.ladycure.presentation.booking.components.TimeSlotGrid
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime

@@ -3,6 +3,7 @@ package com.example.ladycure.presentation.home
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import Green
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -21,12 +22,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.DismissValue
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
@@ -79,11 +88,20 @@ fun NotificationsScreen(
         unreadCount = unreadCount,
         isDoctor = isDoctor,
         onNotificationClick = { notification ->
-            viewModel.markAsRead(notification.id)
+            // Handle notification click
+        },
+        onReadNotification = { notificationId ->
+            viewModel.markAsRead(notificationId)
+        },
+        onUnreadNotification = { notificationId ->
+            viewModel.markAsUnread(notificationId)
         },
         onFilterChange = viewModel::setFilter,
         onTypeChange = viewModel::setTypeFilter,
         onMarkAllAsRead = viewModel::markAllAsRead,
+        onDeleteNotification = { notificationId ->
+            viewModel.deleteNotification(notificationId)
+        },
         selectedFilter = viewModel.currentFilter,
         selectedType = viewModel.currentType,
         errors = errors,
@@ -98,9 +116,12 @@ private fun NotificationsContent(
     unreadCount: Int,
     isDoctor: Boolean,
     onNotificationClick: (Notification) -> Unit,
+    onReadNotification: (String) -> Unit,
+    onUnreadNotification: (String) -> Unit,
     onFilterChange: (NotificationFilter) -> Unit,
     onTypeChange: (NotificationType?) -> Unit,
     onMarkAllAsRead: () -> Unit,
+    onDeleteNotification: (String) -> Unit,
     selectedFilter: NotificationFilter,
     selectedType: NotificationType?,
     errors: String? = null
@@ -127,7 +148,7 @@ private fun NotificationsContent(
             onMarkAllAsRead = onMarkAllAsRead,
             isDoctor = isDoctor,
             selectedType = selectedType,
-            onTypeSelected = onTypeChange // Pass the updated onTypeChange lambda
+            onTypeSelected = onTypeChange
         )
 
         if (notifications.isEmpty()) {
@@ -136,7 +157,16 @@ private fun NotificationsContent(
             NotificationsList(
                 notifications = notifications,
                 onNotificationClick = onNotificationClick,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
+                onReadNotification = { notificationId ->
+                    onReadNotification(notificationId)
+                },
+                onUnreadNotification = { notificationId ->
+                    onUnreadNotification(notificationId)
+                },
+                onDeleteNotification = { notificationId ->
+                    onDeleteNotification(notificationId)
+                }
             )
         }
     }
@@ -299,22 +329,93 @@ private fun NotificationsTopBar(
 }
 
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 private fun NotificationsList(
     notifications: List<Notification>,
     onNotificationClick: (Notification) -> Unit,
-    modifier: Modifier = Modifier
+    onReadNotification: (String) -> Unit,
+    onUnreadNotification: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    onDeleteNotification: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(notifications.size) { index ->
-            NotificationItem(
-                notification = notifications[index],
-                onClick = { onNotificationClick(notifications[index]) },
+        items(
+            items = notifications,
+            key = { it.id + it.isRead.toString() }
+        ) { notification ->
+            val dismissState = rememberDismissState(
+                confirmStateChange = { value ->
+                    when (value) {
+                        DismissValue.DismissedToStart -> {
+                            onDeleteNotification(notification.id)
+                            false
+                        }
+
+                        DismissValue.DismissedToEnd -> {
+                            if (notification.isRead) {
+                                onUnreadNotification(notification.id)
+                            } else {
+                                onReadNotification(notification.id)
+                            }
+                            false
+                        }
+
+                        else -> false
+                    }
+                }
+            )
+
+            SwipeToDismiss(
+                state = dismissState,
+                background = {
+                    val direction = dismissState.dismissDirection
+                    val color = when (direction) {
+                        DismissDirection.StartToEnd -> Green.copy(alpha = 0.5f)
+                        DismissDirection.EndToStart -> Color.Red.copy(alpha = 0.5f)
+                        else -> Color.Transparent
+                    }
+
+                    val icon = when (direction) {
+                        DismissDirection.StartToEnd -> if (!notification.isRead) {
+                            Icons.Default.Check
+                        } else {
+                            Icons.AutoMirrored.Filled.Undo
+                        }
+
+                        DismissDirection.EndToStart -> Icons.Default.Delete
+                        else -> null
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(color, shape = RoundedCornerShape(16.dp))
+                            .padding(horizontal = 20.dp),
+                        contentAlignment = if (direction == DismissDirection.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+                    ) {
+                        icon?.let {
+                            Icon(
+                                imageVector = it,
+                                contentDescription = if (direction == DismissDirection.StartToEnd) "Mark as Read" else "Delete",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                },
+                directions = setOf(
+                    DismissDirection.StartToEnd, // right swipe to mark as read
+                    DismissDirection.EndToStart  // left swipe to delete
+                ),
+                dismissContent = {
+                    NotificationItem(
+                        notification = notification,
+                        onClick = { onNotificationClick(notification) })
+                }
             )
         }
     }

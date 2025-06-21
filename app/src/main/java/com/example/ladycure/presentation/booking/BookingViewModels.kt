@@ -143,21 +143,22 @@ class BookingViewModel(
         appointmentDuration: Int
     ): List<String> {
         val now = LocalTime.now()
+        val today = LocalDate.now()
+        val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+
+        val currentTimeWithBuffer = now.plusMinutes(30)
+
         val validDoctorIds = getDoctorsWithEnoughSlots(date, appointmentDuration, availabilities)
 
-        // Get all slots only from valid doctors
         val validSlots = availabilities
             .filter { it.date == date && it.doctorId in validDoctorIds }
             .flatMap { it.availableSlots }
-            .filter { date != LocalDate.now() || it.isAfter(now) }
             .distinct()
             .sorted()
 
         val requiredSlots = appointmentDuration / 15
         val availableStartSlots = mutableListOf<LocalTime>()
 
-        // Now check which start slots have enough consecutive slots
-        // within individual doctor's availabilities
         for (doctorId in validDoctorIds) {
             val doctorSlots = availabilities
                 .filter { it.doctorId == doctorId && it.date == date }
@@ -166,8 +167,14 @@ class BookingViewModel(
 
             for (i in 0..(doctorSlots.size - requiredSlots)) {
                 val startSlot = doctorSlots[i]
-                var hasConsecutive = true
 
+                if (date == today) {
+                    if (!startSlot.isAfter(currentTimeWithBuffer)) {
+                        continue
+                    }
+                }
+
+                var hasConsecutive = true
                 for (j in 1 until requiredSlots) {
                     val expectedSlot = startSlot.plusMinutes((15 * j).toLong())
                     if (doctorSlots.getOrNull(i + j) != expectedSlot) {
@@ -183,7 +190,7 @@ class BookingViewModel(
         }
 
         return availableStartSlots.sorted()
-            .map { it.format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())) }
+            .map { it.format(timeFormatter) }
     }
 
     private fun filterAvailableDoctors(
