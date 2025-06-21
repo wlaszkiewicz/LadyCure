@@ -123,7 +123,7 @@ fun BookingSuccessScreen(
                         .align(Alignment.Center)
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.BottomCenter
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.kapi_happi),
