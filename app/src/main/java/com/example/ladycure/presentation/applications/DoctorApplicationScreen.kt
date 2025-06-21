@@ -5,6 +5,7 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import Green
+import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_SENDTO
 import android.net.Uri
@@ -32,10 +33,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocalHospital
@@ -83,7 +86,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -91,7 +93,9 @@ import androidx.navigation.NavController
 import androidx.wear.compose.material3.TextButton
 import coil.compose.AsyncImage
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.presentation.booking.FileTooLargeDialog
 import com.example.ladycure.presentation.register.components.DatePickerButton
+import com.example.ladycure.utility.PdfUploader
 import com.example.ladycure.utility.SnackbarController
 import com.example.ladycure.utility.rememberImagePickerLauncher
 import java.time.LocalDate
@@ -106,6 +110,7 @@ fun DoctorApplicationScreen(
     val focusManager = LocalFocusManager.current
     var showSuccessDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) } // 0 for personal, 1 for professional
+    var tooLarge = viewModel.tooLarge
 
     // Show error messages
     LaunchedEffect(viewModel.errorMessage) {
@@ -128,45 +133,51 @@ fun DoctorApplicationScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Doctor Application",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = DefaultPrimary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            TextButton(
-                onClick = {
-                    val intent = Intent(
-                        ACTION_SENDTO,
-                        "mailto:ladycure.help@gmail.com".toUri()
-                    )
-                    context.startActivity(intent)
-                },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .padding(4.dp)
+                Spacer(modifier = Modifier.width(48.dp)) // Placeholder for left side
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
                     Text(
-                        "Any Questions? Contact Us!",
-                        color = Color.Gray,
+                        text = "Doctor Application",
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
+                        color = DefaultPrimary,
                     )
-                    Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = "Contact Us",
-                        tint = Color.Gray,
-                    )
+                }
 
+                IconButton(
+                    onClick = {
+                        navController.popBackStack("register", inclusive = false)
+                    },
+                    modifier = Modifier
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Back to Register",
+                        tint = DefaultOnPrimary
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+
+            Text(
+                text = "Please fill out the application form to become a doctor on our platform. We are excited to have you join our team!",
+                style = MaterialTheme.typography.bodyMedium,
+                color = DefaultOnPrimary.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -174,7 +185,6 @@ fun DoctorApplicationScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-
                     .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -192,10 +202,12 @@ fun DoctorApplicationScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Application Form Card
             Card(
                 modifier = Modifier
-                    .fillMaxHeight(0.9f)
+                    .fillMaxHeight(0.8f)
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -227,6 +239,8 @@ fun DoctorApplicationScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Submit Button (fixed at bottom)
             Button(
                 onClick = {
@@ -245,8 +259,7 @@ fun DoctorApplicationScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f) // Fill remaining space
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 8.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (viewModel.isFormValid()) DefaultPrimary else Color.Gray,
@@ -268,6 +281,41 @@ fun DoctorApplicationScreen(
                     )
                 }
             }
+
+
+            TextButton(
+                onClick = {
+                    val intent = Intent(
+                        ACTION_SENDTO,
+                        "mailto:ladycure.help@gmail.com".toUri()
+                    )
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .padding(4.dp)
+                ) {
+                    Text(
+                        "Any Questions? Contact Us!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = DefaultOnPrimary.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = "Contact Us",
+                        tint = DefaultOnPrimary.copy(alpha = 0.8f),
+                    )
+
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         // Progress Indicator
@@ -417,6 +465,11 @@ fun DoctorApplicationScreen(
             }
         }
     }
+    if (tooLarge) {
+        FileTooLargeDialog(
+            onDismiss = { viewModel.tooLarge = false },
+        )
+    }
 }
 
 @Composable
@@ -457,150 +510,167 @@ private fun PersonalInfoTab(
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
 
-        Spacer(modifier = Modifier.height(8.dp))
+            // Email Field
+            OutlinedTextField(
+                value = viewModel.email,
+                onValueChange = { viewModel.email = it },
+                label = { Text("Email address") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+                isError = viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
+                    .matches(),
+                supportingText = {
+                    if (viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
+                            .matches()
+                    ) {
+                        Text("Please enter a valid email")
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { firstNameFocus.requestFocus() }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(emailFocus)
+            )
 
-        // Email Field
-        OutlinedTextField(
-            value = viewModel.email,
-            onValueChange = { viewModel.email = it },
-            label = { Text("Email address") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
-            isError = viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
-                .matches(),
-            supportingText = {
-                if (viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
-                        .matches()
-                ) {
-                    Text("Please enter a valid email")
-                }
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { firstNameFocus.requestFocus() }),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(emailFocus)
-        )
+            // Name Fields Row
+            OutlinedTextField(
+                value = viewModel.firstName,
+                onValueChange = { viewModel.firstName = it },
+                label = { Text("First name") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { lastNameFocus.requestFocus() }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(firstNameFocus),
+                supportingText = {
+                    // to keep the spaces consistent
+                },
+            )
 
-        // Name Fields Row
-        OutlinedTextField(
-            value = viewModel.firstName,
-            onValueChange = { viewModel.firstName = it },
-            label = { Text("First name") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { lastNameFocus.requestFocus() }),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(firstNameFocus),
-            supportingText = {
-                // to keep the spaces consistent
-            },
-        )
+            OutlinedTextField(
+                value = viewModel.lastName,
+                onValueChange = { viewModel.lastName = it },
+                label = { Text("Last name") },
+                leadingIcon = { Icon(Icons.Default.PersonOutline, contentDescription = "Surname") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(lastNameFocus)
+            )
 
-        OutlinedTextField(
-            value = viewModel.lastName,
-            onValueChange = { viewModel.lastName = it },
-            label = { Text("Last name") },
-            leadingIcon = { Icon(Icons.Default.PersonOutline, contentDescription = "Surname") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(lastNameFocus)
-        )
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Date of Birth",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                modifier = Modifier.padding(top = 4.dp)
+            )
 
-        Text(
-            text = "Date of Birth",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-            modifier = Modifier.padding(top = 4.dp)
-        )
+            DatePickerButton(
+                selectedDate = viewModel.selectedDate,
+                onDateSelected = { date ->
+                    viewModel.dateOfBirth = date
+                    viewModel.selectedDate = date
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        DatePickerButton(
-            selectedDate = viewModel.selectedDate,
-            onDateSelected = { date ->
-                viewModel.dateOfBirth = date
-                viewModel.selectedDate = date
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+            // Error message for date of birth
 
-        // Error message for date of birth
-
-        Text(
-            text =
-                if (viewModel.selectedDate.isAfter(LocalDate.now().minusYears(18))) {
-                    "You must be at least 18 years old"
-                } else "",
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(start = 16.dp)
-        )
+            Text(
+                text =
+                    if (viewModel.selectedDate.isAfter(LocalDate.now().minusYears(18))) {
+                        "You must be at least 18 years old"
+                    } else "",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
 
 
-        // Password Fields
-        OutlinedTextField(
-            value = viewModel.password,
-            onValueChange = { viewModel.password = it },
-            label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            isError = viewModel.password.isNotBlank() && viewModel.password.length < 8
-                    || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[A-Z].*"))
-                    || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[0-9].*"))
-                    || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[!@#$%^&*].*")),
-            supportingText = {
-                if (viewModel.password.isNotBlank() && viewModel.password.length < 8) {
-                    Text("Password must be at least 8 characters")
-                } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[A-Z].*"))) {
-                    Text("Password must contain at least one uppercase letter")
-                } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[0-9].*"))) {
-                    Text("Password must contain at least one number")
-                } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[!@#$%^&*].*"))) {
-                    Text("Password must contain at least one special character")
-                }
-            },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { confirmPasswordFocus.requestFocus() }),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(passwordFocus)
-        )
+            // Password Fields
+            OutlinedTextField(
+                value = viewModel.password,
+                onValueChange = { viewModel.password = it },
+                label = { Text("Password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                isError = viewModel.password.isNotBlank() && viewModel.password.length < 8
+                        || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[A-Z].*"))
+                        || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[0-9].*"))
+                        || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[!@#$%^&*].*")),
+                supportingText = {
+                    if (viewModel.password.isNotBlank() && viewModel.password.length < 8) {
+                        Text("Password must be at least 8 characters")
+                    } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(
+                            Regex(
+                                ".*[A-Z].*"
+                            )
+                        )
+                    ) {
+                        Text("Password must contain at least one uppercase letter")
+                    } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(
+                            Regex(
+                                ".*[0-9].*"
+                            )
+                        )
+                    ) {
+                        Text("Password must contain at least one number")
+                    } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(
+                            Regex(
+                                ".*[!@#$%^&*].*"
+                            )
+                        )
+                    ) {
+                        Text("Password must contain at least one special character")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { confirmPasswordFocus.requestFocus() }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocus)
+            )
 
-        OutlinedTextField(
-            value = viewModel.confirmPassword,
-            onValueChange = { viewModel.confirmPassword = it },
-            label = { Text("Confirm Password") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.LockReset,
-                    contentDescription = "Confirm Password"
-                )
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            isError = viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword,
-            supportingText = {
-                if (viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword) {
-                    Text("Passwords don't match")
-                }
-            },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onDone = {
-                onFinished()
-            }),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(confirmPasswordFocus)
-        )
+            OutlinedTextField(
+                value = viewModel.confirmPassword,
+                onValueChange = { viewModel.confirmPassword = it },
+                label = { Text("Confirm Password") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.LockReset,
+                        contentDescription = "Confirm Password"
+                    )
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                isError = viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword,
+                supportingText = {
+                    if (viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword) {
+                        Text("Passwords don't match")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onDone = {
+                    onFinished()
+                }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(confirmPasswordFocus)
+            )
+        }
     }
 }
 
@@ -662,6 +732,9 @@ private fun ProfessionalInfoTab(viewModel: DoctorApplicationViewModel) {
                 title = "License Photo",
                 fileUri = viewModel.licensePhotoUri,
                 onFileSelected = { viewModel.licensePhotoUri = it },
+                onFileTooLarge = {
+                    viewModel.tooLarge = true
+                },
                 modifier = Modifier.weight(1f),
             )
 
@@ -669,6 +742,9 @@ private fun ProfessionalInfoTab(viewModel: DoctorApplicationViewModel) {
                 title = "Diploma",
                 fileUri = viewModel.diplomaPhotoUri,
                 onFileSelected = { viewModel.diplomaPhotoUri = it },
+                onFileTooLarge = {
+                    viewModel.tooLarge = true
+                },
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 16.dp),
@@ -705,6 +781,9 @@ private fun ProfessionalInfoTab(viewModel: DoctorApplicationViewModel) {
                     Icons.Default.LocalHospital,
                     contentDescription = "Workplace"
                 )
+            },
+            supportingText = {
+                // to keep the spaces consistent
             },
         )
 
@@ -828,12 +907,18 @@ fun FileUploadSection(
     title: String,
     fileUri: Uri?,
     onFileSelected: (Uri?) -> Unit,
+    onFileTooLarge: () -> Unit,
     isError: Boolean = false,
     errorText: String = "",
+    context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
     val launcher = rememberImagePickerLauncher(
         onImageSelected = { uri ->
+            if (PdfUploader.isFileTooLarge(context, uri)) {
+                onFileTooLarge()
+                return@rememberImagePickerLauncher
+            }
             onFileSelected(uri)
         }
     )
@@ -897,16 +982,5 @@ fun FileUploadSection(
             )
         }
     }
-}
-
-private fun isImageFile(uriString: String): Boolean {
-    return uriString.contains(".jpg", ignoreCase = true) ||
-            uriString.contains(".jpeg", ignoreCase = true) ||
-            uriString.contains(".png", ignoreCase = true) ||
-            uriString.contains(".webp", ignoreCase = true)
-}
-
-private fun isPdfFile(uriString: String): Boolean {
-    return uriString.contains(".pdf", ignoreCase = true)
 }
 

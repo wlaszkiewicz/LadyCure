@@ -54,6 +54,7 @@ class DoctorApplicationViewModel(
     val totalSteps = 4
     var errorMessage by mutableStateOf<String?>(null)
     var hasSubmitted by mutableStateOf(false)
+    var tooLarge by mutableStateOf(false)
 
     fun submitApplication(
         onSuccess: () -> Unit,

@@ -91,9 +91,6 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.delay
 import java.io.File
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
@@ -115,6 +112,8 @@ fun ConfirmationScreen(
     val isUploading = viewModel.isUploading
     val showUploadSuccess = viewModel.showUploadSuccess
     val uploadProgress = viewModel.uploadProgress
+    val tooLarge = viewModel.tooLarge
+    val context = LocalContext.current
 
     // Initialize data loading
     LaunchedEffect(Unit) {
@@ -138,6 +137,7 @@ fun ConfirmationScreen(
                     uri = it,
                     referralId = referralId.toString(),
                     appointmentType = appointmentType,
+                    context = context,
                     onSuccess = { /* Success handled in ViewModel */ },
                     onError = { message ->
                         snackbarController?.showMessage(message)
@@ -338,6 +338,11 @@ fun ConfirmationScreen(
                     }
                 }
             }
+        }
+        if (tooLarge) {
+            FileTooLargeDialog(
+                onDismiss = { viewModel.tooLarge = false },
+            )
         }
     }
 }
@@ -1144,23 +1149,4 @@ private fun openPdf(context: Context, pdfUrl: String) {
     }
 }
 
-
-// Helper functions for date/time formatting
-fun formatConfirmationDate(dateString: String): String {
-    return try {
-        val date = LocalDate.parse(dateString)
-        date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d"))
-    } catch (e: Exception) {
-        dateString
-    }
-}
-
-fun formatConfirmationTime(timeString: String): String {
-    return try {
-        val time = LocalTime.parse(timeString)
-        time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US))
-    } catch (e: Exception) {
-        timeString
-    }
-}
 
