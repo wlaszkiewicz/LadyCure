@@ -35,15 +35,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
@@ -111,7 +112,8 @@ fun DoctorHomeScreen(
     val selectedAppointment by viewModel.selectedAppointment
     val showEditStatusDialog by viewModel.showEditStatusDialog
     val showDetailsDialog by viewModel.showDetailsDialog
-    val nearestAppointment by viewModel.nearestAppointment
+    val nearestAppointment by viewModel.nearestAppointment.collectAsState()
+
 
     // Show error message if any
     LaunchedEffect(uiState.errorMessage) {
@@ -134,7 +136,9 @@ fun DoctorHomeScreen(
         ) {
             DoctorHeader(
                 doctorData = uiState.doctorData,
-                navController = navController
+                unreadNotificationsCount = uiState.unreadNotificationsCount,
+                onNotificationClick = { navController.navigate("notifications/doctor") },
+                onProfileClick = { navController.navigate("profile") }
             )
 
             Column(
@@ -163,7 +167,7 @@ fun DoctorHomeScreen(
                 NextAppointmentCard(
                     nearestAppointment = nearestAppointment,
                     onShowEditStatusDialog = { viewModel.setShowEditStatusDialog(true) },
-                    onViewAll = { navController.navigate("doctor_appointments") },
+                    onViewAll = { navController.navigate("appointments") },
                     onShowDetailsDialog = { appointment ->
                         viewModel.selectAppointment(appointment)
                         viewModel.setShowDetailsDialog(true)
@@ -543,7 +547,7 @@ private fun AppointmentCardContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = appointment.patientName ?: "Patient",
+                        text = appointment.patientName,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold
                         ),
@@ -798,7 +802,9 @@ private fun StatsRow(
 @Composable
 private fun DoctorHeader(
     doctorData: Map<String, Any>?,
-    navController: NavHostController
+    unreadNotificationsCount: Int,
+    onNotificationClick: () -> Unit,
+    onProfileClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -825,20 +831,42 @@ private fun DoctorHeader(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
-                onClick = { navController.navigate("notifications") },
-                modifier = Modifier.size(40.dp)
+                onClick = {
+                    onNotificationClick()
+                },
+                modifier = Modifier.height(40.dp)
             ) {
-                BadgedBox(badge = {
-                    Badge(modifier = Modifier.offset((-4).dp, 4.dp))
-                }) {
+                if (unreadNotificationsCount > 0) {
+                    BadgedBox(
+                        badge = {
+                            Badge(containerColor = DefaultPrimary) {
+                                Text(
+                                    text = unreadNotificationsCount.toString(),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsNone,
+                            contentDescription = "Notifications",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                } else {
                     Icon(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Notifications",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(30.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
+
             }
+
 
             Spacer(modifier = Modifier.width(8.dp))
 
@@ -848,7 +876,7 @@ private fun DoctorHeader(
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(DefaultPrimary.copy(alpha = 0.2f))
-                    .clickable { navController.navigate("profile") },
+                    .clickable { onProfileClick() },
                 contentAlignment = Alignment.Center
             ) {
                 val profileUrl = doctorData?.get("profilePictureUrl") as? String
@@ -1401,7 +1429,7 @@ fun DetailsDialog(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Comment,
+                                        imageVector = Icons.AutoMirrored.Filled.Comment,
                                         contentDescription = "Notes",
                                         tint = DefaultPrimary.copy(alpha = 0.8f),
                                         modifier = Modifier.size(20.dp)

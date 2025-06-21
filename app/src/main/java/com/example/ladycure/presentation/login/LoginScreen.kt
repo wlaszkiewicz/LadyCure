@@ -197,7 +197,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         keyboardActions = KeyboardActions(onDone = {
                             focusManager.clearFocus() // hide the keyboard
                             if (viewModel.isValidInput()) {
-                                viewModel.login(navController, snackbarHostState)
+                                viewModel.login(navController)
                             }
                         })
                     )
@@ -206,7 +206,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
 
                     Button(
                         onClick = {
-                            viewModel.login(navController, snackbarHostState)
+                            viewModel.login(navController)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

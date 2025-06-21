@@ -3,7 +3,6 @@ package com.example.ladycure.presentation.home
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
-import Purple
 import SwipeCard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -29,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Close
@@ -38,6 +38,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Swipe
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -164,11 +166,11 @@ fun DoctorsListScreen(
                         .padding(horizontal = 20.dp),
                     border = BorderStroke(
                         width = 1.dp,
-                        color = Purple.copy(alpha = 0.5f)
+                        color = DefaultPrimary.copy(alpha = 0.8f)
                     ),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Purple
+                        contentColor = DefaultPrimary,
                     )
                 ) {
                     Text(
@@ -178,7 +180,18 @@ fun DoctorsListScreen(
                             "Go back to the list."
                         },
                         style = MaterialTheme.typography.labelLarge,
-                        color = Purple
+                        color = DefaultPrimary,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = if (!showSwipingScreen) {
+                            Icons.Default.Swipe
+                        } else {
+                            Icons.AutoMirrored.Filled.List
+                        },
+                        contentDescription = "Toggle Swiping",
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
@@ -190,7 +203,7 @@ fun DoctorsListScreen(
                     style = MaterialTheme.typography.titleLarge,
                     color = DefaultOnPrimary.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
                 )
 
                 Box {
@@ -254,6 +267,10 @@ fun DoctorsListScreen(
                         text = "Looks like you’ve seen all the doctors. Didn’t find the one yet? Would you like to start again?",
                         style = MaterialTheme.typography.bodyLarge,
                         color = DefaultOnPrimary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .align(Alignment.CenterHorizontally)
                     )
                     Button(
                         modifier = Modifier
@@ -269,6 +286,13 @@ fun DoctorsListScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("Start again")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Start again",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 

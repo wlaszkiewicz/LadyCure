@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,8 +24,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,6 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
@@ -138,8 +143,9 @@ fun HomeScreen(
 
             Header(
                 userData = uiState.userData ?: emptyMap(),
+                unreadCount = uiState.unreadNotificationCount,
                 onProfileClick = { navController.navigate("profile") },
-                onNotificationClick = { /* TODO: Handle notification click */ }
+                onNotificationClick = { navController.navigate("notifications/user") }
             )
 
             var dailyTip by remember { mutableStateOf(getDailyTip()) }
@@ -394,6 +400,7 @@ fun HealthTipCard(
 @Composable
 fun Header(
     userData: Map<String, Any>,
+    unreadCount: Int,
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit
 ) {
@@ -401,7 +408,7 @@ fun Header(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp),
+            .padding(top = 16.dp, start = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -418,16 +425,40 @@ fun Header(
                 onClick = {
                     onNotificationClick()
                 },
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.fillMaxHeight(),
             ) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notifications",
-                    tint = DefaultPrimary,
-                    modifier = Modifier.fillMaxSize()
-                )
+                if (unreadCount > 0) {
+                    BadgedBox(
+                        badge = {
+                            Badge(containerColor = DefaultPrimary) {
+                                Text(
+                                    text = unreadCount.toString(),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsNone,
+                            contentDescription = "Notifications",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notifications",
+                        tint = DefaultPrimary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
             }
-            Spacer(modifier = Modifier.size(8.dp))
+
+            Spacer(modifier = Modifier.size(16.dp))
 
             // User avatar
             Box(

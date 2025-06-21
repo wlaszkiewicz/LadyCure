@@ -6,14 +6,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ladycure.data.repository.AppointmentRepository
 import com.example.ladycure.data.repository.AuthRepository
+import com.example.ladycure.data.repository.NotificationRepository
 import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Appointment.Status
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -22,7 +26,8 @@ import java.time.LocalTime
 class DoctorHomeViewModel(
     private val authRepo: AuthRepository = AuthRepository(),
     private val userRepo: UserRepository = UserRepository(),
-    private val appointmentsRepo: AppointmentRepository = AppointmentRepository()
+    private val appointmentsRepo: AppointmentRepository = AppointmentRepository(),
+    private val notificationRepo: NotificationRepository = NotificationRepository()
 ) : ViewModel() {
 
     // UI State
@@ -39,8 +44,14 @@ class DoctorHomeViewModel(
     private val _showDetailsDialog = mutableStateOf(false)
     val showDetailsDialog: State<Boolean> = _showDetailsDialog
 
-    private val _nearestAppointment = mutableStateOf<Appointment?>(null)
-    val nearestAppointment: State<Appointment?> = _nearestAppointment
+    val nearestAppointment: StateFlow<Appointment?> = uiState.map { state ->
+        findNearestAppointment(state.upcomingAppointments)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+
 
     init {
         loadData()
@@ -63,7 +74,15 @@ class DoctorHomeViewModel(
                             (it.date == LocalDate.now() && it.time >= LocalTime.now())
                 }.sortedWith(compareBy({ it.date }, { it.time }))
 
-                _nearestAppointment.value = findNearestAppointment(upcomingAppointments)
+                notificationRepo.getUnreadNotificationsCount(
+                    onResult = { count ->
+                        _uiState.update { it.copy(unreadNotificationsCount = count) }
+                    },
+                    onError = { error ->
+                        _uiState.update { it.copy(errorMessage = error) }
+                    }
+                )
+
 
                 _uiState.update {
                     it.copy(
@@ -172,7 +191,7 @@ class DoctorHomeViewModel(
                                 if (it.appointmentId == appointment.appointmentId) {
                                     it.copy(comments = newComment)
                                 } else it
-                            }
+                            },
                         )
                     }
 
@@ -207,6 +226,7 @@ data class DoctorHomeUiState(
     val doctorData: Map<String, Any>? = null,
     val allAppointments: List<Appointment> = emptyList(),
     val upcomingAppointments: List<Appointment> = emptyList(),
+    val unreadNotificationsCount: Int = 0,
     val currentTime: LocalTime = LocalTime.now(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null

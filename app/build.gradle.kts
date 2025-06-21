@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp") version "1.5.30-1.0.0"
+    id("com.google.dagger.hilt.android") version "2.56.2"
+
 }
 
 android {
@@ -33,6 +36,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+        languageVersion = "1.9"
     }
     buildFeatures {
         compose = true
@@ -111,8 +115,12 @@ dependencies {
 
     // Firebase Messaging
     implementation("com.google.firebase:firebase-messaging-ktx")
-    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.google.firebase.analytics)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
 
 }
 
 apply(plugin = "com.google.gms.google-services")
+apply(plugin = "com.google.devtools.ksp")

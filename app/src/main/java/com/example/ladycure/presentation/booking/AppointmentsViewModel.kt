@@ -14,11 +14,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 class AppointmentViewModel(
     private val userRepo: UserRepository = UserRepository(),
     private val appointmentRepo: AppointmentRepository = AppointmentRepository()
 ) : ViewModel() {
+
     // State variables
     var futureAppointments by mutableStateOf<List<Appointment>>(emptyList())
         private set
@@ -34,18 +36,18 @@ class AppointmentViewModel(
     var showEditStatusDialog by mutableStateOf(false)
         private set
 
-    // Filter state variables
+    // Filter state variables - now using lists for multiple selections
     var showFilters by mutableStateOf(false)
         private set
-    var selectedSpecialization by mutableStateOf<String?>(null)
+    var selectedSpecializations by mutableStateOf<List<String>>(emptyList())
         private set
-    var selectedDoctor by mutableStateOf<String?>(null)
+    var selectedDoctors by mutableStateOf<List<String>>(emptyList())
         private set
     var selectedDate by mutableStateOf<LocalDate?>(null)
         private set
-    var selectedTypes by mutableStateOf<AppointmentType?>(null)
+    var selectedTypes by mutableStateOf<List<AppointmentType>>(emptyList())
         private set
-    var selectedPatient by mutableStateOf<String?>(null)
+    var selectedPatients by mutableStateOf<List<String>>(emptyList())
         private set
     var role by mutableStateOf<String?>(null)
         private set
@@ -64,7 +66,9 @@ class AppointmentViewModel(
                     val appointmentsResult = appointmentRepo.getAppointments(role!!)
                     if (appointmentsResult.isSuccess) {
                         val allAppointments = appointmentsResult.getOrNull() ?: emptyList()
-                        updateAppointmentsLists(allAppointments)
+                        updateAppointmentsLists(
+                            allAppointments
+                        )
                     } else {
                         error = appointmentsResult.exceptionOrNull()?.message
                             ?: "Failed to load appointments"
@@ -92,6 +96,15 @@ class AppointmentViewModel(
         }.sortedWith(compareBy({ it.date }, { it.time })).reversed()
     }
 
+    internal fun groupAppointmentsByMonth(appointments: List<Appointment>): Map<String, List<Appointment>> {
+        val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
+        return appointments.groupBy {
+            it.date.format(formatter)
+        }.toSortedMap(compareByDescending {
+            LocalDate.parse("01 $it", DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+        })
+    }
+
     fun updateError(message: String?) {
         error = message
     }
@@ -108,32 +121,49 @@ class AppointmentViewModel(
         showFilters = show
     }
 
-    fun setSpecializationFilter(specialization: String?) {
-        selectedSpecialization = specialization
+    // Updated filter functions to handle multiple selections
+    fun toggleSpecializationFilter(specialization: String) {
+        selectedSpecializations = if (selectedSpecializations.contains(specialization)) {
+            selectedSpecializations - specialization
+        } else {
+            selectedSpecializations + specialization
+        }
     }
 
-    fun setDoctorFilter(doctor: String?) {
-        selectedDoctor = doctor
+    fun toggleDoctorFilter(doctor: String) {
+        selectedDoctors = if (selectedDoctors.contains(doctor)) {
+            selectedDoctors - doctor
+        } else {
+            selectedDoctors + doctor
+        }
     }
 
     fun setDateFilter(date: LocalDate?) {
         selectedDate = date
     }
 
-    fun setTypeFilter(type: AppointmentType?) {
-        selectedTypes = type
+    fun toggleTypeFilter(type: AppointmentType) {
+        selectedTypes = if (selectedTypes.contains(type)) {
+            selectedTypes - type
+        } else {
+            selectedTypes + type
+        }
     }
 
-    fun setPatientFilter(patient: String?) {
-        selectedPatient = patient
+    fun togglePatientFilter(patient: String) {
+        selectedPatients = if (selectedPatients.contains(patient)) {
+            selectedPatients - patient
+        } else {
+            selectedPatients + patient
+        }
     }
 
     fun clearAllFilters() {
-        selectedSpecialization = null
-        selectedDoctor = null
+        selectedSpecializations = emptyList()
+        selectedDoctors = emptyList()
         selectedDate = null
-        selectedTypes = null
-        selectedPatient = null
+        selectedTypes = emptyList()
+        selectedPatients = emptyList()
     }
 
     fun updateAppointmentStatus(status: Status) {
@@ -196,18 +226,18 @@ class AppointmentViewModel(
         }
     }
 
-    // Computed properties for filtered lists
+    // Updated filtered lists to handle multiple selections
     val filteredFutureAppointments: List<Appointment>
         get() = if (role == "user") {
             futureAppointments.filter { appointment ->
-                (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
-                        (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
+                (selectedSpecializations.isEmpty() || selectedSpecializations.contains(appointment.type.speciality)) &&
+                        (selectedDoctors.isEmpty() || selectedDoctors.contains(appointment.doctorName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
         } else {
             futureAppointments.filter { appointment ->
-                (selectedTypes == null || appointment.type == selectedTypes) &&
-                        (selectedPatient == null || appointment.patientName == selectedPatient) &&
+                (selectedTypes.isEmpty() || selectedTypes.contains(appointment.type)) &&
+                        (selectedPatients.isEmpty() || selectedPatients.contains(appointment.patientName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
         }
@@ -215,14 +245,14 @@ class AppointmentViewModel(
     val filteredPastAppointments: List<Appointment>
         get() = if (role == "user") {
             pastAppointments.filter { appointment ->
-                (selectedSpecialization == null || appointment.type.speciality == selectedSpecialization) &&
-                        (selectedDoctor == null || appointment.doctorName == selectedDoctor) &&
+                (selectedSpecializations.isEmpty() || selectedSpecializations.contains(appointment.type.speciality)) &&
+                        (selectedDoctors.isEmpty() || selectedDoctors.contains(appointment.doctorName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
         } else {
             pastAppointments.filter { appointment ->
-                (selectedTypes == null || appointment.type == selectedTypes) &&
-                        (selectedPatient == null || appointment.patientName == selectedPatient) &&
+                (selectedTypes.isEmpty() || selectedTypes.contains(appointment.type)) &&
+                        (selectedPatients.isEmpty() || selectedPatients.contains(appointment.patientName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
         }

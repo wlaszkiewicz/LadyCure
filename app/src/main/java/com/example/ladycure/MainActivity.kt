@@ -58,6 +58,7 @@ import com.example.ladycure.presentation.doctor.DoctorEarningsScreen
 import com.example.ladycure.presentation.doctor.DoctorHomeScreen
 import com.example.ladycure.presentation.home.DoctorsListScreen
 import com.example.ladycure.presentation.home.HomeScreen
+import com.example.ladycure.presentation.home.NotificationsScreen
 import com.example.ladycure.presentation.home.PeriodTrackerScreen
 import com.example.ladycure.presentation.home.ProfileScreen
 import com.example.ladycure.presentation.home.SearchDoctorsScreen
@@ -164,6 +165,15 @@ fun MainScreen(navController: NavHostController) {
                 composable("welcome") { WelcomeScreen(navController) }
                 composable("login") { LoginScreen(navController, snackbarController) }
                 composable("register") { RegisterScreen(navController, snackbarController) }
+
+                composable("notifications/{role}") { backStackEntry ->
+                    val role = backStackEntry.arguments?.getString("role") ?: "user"
+                    NotificationsScreen(
+                        navController = navController,
+                        snackbarController = snackbarController,
+                        role = role
+                    )
+                }
 
 
                 composable("admin_user_management") {

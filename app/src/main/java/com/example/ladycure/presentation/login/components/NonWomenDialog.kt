@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -134,7 +134,7 @@ fun NonWomanWelcomeDialog(
                     ) {
                         Text("Not for me")
                         Icon(
-                            imageVector = Icons.Default.ExitToApp,
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Not for me",
                             modifier = Modifier.padding(start = 8.dp)
                         )

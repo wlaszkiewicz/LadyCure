@@ -78,7 +78,8 @@ data class Appointment(
     enum class Status(val displayName: String) {
         PENDING("Pending"),
         CONFIRMED("Confirmed"),
-        CANCELLED("Cancelled");
+        CANCELLED("Cancelled"), // By patient or doctor or system (when doctor didn't confirm in time)
+        COMPLETED("Completed");
 
         companion object {
             fun fromDisplayName(value: String): Status {
