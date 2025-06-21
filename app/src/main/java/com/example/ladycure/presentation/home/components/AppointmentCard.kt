@@ -93,8 +93,9 @@ fun AppointmentsSection(
     snackbarController: SnackbarController, navController: NavController
 ) {
     val futureAppointments = appointments?.filter {
-        it.date.isAfter(LocalDate.now()) ||
-                (it.date == LocalDate.now() && it.time >= LocalTime.now())
+        (it.date.isAfter(LocalDate.now()) ||
+                (it.date == LocalDate.now() && it.time >= LocalTime.now())) &&
+                it.status != Status.CANCELLED
     }?.sortedWith(compareBy({ it.date }, { it.time })) ?: emptyList()
 
 

@@ -43,25 +43,36 @@ class NotificationsViewModel : ViewModel() {
         )
     }
 
-    fun markAsRead(notificationId: String) {
+    fun deleteNotification(notificationId: String) {
+        _allNotifications.update { list -> list.filterNot { it.id == notificationId } }
+        _notifications.update { list -> list.filterNot { it.id == notificationId } }
+
         viewModelScope.launch {
-            try {
-                notificationRepo.markNotificationAsRead(notificationId).onSuccess {
-                    _allNotifications.update { list ->
-                        list.map {
-                            if (it.id == notificationId) it.copy(isRead = true) else it
-                        }
-                    }
-                    _unreadCount.value = _allNotifications.value.count { !it.isRead }
-                    applyFilters()
-                }.onFailure { e ->
-                    _errors.value = "Failed to mark notification as read: ${e.message}"
+            notificationRepo.deleteNotification(notificationId)
+                .onFailure { e ->
+                    _errors.value = "Failed to delete notification: ${e.message}"
                 }
-            } catch (e: Exception) {
-                _errors.value = "Failed to mark notification as read: ${e.message}"
-            }
         }
     }
+
+    fun markAsRead(notificationId: String) {
+        _allNotifications.update { list ->
+            list.map { if (it.id == notificationId) it.copy(isRead = true) else it }
+        }
+        _notifications.update { list ->
+            list.map { if (it.id == notificationId) it.copy(isRead = true) else it }
+        }
+
+        _unreadCount.value = _allNotifications.value.count { !it.isRead }
+
+        viewModelScope.launch {
+            notificationRepo.markNotificationAsRead(notificationId)
+                .onFailure { e ->
+                    _errors.value = "Failed to mark notification as read: ${e.message}"
+                }
+        }
+    }
+
 
     fun markAllAsRead() {
         viewModelScope.launch {

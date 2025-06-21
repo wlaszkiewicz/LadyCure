@@ -39,6 +39,22 @@ class NotificationRepository {
             }
     }
 
+    fun deleteNotification(notificationId: String): Result<Unit> {
+        return try {
+            val userId =
+                auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+            firestore
+                .collection("users")
+                .document(userId)
+                .collection("notifications")
+                .document(notificationId)
+                .delete()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun getUnreadNotificationsCount(
         onResult: (Int) -> Unit,
         onError: (String) -> Unit

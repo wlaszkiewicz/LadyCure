@@ -5,7 +5,6 @@ import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -46,8 +44,8 @@ import coil.compose.AsyncImage
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.presentation.booking.components.DateAndTimeSelectionView
 import com.example.ladycure.utility.SnackbarController
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -124,7 +122,7 @@ fun BookAppointmentDirectlyScreen(
                     onTimeSlotSelected = { time ->
                         var time = LocalTime.parse(
                             time,
-                            DateTimeFormatter.ofPattern("h:mm a", Locale.US)
+                            DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
                         )
                         viewModel.selectTimeSlot(time)
                         val timestamp = viewModel.createTimestamp()
@@ -177,112 +175,6 @@ private fun AppointmentHeader(
         )
 
         Spacer(modifier = Modifier.width(48.dp))
-    }
-}
-
-@Composable
-internal fun DateAndTimeSelectionView(
-    city: String? = null,
-    selectedSpeciality: Speciality? = null,
-    selectedService: AppointmentType,
-    availableDates: List<LocalDate>,
-    selectedDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit,
-    timeSlots: List<String>,
-    selectedTimeSlot: LocalTime?,
-    onTimeSlotSelected: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-    ) {
-        // Service info chip
-        ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = 16.dp))
-
-        // Location and specialty if available
-        if (city != null && selectedSpeciality != null) {
-            LocationSpecialtyRow(city, selectedSpeciality)
-        }
-
-        // Date selection
-        Text(
-            text = "Select Date",
-            style = MaterialTheme.typography.titleMedium,
-            color = DefaultOnPrimary,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
-        )
-
-        // Enhanced date selector
-        DateSelector(
-            availableDates = availableDates,
-            selectedDate = selectedDate,
-            onDateSelected = onDateSelected,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        // Time slots
-        if (selectedDate != null) {
-            Text(
-                text = "Available Time Slots",
-                style = MaterialTheme.typography.titleMedium,
-                color = DefaultOnPrimary,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            if (timeSlots.isEmpty()) {
-                EmptyTimeSlotsView()
-            } else {
-                TimeSlotGrid(
-                    timeSlots = timeSlots,
-                    selectedTimeSlot = selectedTimeSlot?.format(
-                        DateTimeFormatter.ofPattern("h:mm a", Locale.US)
-                    ),
-                    onTimeSlotSelected = onTimeSlotSelected
-                )
-            }
-        } else if (availableDates.isNotEmpty()) {
-            PromptToSelectDate()
-        }
-    }
-}
-
-@Composable
-private fun DateSelector(
-    availableDates: List<LocalDate>,
-    selectedDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val scrollState = rememberScrollState()
-
-    Column(modifier = modifier) {
-        if (availableDates.isEmpty()) {
-            Text(
-                text = "We are sorry, there's no available dates",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DefaultOnPrimary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(scrollState),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                availableDates.forEach { date ->
-                    DateCard(
-                        date = date,
-                        isSelected = date == selectedDate,
-                        onSelect = { onDateSelected(date) },
-                        modifier = Modifier.width(80.dp)
-                    )
-                }
-            }
-        }
     }
 }
 
