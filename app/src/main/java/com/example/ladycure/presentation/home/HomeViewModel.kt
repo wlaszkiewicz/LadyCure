@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ladycure.data.repository.AppointmentRepository
 import com.example.ladycure.data.repository.DoctorRepository
+import com.example.ladycure.data.repository.NotificationRepository
 import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.utility.SharedPreferencesHelper
@@ -24,6 +25,7 @@ import kotlinx.coroutines.tasks.await
 // A data class to hold all the UI state in one place
 data class HomeUiState(
     val userData: Map<String, Any>? = null,
+    val unreadNotificationCount: Int = 0,
     var appointments: List<Appointment>? = null,
     val availableCities: List<String> = listOf("Warszawa"),
     val locationFetched: Boolean = false,
@@ -38,6 +40,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     // Repositories
     private val userRepo = UserRepository()
     private val appointmentRepo = AppointmentRepository()
+    private val notificationRepo = NotificationRepository()
     private val doctorRepo = DoctorRepository()
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -50,6 +53,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun fetchInitialData() {
         viewModelScope.launch {
             val context = getApplication<Application>().applicationContext
+
             if (SharedPreferencesHelper.shouldRememberChoice(context)) {
                 SharedPreferencesHelper.getCity(context)?.let { savedCity ->
                     _uiState.update {
@@ -64,16 +68,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             userRepo.getCurrentUserData().onSuccess { data ->
                 _uiState.update { it.copy(userData = data) }
             }
+
             appointmentRepo.getAppointments("user").onSuccess { apps ->
                 _uiState.update { it.copy(appointments = apps) }
             }
+
             doctorRepo.getAvailableCities().onSuccess { cities ->
                 if (cities.isNotEmpty()) {
                     _uiState.update { it.copy(availableCities = cities) }
                 }
             }
+
+            notificationRepo.getUnreadNotificationsCount(
+                onResult = { count ->
+                    _uiState.update { it.copy(unreadNotificationCount = count) }
+                },
+                onError = { error ->
+                    _uiState.update { it.copy(error = error) }
+                }
+            )
         }
     }
+
 
     fun onPermissionResult(isGranted: Boolean) {
         if (_uiState.value.locationFetched) return

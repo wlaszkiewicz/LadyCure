@@ -39,6 +39,16 @@ exports.sendAppointmentConfirmedNotification = functions
 
       await admin.messaging().send(message);
       console.log("✅ Notification sent");
+
+      await admin.firestore().collection("users").doc(patientId).collection("notifications").add({
+        title: message.notification.title,
+        body: message.notification.body,
+        timestamp: admin.firestore.Timestamp.now(),
+        isRead: false,
+        type: "confirmation",
+      });
+
+
     } catch (error) {
       console.error("❌ Error sending notification:", error);
     }
@@ -117,6 +127,8 @@ exports.sendUpcomingAppointmentReminders = functions.pubsub
     const tenMinFromNow = admin.firestore.Timestamp.fromMillis(nowMs + 10 * 60 * 1000);
     const fiftyFiveMinFromNow = admin.firestore.Timestamp.fromMillis(nowMs + 55 * 60 * 1000);
     const sixtyFiveMinFromNow = admin.firestore.Timestamp.fromMillis(nowMs + 65 * 60 * 1000);
+    const fifteenMinAgo = admin.firestore.Timestamp.fromMillis(nowMs - 15 * 60 * 1000);
+    const fiveMinAgo = admin.firestore.Timestamp.fromMillis(nowMs - 5 * 60 * 1000);
 
     const snapshotOneHour = await admin.firestore()
       .collection("appointments")
@@ -133,11 +145,14 @@ exports.sendUpcomingAppointmentReminders = functions.pubsub
       .get();
 
     const sendReminders = async (
-      docs: FirebaseFirestore.QueryDocumentSnapshot[],
-      type: "hour" | "five"
+        docs: FirebaseFirestore.QueryDocumentSnapshot[],
+        type: string
     ) => {
       const promises = docs.map(async (doc) => {
         const data = doc.data();
+
+        if ((type === "hour" && data.reminderSent_hour) || (type === "five" && data.reminderSent_five)) return;
+
         const patientId = data.patientId;
         const doctorId = data.doctorId;
         const doctorName = data.doctorName || "the doctor";
@@ -154,7 +169,7 @@ exports.sendUpcomingAppointmentReminders = functions.pubsub
         if (patientToken) {
           const patientPayload = {
             notification: {
-              title: type === "hour" ? "⏳ Upcoming Appointment" : "⏰ Appointment Starting Soon",
+              title: type === "hour" ? "Upcoming Appointment ⏳" : "Appointment Starting Soon! ⏰",
               body:
                 type === "hour"
                   ? `Reminder: Your appointment with Dr. ${doctorName} is in 1 hour.`
@@ -164,20 +179,50 @@ exports.sendUpcomingAppointmentReminders = functions.pubsub
           };
 
           tasks.push(admin.messaging().send(patientPayload));
-          console.log(`✅ ${type} reminder sent to patient ${patientId}`);
+          tasks.push(
+            admin.firestore()
+              .collection("users")
+              .doc(patientId)
+              .collection("notifications")
+              .add({
+                title: patientPayload.notification.title,
+                body: patientPayload.notification.body,
+                timestamp: admin.firestore.Timestamp.now(),
+                isRead: false,
+                type: "reminder"
+              })
+          );
         }
 
         if (type === "five" && doctorToken) {
           const doctorPayload = {
             notification: {
-              title: "👩‍⚕️ Appointment Starting Soon",
+              title: "Appointment Starting Soon! ⏰",
               body: `Upcoming appointment with ${patientName} is starting in a few minutes!`,
             },
             token: doctorToken,
           };
 
           tasks.push(admin.messaging().send(doctorPayload));
-          console.log(`✅ ${type} reminder sent to doctor ${doctorId}`);
+          tasks.push(
+            admin.firestore()
+              .collection("users")
+              .doc(doctorId)
+              .collection("notifications")
+              .add({
+                title: doctorPayload.notification.title,
+                body: doctorPayload.notification.body,
+                timestamp: admin.firestore.Timestamp.now(),
+                isRead: false,
+                type: "reminder"
+              })
+          );
+        }
+
+        if (type === "hour") {
+          tasks.push(doc.ref.update({ reminderSent_hour: true }));
+        } else if (type === "five") {
+          tasks.push(doc.ref.update({ reminderSent_five: true }));
         }
 
         await Promise.all(tasks);
@@ -189,9 +234,131 @@ exports.sendUpcomingAppointmentReminders = functions.pubsub
     if (!snapshotOneHour.empty) await sendReminders(snapshotOneHour.docs, "hour");
     if (!snapshotFiveMin.empty) await sendReminders(snapshotFiveMin.docs, "five");
 
+    const completedSnapshot = await admin.firestore()
+      .collection("appointments")
+      .where("status", "==", "Confirmed")
+      .where("dateTime", ">=", fifteenMinAgo)
+      .where("dateTime", "<=", fiveMinAgo)
+      .get();
+
+    const completeTasks = completedSnapshot.docs.map(async (doc) => {
+      const data = doc.data();
+      const patientId = data.patientId;
+      const doctorName = data.doctorName || "your doctor";
+
+      await doc.ref.update({ status: "Completed" });
+
+      const patientDoc = await admin.firestore().collection("users").doc(patientId).get();
+      const token = patientDoc.get("fcmToken");
+
+      if (token) {
+        const feedbackPayload = {
+          notification: {
+            title: "How was your appointment? 📝",
+            body: `Let us know how your visit with Dr. ${doctorName} went!`,
+          },
+          token: token,
+        };
+
+        await admin.messaging().send(feedbackPayload);
+        await admin.firestore()
+          .collection("users")
+          .doc(patientId)
+          .collection("notifications")
+          .add({
+            title: feedbackPayload.notification.title,
+            body: feedbackPayload.notification.body,
+            timestamp: admin.firestore.Timestamp.now(),
+            isRead: false,
+            type: "feedback",
+            relatedAppointmentId: doc.id,
+          });
+      }
+    });
+    await Promise.all(completeTasks);
+
+    const pendingSnapshot = await admin.firestore()
+      .collection("appointments")
+      .where("status", "==", "Pending")
+      .where("dateTime", ">=", fiftyFiveMinFromNow)
+      .where("dateTime", "<=", sixtyFiveMinFromNow)
+      .get();
+
+    const autoCancelTasks = pendingSnapshot.docs.map(async (doc) => {
+      const data = doc.data();
+      const patientId = data.patientId;
+      const doctorId = data.doctorId;
+      const doctorName = data.doctorName || "your doctor";
+      const patientName = data.patientName || "the patient";
+
+      await doc.ref.update({
+        status: "Cancelled",
+        comments: "The appointment was automatically cancelled due to not being confirmed by the doctor within the allowed time. Please contact the doctor directly to reschedule.",
+      });
+
+      const patientDoc = await admin.firestore().collection("users").doc(patientId).get();
+      const doctorDoc = await admin.firestore().collection("users").doc(doctorId).get();
+      const patientToken = patientDoc.get("fcmToken");
+      const doctorToken = doctorDoc.get("fcmToken");
+
+      const tasks = [];
+
+      if (patientToken) {
+        const payload = {
+          notification: {
+            title: "Appointment Cancelled ❗",
+            body: `Your appointment with Dr. ${doctorName} was cancelled due to not being confirmed by the doctor. We apologize for the inconvenience. You can contact the doctor directly to reschedule.`,
+          },
+          token: patientToken,
+        };
+        tasks.push(admin.messaging().send(payload));
+        tasks.push(
+          admin.firestore()
+            .collection("users")
+            .doc(patientId)
+            .collection("notifications")
+            .add({
+              title: payload.notification.title,
+              body: payload.notification.body,
+              timestamp: admin.firestore.Timestamp.now(),
+              isRead: false,
+              type: "cancellation",
+              relatedAppointmentId: doc.id,
+            })
+        );
+      }
+
+      if (doctorToken) {
+        const payload = {
+          notification: {
+            title: "Auto-Cancelled Appointment ❌",
+            body: `Your pending appointment with ${patientName} was cancelled automatically. Please try to confirm appointments in time. It helps us provide better service!`,
+          },
+          token: doctorToken,
+        };
+        tasks.push(admin.messaging().send(payload));
+        tasks.push(
+          admin.firestore()
+            .collection("users")
+            .doc(doctorId)
+            .collection("notifications")
+            .add({
+              title: payload.notification.title,
+              body: payload.notification.body,
+              timestamp: admin.firestore.Timestamp.now(),
+              isRead: false,
+              type: "cancellation",
+              relatedAppointmentId: doc.id,
+            })
+        );
+      }
+
+      await Promise.all(tasks);
+    });
+
+    await Promise.all(autoCancelTasks);
     return null;
   });
-
 
 
 exports.sendAppointmentCancelledNotification = functions
@@ -205,34 +372,74 @@ exports.sendAppointmentCancelledNotification = functions
     if (!before || !after) return null;
 
     // Only send if it was Confirmed and now Cancelled
-    if (before.status !== "Confirmed" || after.status !== "Cancelled") {
-      return null;
-    }
+    if (before.status !== "Confirmed" || after.status !== "Cancelled") return null;
 
     const doctorId = after.doctorId;
+    const patientId = after.patientId;
+    const doctorName = after.doctorName || "the doctor";
     const patientName = after.patientName || "the patient";
 
     try {
-      const userDoc = await admin.firestore().collection("users").doc(doctorId).get();
-      const fcmToken = userDoc.get("fcmToken");
+      const doctorDoc = await admin.firestore().collection("users").doc(doctorId).get();
+      const patientDoc = await admin.firestore().collection("users").doc(patientId).get();
+      const doctorToken = doctorDoc.get("fcmToken");
+      const patientToken = patientDoc.get("fcmToken");
 
-      if (!fcmToken) {
-        console.log("❌ No FCM token found for doctor");
-        return null;
+      const timestamp = admin.firestore.Timestamp.now();
+
+      const tasks = [];
+
+      if (doctorToken) {
+        const doctorMessage = {
+          notification: {
+            title: "Appointment Cancelled ❗",
+            body: `${patientName} just cancelled a confirmed appointment.`,
+          },
+          token: doctorToken,
+        };
+
+        tasks.push(admin.messaging().send(doctorMessage));
+        tasks.push(
+          admin.firestore().collection("users").doc(doctorId).collection("notifications").add({
+            title: doctorMessage.notification.title,
+            body: doctorMessage.notification.body,
+            timestamp,
+            isRead: false,
+            type: "cancellation",
+            relatedAppointmentId: context.params.appointmentId,
+          })
+        );
+
+        console.log(`✅ Notification sent to doctor ${doctorId}`);
       }
 
-      const message = {
-        notification: {
-          title: "Appointment Cancelled ❌",
-          body: `${patientName} just cancelled a confirmed appointment.`,
-        },
-        token: fcmToken,
-      };
+      if (patientToken) {
+        const patientMessage = {
+          notification: {
+            title: "Appointment Cancelled ❌",
+            body: `Your appointment with Dr. ${doctorName} has been cancelled.`,
+          },
+          token: patientToken,
+        };
 
-      await admin.messaging().send(message);
-      console.log(`✅ Cancellation notification sent to Dr. ${doctorId}`);
+        tasks.push(admin.messaging().send(patientMessage));
+        tasks.push(
+          admin.firestore().collection("users").doc(patientId).collection("notifications").add({
+            title: patientMessage.notification.title,
+            body: patientMessage.notification.body,
+            timestamp,
+            isRead: false,
+            type: "cancellation",
+            relatedAppointmentId: context.params.appointmentId,
+          })
+        );
+
+        console.log(`✅ Notification sent to patient ${patientId}`);
+      }
+
+      await Promise.all(tasks);
     } catch (error) {
-      console.error("❌ Error sending cancellation notification:", error);
+      console.error("❌ Error sending cancellation notifications:", error);
     }
 
     return null;

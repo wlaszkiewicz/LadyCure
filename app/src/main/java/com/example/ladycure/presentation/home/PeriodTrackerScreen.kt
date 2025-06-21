@@ -135,15 +135,15 @@ fun getPredictedPeriodStartDates(
 
     // Predict future periods for the next 12 cycles
     repeat(12) {
-        currentPrediction = currentPrediction!!.plusDays(averageCycleLength.toLong())
-        predictedStarts.add(currentPrediction)
+        currentPrediction = currentPrediction?.plusDays(averageCycleLength.toLong())
+        currentPrediction?.let { predictedStarts.add(it) }
     }
 
     // Predict up to 3 past cycles
-    currentPrediction = currentPrediction!!.minusDays(averageCycleLength.toLong())
+    currentPrediction = lastPeriodStartDate
     repeat(3) {
-        currentPrediction = currentPrediction!!.minusDays(averageCycleLength.toLong())
-        predictedStarts.add(currentPrediction)
+        currentPrediction = currentPrediction?.minusDays(averageCycleLength.toLong())
+        currentPrediction?.let { predictedStarts.add(it) }
     }
 
     return predictedStarts
