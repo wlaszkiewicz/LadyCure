@@ -82,6 +82,21 @@ class NotificationRepository {
             }
     }
 
+    fun markNotificationAsUnread(notificationId: String): Result<Unit> {
+        return try {
+            val userId =
+                auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+            firestore
+                .collection("users")
+                .document(userId)
+                .collection("notifications")
+                .document(notificationId)
+                .update("isRead", false)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     fun markNotificationAsRead(notificationId: String): Result<Unit> {
         return try {

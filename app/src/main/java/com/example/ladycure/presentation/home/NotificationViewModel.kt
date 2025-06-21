@@ -73,6 +73,24 @@ class NotificationsViewModel : ViewModel() {
         }
     }
 
+    fun markAsUnread(notificationId: String) {
+        _allNotifications.update { list ->
+            list.map { if (it.id == notificationId) it.copy(isRead = false) else it }
+        }
+        _notifications.update { list ->
+            list.map { if (it.id == notificationId) it.copy(isRead = false) else it }
+        }
+
+        _unreadCount.value = _allNotifications.value.count { !it.isRead }
+
+        viewModelScope.launch {
+            notificationRepo.markNotificationAsUnread(notificationId)
+                .onFailure { e ->
+                    _errors.value = "Failed to mark notification as unread: ${e.message}"
+                }
+        }
+    }
+
 
     fun markAllAsRead() {
         viewModelScope.launch {

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.DismissDirection
@@ -30,6 +31,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -91,6 +93,9 @@ fun NotificationsScreen(
         onReadNotification = { notificationId ->
             viewModel.markAsRead(notificationId)
         },
+        onUnreadNotification = { notificationId ->
+            viewModel.markAsUnread(notificationId)
+        },
         onFilterChange = viewModel::setFilter,
         onTypeChange = viewModel::setTypeFilter,
         onMarkAllAsRead = viewModel::markAllAsRead,
@@ -112,6 +117,7 @@ private fun NotificationsContent(
     isDoctor: Boolean,
     onNotificationClick: (Notification) -> Unit,
     onReadNotification: (String) -> Unit,
+    onUnreadNotification: (String) -> Unit,
     onFilterChange: (NotificationFilter) -> Unit,
     onTypeChange: (NotificationType?) -> Unit,
     onMarkAllAsRead: () -> Unit,
@@ -154,6 +160,9 @@ private fun NotificationsContent(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onReadNotification = { notificationId ->
                     onReadNotification(notificationId)
+                },
+                onUnreadNotification = { notificationId ->
+                    onUnreadNotification(notificationId)
                 },
                 onDeleteNotification = { notificationId ->
                     onDeleteNotification(notificationId)
@@ -326,6 +335,7 @@ private fun NotificationsList(
     notifications: List<Notification>,
     onNotificationClick: (Notification) -> Unit,
     onReadNotification: (String) -> Unit,
+    onUnreadNotification: (String) -> Unit,
     modifier: Modifier = Modifier,
     onDeleteNotification: (String) -> Unit,
 ) {
@@ -334,8 +344,10 @@ private fun NotificationsList(
         contentPadding = PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(notifications.size) { index ->
-            val notification = notifications[index]
+        items(
+            items = notifications,
+            key = { it.id + it.isRead.toString() }
+        ) { notification ->
             val dismissState = rememberDismissState(
                 confirmStateChange = { value ->
                     when (value) {
@@ -345,7 +357,11 @@ private fun NotificationsList(
                         }
 
                         DismissValue.DismissedToEnd -> {
-                            onReadNotification(notification.id)
+                            if (notification.isRead) {
+                                onUnreadNotification(notification.id)
+                            } else {
+                                onReadNotification(notification.id)
+                            }
                             false
                         }
 
@@ -365,7 +381,12 @@ private fun NotificationsList(
                     }
 
                     val icon = when (direction) {
-                        DismissDirection.StartToEnd -> Icons.Default.Check
+                        DismissDirection.StartToEnd -> if (!notification.isRead) {
+                            Icons.Default.Check
+                        } else {
+                            Icons.AutoMirrored.Filled.Undo
+                        }
+
                         DismissDirection.EndToStart -> Icons.Default.Delete
                         else -> null
                     }
