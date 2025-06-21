@@ -1,5 +1,6 @@
 package com.example.ladycure.presentation.booking
 
+import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +16,7 @@ import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Referral
+import com.example.ladycure.utility.PdfUploader
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,6 +51,9 @@ class ConfirmationViewModel(
     var uploadProgress by mutableStateOf(0f)
         private set
     var dateTime by mutableStateOf(Timestamp.now())
+
+    var tooLarge by mutableStateOf(false)
+        internal set
 
     fun loadInitialData(
         doctorId: String,
@@ -101,10 +106,15 @@ class ConfirmationViewModel(
         uri: Uri,
         referralId: String,
         appointmentType: AppointmentType,
+        context: Context,
         onSuccess: () -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ) {
         viewModelScope.launch {
+            if (PdfUploader.isFileTooLarge(context = context, uri = uri)) {
+                tooLarge = true
+                return@launch
+            }
             try {
                 withContext(Dispatchers.Main) {
                     isUploading = true

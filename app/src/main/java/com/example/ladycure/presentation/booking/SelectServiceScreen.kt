@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -53,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,6 +67,7 @@ import com.example.ladycure.data.repository.StorageRepository
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.utility.PdfUploader
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -90,12 +93,19 @@ fun SelectServiceScreen(
     var showUploadSuccessDialog by remember { mutableStateOf(false) }
     var uploadProgress by remember { mutableFloatStateOf(0f) }
     var referralId by remember { mutableStateOf<String?>(null) }
+    var tooLarge by remember { mutableStateOf(false) }
+    var context = LocalContext.current
 
     val pdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             uri?.let {
                 CoroutineScope(Dispatchers.IO).launch {
+                    if (PdfUploader.isFileTooLarge(context, uri)) {
+                        tooLarge = true
+                        return@launch
+                    }
+
                     try {
                         withContext(Dispatchers.Main) {
                             isUploading = true
@@ -240,6 +250,12 @@ fun SelectServiceScreen(
             }
         }
 
+        if (tooLarge) {
+            FileTooLargeDialog(
+                onDismiss = { tooLarge = false },
+            )
+        }
+
         if (showReferralDialog) {
             ReferralRequiredDialog(
                 service = selectedService,
@@ -360,6 +376,58 @@ fun SelectServiceScreen(
                             Text("Continue to Booking")
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FileTooLargeDialog(
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FileCopy,
+                    contentDescription = "File Too Large",
+                    tint = DefaultPrimary,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "File Too Large",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DefaultPrimary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "The selected file exceeds the maximum size limit of 5MB. Please choose a smaller file and try again.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                OutlinedButton(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = DefaultPrimary,
+                        containerColor = Color.Transparent
+                    ),
+                    border = BorderStroke(1.dp, DefaultPrimary),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("OK")
                 }
             }
         }

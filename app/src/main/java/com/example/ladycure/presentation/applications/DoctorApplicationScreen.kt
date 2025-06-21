@@ -5,6 +5,7 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import Green
+import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_SENDTO
 import android.net.Uri
@@ -91,7 +92,9 @@ import androidx.navigation.NavController
 import androidx.wear.compose.material3.TextButton
 import coil.compose.AsyncImage
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.presentation.booking.FileTooLargeDialog
 import com.example.ladycure.presentation.register.components.DatePickerButton
+import com.example.ladycure.utility.PdfUploader
 import com.example.ladycure.utility.SnackbarController
 import com.example.ladycure.utility.rememberImagePickerLauncher
 import java.time.LocalDate
@@ -106,6 +109,7 @@ fun DoctorApplicationScreen(
     val focusManager = LocalFocusManager.current
     var showSuccessDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) } // 0 for personal, 1 for professional
+    var tooLarge = viewModel.tooLarge
 
     // Show error messages
     LaunchedEffect(viewModel.errorMessage) {
@@ -417,6 +421,11 @@ fun DoctorApplicationScreen(
             }
         }
     }
+    if (tooLarge) {
+        FileTooLargeDialog(
+            onDismiss = { viewModel.tooLarge = false },
+        )
+    }
 }
 
 @Composable
@@ -662,6 +671,9 @@ private fun ProfessionalInfoTab(viewModel: DoctorApplicationViewModel) {
                 title = "License Photo",
                 fileUri = viewModel.licensePhotoUri,
                 onFileSelected = { viewModel.licensePhotoUri = it },
+                onFileTooLarge = {
+                    viewModel.tooLarge = true
+                },
                 modifier = Modifier.weight(1f),
             )
 
@@ -669,6 +681,9 @@ private fun ProfessionalInfoTab(viewModel: DoctorApplicationViewModel) {
                 title = "Diploma",
                 fileUri = viewModel.diplomaPhotoUri,
                 onFileSelected = { viewModel.diplomaPhotoUri = it },
+                onFileTooLarge = {
+                    viewModel.tooLarge = true
+                },
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 16.dp),
@@ -828,12 +843,18 @@ fun FileUploadSection(
     title: String,
     fileUri: Uri?,
     onFileSelected: (Uri?) -> Unit,
+    onFileTooLarge: () -> Unit,
     isError: Boolean = false,
     errorText: String = "",
+    context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
     val launcher = rememberImagePickerLauncher(
         onImageSelected = { uri ->
+            if (PdfUploader.isFileTooLarge(context, uri)) {
+                onFileTooLarge()
+                return@rememberImagePickerLauncher
+            }
             onFileSelected(uri)
         }
     )
@@ -897,16 +918,5 @@ fun FileUploadSection(
             )
         }
     }
-}
-
-private fun isImageFile(uriString: String): Boolean {
-    return uriString.contains(".jpg", ignoreCase = true) ||
-            uriString.contains(".jpeg", ignoreCase = true) ||
-            uriString.contains(".png", ignoreCase = true) ||
-            uriString.contains(".webp", ignoreCase = true)
-}
-
-private fun isPdfFile(uriString: String): Boolean {
-    return uriString.contains(".pdf", ignoreCase = true)
 }
 
