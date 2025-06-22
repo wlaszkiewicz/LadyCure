@@ -613,7 +613,7 @@ fun DoctorAccountSettingsDialog(
 
             Box(
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(160.dp)
                     .clip(CircleShape)
                     .background(DefaultPrimary.copy(alpha = 0.1f))
                     .border(2.dp, DefaultPrimary.copy(alpha = 0.3f), CircleShape)
@@ -669,10 +669,10 @@ fun DoctorAccountSettingsDialog(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
-                            value = name,
-                            onValueChange = { name = it },
-                            label = { Text("Name") },
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                            value = surname,
+                            onValueChange = { surname = it },
+                            label = { Text("Surname") },
+                            leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = "Surname") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
