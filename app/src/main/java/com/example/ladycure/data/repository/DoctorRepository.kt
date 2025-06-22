@@ -397,4 +397,37 @@ class DoctorRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun getCurrentDoctorData(): Result<Map<String, Any>?> {
+        val user = auth.currentUser
+        user?.let {
+            return try {
+                val documentSnapshot = firestore.collection("users").document(it.uid).get().await()
+                val data = documentSnapshot.data
+                if (data != null) {
+                    Result.success(data)
+                } else {
+                    Result.failure(Exception("Doctor document does not exist"))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("Failed to fetch doctor data: ${e.message}"))
+            }
+        } ?: return Result.failure(Exception("Doctor not logged in"))
+    }
+
+    suspend fun updateDoctorProfile(data: Map<String, Any>): Result<Unit> {
+        val user = auth.currentUser
+        return if (user != null) {
+            try {
+                val doctorRef = firestore.collection("users").document(user.uid)
+                doctorRef.set(data, SetOptions.merge()).await()
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        } else {
+            Result.failure(Exception("You are not logged in as a doctor"))
+        }
+    }
+
 }

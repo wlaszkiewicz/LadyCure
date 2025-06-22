@@ -18,25 +18,30 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,6 +61,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -63,7 +69,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -72,6 +80,7 @@ import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.R
 import com.example.ladycure.data.repository.AuthRepository
+import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.presentation.register.components.DatePickerButton
 import com.example.ladycure.utility.ImageUploader
@@ -87,6 +96,7 @@ fun ProfileScreen(navController: NavHostController) {
     val context = LocalContext.current
     val userRepo = UserRepository()
     val authRepo = AuthRepository()
+    val doctorRepo = remember { DoctorRepository() }
     val imageUploader = remember { ImageUploader(context) }
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
@@ -108,7 +118,13 @@ fun ProfileScreen(navController: NavHostController) {
                     onSuccess = { downloadUrl ->
                         userRepo.updateProfilePicture(downloadUrl)
                         currentImageUrl = downloadUrl
-                        userData.value = userRepo.getCurrentUserData().getOrNull()
+                        val role = userData.value?.get("role") as? String
+                        if (role == "doctor") {
+                            userRepo.updateProfilePicture(downloadUrl)
+                            userData.value = doctorRepo.getCurrentDoctorData().getOrNull()
+                        } else {
+                            userData.value = userRepo.getCurrentUserData().getOrNull()
+                        }
                         errorMessage = ""
                     },
                     onFailure = { e ->
@@ -122,11 +138,24 @@ fun ProfileScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(Unit) {
-        val result = userRepo.getCurrentUserData()
-        if (result.isFailure) {
-            errorMessage = "Failed to load user data: ${result.exceptionOrNull()?.message}"
+        val userResult = userRepo.getCurrentUserData()
+        if (userResult.isFailure) {
+            errorMessage = "Failed to load user data: ${userResult.exceptionOrNull()?.message}"
+            return@LaunchedEffect
+        }
+
+        val user = userResult.getOrNull() ?: return@LaunchedEffect
+        val role = user["role"] as? String
+
+        if (role == "doctor") {
+            val doctorResult = doctorRepo.getCurrentDoctorData()
+            if (doctorResult.isFailure) {
+                errorMessage = "Failed to load doctor data: ${doctorResult.exceptionOrNull()?.message}"
+            } else {
+                userData.value = doctorResult.getOrNull()
+            }
         } else {
-            userData.value = result.getOrNull()
+            userData.value = user
         }
     }
 
@@ -307,16 +336,21 @@ fun ProfileScreen(navController: NavHostController) {
             onDismiss = { showAccountSettingsDialog = false },
             onSave = { updatedData ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    val result = userRepo.updateUserData(updatedData)
-                    if (result.isSuccess) {
-                        userData.value = result.getOrNull() ?: emptyMap()
+                    val role = userData.value?.get("role") as? String
+                    if (role == "doctor") {
+                        userData.value = doctorRepo.getCurrentDoctorData().getOrNull() ?: emptyMap()
                     } else {
-                        errorMessage =
-                            "Failed to update user data: ${result.exceptionOrNull()?.message}"
+                        val result = userRepo.updateUserData(updatedData)
+                        if (result.isSuccess) {
+                            userData.value = result.getOrNull() ?: emptyMap()
+                        } else {
+                            errorMessage = "Failed to update user data: ${result.exceptionOrNull()?.message}"
+                        }
                     }
                     showAccountSettingsDialog = false
                 }
-            }
+            },
+            role = userData.value?.get("role") as? String
         )
     }
 
@@ -467,8 +501,388 @@ fun ProfileOption(
     }
 }
 
+
 @Composable
 fun AccountSettingsDialog(
+    userData: Map<String, Any>?,
+    onDismiss: () -> Unit,
+    onSave: (Map<String, String>) -> Unit,
+    role: String? = null
+) {
+    val doctorRepo = remember { DoctorRepository() }
+    when (role) {
+        "doctor" -> DoctorAccountSettingsDialog(
+            userData = userData,
+            onDismiss = onDismiss,
+            onSave = { updatedData ->
+                CoroutineScope(Dispatchers.IO).launch {
+                    doctorRepo.updateDoctorProfile(updatedData)
+                    onSave(updatedData as Map<String, String>)
+                }
+            }
+        )
+        else -> RegularAccountSettingsDialog(userData, onDismiss, onSave)
+    }
+}
+
+@Composable
+fun DoctorAccountSettingsDialog(
+    userData: Map<String, Any>?,
+    onDismiss: () -> Unit,
+    onSave: (Map<String, Any>) -> Unit,
+    role: String? = null
+) {
+    var name by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("name") as? String) ?: ""
+            )
+        )
+    }
+    var surname by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("surname") as? String) ?: ""
+            )
+        )
+    }
+
+    val initialDob = remember {
+        try {
+            (userData?.get("dob") as? String)?.let {
+                LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE)
+            } ?: LocalDate.now().minusYears(18)
+        } catch (e: Exception) {
+            LocalDate.now().minusYears(18)
+        }
+    }
+    var dob by remember { mutableStateOf(initialDob) }
+    var dobText by remember { mutableStateOf(initialDob.format(DateTimeFormatter.ISO_LOCAL_DATE)) }
+    var isAdult by remember { mutableStateOf(!dob.isAfter(LocalDate.now().minusYears(18))) }
+
+    var phone by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("phone") as? String) ?: ""
+            )
+        )
+    }
+
+    var address by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("address") as? String) ?: ""
+            )
+        )
+    }
+
+    var city by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("city") as? String) ?: ""
+            )
+        )
+    }
+
+    var consultationPrice by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("consultationPrice") as? String) ?: ""
+            )
+        )
+    }
+
+    var experience by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("experience") as? String) ?: ""
+            )
+        )
+    }
+
+    var languages by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("languages") as? List<String>)?.joinToString(", ") ?: ""
+            )
+        )
+    }
+
+    var speciality by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("speciality") as? String) ?: ""
+            )
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .background(DefaultBackground)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable { onDismiss() },
+                    tint = DefaultPrimary
+                )
+
+                Text(
+                    text = "Doctor Account Settings",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = DefaultPrimary,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.size(32.dp))
+            }
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(DefaultPrimary.copy(alpha = 0.1f))
+                        .border(2.dp, DefaultPrimary.copy(alpha = 0.3f), CircleShape)
+                        .align(Alignment.CenterHorizontally),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.setting_kapii),
+                        contentDescription = "settings kapi",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Basic Information",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = DefaultPrimary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = surname,
+                    onValueChange = { surname = it },
+                    label = { Text("Surname") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.Person,
+                            contentDescription = "Surname"
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Phone Number") },
+                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("+48 123 456 789") }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Date of Birth",
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                    DatePickerButton(
+                        selectedDate = dob,
+                        onDateSelected = { date ->
+                            dob = date
+                            dobText = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                            isAdult = !date.isAfter(LocalDate.now().minusYears(18))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (!isAdult) {
+                        Text(
+                            text = "We are sorry, you must be at least 18 years old",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Professional Information",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = DefaultPrimary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = speciality,
+                    onValueChange = { speciality = it },
+                    label = { Text("Speciality") },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Speciality") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = experience,
+                    onValueChange = { experience = it },
+                    label = { Text("Experience (years)") },
+                    leadingIcon = { Icon(Icons.Default.Star, contentDescription = "Experience") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = consultationPrice,
+                    onValueChange = { consultationPrice = it },
+                    label = { Text("Consultation Price") },
+                    leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = "Price") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    prefix = { Text("$") }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = languages,
+                    onValueChange = { languages = it },
+                    label = { Text("Languages (comma separated)") },
+                    leadingIcon = { Icon(Icons.Default.Language, contentDescription = "Languages") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Address Information",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = DefaultPrimary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Address") },
+                    leadingIcon = { Icon(Icons.Default.Place, contentDescription = "Address") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = city,
+                    onValueChange = { city = it },
+                    label = { Text("City") },
+                    leadingIcon = { Icon(Icons.Default.Home, contentDescription = "City") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
+                                contentColor = DefaultPrimary
+                            ),
+                            modifier = Modifier.padding(end = 8.dp).width(120.dp)
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        Button(
+                            onClick = {
+                                val updatedData = mapOf(
+                                    "name" to name.text,
+                                    "surname" to surname.text,
+                                    "dob" to dobText,
+                                    "phone" to phone.text,
+                                    "address" to address.text,
+                                    "city" to city.text,
+                                    "consultationPrice" to consultationPrice.text,
+                                    "experience" to experience.text,
+                                    "languages" to languages.text.split(",").map { it.trim() },
+                                    "speciality" to speciality.text
+                                )
+                                onSave(updatedData)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary,
+                                contentColor = DefaultOnPrimary
+                            ),
+                            enabled = isAdult,
+                            modifier = Modifier.width(120.dp)
+                        ) {
+                            Text("Save")
+                        }
+                    }
+            }
+        }
+    }
+}
+
+@Composable
+fun RegularAccountSettingsDialog(
     userData: Map<String, Any>?,
     onDismiss: () -> Unit,
     onSave: (Map<String, String>) -> Unit
