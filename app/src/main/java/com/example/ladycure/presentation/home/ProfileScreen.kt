@@ -514,151 +514,167 @@ fun AccountSettingsDialog(
         contentAlignment = Alignment.TopCenter
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
-                .clickable(onClick = onDismiss)
-        )
-
-        Box(
-            modifier = Modifier
-                .width(360.dp)
-                .height(720.dp)
-                .padding(top = 70.dp)
-                .background(
-                    color = DefaultBackground,
-                    shape = RoundedCornerShape(20.dp)
-                )
-        )
-
-        Image(
-            painter = painterResource(id = R.drawable.login_kapi),
-            contentDescription = "Capybara",
-            modifier = Modifier
-                .width(240.dp)
-                .height(210.dp)
-                .offset(y = 80.dp)
-                .zIndex(3f),
-            contentScale = ContentScale.Crop
-        )
-
-        Card(
-            modifier = Modifier
-                .width(340.dp)
-                .padding(top = 260.dp)
-                .zIndex(2f),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White,
-                contentColor = DefaultOnPrimary
-            )
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Column(
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 24.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Account Settings",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = DefaultPrimary,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = surname,
-                    onValueChange = { surname = it },
-                    label = { Text("Surname") },
-                    leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = "Surname") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = it },
-                    label = { Text("Phone Number") },
-                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("+48 123 456 789") }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Date of Birth",
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.55f))
+                    .clickable(onClick = onDismiss)
+            )
+            Box(
+                modifier = Modifier
+                    .width(360.dp)
+                    .height(700.dp)
+                    .padding(top = 70.dp)
+                    .background(
+                        color = DefaultBackground,
+                        shape = RoundedCornerShape(20.dp)
                     )
-                    DatePickerButton(
-                        selectedDate = dob,
-                        onDateSelected = { date ->
-                            dob = date
-                            dobText = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                            isAdult = !date.isAfter(LocalDate.now().minusYears(18))
+            )
+            Card(
+                modifier = Modifier
+                    .width(340.dp)
+                    .padding(top = 80.dp)
+                    .zIndex(2f),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White,
+                    contentColor = DefaultOnPrimary
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(150.dp)
+                            .clip(CircleShape)
+                            .background(DefaultPrimary.copy(alpha = 0.1f))
+                            .border(2.dp, DefaultPrimary.copy(alpha = 0.3f), CircleShape)
+                            .align(Alignment.CenterHorizontally),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.setting_kapii),
+                            contentDescription = "Profile Picture",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Account Settings",
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
+                        ),
+                        color = DefaultPrimary,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") },
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = surname,
+                        onValueChange = { surname = it },
+                        label = { Text("Surname") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Outlined.Person,
+                                contentDescription = "Surname"
+                            )
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    if (!isAdult) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        label = { Text("Phone Number") },
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone") },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("+48 123 456 789") }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "We are sorry, you must be at least 18 years old",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                            text = "Date of Birth",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                         )
-                    }
-                }
+                        DatePickerButton(
+                            selectedDate = dob,
+                            onDateSelected = { date ->
+                                dob = date
+                                dobText = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                isAdult = !date.isAfter(LocalDate.now().minusYears(18))
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Button(
-                        onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
-                            contentColor = DefaultPrimary
-                        ),
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Text("Cancel")
-                    }
-
-                    Button(
-                        onClick = {
-                            val updatedData = mapOf(
-                                "name" to name.text,
-                                "surname" to surname.text,
-                                "dob" to dobText,
-                                "phone" to phone.text
+                        if (!isAdult) {
+                            Text(
+                                text = "We are sorry, you must be at least 18 years old",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                             )
-                            onSave(updatedData)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DefaultPrimary,
-                            contentColor = DefaultOnPrimary
-                        ),
-                        enabled = isAdult
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        Text("Save")
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
+                                contentColor = DefaultPrimary
+                            ),
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        Button(
+                            onClick = {
+                                val updatedData = mapOf(
+                                    "name" to name.text,
+                                    "surname" to surname.text,
+                                    "dob" to dobText,
+                                    "phone" to phone.text
+                                )
+                                onSave(updatedData)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary,
+                                contentColor = DefaultOnPrimary
+                            ),
+                            enabled = isAdult
+                        ) {
+                            Text("Save")
+                        }
                     }
                 }
             }
