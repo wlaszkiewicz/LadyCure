@@ -94,7 +94,9 @@ import com.example.ladycure.data.repository.ChatRepository
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Message
+import com.example.ladycure.presentation.booking.FileTooLargeDialog
 import com.example.ladycure.presentation.home.DoctorInfoCard
+import com.example.ladycure.utility.PdfUploader
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -116,6 +118,7 @@ fun DoctorChatScreen(
     val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
     val context = LocalContext.current
 
+    var showFileTooLargeDialog by remember { mutableStateOf(false) }
 
     var messageText by remember { mutableStateOf("") }
     var attachmentUri by remember { mutableStateOf<Uri?>(null) }
@@ -135,7 +138,13 @@ fun DoctorChatScreen(
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { attachmentUri = it }
+        uri?.let {
+            if (PdfUploader.isFileTooLarge(context, it)) {
+                showFileTooLargeDialog = true
+            } else {
+                attachmentUri = it
+            }
+        }
     }
 
     LaunchedEffect(chatId) {
@@ -366,6 +375,12 @@ fun DoctorChatScreen(
                     isSending = isSending,
                     hasAttachment = attachmentUri != null
                 )
+
+                if (showFileTooLargeDialog) {
+                    FileTooLargeDialog(
+                        onDismiss = { showFileTooLargeDialog = false }
+                    )
+                }
             }
         }
     ) { paddingValues ->
