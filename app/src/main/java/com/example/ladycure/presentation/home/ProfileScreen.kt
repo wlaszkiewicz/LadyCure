@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Error
@@ -47,6 +48,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -82,6 +85,7 @@ import com.example.ladycure.R
 import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.data.repository.UserRepository
+import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.register.components.DatePickerButton
 import com.example.ladycure.utility.ImageUploader
 import com.example.ladycure.utility.rememberImagePickerLauncher
@@ -560,6 +564,13 @@ fun DoctorAccountSettingsDialog(
     var dobText by remember { mutableStateOf(initialDob.format(DateTimeFormatter.ISO_LOCAL_DATE)) }
     var isAdult by remember { mutableStateOf(!dob.isAfter(LocalDate.now().minusYears(18))) }
 
+    var selectedSpeciality by remember {
+        mutableStateOf(
+            Speciality.fromDisplayName(userData?.get("speciality") as? String ?: "") ?: Speciality.OTHER
+        )
+    }
+    var expanded by remember { mutableStateOf(false) }
+
     var phone by remember {
         mutableStateOf(
             TextFieldValue(
@@ -763,16 +774,6 @@ fun DoctorAccountSettingsDialog(
                 )
 
                 OutlinedTextField(
-                    value = speciality,
-                    onValueChange = { speciality = it },
-                    label = { Text("Speciality") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Speciality") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
                     value = experience,
                     onValueChange = { experience = it },
                     label = { Text("Experience (years)") },
@@ -802,6 +803,73 @@ fun DoctorAccountSettingsDialog(
                     leadingIcon = { Icon(Icons.Default.Language, contentDescription = "Languages") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Speciality",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = DefaultPrimary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expanded = true }
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = selectedSpeciality.displayName,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Expand",
+                                    modifier = Modifier.rotate(if (expanded) 180f else 0f)
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth(0.9f)
+                        ) {
+                            Speciality.values().forEach { speciality ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = speciality.displayName,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    onClick = {
+                                        selectedSpeciality = speciality
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -835,45 +903,45 @@ fun DoctorAccountSettingsDialog(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
+                            contentColor = DefaultPrimary
+                        ),
+                        modifier = Modifier.padding(end = 8.dp).width(120.dp)
                     ) {
-                        Button(
-                            onClick = onDismiss,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
-                                contentColor = DefaultPrimary
-                            ),
-                            modifier = Modifier.padding(end = 8.dp).width(120.dp)
-                        ) {
-                            Text("Cancel")
-                        }
+                        Text("Cancel")
+                    }
 
-                        Button(
-                            onClick = {
-                                val updatedData = mapOf(
-                                    "name" to name.text,
-                                    "surname" to surname.text,
-                                    "dob" to dobText,
-                                    "phone" to phone.text,
-                                    "address" to address.text,
-                                    "city" to city.text,
-                                    "consultationPrice" to consultationPrice.text,
-                                    "experience" to experience.text,
-                                    "languages" to languages.text.split(",").map { it.trim() },
-                                    "speciality" to speciality.text
-                                )
-                                onSave(updatedData)
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DefaultPrimary,
-                                contentColor = DefaultOnPrimary
-                            ),
-                            enabled = isAdult,
-                            modifier = Modifier.width(120.dp)
-                        ) {
-                            Text("Save")
+                    Button(
+                        onClick = {
+                            val updatedData = mapOf(
+                                "name" to name.text,
+                                "surname" to surname.text,
+                                "dob" to dobText,
+                                "phone" to phone.text,
+                                "address" to address.text,
+                                "city" to city.text,
+                                "consultationPrice" to consultationPrice.text,
+                                "experience" to experience.text,
+                                "languages" to languages.text.split(",").map { it.trim() },
+                                "speciality" to selectedSpeciality.displayName
+                            )
+                            onSave(updatedData)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DefaultPrimary,
+                            contentColor = DefaultOnPrimary
+                        ),
+                        enabled = isAdult,
+                        modifier = Modifier.width(120.dp)
+                    ) {
+                        Text("Save")
                         }
                     }
             }
