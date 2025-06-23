@@ -1,36 +1,35 @@
 package com.example.ladycure
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
+import com.example.ladycure.data.repository.AuthRepository
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.firebase.messaging.messaging
-import com.google.firebase.messaging.remoteMessage
-import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    val authRepo = AuthRepository()
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         remoteMessage.notification?.let { message ->
             sendNotification(message)
         }
     }
+
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+
+        val repo = AuthRepository()
+        repo.updateFcmToken(token)
+    }
+
 
     @OptIn(ExperimentalMaterialApi::class)
     private fun sendNotification(message: RemoteMessage.Notification) {

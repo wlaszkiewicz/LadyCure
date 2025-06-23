@@ -35,11 +35,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -54,128 +49,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.ladycure.data.repository.AdminRepository
 import com.example.ladycure.utility.SnackbarController
-import kotlinx.coroutines.async
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminAnalyticsScreen(
     navController: NavController,
-    snackbarController: SnackbarController
+    snackbarController: SnackbarController,
+    viewModel: AdminAnalyticsViewModel = viewModel()
 ) {
-    val adminRepo = remember { AdminRepository() }
-    val coroutineScope = rememberCoroutineScope()
+    var errorMessage = viewModel.errorMessage
 
-    var isLoading by remember { mutableStateOf(true) }
-    var userGrowthData by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
-    var patientGrowthData by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
-    var doctorGrowthData by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
-    var usersAgeData by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
-    var applicationStats by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var totalStats by remember { mutableStateOf<Map<String, Any>>(emptyMap()) }
-
-    // Time period selection
-    var selectedTimePeriod by remember { mutableStateOf(TimePeriod.MONTHLY) }
-
-    // Fetch data on first load or when time period changes
-    LaunchedEffect(selectedTimePeriod) {
-        isLoading = true
-        try {
-            // Fetch all data in parallel
-            val userGrowthDeferred = coroutineScope.async {
-                adminRepo.getUserGrowthData(selectedTimePeriod)
-            }
-            val patientGrowthDeferred = coroutineScope.async {
-                adminRepo.getPatientGrowthData(selectedTimePeriod)
-            }
-            val doctorGrowthDeferred = coroutineScope.async {
-                adminRepo.getDoctorGrowthData(selectedTimePeriod)
-            }
-            val applicationStatsDeferred = coroutineScope.async {
-                adminRepo.getApplicationStats()
-            }
-            val totalStatsDeferred = coroutineScope.async {
-                adminRepo.getAdminStats()
-            }
-            val usersAgeDeferred = coroutineScope.async {
-                adminRepo.getUsersAgeData()
-            }
-
-            // Wait for all requests to complete
-            val userGrowthResult = userGrowthDeferred.await()
-            userGrowthData = when {
-                userGrowthResult.isSuccess -> userGrowthResult.getOrNull() ?: emptyList()
-                else -> {
-                    snackbarController.showMessage(
-                        userGrowthResult.exceptionOrNull()?.message
-                            ?: "Failed to load user growth data"
-                    )
-                    emptyList()
-                }
-            }
-            val patientGrowthResult = patientGrowthDeferred.await()
-            patientGrowthData = when {
-                patientGrowthResult.isSuccess -> patientGrowthResult.getOrNull() ?: emptyList()
-                else -> {
-                    snackbarController.showMessage(
-                        patientGrowthResult.exceptionOrNull()?.message
-                            ?: "Failed to load patient growth data"
-                    )
-                    emptyList()
-                }
-            }
-            val doctorGrowthResult = doctorGrowthDeferred.await()
-            doctorGrowthData = when {
-                doctorGrowthResult.isSuccess -> doctorGrowthResult.getOrNull() ?: emptyList()
-                else -> {
-                    snackbarController.showMessage(
-                        doctorGrowthResult.exceptionOrNull()?.message
-                            ?: "Failed to load doctor growth data"
-                    )
-                    emptyList()
-                }
-            }
-            val applicationStatsResult = applicationStatsDeferred.await()
-            applicationStats = when {
-                applicationStatsResult.isSuccess -> applicationStatsResult.getOrNull() ?: emptyMap()
-                else -> {
-                    snackbarController.showMessage(
-                        applicationStatsResult.exceptionOrNull()?.message
-                            ?: "Failed to load application stats"
-                    )
-                    emptyMap()
-                }
-            }
-            val totalStatsResult = totalStatsDeferred.await()
-            totalStats = when {
-                totalStatsResult.isSuccess -> totalStatsResult.getOrNull() ?: emptyMap()
-                else -> {
-                    snackbarController.showMessage(
-                        totalStatsResult.exceptionOrNull()?.message ?: "Failed to load total stats"
-                    )
-                    emptyMap()
-                }
-            }
-            val usersAgeResult = usersAgeDeferred.await()
-            usersAgeData = when {
-                usersAgeResult.isSuccess -> usersAgeResult.getOrNull() ?: emptyList()
-                else -> {
-                    snackbarController.showMessage(
-                        usersAgeResult.exceptionOrNull()?.message ?: "Failed to load users age data"
-                    )
-                    emptyList()
-                }
-            }
-
-        } catch (e: Exception) {
-            snackbarController.showMessage("Failed to load analytics: ${e.message}")
-        } finally {
-            isLoading = false
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarController.showMessage(it)
+            viewModel.errorMessage = null // Reset error message after showing
         }
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -190,8 +82,7 @@ fun AdminAnalyticsScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-
-        // Time period selector - make it scrollable if needed
+        // Time period selector
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -200,10 +91,10 @@ fun AdminAnalyticsScreen(
         ) {
             TimePeriod.entries.forEach { period ->
                 OutlinedButton(
-                    onClick = { selectedTimePeriod = period },
+                    onClick = { viewModel.updateTimePeriod(period) },
                     modifier = Modifier.padding(end = 8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (selectedTimePeriod == period)
+                        containerColor = if (viewModel.selectedTimePeriod == period)
                             DefaultPrimary.copy(alpha = 0.2f)
                         else
                             Color.Transparent,
@@ -211,7 +102,7 @@ fun AdminAnalyticsScreen(
                     ),
                     border = BorderStroke(
                         1.dp,
-                        if (selectedTimePeriod == period) DefaultPrimary else DefaultPrimary.copy(
+                        if (viewModel.selectedTimePeriod == period) DefaultPrimary else DefaultPrimary.copy(
                             alpha = 0.5f
                         )
                     )
@@ -221,7 +112,7 @@ fun AdminAnalyticsScreen(
             }
         }
 
-        if (isLoading) {
+        if (viewModel.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = DefaultPrimary)
             }
@@ -241,124 +132,43 @@ fun AdminAnalyticsScreen(
                 ) {
                     SummaryCard(
                         title = "Total Users",
-                        value = totalStats["totalUsers"]?.toString() ?: "0",
+                        value = viewModel.totalStats["totalUsers"]?.toString() ?: "0",
                         color = DefaultPrimary,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
                         title = "Active Doctors",
-                        value = totalStats["activeDoctors"]?.toString() ?: "0",
+                        value = viewModel.totalStats["activeDoctors"]?.toString() ?: "0",
                         color = BabyBlue,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
                         title = "Pending Apps",
-                        value = totalStats["pendingApplications"]?.toString() ?: "0",
+                        value = viewModel.totalStats["pendingApplications"]?.toString() ?: "0",
                         color = Yellow,
                         modifier = Modifier.weight(1f)
                     )
                 }
 
-                // Growth Charts - better spacing and sizing
+                // Growth Charts
+                AnalyticsChartCard(
+                    title = "All User Growth",
+                    color = DefaultPrimary,
+                    data = viewModel.userGrowthData
+                )
 
-                // User Growth Chart
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "All User Growth",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                color = DefaultPrimary,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        if (userGrowthData.isNotEmpty()) {
-                            BarChart(
-                                data = userGrowthData,
-                                color = DefaultPrimary,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                                    .padding(top = 8.dp)
-                            )
-                        } else {
-                            Text(
-                                "No user growth data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                    }
-                }
+                AnalyticsChartCard(
+                    title = "Patient Growth",
+                    color = Purple,
+                    data = viewModel.patientGrowthData
+                )
 
-                //Patient Growth Chart
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "Patient Growth",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                color = Purple,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        if (patientGrowthData.isNotEmpty()) {
-                            BarChart(
-                                data = patientGrowthData,
-                                color = Purple,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                                    .padding(top = 8.dp)
-                            )
-                        } else {
-                            Text(
-                                "No patient growth data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                    }
-                }
+                AnalyticsChartCard(
+                    title = "Doctor Growth",
+                    color = BabyBlue,
+                    data = viewModel.doctorGrowthData
+                )
 
-                // Doctor Growth Chart
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "Doctor Growth",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                color = BabyBlue,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        if (doctorGrowthData.isNotEmpty()) {
-                            BarChart(
-                                data = doctorGrowthData,
-                                color = BabyBlue,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                                    .padding(top = 8.dp)
-                            )
-                        } else {
-                            Text(
-                                "No doctor growth data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                    }
-                }
                 // Application Stats
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -374,9 +184,9 @@ fun AdminAnalyticsScreen(
                             ),
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        if (applicationStats.isNotEmpty()) {
+                        if (viewModel.applicationStats.isNotEmpty()) {
                             PieChart(
-                                data = applicationStats.mapKeys {
+                                data = viewModel.applicationStats.mapKeys {
                                     it.key.replaceFirstChar { char ->
                                         if (char.isLowerCase()) char.titlecase() else char.toString()
                                     }
@@ -395,42 +205,58 @@ fun AdminAnalyticsScreen(
                 }
 
                 // Age Distribution Chart
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            "User Age Distribution",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                color = Purple,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        if (usersAgeData.isNotEmpty()) {
-                            BarChart(
-                                data = usersAgeData,
-                                color = Purple,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                                    .padding(top = 8.dp)
-                            )
-                        } else {
-                            Text(
-                                "No age data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
-                    }
-                }
+                AnalyticsChartCard(
+                    title = "User Age Distribution",
+                    color = Purple,
+                    data = viewModel.usersAgeData
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
 }
+
+@Composable
+private fun AnalyticsChartCard(
+    title: String,
+    color: Color,
+    data: List<Pair<String, Int>>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = color,
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            if (data.isNotEmpty()) {
+                BarChart(
+                    data = data,
+                    color = color,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .padding(top = 8.dp)
+                )
+            } else {
+                Text(
+                    "No data available",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun SummaryCard(

@@ -105,6 +105,21 @@ class AuthRepository {
     }
 
 
+    fun updateFcmToken(token: String) {
+        val userId = auth.currentUser?.uid ?: return
+
+        firestore.collection("users")
+            .document(userId)
+            .update("fcmToken", token)
+            .addOnSuccessListener {
+                Log.d("FCM", "🔥 New token saved for $userId")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FCM", "💀 Failed to save new token: ${e.message}")
+            }
+    }
+
+
     suspend fun register(
         email: String,
         name: String,
