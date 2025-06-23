@@ -244,7 +244,8 @@ fun RoleSelection(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Role.entries.forEach { role ->
+        val roles = listOf(Role.USER, Role.DOCTOR, Role.ADMIN)
+        roles.forEach { role ->
             FilterChip(
                 selected = selectedRole == role,
                 onClick = { onRoleSelected(role) },

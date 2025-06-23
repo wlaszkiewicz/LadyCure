@@ -227,7 +227,7 @@ private fun UserForm(
         OutlinedTextField(
             value = user.dateOfBirth,
             onValueChange = { onUserChange(user.copy(dateOfBirth = it)) },
-            label = { Text("Date of Birth (DD/MM/YYYY)") },
+            label = { Text("Date of Birth (yyyy-MM-dd)") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -267,7 +267,7 @@ fun UserList(
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier.padding(horizontal = 16.dp),
+        modifier = modifier.padding(horizontal = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(users) { user ->

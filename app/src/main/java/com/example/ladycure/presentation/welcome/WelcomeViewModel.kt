@@ -19,6 +19,7 @@ import com.example.ladycure.data.repository.UserRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 
 class WelcomeViewModel(
@@ -51,7 +52,12 @@ class WelcomeViewModel(
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     authenticationSuccess = true
+                    FirebaseMessaging.getInstance().token
+                        .addOnSuccessListener { token ->
+                            authRepository.updateFcmToken(token)
+                        }
                 }
+
 
                 override fun onAuthenticationFailed() {
                     showBiometricError = true
