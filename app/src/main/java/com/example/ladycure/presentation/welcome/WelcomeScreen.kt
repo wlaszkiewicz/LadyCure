@@ -183,7 +183,7 @@ fun LoggedInWelcomeScreen(
             painter = painterResource(id = R.drawable.icon),
             contentDescription = "App Logo",
             modifier = Modifier
-                .size(150.dp)
+                .size(180.dp)
                 .padding(bottom = 24.dp),
             contentScale = ContentScale.Fit
         )
