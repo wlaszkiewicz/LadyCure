@@ -284,24 +284,24 @@ fun DoctorChatScreen(
                             )
                         }
 
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .align(Alignment.BottomEnd)
-                                .background(Color.Green, shape = CircleShape)
-                                .padding(2.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Green, shape = CircleShape)
-                                    .border(
-                                        width = 1.dp,
-                                        color = DefaultPrimary,
-                                        shape = CircleShape
-                                    )
-                            )
-                        }
+//                        Box(
+//                            modifier = Modifier
+//                                .size(16.dp)
+//                                .align(Alignment.BottomEnd)
+//                                .background(Color.Green, shape = CircleShape)
+//                                .padding(2.dp)
+//                        ) {
+//                            Box(
+//                                modifier = Modifier
+//                                    .fillMaxSize()
+//                                    .background(Color.Green, shape = CircleShape)
+//                                    .border(
+//                                        width = 1.dp,
+//                                        color = DefaultPrimary,
+//                                        shape = CircleShape
+//                                    )
+//                            )
+//                        }
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))

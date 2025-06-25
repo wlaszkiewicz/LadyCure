@@ -449,7 +449,7 @@ class AppointmentRepository {
                         uid = otherUserId,
                         fullName = "${userData["name"]} ${userData["surname"]}",
                         specialty = userData["speciality"] as? String,
-                        isOnline = userData["isOnline"] as? Boolean ?: false,
+                        //isOnline = userData["isOnline"] as? Boolean ?: false,
                         lastSeen = userData["lastSeen"] as? Long,
                         lastMessage = lastMessage,
                         lastMessageSender = if (lastMessageSenderId == currentUserId) "Ty" else "${userData["name"]} ${userData["surname"]}",
