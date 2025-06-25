@@ -73,11 +73,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-import com.example.ladycure.data.Appointment
-import com.example.ladycure.data.Appointment.Status
-import com.example.ladycure.data.doctor.Speciality
-import com.example.ladycure.repository.AppointmentRepository
-import com.example.ladycure.repository.AuthRepository
+import com.example.ladycure.R
+import com.example.ladycure.data.repository.AppointmentRepository
+import com.example.ladycure.domain.model.Appointment
+import com.example.ladycure.domain.model.Appointment.Status
+import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -93,12 +93,16 @@ fun AppointmentsSection(
     snackbarController: SnackbarController, navController: NavController
 ) {
     val futureAppointments = appointments?.filter {
-        it.date.isAfter(LocalDate.now()) ||
-                (it.date == LocalDate.now() && it.time >= LocalTime.now())
+        (it.date.isAfter(LocalDate.now()) ||
+                (it.date == LocalDate.now() && it.time >= LocalTime.now())) &&
+                it.status != Status.CANCELLED
     }?.sortedWith(compareBy({ it.date }, { it.time })) ?: emptyList()
 
-    val pastAppointments =
-        appointments?.sortedWith(compareBy({ it.date }, { it.time }))?.reversed() ?: emptyList()
+
+    val pastAppointments = appointments?.filter {
+        it.date.isBefore(LocalDate.now()) ||
+                (it.date == LocalDate.now() && it.time < LocalTime.now())
+    }?.sortedWith(compareBy({ it.date }, { it.time }))?.reversed() ?: emptyList()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,7 +127,6 @@ fun AppointmentsSection(
                     fontWeight = FontWeight.Bold,
                     color = DefaultPrimary
                 ),
-                modifier = Modifier.padding(bottom = 12.dp)
             )
             TextButton(onClick = {
                 navController.navigate("appointments")
@@ -131,6 +134,8 @@ fun AppointmentsSection(
                 Text("View All", color = DefaultPrimary)
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (appointments == null) {
             Box(
@@ -201,7 +206,8 @@ fun PatientAppointmentCard(
             when (appointment.status) {
                 Status.CONFIRMED -> Green
                 Status.PENDING -> Yellow
-                else -> Red
+                Status.CANCELLED -> Red
+                Status.COMPLETED -> BabyBlue
             }
         }
     }
@@ -387,7 +393,8 @@ fun ShowDetailsDialog(
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Green
         Status.PENDING -> Yellow
-        else -> Red
+        Status.CANCELLED -> Red
+        Status.COMPLETED -> BabyBlue
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -549,66 +556,69 @@ fun ShowDetailsDialog(
                         )
 
                         // Preparation instructions
-                        if (appointment.type.preparationInstructions.isNotEmpty()) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            isPreparationExpanded.value =
-                                                !isPreparationExpanded.value
-                                        },
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = "Preparation",
-                                        tint = DefaultPrimary.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "Preparation",
-                                            style = MaterialTheme.typography.labelMedium.copy(
-                                                color = DefaultOnPrimary.copy(alpha = 0.6f)
-                                            )
+                        if (appointment.status != Status.CANCELLED && appointment.status != Status.COMPLETED) {
+
+                            if (appointment.type.preparationInstructions.isNotEmpty()) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                isPreparationExpanded.value =
+                                                    !isPreparationExpanded.value
+                                            },
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = "Preparation",
+                                            tint = DefaultPrimary.copy(alpha = 0.8f),
+                                            modifier = Modifier.size(20.dp)
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        if (!isPreparationExpanded.value) {
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "Tap to view preparation instructions",
-                                                style = MaterialTheme.typography.bodyLarge.copy(
-                                                    color = DefaultPrimary,
-                                                    fontWeight = FontWeight.Medium
+                                                text = "Preparation",
+                                                style = MaterialTheme.typography.labelMedium.copy(
+                                                    color = DefaultOnPrimary.copy(alpha = 0.6f)
                                                 )
                                             )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            if (!isPreparationExpanded.value) {
+                                                Text(
+                                                    text = "Tap to view preparation instructions",
+                                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                                        color = DefaultPrimary,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                )
+                                            }
                                         }
+                                        Icon(
+                                            imageVector = if (isPreparationExpanded.value)
+                                                Icons.Default.KeyboardArrowUp
+                                            else Icons.Default.KeyboardArrowDown,
+                                            contentDescription = if (isPreparationExpanded.value)
+                                                "Collapse"
+                                            else "Expand",
+                                            tint = DefaultPrimary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
                                     }
-                                    Icon(
-                                        imageVector = if (isPreparationExpanded.value)
-                                            Icons.Default.KeyboardArrowUp
-                                        else Icons.Default.KeyboardArrowDown,
-                                        contentDescription = if (isPreparationExpanded.value)
-                                            "Collapse"
-                                        else "Expand",
-                                        tint = DefaultPrimary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
 
-                                AnimatedVisibility(
-                                    visible = isPreparationExpanded.value,
-                                    enter = fadeIn() + expandVertically(),
-                                    exit = fadeOut() + shrinkVertically()
-                                ) {
-                                    Text(
-                                        text = appointment.type.preparationInstructions,
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            color = DefaultOnPrimary
-                                        ),
-                                        modifier = Modifier.padding(start = 32.dp, top = 8.dp)
-                                    )
+                                    AnimatedVisibility(
+                                        visible = isPreparationExpanded.value,
+                                        enter = fadeIn() + expandVertically(),
+                                        exit = fadeOut() + shrinkVertically()
+                                    ) {
+                                        Text(
+                                            text = appointment.type.preparationInstructions,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                color = DefaultOnPrimary
+                                            ),
+                                            modifier = Modifier.padding(start = 32.dp, top = 8.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -623,14 +633,13 @@ fun ShowDetailsDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
 
                     // Action buttons
-                    if (appointment.status != Status.CANCELLED) {
+                    if (appointment.status != Status.CANCELLED && appointment.status != Status.COMPLETED) {
+                        Spacer(modifier = Modifier.height(24.dp))
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
+                                .fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             // Cancel button
@@ -675,7 +684,52 @@ fun ShowDetailsDialog(
                                 )
                             }
                         }
+                    } else if (appointment.status == Status.CANCELLED) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        // Show cancelled message
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "This appointment has been cancelled.",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = DefaultOnPrimary.copy(alpha = 0.8f)
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else if (appointment.status == Status.COMPLETED) {
+                        Button(
+                            onClick = {
+                                TODO("Implement downloading medical report functionality")
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                "Download Medical Report",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                painter = painterResource(R.drawable.ic_diagnosis),
+                                contentDescription = "Download Report",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
         }
@@ -734,7 +788,7 @@ fun CancelConfirmationDialog(
                     text = "Cancel Appointment?",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Red,
+                        color = Red.copy(alpha = 0.8f),
                         textAlign = TextAlign.Center
                     ),
                     modifier = Modifier.fillMaxWidth()
@@ -797,9 +851,9 @@ fun CancelConfirmationDialog(
                         modifier = Modifier.padding(16.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = DefaultPrimary
+                            contentColor = DefaultOnPrimary.copy(alpha = 0.8f)
                         ),
-                        border = BorderStroke(1.dp, DefaultPrimary)
+                        border = BorderStroke(1.dp, DefaultOnPrimary.copy(alpha = 0.8f))
                     ) {
                         Text(
                             "Go Back",
@@ -816,7 +870,7 @@ fun CancelConfirmationDialog(
                         modifier = Modifier.padding(16.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Red,
+                            containerColor = Red.copy(alpha = 0.8f),
                             contentColor = Color.White
                         )
                     ) {
@@ -935,7 +989,7 @@ fun CancelSuccessDialog(
                     text = "Appointment Cancelled!",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        color = DefaultPrimary,
+                        color = DefaultOnPrimary,
                         textAlign = TextAlign.Center
                     )
                 )
@@ -958,7 +1012,7 @@ fun CancelSuccessDialog(
                     onClick = onDismiss,
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = DefaultPrimary,
+                        containerColor = DefaultPrimary.copy(alpha = 0.9f),
                         contentColor = Color.White
                     ),
                     modifier = Modifier

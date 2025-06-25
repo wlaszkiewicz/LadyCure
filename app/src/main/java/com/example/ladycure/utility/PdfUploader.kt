@@ -1,6 +1,8 @@
 package com.example.ladycure.utility
 
+import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,9 +15,12 @@ object PdfUploader {
     private val storage = FirebaseStorage.getInstance()
     private val storageRef = storage.reference
 
+    private const val MAX_FILE_SIZE_BYTES: Long = 5 * 1024 * 1024 // 5MB
+
     data class UploadProgress(val bytesTransferred: Long, val totalBytes: Long) {
-        val progress: Float get() =
-            if (totalBytes > 0) bytesTransferred.toFloat() / totalBytes.toFloat() else 0f
+        val progress: Float
+            get() =
+                if (totalBytes > 0) bytesTransferred.toFloat() / totalBytes.toFloat() else 0f
     }
 
     suspend fun uploadReferral(
@@ -108,4 +113,22 @@ object PdfUploader {
             continuation.resumeWith(Result.failure(e))
         }
     }
+
+
+    private fun getFileSize(context: Context, uri: Uri): Long {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        return cursor?.use {
+            val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+            if (it.moveToFirst()) it.getLong(sizeIndex) else -1
+        } ?: -1
+    }
+
+    fun isFileTooLarge(
+        context: Context,
+        uri: Uri,
+        maxSizeBytes: Long = MAX_FILE_SIZE_BYTES
+    ): Boolean {
+        return getFileSize(context, uri) > maxSizeBytes
+    }
+
 }

@@ -14,16 +14,18 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.ladycure.repository.AuthRepository
-import com.example.ladycure.repository.UserRepository
+import com.example.ladycure.data.repository.AuthRepository
+import com.example.ladycure.data.repository.UserRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
-import java.util.concurrent.Executor
 
-class WelcomeViewModel(private val authRepository: AuthRepository,
-    private val userRepository: UserRepository) : ViewModel() {
+class WelcomeViewModel(
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository
+) : ViewModel() {
     // States
     var isLoading by mutableStateOf(true)
     var currentUser by mutableStateOf<FirebaseUser?>(null)
@@ -50,7 +52,12 @@ class WelcomeViewModel(private val authRepository: AuthRepository,
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     authenticationSuccess = true
+                    FirebaseMessaging.getInstance().token
+                        .addOnSuccessListener { token ->
+                            authRepository.updateFcmToken(token)
+                        }
                 }
+
 
                 override fun onAuthenticationFailed() {
                     showBiometricError = true
@@ -61,8 +68,10 @@ class WelcomeViewModel(private val authRepository: AuthRepository,
         promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Biometric login")
             .setSubtitle("Authenticate to access LadyCure")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                    BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
             .build()
     }
 
@@ -93,30 +102,53 @@ class WelcomeViewModel(private val authRepository: AuthRepository,
             BiometricManager.BIOMETRIC_SUCCESS -> {
                 biometricPrompt.authenticate(promptInfo)
             }
+
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
-                Toast.makeText(context, "No biometric features available on this device", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "No biometric features available on this device",
+                    Toast.LENGTH_SHORT
+                ).show()
                 showPasswordDialog = true
             }
+
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
-                Toast.makeText(context, "Biometric features are currently unavailable", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Biometric features are currently unavailable",
+                    Toast.LENGTH_SHORT
+                ).show()
                 showPasswordDialog = true
             }
+
             BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> {
-                Toast.makeText(context, "Security update required for biometric authentication", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Security update required for biometric authentication",
+                    Toast.LENGTH_SHORT
+                ).show()
                 showPasswordDialog = true
             }
+
             BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> {
-                Toast.makeText(context, "Biometric authentication is not supported on this device", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Biometric authentication is not supported on this device",
+                    Toast.LENGTH_SHORT
+                ).show()
                 showPasswordDialog = true
             }
+
             BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
                 val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
                     putExtra(
                         Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
-                        BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                        BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                    )
                 }
                 context.startActivity(enrollIntent)
             }
+
             else -> {
                 showPasswordDialog = true
             }
@@ -134,11 +166,16 @@ class WelcomeViewModel(private val authRepository: AuthRepository,
                         authenticationSuccess = true
                     },
                     onFailure = { errorMessage ->
-                        Toast.makeText(context, "Authentication failed: $errorMessage", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Authentication failed: $errorMessage",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 )
             } catch (e: Exception) {
-                Toast.makeText(context, "Authentication failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Authentication failed: ${e.message}", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
     }

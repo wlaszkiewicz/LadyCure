@@ -5,8 +5,6 @@ import DefaultOnPrimary
 import DefaultPrimary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -16,6 +14,8 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -32,9 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.ladycure.repository.AuthRepository
-import com.example.ladycure.repository.UserRepository
-import java.time.Period
+import com.example.ladycure.data.repository.UserRepository
 
 sealed class Screen(
     val route: String,
@@ -45,7 +43,9 @@ sealed class Screen(
     object Home : Screen("home", Icons.Default.Home, "Home")
     object Doctors : Screen("doctor", Icons.Default.Face, "Doctors", listOf("user"))
     object Chat : Screen("chat", Icons.Default.Call, "Chat")
-    object PeriodTracker : Screen("period_tracker", Icons.Default.DateRange, "Tracker", listOf("user"))
+    object PeriodTracker :
+        Screen("period_tracker", Icons.Default.DateRange, "Tracker", listOf("user"))
+
     object Profile : Screen("profile", Icons.Default.AccountCircle, "Profile")
     object AdminDashboard : Screen("admin", Icons.Default.Dashboard, "Dashboard", listOf("admin"))
     object AdminUserManagement : Screen(
@@ -54,6 +54,12 @@ sealed class Screen(
         "Users",
         listOf("admin")
     )
+
+    object Availability :
+        Screen("set_availability", Icons.Default.Schedule, "Availability", listOf("doctor"))
+
+    object Earnings :
+        Screen("earnings", Icons.Default.MonetizationOn, "Earnings", listOf("doctor"))
 
     object AdminDoctorManagement :
         Screen("admin_doctor_management", Icons.Default.Face, "Doctors", listOf("admin"))
@@ -67,11 +73,13 @@ sealed class Screen(
             Doctors,
             Chat,
             PeriodTracker,
+            Availability,
+            Earnings,
             Profile,
             AdminDashboard,
             AdminUserManagement,
             AdminDoctorManagement,
-            AdminAnalytics
+            AdminAnalytics,
         )
 
         fun getRouteForRole(route: String, role: String?): String {

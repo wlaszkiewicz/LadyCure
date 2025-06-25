@@ -6,8 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.ladycure.repository.AuthRepository
-import com.example.ladycure.utility.SnackbarController
+import com.example.ladycure.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
 class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
@@ -16,7 +15,7 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     var isLoading by mutableStateOf(false)
     var error by mutableStateOf("")
 
-    fun login(navController: NavController, snackbarHostState: SnackbarController) {
+    fun login(navController: NavController) {
         if (!isValidInput()) {
             error = "Please fill all fields"
             return

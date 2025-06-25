@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp") version "1.5.30-1.0.0"
+    id("com.google.dagger.hilt.android") version "2.56.2"
+
 }
 
 android {
@@ -33,6 +36,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+        languageVersion = "1.9"
     }
     buildFeatures {
         compose = true
@@ -70,6 +74,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.2")
     implementation("androidx.compose.material3:material3-window-size-class:1.3.2")
     implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-alpha12")
+    implementation("androidx.compose.material:material:1.8.3")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.0")
     implementation("androidx.activity:activity-compose:1.7.2")
     implementation("androidx.navigation:navigation-compose:2.5.3")
@@ -106,6 +111,17 @@ dependencies {
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
     implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
 
+    implementation("com.google.accompanist:accompanist-pager:0.28.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.28.0")
+
+    // Firebase Messaging
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation(libs.google.firebase.analytics)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+
 }
 
 apply(plugin = "com.google.gms.google-services")
+apply(plugin = "com.google.devtools.ksp")
