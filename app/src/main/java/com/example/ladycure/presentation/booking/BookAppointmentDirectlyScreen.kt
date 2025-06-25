@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -210,7 +211,7 @@ private fun DoctorInfoHeader(
                     contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
                         .size(64.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .clip(CircleShape),
                     tint = DefaultPrimary
                 )
             } else {
@@ -219,7 +220,7 @@ private fun DoctorInfoHeader(
                     contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
                         .size(64.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
             }
