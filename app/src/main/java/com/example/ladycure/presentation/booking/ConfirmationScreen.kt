@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -311,9 +312,6 @@ fun ConfirmationScreen(
                                         timestamp = timestamp,
                                         appointmentType = appointmentType,
                                         onSuccess = { appointmentId ->
-                                            snackbarController?.showMessage(
-                                                "Appointment booked successfully"
-                                            )
                                             if (referralId == null) {
                                                 navController.navigate("booking_success/$appointmentId")
                                             } else {
@@ -762,7 +760,7 @@ private fun DoctorConfirmationCard(
                     contentDescription = "Doctor $name",
                     modifier = Modifier
                         .size(80.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop,
                     loading = {
                         Box(
@@ -781,7 +779,7 @@ private fun DoctorConfirmationCard(
                             contentDescription = "Doctor $name",
                             modifier = Modifier
                                 .size(80.dp)
-                                .clip(RoundedCornerShape(8.dp)),
+                                .clip(CircleShape),
                             tint = Color.Gray
                         )
                     }
