@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -57,7 +56,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -158,7 +156,8 @@ fun ProfileScreen(navController: NavHostController) {
         if (role == "doctor") {
             val doctorResult = doctorRepo.getCurrentDoctorData()
             if (doctorResult.isFailure) {
-                errorMessage = "Failed to load doctor data: ${doctorResult.exceptionOrNull()?.message}"
+                errorMessage =
+                    "Failed to load doctor data: ${doctorResult.exceptionOrNull()?.message}"
             } else {
                 userData.value = doctorResult.getOrNull()
             }
@@ -231,6 +230,9 @@ fun ProfileScreen(navController: NavHostController) {
                             .size(150.dp)
                             .clip(CircleShape)
                             .border(4.dp, DefaultPrimary, CircleShape)
+                            .background(
+                                Color.Transparent
+                            )
                             .clickable { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
@@ -259,6 +261,7 @@ fun ProfileScreen(navController: NavHostController) {
                                     }
                                 )
                             }
+
                             else -> {
                                 Icon(
                                     imageVector = Icons.Default.AccountCircle,
@@ -353,7 +356,8 @@ fun ProfileScreen(navController: NavHostController) {
                         if (result.isSuccess) {
                             userData.value = result.getOrNull() ?: emptyMap()
                         } else {
-                            errorMessage = "Failed to update user data: ${result.exceptionOrNull()?.message}"
+                            errorMessage =
+                                "Failed to update user data: ${result.exceptionOrNull()?.message}"
                         }
                     }
                     showAccountSettingsDialog = false
@@ -534,6 +538,7 @@ fun AccountSettingsDialog(
                 }
             }
         )
+
         else -> RegularAccountSettingsDialog(userData, onDismiss, onSave)
     }
 }
@@ -545,8 +550,20 @@ fun DoctorAccountSettingsDialog(
     onSave: (Map<String, Any>) -> Unit,
     role: String? = null
 ) {
-    var name by remember { mutableStateOf(TextFieldValue((userData?.get("name") as? String) ?: "")) }
-    var surname by remember { mutableStateOf(TextFieldValue((userData?.get("surname") as? String) ?: "")) }
+    var name by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("name") as? String) ?: ""
+            )
+        )
+    }
+    var surname by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("surname") as? String) ?: ""
+            )
+        )
+    }
 
     val initialDob = remember {
         try {
@@ -563,18 +580,63 @@ fun DoctorAccountSettingsDialog(
 
     var selectedSpeciality by remember {
         mutableStateOf(
-            Speciality.fromDisplayName(userData?.get("speciality") as? String ?: "") ?: Speciality.OTHER
+            Speciality.fromDisplayName(userData?.get("speciality") as? String ?: "")
+                ?: Speciality.OTHER
         )
     }
     var expanded by remember { mutableStateOf(false) }
 
-    var phone by remember { mutableStateOf(TextFieldValue((userData?.get("phone") as? String) ?: "")) }
-    var address by remember { mutableStateOf(TextFieldValue((userData?.get("address") as? String) ?: "")) }
-    var city by remember { mutableStateOf(TextFieldValue((userData?.get("city") as? String) ?: "")) }
-    var consultationPrice by remember { mutableStateOf(TextFieldValue((userData?.get("consultationPrice") as? String) ?: "")) }
-    var experience by remember { mutableStateOf(TextFieldValue((userData?.get("experience") as? String) ?: "")) }
-    var languages by remember { mutableStateOf(TextFieldValue((userData?.get("languages") as? List<String>)?.joinToString(", ") ?: "")) }
-    var speciality by remember { mutableStateOf(TextFieldValue((userData?.get("speciality") as? String) ?: "")) }
+    var phone by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("phone") as? String) ?: ""
+            )
+        )
+    }
+    var address by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("address") as? String) ?: ""
+            )
+        )
+    }
+    var city by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("city") as? String) ?: ""
+            )
+        )
+    }
+    var consultationPrice by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("consultationPrice") as? String) ?: ""
+            )
+        )
+    }
+    var experience by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("experience") as? String) ?: ""
+            )
+        )
+    }
+    var languages by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("languages") as? List<String>)?.joinToString(
+                    ", "
+                ) ?: ""
+            )
+        )
+    }
+    var speciality by remember {
+        mutableStateOf(
+            TextFieldValue(
+                (userData?.get("speciality") as? String) ?: ""
+            )
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -664,7 +726,12 @@ fun DoctorAccountSettingsDialog(
                             value = name,
                             onValueChange = { name = it },
                             label = { Text("Name") },
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = "Name"
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
@@ -678,7 +745,12 @@ fun DoctorAccountSettingsDialog(
                             value = surname,
                             onValueChange = { surname = it },
                             label = { Text("Surname") },
-                            leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = "Surname") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Person,
+                                    contentDescription = "Surname"
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
@@ -695,7 +767,12 @@ fun DoctorAccountSettingsDialog(
                             value = phone,
                             onValueChange = { phone = it },
                             label = { Text("Phone Number") },
-                            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Phone,
+                                    contentDescription = "Phone"
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = { Text("+48 123 456 789") },
                             colors = OutlinedTextFieldDefaults.colors(
@@ -758,7 +835,12 @@ fun DoctorAccountSettingsDialog(
                             value = experience,
                             onValueChange = { experience = it },
                             label = { Text("Experience (years)") },
-                            leadingIcon = { Icon(Icons.Default.Star, contentDescription = "Experience") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = "Experience"
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -773,7 +855,12 @@ fun DoctorAccountSettingsDialog(
                             value = consultationPrice,
                             onValueChange = { consultationPrice = it },
                             label = { Text("Consultation Price") },
-                            leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = "Price") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.AttachMoney,
+                                    contentDescription = "Price"
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             prefix = { Text("$") },
@@ -789,7 +876,12 @@ fun DoctorAccountSettingsDialog(
                             value = languages,
                             onValueChange = { languages = it },
                             label = { Text("Languages (comma separated)") },
-                            leadingIcon = { Icon(Icons.Default.Language, contentDescription = "Languages") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Language,
+                                    contentDescription = "Languages"
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
@@ -895,7 +987,12 @@ fun DoctorAccountSettingsDialog(
                             value = address,
                             onValueChange = { address = it },
                             label = { Text("Address") },
-                            leadingIcon = { Icon(Icons.Default.Place, contentDescription = "Address") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Place,
+                                    contentDescription = "Address"
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
