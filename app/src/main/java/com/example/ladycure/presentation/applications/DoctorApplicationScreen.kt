@@ -4,14 +4,18 @@ import BabyBlue
 import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
+import DefaultSecondaryVariant
 import Green
+import Grey
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_SENDTO
 import android.net.Uri
 import android.util.Patterns
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
@@ -80,18 +84,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.TextButton
 import coil.compose.AsyncImage
+import com.example.ladycure.R
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.FileTooLargeDialog
 import com.example.ladycure.presentation.register.components.DatePickerButton
@@ -109,7 +116,6 @@ fun DoctorApplicationScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     var showSuccessDialog by remember { mutableStateOf(false) }
-    var selectedTab by remember { mutableStateOf(0) } // 0 for personal, 1 for professional
     var tooLarge = viewModel.tooLarge
 
     // Show error messages
@@ -128,7 +134,8 @@ fun DoctorApplicationScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -153,9 +160,7 @@ fun DoctorApplicationScreen(
                 }
 
                 IconButton(
-                    onClick = {
-                        navController.popBackStack("register", inclusive = false)
-                    },
+                    onClick = { navController.popBackStack("register", inclusive = false) },
                     modifier = Modifier
                 ) {
                     Icon(
@@ -166,82 +171,398 @@ fun DoctorApplicationScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
 
-            Text(
-                text = "Please fill out the application form to become a doctor on our platform. We are excited to have you join our team!",
-                style = MaterialTheme.typography.bodyMedium,
-                color = DefaultOnPrimary.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center,
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Tab Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    .size(160.dp)
+                    .clip(CircleShape)
+                    .background(DefaultPrimary.copy(alpha = 0.1f))
+                    .border(2.dp, DefaultPrimary.copy(alpha = 0.3f), CircleShape)
+                    .align(Alignment.CenterHorizontally),
+                contentAlignment = Alignment.Center
             ) {
-                TabButton(
-                    text = "Personal Info",
-                    isSelected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    modifier = Modifier.weight(1f)
-                )
-                TabButton(
-                    text = "Professional Info",
-                    isSelected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    modifier = Modifier.weight(1f)
+                Image(
+                    painter = painterResource(id = R.drawable.registration_kapi),
+                    contentDescription = "registration kapi",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Application Form Card
+            // Personal Information Card
             Card(
                 modifier = Modifier
-                    .fillMaxHeight(0.8f)
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White,
-                    contentColor = DefaultOnPrimary
-                )
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    // Tab Content
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        when (selectedTab) {
-                            0 -> PersonalInfoTab(viewModel, onFinished = {
-                                focusManager.clearFocus()
-                                selectedTab = 1
-                            })
+                    Text(
+                        text = "Personal Information",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ),
+                        color = DefaultPrimary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
 
-                            1 -> ProfessionalInfoTab(viewModel)
+                    // Email
+                    OutlinedTextField(
+                        value = viewModel.email,
+                        onValueChange = { viewModel.email = it },
+                        label = { Text("Email address") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+                        isError = viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
+                            .matches(),
+                        supportingText = {
+                            if (viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
+                                    .matches()
+                            ) {
+                                Text("Please enter a valid email")
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Name
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = viewModel.firstName,
+                            onValueChange = { viewModel.firstName = it },
+                            label = { Text("First name") },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = viewModel.lastName,
+                            onValueChange = { viewModel.lastName = it },
+                            label = { Text("Last name") },
+                            leadingIcon = { Icon(Icons.Default.PersonOutline, contentDescription = "Surname") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Dob
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Date of Birth",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        DatePickerButton(
+                            selectedDate = viewModel.selectedDate,
+                            onDateSelected = { date ->
+                                viewModel.dateOfBirth = date
+                                viewModel.selectedDate = date
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        if (viewModel.selectedDate.isAfter(LocalDate.now().minusYears(18))) {
+                            Text(
+                                text = "You must be at least 18 years old",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Password
+                    OutlinedTextField(
+                        value = viewModel.password,
+                        onValueChange = { viewModel.password = it },
+                        label = { Text("Password") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        isError = viewModel.password.isNotBlank() && viewModel.password.length < 8
+                                || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[A-Z].*"))
+                                || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[0-9].*"))
+                                || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[!@#$%^&*].*")),
+                        supportingText = {
+                            if (viewModel.password.isNotBlank()) {
+                                Column {
+                                    if (viewModel.password.length < 8) {
+                                        Text("• Must be at least 8 characters")
+                                    }
+                                    if (!viewModel.password.matches(Regex(".*[A-Z].*"))) {
+                                        Text("• Must contain uppercase letter")
+                                    }
+                                    if (!viewModel.password.matches(Regex(".*[0-9].*"))) {
+                                        Text("• Must contain number")
+                                    }
+                                    if (!viewModel.password.matches(Regex(".*[!@#$%^&*].*"))) {
+                                        Text("• Must contain special character")
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = viewModel.confirmPassword,
+                        onValueChange = { viewModel.confirmPassword = it },
+                        label = { Text("Confirm Password") },
+                        leadingIcon = { Icon(Icons.Default.LockReset, contentDescription = "Confirm Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        isError = viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword,
+                        supportingText = {
+                            if (viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword) {
+                                Text("Passwords don't match")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // Specialization card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Specialization",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ),
+                        color = DefaultPrimary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        SpecialityDropdown(
+                            selectedSpeciality = viewModel.speciality,
+                            onSpecialitySelected = { viewModel.speciality = it }
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Professional inf card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Professional Information",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ),
+                        color = DefaultPrimary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
 
-            // Submit Button (fixed at bottom)
+                    OutlinedTextField(
+                        value = viewModel.licenseNumber,
+                        onValueChange = { viewModel.licenseNumber = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Medical License Number") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Badge,
+                                contentDescription = "License Number"
+                            )
+                        },
+                        isError = viewModel.licenseNumber.isNotBlank() && !Regex("[A-Za-z]{2,3}\\d{4,8}").matches(
+                            viewModel.licenseNumber
+                        ),
+                        supportingText = {
+                            if (viewModel.licenseNumber.isNotBlank() && !Regex("[A-Za-z]{2,3}\\d{4,8}").matches(
+                                    viewModel.licenseNumber
+                                )
+                            ) {
+                                Text("Format: 2-3 letters followed by 4-8 digits")
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        FileUploadSection(
+                            title = "        License Photo",
+                            fileUri = viewModel.licensePhotoUri,
+                            onFileSelected = { viewModel.licensePhotoUri = it },
+                            onFileTooLarge = { viewModel.tooLarge = true },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        FileUploadSection(
+                            title = "             Diploma",
+                            fileUri = viewModel.diplomaPhotoUri,
+                            onFileSelected = { viewModel.diplomaPhotoUri = it },
+                            onFileTooLarge = { viewModel.tooLarge = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Years of experience
+                    OutlinedTextField(
+                        value = viewModel.yearsOfExperience,
+                        onValueChange = { viewModel.yearsOfExperience = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Years of Experience") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.WorkHistory,
+                                contentDescription = "Years of Experience"
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = (viewModel.yearsOfExperience.isNotBlank() && viewModel.yearsOfExperience.toIntOrNull() == null),
+                        supportingText = {
+                            if (viewModel.yearsOfExperience.isNotBlank() && viewModel.yearsOfExperience.toIntOrNull() == null) {
+                                Text("Please enter a valid number")
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Workplace
+                    OutlinedTextField(
+                        value = viewModel.currentWorkplace,
+                        onValueChange = { viewModel.currentWorkplace = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Current Workplace/Hospital") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.LocalHospital,
+                                contentDescription = "Workplace"
+                            )
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    // Phone
+                    OutlinedTextField(
+                        value = viewModel.phoneNumber,
+                        onValueChange = { viewModel.phoneNumber = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Phone Number") },
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        isError = (viewModel.phoneNumber.isNotBlank() && !Regex("^\\+?[0-9]{8,15}\$").matches(
+                            viewModel.phoneNumber
+                        )),
+                        supportingText = {
+                            if (viewModel.phoneNumber.isNotBlank()) {
+                                if (viewModel.phoneNumber.length < 8) {
+                                    Text("Phone number is too short")
+                                } else if (viewModel.phoneNumber.length > 15) {
+                                    Text("Phone number is too long")
+                                } else if (!Regex("^\\+?[0-9]{8,15}\$").matches(viewModel.phoneNumber)) {
+                                    Text("Please enter a valid phone number")
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+            // Address inf card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Address Information",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ),
+                        color = DefaultPrimary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = viewModel.address,
+                        onValueChange = { viewModel.address = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Address") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.PinDrop,
+                                contentDescription = "Address"
+                            )
+                        },
+                        isError = viewModel.address.isBlank() && viewModel.hasSubmitted,
+                        supportingText = {
+                            if (viewModel.address.isBlank() && viewModel.hasSubmitted) {
+                                Text("Address is required")
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = viewModel.city,
+                        onValueChange = { viewModel.city = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("City") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.LocationCity,
+                                contentDescription = "City"
+                            )
+                        },
+                        isError = viewModel.city.isBlank() && viewModel.hasSubmitted,
+                        supportingText = {
+                            if (viewModel.city.isBlank() && viewModel.hasSubmitted) {
+                                Text("City is required")
+                            }
+                        }
+                    )
+                }
+            }
+
             Button(
                 onClick = {
                     viewModel.hasSubmitted = true
@@ -296,8 +617,7 @@ fun DoctorApplicationScreen(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .padding(4.dp)
+                    modifier = Modifier.padding(4.dp)
                 ) {
                     Text(
                         "Any Questions? Contact Us!",
@@ -311,14 +631,12 @@ fun DoctorApplicationScreen(
                         contentDescription = "Contact Us",
                         tint = DefaultOnPrimary.copy(alpha = 0.8f),
                     )
-
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Progress Indicator
         if (viewModel.isLoading) {
             Box(
                 modifier = Modifier
@@ -471,390 +789,6 @@ fun DoctorApplicationScreen(
         )
     }
 }
-
-@Composable
-private fun TabButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier
-            .padding(horizontal = 4.dp),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(2.dp, DefaultPrimary),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (isSelected) DefaultPrimary else Color.Transparent,
-            contentColor = if (isSelected) Color.White else DefaultPrimary,
-        ),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = if (isSelected) 4.dp else 0.dp
-        )
-    ) {
-        Text(text)
-    }
-}
-
-@Composable
-private fun PersonalInfoTab(
-    viewModel: DoctorApplicationViewModel,
-    onFinished: () -> Unit
-) {
-
-    val focusManager = LocalFocusManager.current
-
-    val (emailFocus, firstNameFocus, lastNameFocus, passwordFocus, confirmPasswordFocus) = remember {
-        List(5) { FocusRequester() }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-
-            // Email Field
-            OutlinedTextField(
-                value = viewModel.email,
-                onValueChange = { viewModel.email = it },
-                label = { Text("Email address") },
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
-                isError = viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
-                    .matches(),
-                supportingText = {
-                    if (viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
-                            .matches()
-                    ) {
-                        Text("Please enter a valid email")
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { firstNameFocus.requestFocus() }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(emailFocus)
-            )
-
-            // Name Fields Row
-            OutlinedTextField(
-                value = viewModel.firstName,
-                onValueChange = { viewModel.firstName = it },
-                label = { Text("First name") },
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { lastNameFocus.requestFocus() }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(firstNameFocus),
-                supportingText = {
-                    // to keep the spaces consistent
-                },
-            )
-
-            OutlinedTextField(
-                value = viewModel.lastName,
-                onValueChange = { viewModel.lastName = it },
-                label = { Text("Last name") },
-                leadingIcon = { Icon(Icons.Default.PersonOutline, contentDescription = "Surname") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { passwordFocus.requestFocus() }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(lastNameFocus)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Date of Birth",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                modifier = Modifier.padding(top = 4.dp)
-            )
-
-            DatePickerButton(
-                selectedDate = viewModel.selectedDate,
-                onDateSelected = { date ->
-                    viewModel.dateOfBirth = date
-                    viewModel.selectedDate = date
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Error message for date of birth
-
-            Text(
-                text =
-                    if (viewModel.selectedDate.isAfter(LocalDate.now().minusYears(18))) {
-                        "You must be at least 18 years old"
-                    } else "",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-
-
-            // Password Fields
-            OutlinedTextField(
-                value = viewModel.password,
-                onValueChange = { viewModel.password = it },
-                label = { Text("Password") },
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                isError = viewModel.password.isNotBlank() && viewModel.password.length < 8
-                        || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[A-Z].*"))
-                        || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[0-9].*"))
-                        || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[!@#$%^&*].*")),
-                supportingText = {
-                    if (viewModel.password.isNotBlank() && viewModel.password.length < 8) {
-                        Text("Password must be at least 8 characters")
-                    } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(
-                            Regex(
-                                ".*[A-Z].*"
-                            )
-                        )
-                    ) {
-                        Text("Password must contain at least one uppercase letter")
-                    } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(
-                            Regex(
-                                ".*[0-9].*"
-                            )
-                        )
-                    ) {
-                        Text("Password must contain at least one number")
-                    } else if (viewModel.password.isNotBlank() && !viewModel.password.matches(
-                            Regex(
-                                ".*[!@#$%^&*].*"
-                            )
-                        )
-                    ) {
-                        Text("Password must contain at least one special character")
-                    }
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { confirmPasswordFocus.requestFocus() }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(passwordFocus)
-            )
-
-            OutlinedTextField(
-                value = viewModel.confirmPassword,
-                onValueChange = { viewModel.confirmPassword = it },
-                label = { Text("Confirm Password") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.LockReset,
-                        contentDescription = "Confirm Password"
-                    )
-                },
-                visualTransformation = PasswordVisualTransformation(),
-                isError = viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword,
-                supportingText = {
-                    if (viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword) {
-                        Text("Passwords don't match")
-                    }
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onDone = {
-                    onFinished()
-                }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(confirmPasswordFocus)
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProfessionalInfoTab(viewModel: DoctorApplicationViewModel) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Speciality",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
-            )
-            SpecialityDropdown(
-                selectedSpeciality = viewModel.speciality,
-                onSpecialitySelected = { viewModel.speciality = it }
-            )
-        }
-
-        OutlinedTextField(
-            value = viewModel.licenseNumber,
-            onValueChange = { viewModel.licenseNumber = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Medical License Number") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Badge,
-                    contentDescription = "License Number"
-                )
-            },
-            isError = viewModel.licenseNumber.isNotBlank() && !Regex("[A-Za-z]{2,3}\\d{4,8}").matches(
-                viewModel.licenseNumber
-            ),
-            supportingText = {
-                if (viewModel.licenseNumber.isNotBlank() && !Regex("[A-Za-z]{2,3}\\d{4,8}").matches(
-                        viewModel.licenseNumber
-                    )
-                ) {
-                    Text("Invalid license number format (should be 2-3 letters followed by 4-8 digits)")
-                }
-            }
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-
-            FileUploadSection(
-                title = "License Photo",
-                fileUri = viewModel.licensePhotoUri,
-                onFileSelected = { viewModel.licensePhotoUri = it },
-                onFileTooLarge = {
-                    viewModel.tooLarge = true
-                },
-                modifier = Modifier.weight(1f),
-            )
-
-            FileUploadSection(
-                title = "Diploma",
-                fileUri = viewModel.diplomaPhotoUri,
-                onFileSelected = { viewModel.diplomaPhotoUri = it },
-                onFileTooLarge = {
-                    viewModel.tooLarge = true
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp),
-            )
-        }
-
-        OutlinedTextField(
-            value = viewModel.yearsOfExperience,
-            onValueChange = { viewModel.yearsOfExperience = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Years of Experience") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.WorkHistory,
-                    contentDescription = "Years of Experience"
-                )
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            isError = (viewModel.yearsOfExperience.isNotBlank() && viewModel.yearsOfExperience.toIntOrNull() == null),
-            supportingText = {
-                if (viewModel.yearsOfExperience.isNotBlank() && viewModel.yearsOfExperience.toIntOrNull() == null) {
-                    Text("Please enter a valid number")
-                }
-            }
-        )
-
-        OutlinedTextField(
-            value = viewModel.currentWorkplace,
-            onValueChange = { viewModel.currentWorkplace = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Current Workplace/Hospital") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.LocalHospital,
-                    contentDescription = "Workplace"
-                )
-            },
-            supportingText = {
-                // to keep the spaces consistent
-            },
-        )
-
-        OutlinedTextField(
-            value = viewModel.phoneNumber,
-            onValueChange = { viewModel.phoneNumber = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Phone Number") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Phone,
-                    contentDescription = "Phone"
-                )
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            isError = (viewModel.phoneNumber.isNotBlank() && !Regex("^\\+?[0-9]{8,15}\$").matches(
-                viewModel.phoneNumber
-            )),
-            supportingText = {
-                if (viewModel.phoneNumber.isNotBlank()) {
-                    if (viewModel.phoneNumber.length < 8) {
-                        Text("Phone number is too short")
-                    } else if (viewModel.phoneNumber.length > 15) {
-                        Text("Phone number is too long")
-                    } else if (!Regex("^\\+?[0-9]{8,15}\$").matches(viewModel.phoneNumber)) {
-                        Text("Please enter a valid phone number")
-                    }
-                }
-            }
-        )
-
-        OutlinedTextField(
-            value = viewModel.address,
-            onValueChange = { viewModel.address = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Address") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.PinDrop,
-                    contentDescription = "Address"
-                )
-            },
-            isError = viewModel.address.isBlank() && viewModel.hasSubmitted,
-            supportingText = {
-                if (viewModel.address.isBlank() && viewModel.hasSubmitted) {
-                    Text("Address is required")
-                }
-            }
-        )
-
-        OutlinedTextField(
-            value = viewModel.city,
-            onValueChange = { viewModel.city = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("City") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.LocationCity,
-                    contentDescription = "City"
-                )
-            },
-            isError = viewModel.city.isBlank() && viewModel.hasSubmitted,
-            supportingText = {
-                if (viewModel.city.isBlank() && viewModel.hasSubmitted) {
-                    Text("City is required")
-                }
-            }
-        )
-    }
-}
-
 
 @Composable
 fun SpecialityDropdown(
