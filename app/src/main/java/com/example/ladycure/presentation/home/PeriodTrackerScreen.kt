@@ -4,6 +4,7 @@ import DefaultBackground
 import DefaultOnPrimary
 import DefaultPrimary
 import android.util.Log
+import com.example.ladycure.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -14,6 +15,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,6 +79,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -406,22 +409,25 @@ fun PeriodTrackerScreen(navController: NavHostController) {
     )
 }
 
+data class MoodOption(
+    val drawableResId: Int,
+    val name: String
+)
+
 @Composable
 fun MoodGrid(
-    selectedEmoji: String?,
-    onEmojiSelected: (String) -> Unit,
+    selectedMood: String?,
+    onMoodSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val moods = remember {
         listOf(
-            "😊" to "Happy",
-            "😢" to "Sad",
-            "😠" to "Angry",
-            "😐" to "Neutral",
-            "🥳" to "Excited",
-            "😍" to "Loving",
-            "🤒" to "Sick",
-            "😴" to "Tired"
+            MoodOption(R.drawable.happy_kapi_emote, "Happy"),
+            MoodOption(R.drawable.love_kapi_emote, "Love"),
+            MoodOption(R.drawable.mad_kapi_emote, "Mad"),
+            MoodOption(R.drawable.sad_kapi_emote, "Sad"),
+            MoodOption(R.drawable.sick_kapi_emote, "Sick"),
+            MoodOption(R.drawable.tired_kapi_emote, "Tired")
         )
     }
 
@@ -430,25 +436,22 @@ fun MoodGrid(
             text = "How are you feeling?",
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary,
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier.padding(bottom = 16.dp) // Reduced bottom padding
         )
+
         LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            columns = GridCells.Fixed(3),
+            verticalArrangement = Arrangement.spacedBy(2.dp), // Reduced vertical spacing
+            horizontalArrangement = Arrangement.spacedBy(2.dp), // Reduced horizontal spacing
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp) // Adjust height as needed
+                .height(160.dp) // Reduced overall height
         ) {
-            items(moods) { (emoji, name) ->
-                val isSelected = selectedEmoji == emoji
+            items(moods) { mood ->
+                val isSelected = selectedMood == mood.name
                 val scale by animateFloatAsState(
                     targetValue = if (isSelected) 1.1f else 1.0f,
-                    label = "emojiScale"
-                )
-                val borderColor by animateDpAsState(
-                    targetValue = if (isSelected) 2.dp else 0.dp,
-                    label = "emojiBorder"
+                    label = "moodScale"
                 )
 
                 Card(
@@ -456,32 +459,29 @@ fun MoodGrid(
                         .scale(scale)
                         .aspectRatio(1f)
                         .border(
-                            width = borderColor,
-                            color = if (isSelected) DefaultPrimary else Color.Transparent,
+                            width = if (isSelected) 2.dp else 0.dp,
+                            color = DefaultPrimary,
                             shape = RoundedCornerShape(16.dp)
                         )
-                        .clickable { onEmojiSelected(emoji) },
+                        .clickable { onMoodSelected(mood.name) },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = DefaultPrimary.copy(alpha = 0.08f) // Light pink background for mood cards
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        containerColor = if (isSelected)
+                            DefaultPrimary.copy(alpha = 0.2f)
+                        else
+                            Color.White.copy(alpha = 0.1f)
+                    )
                 ) {
-                    Column(
+                    Box(
                         modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = emoji,
-                            style = MaterialTheme.typography.headlineSmall, // Increased emoji size
-                        )
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.labelMedium, // Adjusted text size
-                            color = DefaultOnPrimary.copy(alpha = 0.8f),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 4.dp) // Added horizontal padding
+                        Image(
+                            painter = painterResource(id = mood.drawableResId),
+                            contentDescription = mood.name,
+                            modifier = Modifier
+                                .fillMaxSize(0.9f) // Make emote fill most of the button
+                                .padding(4.dp)
                         )
                     }
                 }
@@ -1107,14 +1107,14 @@ private fun DailyDetailContent(
                     )
                 }
             }
-            // Mood selector
+
             MoodGrid(
-                selectedEmoji = dailyData.moodEmoji,
-                onEmojiSelected = { emoji ->
-                    dailyData = if (dailyData.moodEmoji == emoji) {
-                        dailyData.copy(moodEmoji = null) // Deselect if tapped again
+                selectedMood = dailyData.moodEmoji,
+                onMoodSelected = { moodName ->
+                    dailyData = if (dailyData.moodEmoji == moodName) {
+                        dailyData.copy(moodEmoji = null)
                     } else {
-                        dailyData.copy(moodEmoji = emoji)
+                        dailyData.copy(moodEmoji = moodName)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
