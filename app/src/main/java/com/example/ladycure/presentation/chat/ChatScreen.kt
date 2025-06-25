@@ -84,7 +84,7 @@ data class ChatParticipantInfo(
     val uid: String,
     val fullName: String,
     val specialty: String? = null,
-    val isOnline: Boolean = false,
+    //val isOnline: Boolean = false,
     val lastSeen: Long? = null,
     val lastMessage: String? = null,
     val lastMessageTime: Long? = null,
@@ -114,7 +114,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
     val appointmentRepo = AppointmentRepository()
 
     var filter by remember { mutableStateOf("All") }
-    val filters = listOf("All", "Online", "Offline", "Unread")
+    val filters = listOf("All", "Unread")
     var searchQuery by remember { mutableStateOf("") }
 
     val loadPossibleParticipants = remember(role) {
@@ -265,8 +265,8 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                                         ignoreCase = true
                                     )) &&
                                     when (filter) {
-                                        "Online" -> participant.isOnline
-                                        "Offline" -> !participant.isOnline
+//                                        "Online" -> participant.isOnline
+//                                        "Offline" -> !participant.isOnline
                                         "Unread" -> participant.unreadCount > 0
                                         else -> true // "All"
                                     }
@@ -459,7 +459,7 @@ private fun ChatParticipantItem(
     var currentUserId by remember { mutableStateOf<String?>(null) }
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
-    var isOnline by remember { mutableStateOf(participant.isOnline) }
+    //var isOnline by remember { mutableStateOf(participant.isOnline) }
 
     LaunchedEffect(participant.uid) {
         isLoading = true
@@ -471,9 +471,9 @@ private fun ChatParticipantItem(
             }
 
             profilePictureUrl = chatRepository.getUserProfilePicture(participant.uid)
-            chatRepository.listenForUserStatus(participant.uid) { onlineStatus ->
-                isOnline = onlineStatus
-            }
+//            chatRepository.listenForUserStatus(participant.uid) { onlineStatus ->
+//                isOnline = onlineStatus
+//            }
         } finally {
             isLoading = false
         }
@@ -536,20 +536,20 @@ private fun ChatParticipantItem(
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .align(Alignment.BottomEnd)
-                        .background(
-                            color = if (isOnline) Color.Green else Color.Red,
-                            shape = CircleShape
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.White,
-                            shape = CircleShape
-                        )
-                )
+//                Box(
+//                    modifier = Modifier
+//                        .size(12.dp)
+//                        .align(Alignment.BottomEnd)
+//                        .background(
+//                            color = if (isOnline) Color.Green else Color.Red,
+//                            shape = CircleShape
+//                        )
+//                        .border(
+//                            width = 1.dp,
+//                            color = Color.White,
+//                            shape = CircleShape
+//                        )
+//                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))

@@ -108,6 +108,7 @@ fun ProfileScreen(navController: NavHostController) {
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
+    var showNotifications by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var currentImageUrl by remember {
         mutableStateOf(
@@ -301,7 +302,8 @@ fun ProfileScreen(navController: NavHostController) {
                     )
                     ProfileOption(
                         text = "Notifications",
-                        icon = Icons.Default.Notifications
+                        icon = Icons.Default.Notifications,
+                        onClick = { showNotifications = true }
                     )
                     ProfileOption(
                         text = "Help & Support",
@@ -359,6 +361,10 @@ fun ProfileScreen(navController: NavHostController) {
             },
             role = userData.value?.get("role") as? String
         )
+    }
+
+    if (showNotifications) {
+        navController.navigate("notifications/user")
     }
 
     if (showSupportDialog) {
