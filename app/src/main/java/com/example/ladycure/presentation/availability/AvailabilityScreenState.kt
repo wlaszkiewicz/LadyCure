@@ -2,6 +2,7 @@ package com.example.ladycure.presentation.availability
 
 import DefaultBackground
 import DefaultPrimary
+import DefaultOnPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,7 +38,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -123,99 +125,125 @@ fun BaseAvailabilityScreen(
             .background(DefaultBackground),
     ) {
         // Header with navigation
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = DefaultBackground,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DefaultPrimary)
-                }
-                Text(
-                    headerTitle,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        color = DefaultPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-
-            // New button style
-            OutlinedButton(
-                onClick = onViewAvailabilityClick,
-                border = BorderStroke(1.dp, DefaultPrimary),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = DefaultPrimary
-                ),
-                modifier = Modifier.height(36.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.CalendarToday,
-                    contentDescription = "View",
-                    tint = DefaultPrimary
-                )
-                Spacer(Modifier.width(4.dp))
-                Text("View", style = MaterialTheme.typography.labelMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DefaultPrimary)
+                    }
+                    Text(
+                        headerTitle,
+                        style = MaterialTheme.typography.headlineMedium.copy( // Changed from headlineLarge to headlineMedium
+                            color = DefaultPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+
+                // New button style
+                OutlinedButton(
+                    onClick = onViewAvailabilityClick,
+                    border = BorderStroke(1.dp, DefaultPrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = DefaultPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = "View",
+                        tint = DefaultPrimary
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("View", style = MaterialTheme.typography.labelLarge)
+                }
             }
         }
 
         AvailabilityLegend(
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
         )
 
         // Main content with scroll
         LazyColumn(
             modifier = Modifier
-                .padding(16.dp)
-                .weight(1f)
+                .padding(horizontal = 16.dp)
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // Month selection row
+            // Consolidated Calendar card
             item {
-                CalendarHeader(
-                    currentMonth = state.currentMonth,
-                    minMonth = minMonth,
-                    onMonthChange = { newMonth -> onStateChange(state.copy(currentMonth = newMonth)) },
-                    onShowMonthPicker = { onStateChange(state.copy(showMonthPicker = true)) },
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-
-            // Calendar grid
-            item {
-                CalendarView(
-                    currentMonth = state.currentMonth,
-                    selectedDates = state.selectedDates, // Pass immutable set
-                    existingAvailabilities = state.existingAvailabilities,
-                    today = today,
-                    onDateSelected = { date ->
-                        val newSelectedDates = if (state.selectedDates.contains(date)) {
-                            state.selectedDates - date
-                        } else {
-                            state.selectedDates + date
-                        }
-                        onStateChange(state.copy(selectedDates = newSelectedDates))
-                    },
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White,
+                        contentColor = DefaultOnPrimary
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) { // Added Column inside Card
+                        CalendarHeader(
+                            currentMonth = state.currentMonth,
+                            minMonth = minMonth,
+                            onMonthChange = { newMonth -> onStateChange(state.copy(currentMonth = newMonth)) },
+                            onShowMonthPicker = { onStateChange(state.copy(showMonthPicker = true)) },
+                            modifier = Modifier.fillMaxWidth() // Modifier applied to Header
+                        )
+                        Spacer(Modifier.height(8.dp)) // Spacer between header and view
+                        CalendarView(
+                            currentMonth = state.currentMonth,
+                            selectedDates = state.selectedDates, // Pass immutable set
+                            existingAvailabilities = state.existingAvailabilities,
+                            today = today,
+                            onDateSelected = { date ->
+                                val newSelectedDates = if (state.selectedDates.contains(date)) {
+                                    state.selectedDates - date
+                                } else {
+                                    state.selectedDates + date
+                                }
+                                onStateChange(state.copy(selectedDates = newSelectedDates))
+                            },
+                            modifier = Modifier.fillMaxWidth() // Modifier applied to View
+                        )
+                    }
+                }
             }
 
             // Time range selection
             item {
-                TimeRangePicker(
-                    startTime = state.startTime,
-                    endTime = state.endTime,
-                    onStartTimeClick = {
-                        onStateChange(state.copy(isStartTimePicker = true, showTimePicker = true))
-                    },
-                    onEndTimeClick = {
-                        onStateChange(state.copy(isStartTimePicker = false, showTimePicker = true))
-                    },
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White,
+                        contentColor = DefaultOnPrimary
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    TimeRangePicker(
+                        startTime = state.startTime,
+                        endTime = state.endTime,
+                        onStartTimeClick = {
+                            onStateChange(state.copy(isStartTimePicker = true, showTimePicker = true))
+                        },
+                        onEndTimeClick = {
+                            onStateChange(state.copy(isStartTimePicker = false, showTimePicker = true))
+                        },
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
 
             // Quick selection buttons
@@ -223,7 +251,7 @@ fun BaseAvailabilityScreen(
                 QuickSelectionButtons(
                     currentMonth = state.currentMonth,
                     selectedDates = internalSelectedDates, // Pass the mutable state directly
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -232,17 +260,16 @@ fun BaseAvailabilityScreen(
                 Button(
                     onClick = { onStateChange(state.copy(showRecurringOptions = true)) },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = DefaultPrimary
+                        containerColor = DefaultPrimary,
+                        contentColor = DefaultOnPrimary
                     ),
-                    border = BorderStroke(1.dp, DefaultPrimary)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.ContentCopy, contentDescription = "Recurring")
                     Spacer(Modifier.width(8.dp))
-                    Text("Set Recurring Pattern")
+                    Text("Set Recurring Pattern", style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -263,20 +290,18 @@ fun BaseAvailabilityScreen(
                         onStateChange(state.copy(selectedDates = state.selectedDates + datesToAdd))
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = DefaultPrimary
+                        containerColor = DefaultPrimary.copy(alpha = 0.8f),
+                        contentColor = DefaultOnPrimary
                     ),
-                    border = BorderStroke(1.dp, DefaultPrimary)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.Schedule, contentDescription = "Copy")
                     Spacer(Modifier.width(8.dp))
-                    Text("Copy to Next 3 Months")
+                    Text("Copy to Next 3 Months", style = MaterialTheme.typography.labelLarge)
                 }
             }
-
         }
         // Save button at bottom
         SaveButton(
@@ -313,18 +338,35 @@ fun BaseAvailabilityScreen(
 
     // Time Picker Dialog
     if (state.showTimePicker) {
-        TimePickerDialog(
-            isStartTimePicker = state.isStartTimePicker,
-            initialTime = if (state.isStartTimePicker) state.startTime else state.endTime,
-            onTimeSelected = { time ->
-                if (state.isStartTimePicker) {
-                    onStateChange(state.copy(startTime = time, showTimePicker = false))
-                } else {
-                    onStateChange(state.copy(endTime = time, showTimePicker = false))
+        val timePickerState = rememberTimePickerState(
+            initialHour = if (state.isStartTimePicker) state.startTime.hour else state.endTime.hour,
+            initialMinute = if (state.isStartTimePicker) state.startTime.minute else state.endTime.minute,
+            is24Hour = false
+        )
+
+        androidx.compose.material3.TimePickerDialog(
+            onDismissRequest = { onStateChange(state.copy(showTimePicker = false)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                    if (state.isStartTimePicker) {
+                        onStateChange(state.copy(startTime = selectedTime, showTimePicker = false))
+                    } else {
+                        onStateChange(state.copy(endTime = selectedTime, showTimePicker = false))
+                    }
+                }) {
+                    Text("OK")
                 }
             },
-            onDismiss = { onStateChange(state.copy(showTimePicker = false)) }
-        )
+            dismissButton = {
+                TextButton(onClick = { onStateChange(state.copy(showTimePicker = false)) }) {
+                    Text("Cancel")
+                }
+            },
+            title = { Text(if (state.isStartTimePicker) "Select Start Time" else "Select End Time") }
+        ) {
+            TimePicker(state = timePickerState)
+        }
     }
 
     // Recurring Options Dialog
@@ -337,7 +379,7 @@ fun BaseAvailabilityScreen(
                     weeks,
                     internalSelectedDates // Pass the mutable state directly
                 )
-                onStateChange(state.copy(showRecurringOptions = false))
+                onStateChange(state.copy(selectedDaysOfWeek = days, showRecurringOptions = false))
             },
             onDismiss = { onStateChange(state.copy(showRecurringOptions = false)) }
         )
@@ -362,7 +404,7 @@ fun SetAvailabilityScreen(
 
     // Load existing availabilities when screen appears
     LaunchedEffect(effectiveDoctorId) { // Relaunch if effectiveDoctorId changes
-        if (effectiveDoctorId == "null") { // Handle case where authRepo.getCurrentUserId() might return null and toString() is called
+        if (effectiveDoctorId == "null" || effectiveDoctorId.isBlank()) { // Handle null and blank string case
             snackbarController.showMessage("Doctor ID is missing for availability management.")
             return@LaunchedEffect
         }
@@ -403,16 +445,23 @@ fun SetAvailabilityScreen(
         onStateChange = { newState -> state.value = newState },
         onSave = { dates, startTime, endTime ->
             coroutineScope.launch {
-                doctorRepo.updateAvailabilities(
-                    dates = dates.toList(),
-                    startTime = startTime,
-                    endTime = endTime,
-                    doctorId = effectiveDoctorId // Use effectiveDoctorId for saving
-                )
-                snackbarController.showMessage("Availability saved successfully!")
-                // Refresh the screen after saving for the current user or admin-edited doctor
-                val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
-                state.value = state.value.copy(existingAvailabilities = newAvailabilities)
+                state.value = state.value.copy(isLoading = true) // Set loading state for save operation
+                try {
+                    doctorRepo.updateAvailabilities(
+                        dates = dates.toList(),
+                        startTime = startTime,
+                        endTime = endTime,
+                        doctorId = effectiveDoctorId // Use effectiveDoctorId for saving
+                    )
+                    snackbarController.showMessage("Availability saved successfully!")
+                    // Refresh the screen after saving for the current user or admin-edited doctor
+                    val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
+                    state.value = state.value.copy(existingAvailabilities = newAvailabilities)
+                } catch (e: Exception) {
+                    snackbarController.showMessage("Error saving availability: ${e.message}")
+                } finally {
+                    state.value = state.value.copy(isLoading = false) // Reset loading state
+                }
             }
         },
         headerTitle = if (adminEditingDoctorId != null) "Edit Doctor Availability" else "Set Availability", // Dynamic header
@@ -526,7 +575,7 @@ private fun TimePickerDialog(
         is24Hour = false
     )
 
-    TimePickerDialog(
+    androidx.compose.material3.TimePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
@@ -574,17 +623,21 @@ fun MonthYearPickerDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
+                .wrapContentHeight(),
+            color = DefaultBackground
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
                     "Select Month",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = DefaultPrimary,
+                        fontWeight = FontWeight.Bold
+                    ),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
@@ -628,7 +681,7 @@ fun MonthYearPickerDialog(
 fun applyRecurringPattern(
     selectedDays: Set<DayOfWeek>,
     durationWeeks: Int,
-    selectedDates: MutableState<Set<LocalDate>> // This is already a mutable state
+    selectedDates: MutableState<Set<LocalDate>>
 ) {
     if (selectedDays.isEmpty()) return
 
@@ -637,7 +690,6 @@ fun applyRecurringPattern(
 
     for (week in 0 until durationWeeks) {
         selectedDays.forEach { dayOfWeek ->
-            // Find next occurrence of this day of week
             var date = today.with(dayOfWeek)
             if (date.isBefore(today)) {
                 date = date.plusWeeks(1)
@@ -647,5 +699,5 @@ fun applyRecurringPattern(
         }
     }
 
-    selectedDates.value = selectedDates.value + newDates // Directly modify the mutable state
+    selectedDates.value = selectedDates.value + newDates
 }
