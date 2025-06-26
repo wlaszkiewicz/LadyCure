@@ -377,7 +377,6 @@ fun TodaysSchedule(
                         )
                     }
 
-                    // ... Layer 2 (Past Overlay) and Layer 3 (Current Time) remain the same ...
                     if (currentTime.isAfter(workDayStart)) {
                         val minutesIntoDay = ChronoUnit.MINUTES.between(workDayStart, currentTime)
                             .coerceAtMost(totalWorkdayMinutes)
@@ -533,14 +532,11 @@ private fun AppointmentCardContent(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Calendar date box (unchanged)
             DateBox(appointment.date)
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Main content column
             Column(modifier = Modifier.weight(1f)) {
-                // Patient name and price
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -566,12 +562,10 @@ private fun AppointmentCardContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Time and appointment type - now in a cleaner row format
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Time with icon
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Schedule,

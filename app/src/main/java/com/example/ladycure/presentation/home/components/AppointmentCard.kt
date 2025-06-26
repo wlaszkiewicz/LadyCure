@@ -77,6 +77,8 @@ import com.example.ladycure.R
 import com.example.ladycure.data.repository.AppointmentRepository
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Appointment.Status
+import com.example.ladycure.domain.model.AppointmentSummary
+import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
@@ -88,8 +90,8 @@ import java.util.Locale
 
 @Composable
 fun AppointmentsSection(
-    appointments: List<Appointment>?,
-    onAppointmentChanged: (Appointment) -> Unit,
+    appointments: List<AppointmentSummary>?,
+    onAppointmentChanged: (AppointmentSummary) -> Unit,
     snackbarController: SnackbarController, navController: NavController
 ) {
     val futureAppointments = appointments?.filter {
@@ -196,8 +198,8 @@ fun AppointmentsSection(
 
 @Composable
 fun PatientAppointmentCard(
-    appointment: Appointment,
-    onAppointmentChanged: (Appointment) -> Unit,
+    appointment: AppointmentSummary,
+    onAppointmentChanged: (AppointmentSummary) -> Unit,
     snackbarController: SnackbarController,
     navController: NavController
 ) {
@@ -216,6 +218,7 @@ fun PatientAppointmentCard(
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     var showCancelSuccessDialog by remember { mutableStateOf(false) }
+    var fullAppointment = remember { mutableStateOf<Appointment?>(null) }
 
     Surface(
         modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
@@ -227,8 +230,17 @@ fun PatientAppointmentCard(
                 containerColor = Color.White.copy(alpha = 0.9f)
             ),
             onClick = {
-                showDetailsDialog.value = true
+                coroutineScope.launch {
+                    val result = appointmentRepo.getAppointmentById(appointment.appointmentId)
+                    if (result.isSuccess) {
+                        fullAppointment.value = result.getOrNull()
+                        showDetailsDialog.value = true
+                    } else {
+                        snackbarController.showMessage("Failed to load appointment details.")
+                    }
+                }
             }
+
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
@@ -247,8 +259,14 @@ fun PatientAppointmentCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(Speciality.fromDisplayName(appointment.type.speciality).icon),
-                            contentDescription = appointment.type.speciality,
+                            painter = painterResource(
+                                Speciality.fromDisplayName(
+                                    AppointmentType.fromDisplayName(
+                                        appointment.type
+                                    ).speciality
+                                ).icon
+                            ),
+                            contentDescription = appointment.type,
                             tint = DefaultPrimary,
                             modifier = Modifier.size(28.dp)
                         )
@@ -256,7 +274,7 @@ fun PatientAppointmentCard(
 
                     Column {
                         Text(
-                            text = appointment.type.displayName,
+                            text = appointment.type,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -344,32 +362,40 @@ fun PatientAppointmentCard(
     }
 
     if (showDetailsDialog.value) {
-        ShowDetailsDialog(
-            appointment = appointment,
-            onDismiss = { showDetailsDialog.value = false },
-            onReschedule = {
-                showDetailsDialog.value = false
-                navController.navigate("reschedule/${appointment.appointmentId}")
-            },
-            onCancel = {
-                showDetailsDialog.value = false
-                coroutineScope.launch {
-                    try {
-                        val result = appointmentRepo.cancelAppointment(appointment.appointmentId)
-                        if (result.isSuccess) {
-                            appointment.status = Status.CANCELLED
-                            onAppointmentChanged(appointment)
-                            showCancelSuccessDialog = true
+        if (fullAppointment.value == null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            ShowDetailsDialog(
+                appointment = fullAppointment.value!!,
+                onDismiss = { showDetailsDialog.value = false },
+                onReschedule = {
+                    showDetailsDialog.value = false
+                    navController.navigate("reschedule/${appointment.appointmentId}")
+                },
+                onCancel = {
+                    showDetailsDialog.value = false
+                    coroutineScope.launch {
+                        val updatedAppointment =
+                            fullAppointment.value!!.copy(status = Status.CANCELLED)
+                        val updatedSummary = appointment.copy(status = Status.CANCELLED)
+                        val updateResult =
+                            appointmentRepo.cancelAppointment(updatedAppointment.appointmentId)
 
+                        if (updateResult.isSuccess) {
+                            onAppointmentChanged(updatedSummary)
+                            showCancelSuccessDialog = true
                         } else {
-                            snackbarController.showMessage("Failed to cancel appointment: ${result.exceptionOrNull()?.message}")
+                            snackbarController.showMessage("Update failed: ${updateResult.exceptionOrNull()?.message}")
                         }
-                    } catch (e: Exception) {
-                        snackbarController.showMessage("Error: ${e.message}")
                     }
                 }
-            }
-        )
+            )
+        }
     }
 
 
@@ -396,6 +422,7 @@ fun ShowDetailsDialog(
         Status.CANCELLED -> Red
         Status.COMPLETED -> BabyBlue
     }
+
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -741,7 +768,7 @@ fun ShowDetailsDialog(
                 onCancel()
                 showCancelConfirmation.value = false
             },
-            appointment = appointment
+            appointment = appointment.toSummary()
         )
     }
 }
@@ -750,7 +777,7 @@ fun ShowDetailsDialog(
 fun CancelConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    appointment: Appointment
+    appointment: AppointmentSummary
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -812,7 +839,7 @@ fun CancelConfirmationDialog(
                             )
                         )
                         Text(
-                            text = appointment.type.displayName,
+                            text = appointment.enumType.displayName,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))

@@ -1,6 +1,7 @@
 package com.example.ladycure.data.repository
 
 import com.example.ladycure.domain.model.Appointment
+import com.example.ladycure.domain.model.AppointmentSummary
 import com.example.ladycure.presentation.chat.ChatParticipantInfo
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -32,7 +33,6 @@ class AppointmentRepository {
                 firestore.collection("appointments").add(appointmentData).await()
             val appointmentId = documentReference.id
 
-            // make the timeslot unavailable
 
             val doctorId = appointment.doctorId
             val startTime = appointment.time
@@ -42,7 +42,6 @@ class AppointmentRepository {
                 startTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
 
 
-            // Fetch the current available slots
             val docRef = firestore.collection("users")
                 .document(doctorId)
                 .collection("availability")
@@ -466,4 +465,71 @@ class AppointmentRepository {
             Result.failure(e)
         }
     }
+
+
+    suspend fun getAppointmentSummaries(role: String): Result<List<AppointmentSummary>> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not logged in"))
+
+            val snapshot = firestore.collection("users")
+                .document(userId)
+                .collection("appointmentSummaries")
+                .orderBy("dateTime", Query.Direction.DESCENDING)
+                .get()
+                .await()
+
+            val summaries = snapshot.documents.mapNotNull { doc ->
+                doc.data?.let { AppointmentSummary.fromMap(it, doc.id) }
+            }
+
+            Result.success(summaries)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUpcomingAppointmentsSummaries(): Result<List<AppointmentSummary>> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not logged in"))
+            val snapshot = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .collection("appointmentSummaries")
+                .document("upcoming")
+                .collection("items")
+                .get()
+                .await()
+
+            val summaries = snapshot.documents.mapNotNull { doc ->
+                doc.data?.let { AppointmentSummary.fromMap(it, doc.id) }
+            }
+
+            Result.success(summaries)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getMonthlyAppointmentSummaries(
+        monthKey: String
+    ): Result<List<AppointmentSummary>> {
+        return try {
+            val userId =
+                auth.currentUser?.uid ?: return Result.failure(Exception("User not authenticated"))
+            val summariesRef = firestore.collection("users")
+                .document(userId)
+                .collection("appointmentSummaries")
+                .document(monthKey)
+                .collection("items")
+
+            val snapshot = summariesRef.get().await()
+            val summaries = snapshot.documents.mapNotNull { doc ->
+                doc.data?.let { AppointmentSummary.fromMap(it, doc.id) }
+            }
+            Result.success(summaries)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }

@@ -321,28 +321,208 @@ exports.cleanOldAvailabilities = functions
   .timeZone("Europe/Warsaw")
   .onRun(async (context) => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // set to midnight
-    const todayString = today.toISOString().split("T")[0]; // yyyy-MM-dd
+    today.setHours(0, 0, 0, 0);
+    const todayString = today.toISOString().split("T")[0];
 
-    const usersSnapshot = await admin.firestore().collection("users").get();
+    const db = admin.firestore();
+    const usersSnapshot = await db.collection("users").get();
+    const batch = db.batch();
 
-    const batch = admin.firestore().batch();
     for (const userDoc of usersSnapshot.docs) {
-      const availabilityRef = userDoc.ref.collection("availability");
-      const pastDatesSnap = await availabilityRef.get();
+      const userId = userDoc.id;
 
-      for (const doc of pastDatesSnap.docs) {
-        if (doc.id < todayString) {
-          batch.delete(doc.ref);
+      // 🧹 1. Clean old availability
+      const availabilitySnap = await db
+        .collection("users")
+        .doc(userId)
+        .collection("availability")
+        .get();
+
+      for (const availDoc of availabilitySnap.docs) {
+        if (availDoc.id < todayString) {
+          batch.delete(availDoc.ref);
+        }
+      }
+
+      // 📦 2. Move past appointments out of "upcoming"
+      const upcomingRef = db
+        .collection("users")
+        .doc(userId)
+        .collection("appointmentSummaries")
+        .doc("upcoming")
+        .collection("items");
+
+      const upcomingSnap = await upcomingRef.get();
+
+      for (const appDoc of upcomingSnap.docs) {
+        const data = appDoc.data();
+        const dateTime = data.dateTime?.toDate?.();
+        if (!dateTime) continue;
+
+        if (dateTime < today) {
+          const monthKey = dateTime.toISOString().slice(0, 7); // e.g. "2024-06"
+
+          const monthRef = db
+            .collection("users")
+            .doc(userId)
+            .collection("appointmentSummaries")
+            .doc(monthKey)
+            .collection("items")
+            .doc(appDoc.id);
+
+          batch.set(monthRef, data);
+          batch.delete(appDoc.ref);
         }
       }
     }
 
     await batch.commit();
-    console.log("🧹 Old availabilities cleaned");
+    console.log("🧹 Cleaned availabilities & 📦 moved past appointments");
     return null;
   });
 
 
 
 
+exports.createAppointmentSummary = functions
+  .region("europe-west1")
+  .firestore.document("appointments/{appointmentId}")
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    const appointmentId = context.params.appointmentId;
+
+    // Validate required fields
+    if (!data.patientId || !data.doctorId) {
+      console.error('Missing patientId or doctorId');
+      return null;
+    }
+
+    // Robust date handling
+    let dateTime;
+    try {
+      dateTime = data.dateTime?.toDate
+        ? data.dateTime.toDate()
+        : new Date(data.dateTime);
+    } catch (e) {
+      console.error('Invalid date format:', e);
+      return null;
+    }
+
+    const summary = {
+      doctorName: data.doctorName || "",
+      patientName: data.patientName || "",
+      dateTime: data.dateTime, // Keep original timestamp
+      status: data.status,
+      type: data.type,
+      price: data.price || 0,
+    };
+
+    const monthKey = dateTime.toISOString().slice(0, 7);
+    const now = new Date();
+    const isFuture = dateTime >= now;
+
+    try {
+      const batch = admin.firestore().batch();
+
+      // Patient summary
+      const patientRef = admin.firestore()
+        .collection("users")
+        .doc(data.patientId)
+        .collection("appointmentSummaries")
+        .doc(monthKey)
+        .collection("items")
+        .doc(appointmentId);
+      batch.set(patientRef, summary);
+
+      if (isFuture) {
+        const patientUpcomingRef = admin.firestore()
+          .collection("users")
+          .doc(data.patientId)
+          .collection("appointmentSummaries")
+          .doc("upcoming")
+          .collection("items")
+          .doc(appointmentId);
+        batch.set(patientUpcomingRef, summary);
+      }
+
+      // Doctor summary
+      const doctorRef = admin.firestore()
+        .collection("users")
+        .doc(data.doctorId)
+        .collection("appointmentSummaries")
+        .doc(monthKey)
+        .collection("items")
+        .doc(appointmentId);
+      batch.set(doctorRef, summary);
+
+      if (isFuture) {
+        const doctorUpcomingRef = admin.firestore()
+          .collection("users")
+          .doc(data.doctorId)
+          .collection("appointmentSummaries")
+          .doc("upcoming")
+          .collection("items")
+          .doc(appointmentId);
+        batch.set(doctorUpcomingRef, summary);
+      }
+
+      await batch.commit();
+      console.log(`Successfully created summaries for ${appointmentId}`);
+    } catch (error) {
+      console.error(`Error creating summaries for ${appointmentId}:`, error);
+    }
+
+    return null;
+  });
+
+
+exports.updateAppointmentSummaries = functions
+  .region("europe-west1")
+  .firestore
+  .document("appointments/{appointmentId}")
+  .onUpdate(async (change, context) => {
+    const after = change.after.data();
+    const appointmentId = context.params.appointmentId;
+
+    if (!after || !after.patientId || !after.dateTime) return null;
+
+    const dateObj = after.dateTime.toDate ? after.dateTime.toDate() : new Date(after.dateTime);
+    const now = new Date();
+    const isUpcoming = dateObj >= now;
+    const monthKey = dateObj.toISOString().slice(0, 7); // "YYYY-MM"
+
+    const summaryUpdate = {
+      doctorName: after.doctorName || "",
+      patientName: after.patientName || "",
+      dateTime: after.dateTime,
+      status: after.status,
+      type: after.type,
+      price: after.price || 0,
+    };
+
+    const db = admin.firestore();
+    const batch = db.batch();
+
+    const updateForUser = (userId: string) => {
+      const baseRef = db.collection("users").doc(userId).collection("appointmentSummaries");
+
+      const monthlyRef = baseRef.doc(monthKey).collection("items").doc(appointmentId);
+      const upcomingRef = baseRef.doc("upcoming").collection("items").doc(appointmentId);
+
+
+      batch.set(monthlyRef, summaryUpdate);
+
+      if (isUpcoming) {
+        batch.set(upcomingRef, summaryUpdate);
+      } else {
+        batch.delete(upcomingRef);
+      }
+    };
+
+    updateForUser(after.patientId);
+    if (after.doctorId) updateForUser(after.doctorId);
+
+    await batch.commit();
+    console.log(`✅ Updated summary for appointment ${appointmentId}`);
+    return null;
+  });

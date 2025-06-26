@@ -11,7 +11,7 @@ import com.example.ladycure.data.repository.AppointmentRepository
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.data.repository.NotificationRepository
 import com.example.ladycure.data.repository.UserRepository
-import com.example.ladycure.domain.model.Appointment
+import com.example.ladycure.domain.model.AppointmentSummary
 import com.example.ladycure.utility.SharedPreferencesHelper
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
@@ -26,7 +26,7 @@ import kotlinx.coroutines.tasks.await
 data class HomeUiState(
     val userData: Map<String, Any>? = null,
     val unreadNotificationCount: Int = 0,
-    var appointments: List<Appointment>? = null,
+    var appointments: List<AppointmentSummary>? = null,
     val availableCities: List<String> = listOf("Warszawa"),
     val locationFetched: Boolean = false,
     val initialCity: String? = null,
@@ -69,8 +69,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update { it.copy(userData = data) }
             }
 
-            appointmentRepo.getAppointments("user").onSuccess { apps ->
-                _uiState.update { it.copy(appointments = apps) }
+            appointmentRepo.getUpcomingAppointmentsSummaries().onSuccess { summaries ->
+                _uiState.update { it.copy(appointments = summaries) }
+            }.onFailure { error ->
+                _uiState.update { it.copy(error = error.message) }
             }
 
             doctorRepo.getAvailableCities().onSuccess { cities ->
@@ -90,7 +92,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-
     fun onPermissionResult(isGranted: Boolean) {
         if (_uiState.value.locationFetched) return
         if (isGranted) {
@@ -109,7 +110,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // This should not happen if isGranted is true, but it's a good safeguard
                 handlePermissionDenied()
                 return@launch
             }
@@ -137,6 +137,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    fun updateAppointmentLocally(updated: AppointmentSummary) {
+        _uiState.update { state ->
+            val updatedList = state.appointments?.map {
+                if (it.appointmentId == updated.appointmentId) updated else it
+            }
+            state.copy(appointments = updatedList)
+        }
+    }
+
 
     fun handlePermissionDenied() {
         if (!_uiState.value.locationFetched) {
