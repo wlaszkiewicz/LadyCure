@@ -96,14 +96,11 @@ fun DoctorEarningsScreen(
     var thisMonthEarnings by remember { mutableStateOf(0.0) }
     var mostPopularType by remember { mutableStateOf<Pair<String, Int>?>(null) }
 
-    // Time period selection
     var selectedTimePeriod by remember { mutableStateOf(TimePeriod.MONTHLY) }
 
-    // Fetch data on first load or when time period changes
     LaunchedEffect(selectedTimePeriod) {
         isLoading = true
         try {
-            // Fetch all data in parallel
             val earningsDeferred = coroutineScope.async {
                 doctorRepo.getEarningsData(selectedTimePeriod)
             }
@@ -118,7 +115,6 @@ fun DoctorEarningsScreen(
                 doctorRepo.getMostPopularAppointmentType()
             }
 
-            // Wait for all requests to complete
             earningsData = earningsDeferred.await().getOrElse { emptyList() }
             earningsByType = earningsByTypeDeferred.await().getOrElse { emptyMap() }
 
@@ -166,7 +162,6 @@ fun DoctorEarningsScreen(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        // Time period selector
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -208,7 +203,6 @@ fun DoctorEarningsScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Summary cards
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -302,10 +296,6 @@ fun DoctorEarningsScreen(
                     }
                 }
 
-
-                // Earnings by Type Bar Chart
-                // In your DoctorEarningsScreen, update the second bar chart section:
-
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -325,7 +315,6 @@ fun DoctorEarningsScreen(
                                 earningsByType.map { it.key to it.value.toInt() }
                             val totalEarningsByType = earningsByType.values.sum()
 
-                            // Use the same colors as the pie chart
                             BarChart(
                                 data = earningsByTypeList,
                                 isCurrency = true,
@@ -336,7 +325,6 @@ fun DoctorEarningsScreen(
                                     .padding(top = 8.dp)
                             )
 
-                            // Add the legend below the chart
                             AppointmentTypeLegend(
                                 data = earningsByTypeList,
                                 showPercentage = false,
@@ -426,7 +414,6 @@ fun PieChart(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Pie Chart
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -452,7 +439,6 @@ fun PieChart(
             }
         }
 
-        // Use the shared legend component
         val dataList = data.map { it.key to it.value.toInt() }
         AppointmentTypeLegend(
             data = dataList,
@@ -473,7 +459,6 @@ fun BarChart(
     val maxValue = data.maxOfOrNull { it.second }?.toFloat() ?: 1f
 
     Column(modifier = modifier) {
-        // The chart itself
         Row(
             modifier = Modifier
                 .padding(bottom = 16.dp)
@@ -508,14 +493,12 @@ fun BarChart(
                     val left = index * (barWidthPx + barSpacing) + 4.dp.toPx()
                     val top = size.height - barHeight
 
-                    // Use type-specific color if requested, otherwise use default
                     val barColor = if (useTypeColors) {
                         getColorForAppointmentType(index)
                     } else {
                         DefaultPrimary.copy(alpha = 0.7f)
                     }
 
-                    // Draw bar
                     drawRoundRect(
                         color = barColor,
                         topLeft = Offset(left, top),
@@ -537,9 +520,8 @@ fun BarChart(
                         )
                     }
 
-                    if (!useTypeColors) { // If not using type colors, draw the label below the bar
+                    if (!useTypeColors) {
 
-                        // Draw time label below the bar, centered
                         drawContext.canvas.nativeCanvas.apply {
                             drawText(
                                 label,

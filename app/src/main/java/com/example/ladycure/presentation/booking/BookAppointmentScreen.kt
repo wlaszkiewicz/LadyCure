@@ -305,7 +305,6 @@ private fun DoctorSelectionView(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // Selected time info
         SelectedTimeInfo(
             date = selectedDate,
             time = selectedTimeSlot,

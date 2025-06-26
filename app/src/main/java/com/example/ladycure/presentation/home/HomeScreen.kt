@@ -179,10 +179,8 @@ fun HomeScreen(
 
             AppointmentsSection(
                 appointments = uiState.appointments,
-                onAppointmentChanged = { updatedAppointment ->
-                    uiState.appointments = uiState.appointments?.map {
-                        if (it.appointmentId == updatedAppointment.appointmentId) updatedAppointment else it
-                    }
+                onAppointmentChanged = {
+                    homeViewModel.updateAppointmentLocally(it)
                 },
                 snackbarController = snackbarController!!,
                 navController = navController

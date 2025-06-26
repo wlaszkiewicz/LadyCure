@@ -125,7 +125,6 @@ class DoctorRepository {
                 val existingDoc = docRef.get().await()
 
                 if (existingDoc.exists()) {
-                    // Get existing available slots
                     val existingAvailableSlots =
                         (existingDoc.get("availableSlots") as? List<String>)
                             ?.mapNotNull { timeString ->
@@ -136,7 +135,6 @@ class DoctorRepository {
                                 }
                             }?.toSet() ?: emptySet()
 
-                    // Get existing time range
                     val existingStartTime = (existingDoc.getString("startTime")?.let {
                         LocalTime.parse(it, timeFormatter)
                     }) ?: LocalTime.MIN
@@ -145,7 +143,6 @@ class DoctorRepository {
                         LocalTime.parse(it, timeFormatter)
                     }) ?: LocalTime.MAX
 
-                    // Generate all possible slots from existing time range
                     val allExistingSlots = mutableSetOf<LocalTime>()
                     var existingCurrentTime = existingStartTime
                     while (existingCurrentTime.isBefore(existingEndTime)) {
@@ -153,14 +150,11 @@ class DoctorRepository {
                         existingCurrentTime = existingCurrentTime.plus(15, ChronoUnit.MINUTES)
                     }
 
-                    // Calculate booked slots (slots that were in the full range but not available)
                     val bookedSlots = allExistingSlots - existingAvailableSlots
 
-                    // Merge slots: new slots + existing available slots, minus any that overlap with booked slots
                     val mergedSlots = (newSlots + existingAvailableSlots).toMutableSet()
                     mergedSlots.removeAll(bookedSlots)
 
-                    // Update the document
                     val availabilityData = hashMapOf(
                         "startTime" to startTime.format(timeFormatter),
                         "endTime" to endTime.format(timeFormatter),
@@ -169,7 +163,6 @@ class DoctorRepository {
 
                     batch.set(docRef, availabilityData, SetOptions.merge())
                 } else {
-                    // No existing document - just create new availability
                     val availabilityData = hashMapOf(
                         "startTime" to startTime.format(timeFormatter),
                         "endTime" to endTime.format(timeFormatter),
@@ -226,24 +219,6 @@ class DoctorRepository {
     }
 
 
-    suspend fun deleteDoctorAvailability(
-        doctorId: String,
-        date: LocalDate
-    ): Result<Unit> {
-        return try {
-            val docRef = firestore.collection("users")
-                .document(doctorId)
-                .collection("availability")
-                .document(date.toString())
-
-            docRef.delete().await()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-
     suspend fun getEarningsData(timePeriod: TimePeriod): Result<List<Pair<String, Double>>> {
         return try {
             val currentDoctorId =
@@ -251,7 +226,13 @@ class DoctorRepository {
 
             val appointmentsSnapshot = firestore.collection("appointments")
                 .whereEqualTo("doctorId", currentDoctorId)
-                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .whereIn(
+                    "status",
+                    listOf(
+                        Appointment.Status.CONFIRMED.displayName,
+                        Appointment.Status.COMPLETED.displayName
+                    )
+                )
                 .get()
                 .await()
 
@@ -270,7 +251,6 @@ class DoctorRepository {
                         ?: LocalDate.now()
 
 
-                    // Group by time period
                     when (timePeriod) {
                         TimePeriod.DAILY -> date.format(DateTimeFormatter.ofPattern("MMM dd"))
                         TimePeriod.WEEKLY -> date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -302,7 +282,13 @@ class DoctorRepository {
 
             val appointmentsSnapshot = firestore.collection("appointments")
                 .whereEqualTo("doctorId", currentDoctorId)
-                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .whereIn(
+                    "status",
+                    listOf(
+                        Appointment.Status.CONFIRMED.displayName,
+                        Appointment.Status.COMPLETED.displayName
+                    )
+                )
                 .get()
                 .await()
 
@@ -323,7 +309,13 @@ class DoctorRepository {
 
             val appointmentsSnapshot = firestore.collection("appointments")
                 .whereEqualTo("doctorId", currentDoctorId)
-                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .whereIn(
+                    "status",
+                    listOf(
+                        Appointment.Status.CONFIRMED.displayName,
+                        Appointment.Status.COMPLETED.displayName
+                    )
+                )
                 .get()
                 .await()
 
@@ -362,7 +354,13 @@ class DoctorRepository {
 
             val appointmentsSnapshot = firestore.collection("appointments")
                 .whereEqualTo("doctorId", currentDoctorId)
-                .whereEqualTo("status", Appointment.Status.CONFIRMED.displayName)
+                .whereIn(
+                    "status",
+                    listOf(
+                        Appointment.Status.CONFIRMED.displayName,
+                        Appointment.Status.COMPLETED.displayName
+                    )
+                )
                 .get()
                 .await()
 

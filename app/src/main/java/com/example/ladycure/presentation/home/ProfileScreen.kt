@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Home
@@ -50,6 +51,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -397,6 +399,17 @@ fun ProfileScreen(navController: NavHostController) {
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    IconButton(
+                        onClick = { showSupportDialog = false },
+                        modifier = Modifier.align(Alignment.End),
+                        content = {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = DefaultPrimary
+                            )
+                        }
+                    )
                     Icon(
                         imageVector = Icons.Default.Help,
                         contentDescription = "Help Icon",
@@ -414,7 +427,7 @@ fun ProfileScreen(navController: NavHostController) {
                     )
 
                     Text(
-                        text = "If you need assistance, please contact us via email.",
+                        text = "If you need assistance, please feel free to contact us via email!",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -422,22 +435,9 @@ fun ProfileScreen(navController: NavHostController) {
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Button(
-                            onClick = { showSupportDialog = false },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = DefaultPrimary
-                            ),
-                            border = BorderStroke(1.dp, DefaultPrimary),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text("Cancel")
-                        }
-
-                        Button(
+                        OutlinedButton(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_SENDTO).apply {
                                     setData("mailto:ladycure_admin@gmail.com".toUri())
@@ -445,10 +445,12 @@ fun ProfileScreen(navController: NavHostController) {
                                 navController.context.startActivity(intent)
                                 showSupportDialog = false
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DefaultPrimary,
-                                contentColor = Color.White
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = DefaultPrimary,
+                                containerColor = Color.White
                             ),
+                            modifier = Modifier.fillMaxWidth(0.7f),
+                            border = BorderStroke(1.dp, DefaultPrimary),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text("Contact Us")
@@ -944,7 +946,7 @@ fun DoctorAccountSettingsDialog(
                                 onDismissRequest = { expanded = false },
                                 modifier = Modifier.fillMaxWidth(0.9f)
                             ) {
-                                Speciality.values().forEach { speciality ->
+                                Speciality.entries.forEach { speciality ->
                                     DropdownMenuItem(
                                         text = {
                                             Text(
@@ -1251,12 +1253,14 @@ fun RegularAccountSettingsDialog(
                             onClick = onDismiss,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
-                                contentColor = DefaultPrimary
+                                contentColor = DefaultOnPrimary
                             ),
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Text("Cancel")
                         }
+
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         Button(
                             onClick = {
@@ -1270,7 +1274,7 @@ fun RegularAccountSettingsDialog(
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = DefaultPrimary,
-                                contentColor = DefaultOnPrimary
+                                contentColor = Color.White
                             ),
                             enabled = isAdult
                         ) {

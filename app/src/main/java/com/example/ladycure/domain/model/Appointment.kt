@@ -51,6 +51,18 @@ data class Appointment(
         )
     }
 
+    fun toSummary(): AppointmentSummary {
+        return AppointmentSummary(
+            appointmentId = appointmentId,
+            doctorName = doctorName,
+            patientName = patientName,
+            dateTime = dateTime,
+            status = status,
+            type = type.displayName,
+            price = price
+        )
+    }
+
     companion object {
         fun fromMap(map: Map<String, Any>): Appointment {
             return Appointment(

@@ -9,11 +9,11 @@ import com.example.ladycure.data.repository.AppointmentRepository
 import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Appointment.Status
+import com.example.ladycure.domain.model.AppointmentSummary
 import com.example.ladycure.domain.model.AppointmentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 class AppointmentViewModel(
@@ -21,10 +21,11 @@ class AppointmentViewModel(
     private val appointmentRepo: AppointmentRepository = AppointmentRepository()
 ) : ViewModel() {
 
-    // State variables
-    var futureAppointments by mutableStateOf<List<Appointment>>(emptyList())
+    private var loadedPastMonths = mutableSetOf<String>()
+    private val monthsToLoadInitially = 6
+    var futureAppointments by mutableStateOf<List<AppointmentSummary>>(emptyList())
         private set
-    var pastAppointments by mutableStateOf<List<Appointment>>(emptyList())
+    var pastAppointments by mutableStateOf<List<AppointmentSummary>>(emptyList())
         private set
     var isLoading by mutableStateOf(true)
         private set
@@ -52,6 +53,9 @@ class AppointmentViewModel(
     var role by mutableStateOf<String?>(null)
         private set
 
+    var isLoadingDetails by mutableStateOf(false)
+        private set
+
     init {
         loadAppointments()
     }
@@ -63,16 +67,18 @@ class AppointmentViewModel(
                 val roleResult = userRepo.getUserRole()
                 if (roleResult.isSuccess) {
                     role = roleResult.getOrNull()
-                    val appointmentsResult = appointmentRepo.getAppointments(role!!)
-                    if (appointmentsResult.isSuccess) {
-                        val allAppointments = appointmentsResult.getOrNull() ?: emptyList()
-                        updateAppointmentsLists(
-                            allAppointments
-                        )
+
+                    // Load upcoming appointments
+                    val upcomingResult = appointmentRepo.getUpcomingAppointmentsSummaries()
+                    if (upcomingResult.isSuccess) {
+                        futureAppointments = upcomingResult.getOrNull() ?: emptyList()
                     } else {
-                        error = appointmentsResult.exceptionOrNull()?.message
-                            ?: "Failed to load appointments"
+                        error = upcomingResult.exceptionOrNull()?.message
+                            ?: "Failed to load upcoming appointments"
                     }
+
+                    // Load initial past appointments (last X months)
+                    loadInitialPastAppointments()
                 } else {
                     error = roleResult.exceptionOrNull()?.message ?: "Failed to load user role"
                 }
@@ -84,34 +90,73 @@ class AppointmentViewModel(
         }
     }
 
-    private fun updateAppointmentsLists(allAppointments: List<Appointment>) {
-        futureAppointments = allAppointments.filter {
-            it.date.isAfter(LocalDate.now()) ||
-                    (it.date == LocalDate.now() && it.time.isAfter(LocalTime.now()))
-        }.sortedWith(compareBy({ it.date }, { it.time }))
+    private suspend fun loadInitialPastAppointments() {
+        val currentDate = LocalDate.now()
+        val monthsToLoad = (0 until monthsToLoadInitially).map {
+            currentDate.minusMonths(it.toLong()).format(DateTimeFormatter.ofPattern("yyyy-MM"))
+        }
 
-        pastAppointments = allAppointments.filter {
-            it.date.isBefore(LocalDate.now()) ||
-                    (it.date == LocalDate.now() && it.time.isBefore(LocalTime.now()))
-        }.sortedWith(compareBy({ it.date }, { it.time })).reversed()
+        val pastAppts = mutableListOf<AppointmentSummary>()
+        monthsToLoad.forEach { monthKey ->
+            if (!loadedPastMonths.contains(monthKey)) {
+                val result = appointmentRepo.getMonthlyAppointmentSummaries(monthKey)
+                if (result.isSuccess) {
+                    pastAppts.addAll(result.getOrNull() ?: emptyList())
+                    loadedPastMonths.add(monthKey)
+                }
+            }
+        }
+
+        pastAppointments = pastAppts.sortedByDescending { it.date }
     }
 
-    internal fun groupAppointmentsByMonth(appointments: List<Appointment>): Map<String, List<Appointment>> {
+    fun loadMorePastAppointments() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val oldestLoadedMonth = loadedPastMonths.minByOrNull { it } ?: return@launch
+                val monthToLoad = LocalDate.parse("$oldestLoadedMonth-01")
+                    .minusMonths(1)
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM"))
+
+                val result = appointmentRepo.getMonthlyAppointmentSummaries(monthToLoad)
+                if (result.isSuccess) {
+                    val newAppointments = result.getOrNull() ?: emptyList()
+                    pastAppointments = (pastAppointments + newAppointments)
+                        .sortedByDescending { it.date }
+                    loadedPastMonths.add(monthToLoad)
+                }
+            } catch (e: Exception) {
+                error = "Failed to load more appointments: ${e.message}"
+            }
+        }
+    }
+
+
+    internal fun groupAppointmentsByMonth(
+        appointments: List<AppointmentSummary>,
+        isUpcoming: Boolean = false
+    ): Map<String, List<AppointmentSummary>> {
         val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
         return appointments.groupBy {
             it.date.format(formatter)
-        }.toSortedMap(compareByDescending {
-            LocalDate.parse("01 $it", DateTimeFormatter.ofPattern("dd MMMM yyyy"))
-        })
+        }.toSortedMap(
+            if (isUpcoming) {
+                compareBy { LocalDate.parse("01 $it", DateTimeFormatter.ofPattern("dd MMMM yyyy")) }
+            } else {
+                compareByDescending {
+                    LocalDate.parse(
+                        "01 $it",
+                        DateTimeFormatter.ofPattern("dd MMMM yyyy")
+                    )
+                }
+            }
+        )
     }
 
     fun updateError(message: String?) {
         error = message
     }
 
-    fun selectAppointment(appointment: Appointment) {
-        selectedAppointment = appointment
-    }
 
     fun toggleEditStatusDialog(show: Boolean) {
         showEditStatusDialog = show
@@ -121,7 +166,6 @@ class AppointmentViewModel(
         showFilters = show
     }
 
-    // Updated filter functions to handle multiple selections
     fun toggleSpecializationFilter(specialization: String) {
         selectedSpecializations = if (selectedSpecializations.contains(specialization)) {
             selectedSpecializations - specialization
@@ -198,13 +242,30 @@ class AppointmentViewModel(
             if (result.isFailure) {
                 error = result.exceptionOrNull()?.message ?: "Failed to update comment"
             } else {
-                futureAppointments = futureAppointments.map {
-                    if (it.appointmentId == appointmentId) {
-                        it.copy(comments = newComment)
-                    } else {
-                        it
-                    }
+//                futureAppointments = futureAppointments.map {
+//                    if (it.appointmentId == appointmentId) {
+//                        it.copy(comments = newComment)
+//                    } else {
+//                        it
+//                    }
+//                }
+            }
+        }
+    }
+
+    fun loadDetailsForAppointment(appointmentId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            isLoadingDetails = true
+            try {
+                val result = appointmentRepo.getAppointmentById(appointmentId)
+                if (result.isSuccess) {
+                    selectedAppointment = result.getOrNull()
+                } else {
+                    error =
+                        result.exceptionOrNull()?.message ?: "Failed to load appointment details"
                 }
+            } finally {
+                isLoadingDetails = false
             }
         }
     }
@@ -226,32 +287,31 @@ class AppointmentViewModel(
         }
     }
 
-    // Updated filtered lists to handle multiple selections
-    val filteredFutureAppointments: List<Appointment>
+    val filteredFutureAppointments: List<AppointmentSummary>
         get() = if (role == "user") {
             futureAppointments.filter { appointment ->
-                (selectedSpecializations.isEmpty() || selectedSpecializations.contains(appointment.type.speciality)) &&
+                (selectedSpecializations.isEmpty() || selectedSpecializations.contains(appointment.enumType.speciality)) &&
                         (selectedDoctors.isEmpty() || selectedDoctors.contains(appointment.doctorName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
         } else {
             futureAppointments.filter { appointment ->
-                (selectedTypes.isEmpty() || selectedTypes.contains(appointment.type)) &&
+                (selectedTypes.isEmpty() || selectedTypes.contains(appointment.enumType)) &&
                         (selectedPatients.isEmpty() || selectedPatients.contains(appointment.patientName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
         }
 
-    val filteredPastAppointments: List<Appointment>
+    val filteredPastAppointments: List<AppointmentSummary>
         get() = if (role == "user") {
             pastAppointments.filter { appointment ->
-                (selectedSpecializations.isEmpty() || selectedSpecializations.contains(appointment.type.speciality)) &&
+                (selectedSpecializations.isEmpty() || selectedSpecializations.contains(appointment.enumType.speciality)) &&
                         (selectedDoctors.isEmpty() || selectedDoctors.contains(appointment.doctorName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
         } else {
             pastAppointments.filter { appointment ->
-                (selectedTypes.isEmpty() || selectedTypes.contains(appointment.type)) &&
+                (selectedTypes.isEmpty() || selectedTypes.contains(appointment.enumType)) &&
                         (selectedPatients.isEmpty() || selectedPatients.contains(appointment.patientName)) &&
                         (selectedDate == null || appointment.date == selectedDate)
             }
@@ -259,7 +319,7 @@ class AppointmentViewModel(
 
     // Computed properties for filter options
     val allSpecializations: List<String>
-        get() = (futureAppointments + pastAppointments).map { it.type.speciality }.distinct()
+        get() = (futureAppointments + pastAppointments).map { it.enumType.speciality }.distinct()
 
     val allDoctors: List<String>
         get() = (futureAppointments + pastAppointments).map { it.doctorName }.distinct()
@@ -268,5 +328,5 @@ class AppointmentViewModel(
         get() = (futureAppointments + pastAppointments).map { it.patientName }.distinct()
 
     val allTypes: List<AppointmentType>
-        get() = (futureAppointments + pastAppointments).map { it.type }.distinct()
+        get() = (futureAppointments + pastAppointments).map { it.enumType }.distinct()
 }
