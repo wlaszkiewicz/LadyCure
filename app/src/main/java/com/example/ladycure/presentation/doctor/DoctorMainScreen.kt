@@ -201,10 +201,12 @@ fun DoctorHomeScreen(
                         viewModel.setShowEditStatusDialog(true)
                     }
                 },
-                onMessage = {},
+                onMessage = {
+                },
                 onCommentUpdated = { newComment ->
                     viewModel.updateAppointmentComment(newComment)
                 },
+                navController = navController
             )
         }
     }
@@ -1236,6 +1238,7 @@ fun DetailsDialog(
     onClickStatus: () -> Unit,
     onMessage: () -> Unit,
     onCommentUpdated: (String) -> Unit,
+    navController: NavHostController? = null
 ) {
     var editedComment by remember { mutableStateOf(appointment.comments) }
     var showEditComment by remember { mutableStateOf(false) }
@@ -1261,6 +1264,7 @@ fun DetailsDialog(
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
             ) {
+                // Header with patient info
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1281,6 +1285,7 @@ fun DetailsDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            // Doctor avatar
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
@@ -1316,10 +1321,12 @@ fun DetailsDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // Info chips
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
+                            // Status chip
                             InfoChip(
                                 text = appointment.status.displayName,
                                 color = statusColor,
@@ -1330,11 +1337,13 @@ fun DetailsDialog(
                                 }
                             )
 
+                            // Duration chip
                             InfoChip(
                                 text = "${appointment.type.durationInMinutes} min",
                                 color = DefaultPrimary
                             )
 
+                            // Price chip
                             InfoChip(
                                 text = "$%.2f".format(appointment.price),
                                 color = BabyBlue
@@ -1343,9 +1352,11 @@ fun DetailsDialog(
                     }
                 }
 
+                // Appointment details
                 Column(
                     modifier = Modifier.padding(horizontal = 24.dp)
                 ) {
+                    // Date and time section
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1390,12 +1401,14 @@ fun DetailsDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Details section
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        // Location
                         AppointmentDetailItem(
                             icon = Icons.Default.LocationOn,
                             title = "Location",
@@ -1523,6 +1536,7 @@ fun DetailsDialog(
                     }
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Action buttons
                     if (appointment.status != Status.CANCELLED) {
                         Row(
                             modifier = Modifier
@@ -1549,7 +1563,10 @@ fun DetailsDialog(
                             }
                             // Reschedule button
                             Button(
-                                onClick = onMessage,
+                                onClick = {
+                                    onMessage()
+                                    navController?.navigate("chat/${appointment.patientId}/${appointment.patientName}")
+                                },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = DefaultPrimary,
