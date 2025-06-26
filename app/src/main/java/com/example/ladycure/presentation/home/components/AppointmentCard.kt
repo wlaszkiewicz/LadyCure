@@ -87,7 +87,18 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-
+/**
+ * Displays a section with a list of appointments, divided into upcoming and past.
+ *
+ * Shows upcoming appointments if any exist; otherwise shows past appointments or
+ * a message indicating no appointments.
+ * Provides navigation to a full appointments screen.
+ *
+ * @param appointments The list of appointment summaries to display, or null if loading.
+ * @param onAppointmentChanged Callback invoked when an appointment is updated.
+ * @param snackbarController Controller to show snackbars for messages.
+ * @param navController NavController for navigation actions.
+ */
 @Composable
 fun AppointmentsSection(
     appointments: List<AppointmentSummary>?,
@@ -196,6 +207,19 @@ fun AppointmentsSection(
     }
 }
 
+/**
+ * Displays a card UI showing brief appointment information.
+ *
+ * The card is clickable and loads full appointment details on click,
+ * showing a dialog with detailed info and actions such as reschedule or cancel.
+ *
+ * Appointment status is visually represented with colors.
+ *
+ * @param appointment The summary of the appointment to display.
+ * @param onAppointmentChanged Callback invoked when this appointment is changed (e.g. cancelled).
+ * @param snackbarController Controller to show snackbar messages.
+ * @param navController NavController for navigation actions.
+ */
 @Composable
 fun PatientAppointmentCard(
     appointment: AppointmentSummary,
@@ -245,7 +269,7 @@ fun PatientAppointmentCard(
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
-                // Header
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -330,7 +354,6 @@ fun PatientAppointmentCard(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Footer
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -406,6 +429,15 @@ fun PatientAppointmentCard(
     }
 }
 
+/**
+ * Displays a detailed dialog view of an appointment, including status, date, time,
+ * location, preparation instructions, notes, and actions to reschedule or cancel.
+ *
+ * @param appointment The detailed appointment data to display.
+ * @param onDismiss Callback invoked when the dialog is dismissed.
+ * @param onReschedule Callback invoked when the user requests to reschedule the appointment.
+ * @param onCancel Callback invoked when the user confirms cancellation of the appointment.
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ShowDetailsDialog(
@@ -437,7 +469,6 @@ fun ShowDetailsDialog(
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
             ) {
-                // Header with doctor info
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -458,7 +489,6 @@ fun ShowDetailsDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Doctor avatar
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
@@ -494,24 +524,20 @@ fun ShowDetailsDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Info chips
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            // Status chip
                             InfoChip(
                                 text = appointment.status.displayName,
                                 color = statusColor
                             )
 
-                            // Duration chip
                             InfoChip(
                                 text = "${appointment.type.durationInMinutes} min",
                                 color = DefaultPrimary
                             )
 
-                            // Price chip
                             InfoChip(
                                 text = "$%.2f".format(appointment.price),
                                 color = BabyBlue
@@ -520,7 +546,6 @@ fun ShowDetailsDialog(
                     }
                 }
 
-                // Appointment details
                 Column(
                     modifier = Modifier.padding(horizontal = 24.dp)
                 ) {
@@ -568,21 +593,18 @@ fun ShowDetailsDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Details section
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Location
                         AppointmentDetailItem(
                             icon = Icons.Default.LocationOn,
                             title = "Location",
                             value = appointment.address.ifEmpty { "Not specified" }
                         )
 
-                        // Preparation instructions
                         if (appointment.status != Status.CANCELLED && appointment.status != Status.COMPLETED) {
 
                             if (appointment.type.preparationInstructions.isNotEmpty()) {
@@ -650,7 +672,6 @@ fun ShowDetailsDialog(
                             }
                         }
 
-                        // Comments
                         if (appointment.comments.isNotEmpty()) {
                             AppointmentDetailItem(
                                 icon = Icons.AutoMirrored.Filled.Comment,
@@ -661,7 +682,6 @@ fun ShowDetailsDialog(
                     }
 
 
-                    // Action buttons
                     if (appointment.status != Status.CANCELLED && appointment.status != Status.COMPLETED) {
                         Spacer(modifier = Modifier.height(24.dp))
                         Row(
@@ -669,7 +689,6 @@ fun ShowDetailsDialog(
                                 .fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            // Cancel button
                             OutlinedButton(
                                 onClick = { showCancelConfirmation.value = true },
                                 shape = RoundedCornerShape(14.dp),
@@ -693,7 +712,6 @@ fun ShowDetailsDialog(
                                 )
                             }
 
-                            // Reschedule button
                             Button(
                                 onClick = onReschedule,
                                 shape = RoundedCornerShape(14.dp),
@@ -713,7 +731,7 @@ fun ShowDetailsDialog(
                         }
                     } else if (appointment.status == Status.CANCELLED) {
                         Spacer(modifier = Modifier.height(24.dp))
-                        // Show cancelled message
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -773,6 +791,13 @@ fun ShowDetailsDialog(
     }
 }
 
+/**
+ * Displays a confirmation dialog to confirm cancellation of an appointment.
+ *
+ * @param onDismiss Callback invoked when the dialog is dismissed without confirmation.
+ * @param onConfirm Callback invoked when the user confirms the cancellation.
+ * @param appointment Summary information of the appointment to be cancelled.
+ */
 @Composable
 fun CancelConfirmationDialog(
     onDismiss: () -> Unit,
@@ -790,7 +815,6 @@ fun CancelConfirmationDialog(
             Column(
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Warning icon
                 Box(
                     modifier = Modifier
                         .size(72.dp)
@@ -810,7 +834,6 @@ fun CancelConfirmationDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Title
                 Text(
                     text = "Cancel Appointment?",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -823,7 +846,6 @@ fun CancelConfirmationDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Appointment details
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = Color(0xFFFAFAFA),
@@ -856,7 +878,6 @@ fun CancelConfirmationDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Confirmation text
                 Text(
                     text = "This action cannot be undone. Are you sure you want to cancel this appointment?",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -868,7 +889,6 @@ fun CancelConfirmationDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -914,6 +934,14 @@ fun CancelConfirmationDialog(
     }
 }
 
+/**
+ * A customizable chip UI component displaying text with a colored border and background.
+ * Can optionally handle click events.
+ *
+ * @param text The text to display inside the chip.
+ * @param color The primary color used for the chip's background tint, border, and text.
+ * @param onClick Lambda to be invoked when the chip is clicked. Default is no-op.
+ */
 @Composable
 fun InfoChip(
     text: String,
@@ -941,6 +969,14 @@ fun InfoChip(
     }
 }
 
+/**
+ * Displays a detailed row item with an icon, a title label, and a corresponding value.
+ * Used for showing appointment details like location or notes.
+ *
+ * @param icon The [ImageVector] icon to display at the start.
+ * @param title The label text describing the information.
+ * @param value The value or content text associated with the title.
+ */
 @Composable
 fun AppointmentDetailItem(
     icon: ImageVector,
@@ -976,7 +1012,12 @@ fun AppointmentDetailItem(
     }
 }
 
-
+/**
+ * Dialog shown to confirm successful cancellation of an appointment.
+ * Provides information about refund timing and an acknowledgment button.
+ *
+ * @param onDismiss Callback invoked when the dialog is dismissed.
+ */
 @Composable
 fun CancelSuccessDialog(
     onDismiss: () -> Unit
@@ -993,7 +1034,6 @@ fun CancelSuccessDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Animated checkmark icon with circle background
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -1023,7 +1063,6 @@ fun CancelSuccessDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Message
                 Text(
                     text = "Your appointment has been successfully cancelled. Any payments will be refunded within 7 business days.",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -1034,7 +1073,6 @@ fun CancelSuccessDialog(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Action button
                 Button(
                     onClick = onDismiss,
                     shape = RoundedCornerShape(14.dp),

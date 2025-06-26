@@ -98,6 +98,14 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Displays the user's profile screen, showing profile picture, user info,
+ * and settings options such as account settings, notifications, and support.
+ * Handles image picking and uploading for profile picture updates.
+ *
+ * @param navController Navigation controller used to navigate to other screens
+ *                      such as notifications and to handle logout navigation.
+ */
 @Composable
 fun ProfileScreen(navController: NavHostController) {
     val context = LocalContext.current
@@ -289,7 +297,6 @@ fun ProfileScreen(navController: NavHostController) {
                     }
                 }
 
-                // Settings
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -462,6 +469,14 @@ fun ProfileScreen(navController: NavHostController) {
     }
 }
 
+/**
+ * A clickable card option used in the profile screen, displaying an icon and a text label.
+ *
+ * @param text The label text to display.
+ * @param icon The icon to show, can be either an [ImageVector] or a [Painter].
+ * @param isVector True if the [icon] is a [Painter], false if it's an [ImageVector]. Default is false.
+ * @param onClick Lambda invoked when the option is clicked.
+ */
 @Composable
 fun ProfileOption(
     text: String,
@@ -472,7 +487,7 @@ fun ProfileOption(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(70.dp), // Increased height
+            .height(70.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White,
@@ -520,7 +535,17 @@ fun ProfileOption(
     }
 }
 
-
+/**
+ * Displays an account settings dialog that adapts its content depending on the user's role.
+ *
+ * If the role is `"doctor"`, it shows the [DoctorAccountSettingsDialog] and updates the doctor's profile.
+ * For all other roles, it shows the [RegularAccountSettingsDialog].
+ *
+ * @param userData The current user data map to prefill the dialog fields.
+ * @param onDismiss Lambda invoked when the dialog is dismissed.
+ * @param onSave Lambda invoked when the user saves changes; receives updated data as a map of strings.
+ * @param role Optional user role string to determine which dialog to show.
+ */
 @Composable
 fun AccountSettingsDialog(
     userData: Map<String, Any>?,
@@ -535,10 +560,8 @@ fun AccountSettingsDialog(
             onDismiss = onDismiss,
             onSave = { updatedData ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    // Cast updatedData to Map<String, Any> for updateDoctorProfile
                     doctorRepo.updateDoctorProfile(updatedData as Map<String, Any>)
-                    // Then cast back to Map<String, String> if needed by the original onSave
-                    // However, the original onSave expects Map<String, String>, so this might need adjustment in the calling component
+
                     onSave(updatedData.mapValues { it.value.toString() })
                 }
             }
@@ -548,6 +571,14 @@ fun AccountSettingsDialog(
     }
 }
 
+/**
+ * Displays a dialog for editing doctor account settings.
+ *
+ * @param userData The current user data to prefill the dialog fields.
+ * @param onDismiss Lambda called when the dialog is dismissed.
+ * @param onSave Lambda called when the user saves changes; receives updated data as a map.
+ * @param role Optional user role string (not used in this dialog).
+ */
 @Composable
 fun DoctorAccountSettingsDialog(
     userData: Map<String, Any>?,
@@ -584,7 +615,7 @@ fun DoctorAccountSettingsDialog(
     var dob by remember { mutableStateOf(initialDob) }
     var dobText by remember { mutableStateOf(initialDob.format(DateTimeFormatter.ISO_LOCAL_DATE)) }
     var isAdult by remember { mutableStateOf(!dob.isAfter(LocalDate.now().minusYears(18))) }
-    var dobError by remember { mutableStateOf("") } // Added for DOB format error
+    var dobError by remember { mutableStateOf("") }
 
     var selectedSpeciality by remember {
         mutableStateOf(
@@ -619,7 +650,7 @@ fun DoctorAccountSettingsDialog(
     }
     var cityError by remember { mutableStateOf("") }
 
-    // Correctly initialize consultationPrice and experience as TextFieldValue holding String
+
     var consultationPrice by remember {
         mutableStateOf(
             TextFieldValue(
@@ -707,7 +738,6 @@ fun DoctorAccountSettingsDialog(
             phoneError = ""
         }
 
-        // Validate consultationPrice
         val price = consultationPrice.text.toDoubleOrNull()
         if (consultationPrice.text.isBlank()) {
             consultationPriceError = "Consultation price cannot be empty"
@@ -719,7 +749,6 @@ fun DoctorAccountSettingsDialog(
             consultationPriceError = ""
         }
 
-        // Validate experience
         val exp = experience.text.toIntOrNull()
         if (experience.text.isBlank()) {
             experienceError = "Experience cannot be empty"
@@ -1037,7 +1066,7 @@ fun DoctorAccountSettingsDialog(
                             label = { Text("Bio") },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Default.Person, // Using person icon, could be a more specific 'description' icon
+                                    Icons.Default.Person,
                                     contentDescription = "Bio"
                                 )
                             },
@@ -1123,7 +1152,7 @@ fun DoctorAccountSettingsDialog(
                                         },
                                         onClick = {
                                             selectedSpeciality = specialityItem
-                                            specialityError = "" // Clear error on selection
+                                            specialityError = ""
                                             expanded = false
                                         }
                                     )
@@ -1230,7 +1259,7 @@ fun DoctorAccountSettingsDialog(
                             containerColor = DefaultPrimary,
                             contentColor = Color.White
                         ),
-                        enabled = validateInputs(), // Button enabled based on validation
+                        enabled = validateInputs(),
                         modifier = Modifier.width(140.dp),
                         elevation = ButtonDefaults.buttonElevation(
                             defaultElevation = 4.dp,
@@ -1245,6 +1274,16 @@ fun DoctorAccountSettingsDialog(
     }
 }
 
+/**
+ * A dialog for regular users to view and edit their account settings.
+ *
+ * Displays fields for name, surname, phone number, and date of birth with validation.
+ * Shows errors if inputs are invalid and only enables saving when all inputs are valid.
+ *
+ * @param userData The current user data to prefill the fields, can be null.
+ * @param onDismiss Lambda called when the dialog is dismissed.
+ * @param onSave Lambda called when the user saves valid changes; provides updated data as a map.
+ */
 @Composable
 fun RegularAccountSettingsDialog(
     userData: Map<String, Any>?,
@@ -1280,7 +1319,7 @@ fun RegularAccountSettingsDialog(
     var dob by remember { mutableStateOf(initialDob) }
     var dobText by remember { mutableStateOf(initialDob.format(DateTimeFormatter.ISO_LOCAL_DATE)) }
     var isAdult by remember { mutableStateOf(!dob.isAfter(LocalDate.now().minusYears(18))) }
-    var dobError by remember { mutableStateOf("") } // Added for DOB format error
+    var dobError by remember { mutableStateOf("") }
 
     var phone by remember {
         mutableStateOf(
@@ -1513,7 +1552,7 @@ fun RegularAccountSettingsDialog(
                                 containerColor = DefaultPrimary,
                                 contentColor = DefaultOnPrimary
                             ),
-                            enabled = validateInputs() // Button enabled based on validation
+                            enabled = validateInputs()
                         ) {
                             Text("Save")
                         }
@@ -1524,17 +1563,36 @@ fun RegularAccountSettingsDialog(
     }
 }
 
+/**
+ * Logs the user out by signing out from the authentication repository
+ * and navigates to the welcome screen, clearing the navigation stack.
+ *
+ * @param navController The NavHostController used to perform navigation.
+ */
 fun logOut(navController: NavHostController) {
     val authRepo = AuthRepository()
     authRepo.signOut()
     navController.navigate("welcome") { popUpTo(0) }
 }
 
-// Helper functions (Added for consistent validation rules)
+/**
+ * Validates an email string against Android's standard email address pattern.
+ *
+ * @param email The email string to validate.
+ * @return True if the email is valid, false otherwise.
+ */
 private fun isValidEmail(email: String): Boolean {
     return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }
 
+/**
+ * Validates a birth date string in the format "yyyy-MM-dd".
+ *
+ * Checks that the date matches the pattern and is a valid date (non-lenient parsing).
+ *
+ * @param date The date string to validate.
+ * @return True if the date is valid, false otherwise.
+ */
 private fun isValidBirthDate(date: String): Boolean {
     val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""")
     if (!pattern.matches(date)) return false
@@ -1549,6 +1607,15 @@ private fun isValidBirthDate(date: String): Boolean {
     }
 }
 
+/**
+ * Validates a phone number string.
+ *
+ * The phone number may start with a "+" and contain digits, spaces, or dashes,
+ * with a length between 6 and 15 characters.
+ *
+ * @param phone The phone number string to validate.
+ * @return True if the phone number matches the pattern, false otherwise.
+ */
 private fun isValidPhone(phone: String): Boolean {
     return phone.matches(Regex("""^[+]?[\d\s-]{6,15}$"""))
 }

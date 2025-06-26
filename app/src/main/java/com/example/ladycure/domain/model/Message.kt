@@ -2,10 +2,22 @@ package com.example.ladycure.domain.model
 
 import com.google.firebase.Timestamp
 
+/**
+ * Represents a message exchanged between users in the system.
+ *
+ * @property sender The unique identifier of the user who sent the message.
+ * @property senderName The display name of the sender.
+ * @property recipient The unique identifier of the message recipient.
+ * @property text The textual content of the message.
+ * @property timestamp The time at which the message was sent.
+ * @property attachmentUrl Optional URL to an attachment associated with the message.
+ * @property attachmentFileName Optional filename of the attached file.
+ * @property attachmentMimeType Optional MIME type of the attachment.
+ */
 data class Message(
-    val sender: String = "", // User ID of the sender
+    val sender: String = "",
     val senderName: String = "",
-    val recipient: String = "", // User ID of the recipient
+    val recipient: String = "",
     val text: String = "",
     val timestamp: Timestamp = Timestamp.Companion.now(),
     val attachmentUrl: String? = null,
@@ -13,6 +25,11 @@ data class Message(
     val attachmentMimeType: String? = null
 ) {
 
+    /**
+     * Converts the [Message] instance into a map suitable for storage or transmission.
+     *
+     * @return A map representing the message fields.
+     */
     fun toMap(): Map<String, Any?> {
         return mapOf(
             "sender" to sender,
@@ -26,6 +43,12 @@ data class Message(
         )
     }
 
+    /**
+     * Creates a [Message] instance from a map of key-value pairs.
+     *
+     * @param map A map containing message data.
+     * @return A [Message] object populated with data from the map.
+     */
     companion object {
         fun fromMap(map: Map<String, Any?>): Message {
             return Message(

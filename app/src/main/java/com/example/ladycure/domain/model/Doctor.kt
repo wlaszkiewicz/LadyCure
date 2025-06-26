@@ -7,6 +7,30 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Represents a Doctor with detailed information including speciality, availability, reviews,
+ * contact info, and personal data.
+ *
+ * @property speciality The medical speciality of the doctor.
+ * @property availability List of availability schedules for the doctor.
+ * @property reviews List of patient reviews for the doctor.
+ * @property address The doctor's office or clinic address.
+ * @property consultationPrice The consultation fee charged by the doctor.
+ * @property rating Average rating score for the doctor.
+ * @property experience Years of professional experience.
+ * @property languages List of languages spoken by the doctor.
+ * @property city The city where the doctor practices.
+ * @property phone The contact phone number of the doctor.
+ * @property bio A short biography or description of the doctor.
+ * @property id Unique identifier for the doctor.
+ * @property email Contact email of the doctor.
+ * @property name Doctor's first name.
+ * @property surname Doctor's last name.
+ * @property dateOfBirth Doctor's birth date as a String.
+ * @property profilePictureUrl URL to the doctor's profile picture.
+ * @property role The role of the user, default is [Role.DOCTOR].
+ * @property joinedAt Timestamp of when the doctor joined the platform.
+ */
 data class Doctor(
     val speciality: Speciality,
     val availability: List<DoctorAvailability> = emptyList(),
@@ -39,8 +63,11 @@ data class Doctor(
     phone = phone
 ) {
 
-
-    // In Doctor class
+    /**
+     * Converts this [Doctor] instance to a generic [User] instance with role set to USER.
+     *
+     * @return A [User] instance with details copied from this doctor.
+     */
     fun toUser(): User {
         return User(
             id = this.id,
@@ -55,6 +82,11 @@ data class Doctor(
         )
     }
 
+    /**
+     * Converts the [Doctor] instance to a map representation for database storage.
+     *
+     * @return A map containing doctor fields and their values.
+     */
     fun toMap(): Map<String, Any> {
         return mapOf(
             "speciality" to speciality.displayName,
@@ -78,6 +110,11 @@ data class Doctor(
         )
     }
 
+    /**
+     * Creates a copy of this doctor with optional modified fields.
+     *
+     * @return A new [Doctor] instance with updated values where specified.
+     */
     fun copyDoc(
         id: String = this.id,
         email: String = this.email,
@@ -123,6 +160,12 @@ data class Doctor(
     }
 
     companion object {
+        /**
+         * Creates a [Doctor] instance from a map representation.
+         *
+         * @param doctor A map containing doctor data.
+         * @return A [Doctor] instance.
+         */
         fun fromMap(doctor: Map<String, Any>): Doctor {
             val rating = when (val rat = doctor["rating"]) {
                 is Int -> rat.toDouble()
@@ -172,6 +215,12 @@ data class Doctor(
             )
         }
 
+        /**
+         * Converts a [DoctorApplication] to a [Doctor] instance.
+         *
+         * @param application The doctor's application data.
+         * @return A new [Doctor] instance.
+         */
         fun fromApplication(application: DoctorApplication): Doctor {
             return Doctor(
                 speciality = application.speciality,
@@ -181,20 +230,26 @@ data class Doctor(
                 consultationPrice = 100,
                 rating = 0.0,
                 experience = application.yearsOfExperience,
-                languages = listOf("English"), // Default language, can be adjusted later
+                languages = listOf("English"),
                 city = application.city,
                 phone = application.phoneNumber,
-                bio = "New doctor", // Default bio, can be adjusted later
+                bio = "New doctor",
                 email = application.email,
                 name = application.firstName,
                 surname = application.lastName,
                 dateOfBirth = application.dateOfBirth.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                profilePictureUrl = "", // No profile picture in application
+                profilePictureUrl = "",
                 id = application.userId,
                 joinedAt = Timestamp.now()
             )
         }
 
+        /**
+         * Converts a [Doctor] instance into a map for storage or transmission.
+         *
+         * @param doctor The doctor instance.
+         * @return A map containing the doctor's data.
+         */
         fun toMap(doctor: Doctor): Map<String, Any> {
             return mapOf(
                 "speciality" to doctor.speciality.displayName,
@@ -222,7 +277,13 @@ data class Doctor(
     }
 }
 
-
+/**
+ * Enum representing medical specialities with display names and icons.
+ *
+ * @property displayName Human-readable name of the speciality.
+ * @property icon Resource ID for the speciality icon.
+ * @property doctorCount Optional count of doctors in this speciality.
+ */
 enum class Speciality(val displayName: String, val icon: Int, val doctorCount: Int? = 2) {
     FAMILY_MEDICINE("Family Medicine", icon = (R.drawable.ic_family_medicine)),
     DERMATOLOGY("Dermatology", icon = (R.drawable.ic_dermatology)),
@@ -251,6 +312,15 @@ enum class Speciality(val displayName: String, val icon: Int, val doctorCount: I
     }
 }
 
+/**
+ * Represents the availability of a doctor on a specific date and times.
+ *
+ * @property doctorId The ID of the doctor.
+ * @property date The date of availability.
+ * @property startTime The start time of availability.
+ * @property endTime The end time of availability.
+ * @property availableSlots The list of available time slots.
+ */
 data class DoctorAvailability(
     val doctorId: String,
     val date: LocalDate?,

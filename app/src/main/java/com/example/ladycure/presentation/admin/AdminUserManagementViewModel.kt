@@ -12,11 +12,21 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/**
+ * ViewModel for managing users in the admin panel.
+ *
+ * Provides functionality to load, search, add, edit, and delete users.
+ * Handles UI state such as dialogs visibility and loading indicators,
+ * as well as error messages.
+ *
+ * @property userRepo Repository for user data operations.
+ * @property authRepo Repository for authentication-related operations.
+ */
 class AdminUserManagementViewModel(
     private val userRepo: UserRepository = UserRepository(),
     private val authRepo: AuthRepository = AuthRepository(),
 ) : ViewModel() {
-    // Dialog visibility states
+
     var showAddUserDialog by mutableStateOf(false)
         private set
 
@@ -26,32 +36,27 @@ class AdminUserManagementViewModel(
     var showDeleteUserDialog by mutableStateOf(false)
         private set
 
-    // User selection states
     var selectedUser by mutableStateOf<User?>(null)
         private set
 
     var editedUser by mutableStateOf<User?>(null)
         private set
 
-    // New user state
     var newUser by mutableStateOf(User.empty().copy(role = Role.USER))
         private set
 
-    // Search and loading states
     var searchQuery by mutableStateOf("")
         private set
 
     var isLoadingUsers by mutableStateOf(false)
         private set
 
-    // Data state
     var users by mutableStateOf<List<Map<String, Any>>>(emptyList())
         private set
 
     var errorMessage by mutableStateOf<String?>(null)
         internal set
 
-    // Computed properties
     val allUsers
         get() = users
             .filter { it["role"] != Role.DOCTOR.value }
@@ -72,6 +77,10 @@ class AdminUserManagementViewModel(
         loadUsers()
     }
 
+    /**
+     * Loads users from the repository.
+     * Updates [users], [isLoadingUsers], and [errorMessage] accordingly.
+     */
     fun loadUsers() {
         viewModelScope.launch {
             isLoadingUsers = true
@@ -85,52 +94,83 @@ class AdminUserManagementViewModel(
         }
     }
 
-    // Search functionality
+    /**
+     * Updates the current search query string.
+     *
+     * @param query New search query.
+     */
     fun updateSearchQuery(query: String) {
         searchQuery = query
     }
 
-    // Dialog control methods
+    /** Shows the Add User dialog. */
     fun showAddUserDialog() {
         showAddUserDialog = true
     }
 
+    /** Dismisses the Add User dialog. */
     fun dismissAddUserDialog() {
         showAddUserDialog = false
     }
 
+    /**
+     * Shows the Edit User dialog for a selected user.
+     *
+     * @param user The user to edit.
+     */
     fun showEditUserDialog(user: User) {
         selectedUser = user
         editedUser = user.copy()
         showEditUserDialog = true
     }
 
+    /** Dismisses the Edit User dialog. */
     fun dismissEditUserDialog() {
         showEditUserDialog = false
     }
 
+    /**
+     * Shows the Delete User confirmation dialog for a selected user.
+     *
+     * @param user The user to delete.
+     */
     fun showDeleteUserDialog(user: User) {
         selectedUser = user
         showDeleteUserDialog = true
     }
 
+    /** Dismisses the Delete User dialog. */
     fun dismissDeleteUserDialog() {
         showDeleteUserDialog = false
     }
 
-    // User data modification methods
+    /**
+     * Updates the user data currently being created in the Add User dialog.
+     *
+     * @param user Updated user data.
+     */
     fun updateNewUser(user: User) {
         newUser = user
     }
 
+    /**
+     * Updates the user data currently being edited in the Edit User dialog.
+     *
+     * @param user Updated user data.
+     */
     fun updateEditedUser(user: User) {
         editedUser = user
     }
 
+    /**
+     * Validates and saves changes made to the edited user.
+     * Shows appropriate error messages if validation fails.
+     * Reloads users on success.
+     */
     fun saveUserChanges() {
         viewModelScope.launch {
             selectedUser?.let { originalUser ->
-                // Validate before proceeding
+
                 when {
                     editedUser?.name.isNullOrBlank() -> {
                         errorMessage = "Name cannot be empty"
@@ -176,17 +216,16 @@ class AdminUserManagementViewModel(
         }
     }
 
-    // Helper function for email validation
     private fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
     private fun isValidBirthDate(date: String): Boolean {
-        val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""") // yyyy-MM-dd format
+        val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""")
         if (!pattern.matches(date)) return false
 
         return try {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            dateFormat.isLenient = false // Strict parsing
+            dateFormat.isLenient = false
             dateFormat.parse(date)
             true
         } catch (e: Exception) {

@@ -34,6 +34,15 @@ import com.example.ladycure.presentation.admin.components.LoadingView
 import com.example.ladycure.presentation.admin.components.UserList
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * Composable screen for managing users in the admin panel.
+ *
+ * Displays a searchable list of users with options to add, edit, and delete users.
+ * Shows loading and empty states accordingly.
+ *
+ * @param snackbarController Controller to display snackbar messages for user feedback.
+ * @param viewModel The [AdminUserManagementViewModel] instance to provide state and event handling.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminUserManagementScreen(
@@ -44,7 +53,7 @@ fun AdminUserManagementScreen(
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarController.showMessage(it)
-            viewModel.errorMessage = null // Reset error message after showing
+            viewModel.errorMessage = null
         }
     }
     Column(

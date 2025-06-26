@@ -41,6 +41,14 @@ import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.User
 
+/**
+ * Displays a card representing a [User], showing profile picture, name, email,
+ * date of birth, and role badge. Includes buttons to edit or delete the user.
+ *
+ * @param user The user data to display.
+ * @param onEditClick Callback invoked when the edit button is clicked.
+ * @param onDeleteClick Callback invoked when the delete button is clicked.
+ */
 @Composable
 private fun UserCard(
     user: User,
@@ -130,6 +138,15 @@ private fun UserCard(
     }
 }
 
+/**
+ * Dialog for editing an existing [User]. Displays a [UserForm] for input and
+ * buttons to save changes or cancel editing.
+ *
+ * @param user The current user data to edit.
+ * @param onDismiss Callback invoked to dismiss the dialog.
+ * @param onSave Callback invoked to save changes.
+ * @param onUserChange Callback triggered when any user field is updated.
+ */
 @Composable
 fun EditUserDialog(
     user: User,
@@ -159,6 +176,15 @@ fun EditUserDialog(
     )
 }
 
+/**
+ * Dialog for adding a new [User]. Displays a [UserForm] for input and
+ * buttons to create the user or cancel the operation.
+ *
+ * @param user The initial user data (usually empty).
+ * @param onDismiss Callback invoked to dismiss the dialog.
+ * @param onSave Callback invoked to save the new user.
+ * @param onUserChange Callback triggered when any user field is updated.
+ */
 @Composable
 fun AddUserDialog(
     user: User,
@@ -188,13 +214,20 @@ fun AddUserDialog(
     )
 }
 
-
+/**
+ * Form for entering or editing [User] details including name, surname, email,
+ * date of birth, and role. If the role is [Role.DOCTOR], shows additional
+ * doctor-specific fields using [DoctorDetailsDialogSection].
+ *
+ * @param user The user data to display and edit.
+ * @param onUserChange Callback triggered when the user data is modified.
+ */
 @Composable
 private fun UserForm(
     user: User,
     onUserChange: (User) -> Unit
 ) {
-    // Track whether we're showing doctor fields
+
     val showDoctorFields = user.role == Role.DOCTOR
 
     Column(
@@ -259,6 +292,16 @@ private fun UserForm(
     }
 }
 
+
+/**
+ * Displays a list of [User]s in a vertical scrolling list. Each user is
+ * represented by a [UserCard] with edit and delete actions.
+ *
+ * @param users The list of users to display.
+ * @param onEditClick Callback invoked with the selected user when the edit button is clicked.
+ * @param onDeleteClick Callback invoked with the selected user when the delete button is clicked.
+ * @param modifier Optional [Modifier] to be applied to the list container.
+ */
 @Composable
 fun UserList(
     users: List<User>,

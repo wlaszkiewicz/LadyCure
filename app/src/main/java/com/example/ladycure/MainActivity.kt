@@ -76,6 +76,11 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 
+/**
+ * Main activity of the LadyCure app.
+ *
+ * Initializes Firebase and sets the app's theme and navigation.
+ */
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,6 +95,12 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
+/**
+ * Composable that sets up the main screen of the app, including
+ * navigation graph, bottom navigation bar, and snackbar host.
+ *
+ * @param navController NavHostController to handle navigation between screens.
+ */
 @Composable
 fun MainScreen(navController: NavHostController) {
     AuthRepository()
@@ -97,7 +108,6 @@ fun MainScreen(navController: NavHostController) {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // List of screens where BottomNavBar should be shown
     val showBottomNavRoutes = listOf(
         "home",
         "doctor",
@@ -374,7 +384,6 @@ fun MainScreen(navController: NavHostController) {
 
                 composable("adminAvailabilityList/{doctorId}") { backStackEntry ->
                     val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
-                    // You'll need to create this screen similar to AvailabilityListScreen but for admin
                     AdminAvailabilityListScreen(
                         navController = navController,
                         snackbarController = snackbarController,
@@ -383,7 +392,7 @@ fun MainScreen(navController: NavHostController) {
                 }
 
                 composable(
-                    route = "chat/{otherUserId}/{otherUserName}", // Trasa z dwoma argumentami
+                    route = "chat/{otherUserId}/{otherUserName}",
                     arguments = listOf(
                         navArgument("otherUserId") { type = NavType.StringType },
                         navArgument("otherUserName") { type = NavType.StringType }
@@ -407,7 +416,11 @@ fun MainScreen(navController: NavHostController) {
     }
 }
 
-
+/**
+ * Dialog shown to request notification permission from the user.
+ *
+ * @param onRequestPermission Callback invoked when the user agrees to grant permission.
+ */
 @Composable
 fun PermissionDialog(onRequestPermission: () -> Unit) {
     AlertDialog(
@@ -422,6 +435,10 @@ fun PermissionDialog(onRequestPermission: () -> Unit) {
     )
 }
 
+/**
+ * Dialog explaining why notification permission is needed,
+ * shown when the system recommends showing rationale.
+ */
 @Composable
 fun RationaleDialog() {
     val context = LocalContext.current
@@ -447,7 +464,11 @@ fun RationaleDialog() {
     )
 }
 
-
+/**
+ * Composable that requests the POST_NOTIFICATIONS permission on Android 13+ devices.
+ *
+ * Shows rationale or permission dialog as appropriate.
+ */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable

@@ -62,6 +62,14 @@ import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.Speciality
 
+/**
+ * Displays a detailed editable section for a [Doctor]'s professional information,
+ * including specialization, contact details, consultation price, experience,
+ * rating, languages spoken, and biography.
+ *
+ * @param doctor The current [Doctor] object whose details are shown and edited.
+ * @param onDoctorChange Callback triggered when any part of the doctor's data changes.
+ */
 @Composable
 fun DoctorDetailsDialogSection(
     doctor: Doctor,
@@ -69,7 +77,6 @@ fun DoctorDetailsDialogSection(
 ) {
     Divider()
 
-    // Professional Information Section
     Text("Professional Information", style = MaterialTheme.typography.titleSmall)
     Column(
         modifier = Modifier
@@ -77,7 +84,6 @@ fun DoctorDetailsDialogSection(
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Specialization Dropdown
         var expanded by remember { mutableStateOf(false) }
         Box {
             OutlinedTextField(
@@ -111,7 +117,6 @@ fun DoctorDetailsDialogSection(
             }
         }
 
-        // Location Information
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -143,7 +148,6 @@ fun DoctorDetailsDialogSection(
 
     Divider()
 
-    // Professional Details Section
     Text("Professional Details", style = MaterialTheme.typography.titleSmall)
     Column(
         modifier = Modifier
@@ -190,7 +194,6 @@ fun DoctorDetailsDialogSection(
             )
         }
 
-        // Rating with visual indicator
         Column {
             Text("Rating", style = MaterialTheme.typography.labelMedium)
             Row(
@@ -211,7 +214,6 @@ fun DoctorDetailsDialogSection(
 
     Divider()
 
-    // Languages Section
     Text("Languages", style = MaterialTheme.typography.titleSmall)
     Column(
         modifier = Modifier
@@ -290,7 +292,6 @@ fun DoctorDetailsDialogSection(
 
     Divider()
 
-    // Biography Section
     Text("Biography", style = MaterialTheme.typography.titleSmall)
     OutlinedTextField(
         value = doctor.bio,
@@ -304,7 +305,18 @@ fun DoctorDetailsDialogSection(
     )
 }
 
-
+/**
+ * A dialog composable for editing a doctor's profile information.
+ * Contains the [DoctorForm] composable and provides buttons to save changes or cancel editing.
+ * Shows a loading indicator when saving.
+ *
+ * @param doctor The current [Doctor] object being edited.
+ * @param onDismiss Callback triggered when the dialog is dismissed.
+ * @param onSave Callback triggered when the user confirms saving changes.
+ * @param onDoctorChange Callback triggered when the doctor's data changes.
+ * @param isSaving Boolean flag indicating if the save operation is in progress.
+ * @param onEditAvailabilityClick Optional callback triggered when the availability edit action is clicked.
+ */
 @Composable
 fun EditDoctorDialog(
     doctor: Doctor,
@@ -365,11 +377,20 @@ fun EditDoctorDialog(
     )
 }
 
+/**
+ * Form for editing a [Doctor]'s personal and professional information.
+ * Displays fields for personal details and conditionally shows professional details and availability editing
+ * if the doctor's role is [Role.DOCTOR].
+ *
+ * @param doctor The current [Doctor] instance being edited.
+ * @param onDoctorChange Callback invoked when the doctor data changes.
+ * @param onEditAvailabilityClick Callback invoked when the "Edit Availability" button is clicked.
+ */
 @Composable
 private fun DoctorForm(
     doctor: Doctor,
     onDoctorChange: (Doctor) -> Unit,
-    onEditAvailabilityClick: () -> Unit  // Add this parameter
+    onEditAvailabilityClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -378,7 +399,6 @@ private fun DoctorForm(
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Personal Information Section
         Text("Personal Information", style = MaterialTheme.typography.titleSmall)
         Column(
             modifier = Modifier
@@ -433,7 +453,6 @@ private fun DoctorForm(
                 }
             )
 
-            // Add Edit Availability button
             Button(
                 onClick = onEditAvailabilityClick,
                 modifier = Modifier
@@ -452,7 +471,12 @@ private fun DoctorForm(
 }
 
 
-
+/**
+ * Displays a summarized section of professional details for a [Doctor], including specialization,
+ * consultation fee, rating, experience, and address.
+ *
+ * @param doctor The [Doctor] whose details are displayed.
+ */
 @Composable
 private fun DoctorDetailsSection(doctor: Doctor) {
     Column(
@@ -541,6 +565,14 @@ private fun DoctorDetailsSection(doctor: Doctor) {
 }
 
 
+/**
+ * A card component that visually represents a [Doctor] with profile picture, name, email,
+ * date of birth, role badge, and professional details. Also provides edit and delete action buttons.
+ *
+ * @param doctor The [Doctor] instance to display.
+ * @param onEditClick Callback invoked when the edit button is pressed.
+ * @param onDeleteClick Callback invoked when the delete button is pressed.
+ */
 @Composable
 private fun DoctorCard(
     doctor: Doctor,
@@ -631,7 +663,14 @@ private fun DoctorCard(
     }
 }
 
-
+/**
+ * Displays a list of doctors using a lazy column. Each doctor is shown as a [DoctorCard].
+ *
+ * @param doctors The list of [Doctor]s to display.
+ * @param onEditClick Callback invoked with the selected doctor when the edit button is pressed.
+ * @param onDeleteClick Callback invoked with the selected doctor when the delete button is pressed.
+ * @param modifier Optional [Modifier] for styling the LazyColumn.
+ */
 @Composable
 fun DoctorList(
     doctors: List<Doctor>,
