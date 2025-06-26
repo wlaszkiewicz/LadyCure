@@ -71,7 +71,12 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 @Composable
-fun AvailabilityListScreen(navController: NavController, snackbarController: SnackbarController) {
+fun AvailabilityListScreen(
+    navController: NavController,
+    snackbarController: SnackbarController,
+    isAdminView: Boolean = false,
+    doctorId: String? = null
+) {
     val existingAvailabilities = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
     val doctorRepo = DoctorRepository()
     val authRepo = AuthRepository()
@@ -84,38 +89,53 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
         )
     }
 
+    val effectiveDoctorId = if (isAdminView) {
+        doctorId ?: run {
+            LaunchedEffect(Unit) {
+                snackbarController.showMessage("Doctor ID is missing")
+                navController.popBackStack()
+            }
+            return
+        }
+    } else {
+        authRepo.getCurrentUserId() ?: run {
+            LaunchedEffect(Unit) {
+                snackbarController.showMessage("User not logged in")
+                navController.popBackStack()
+            }
+            return
+        }
+    }
+
     availabilitiesInMonth = existingAvailabilities.value.filter { availability ->
         val date = availability.date
         val today = LocalDate.now()
-        date != null && date.isAfter(today.minusDays(1)) && // Exclude past dates
-                (date != today || availability.availableSlots.any { it.isAfter(LocalTime.now()) }) && // Exclude past time slots for today
-                (date.month == chosenMonth.month && date.year == chosenMonth.year) // Only include dates in the chosen month
+        date != null && date.isAfter(today.minusDays(1)) &&
+                (date != today || availability.availableSlots.any { it.isAfter(LocalTime.now()) }) &&
+                (date.month == chosenMonth.month && date.year == chosenMonth.year)
     }.groupBy { it.date }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(effectiveDoctorId) {
         isLoading.value = true
         try {
-            val result = doctorRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
+            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId)
             if (result.isSuccess) {
-                val availabilities = result.getOrThrow()
-                existingAvailabilities.value = availabilities
+                existingAvailabilities.value = result.getOrThrow()
             } else {
-                snackbarController.showMessage("Error loading existing availabilities")
+                snackbarController.showMessage("Error loading availability data")
             }
         } catch (e: Exception) {
-            snackbarController.showMessage("Error loading existing availabilities")
+            snackbarController.showMessage("Error: ${e.message}")
         } finally {
             isLoading.value = false
         }
     }
-
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DefaultBackground)
     ) {
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -126,15 +146,11 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.size(40.dp)
             ) {
-                Icon(
-                    Icons.Default.ArrowBack,
-                    "Back",
-                    tint = DefaultPrimary,
-                )
+                Icon(Icons.Default.ArrowBack, "Back", tint = DefaultPrimary)
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(Modifier.width(16.dp))
             Text(
-                "My Availability",
+                if (isAdminView) "Doctor Availability" else "My Availability",
                 style = MaterialTheme.typography.titleLarge.copy(
                     color = DefaultPrimary,
                     fontWeight = FontWeight.Bold
@@ -143,10 +159,7 @@ fun AvailabilityListScreen(navController: NavController, snackbarController: Sna
         }
 
         if (isLoading.value) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = DefaultPrimary)
             }
         } else {
@@ -410,8 +423,13 @@ private fun TimeSlotsVisualization(
             .takeWhile { it.isBefore(endTime) }
             .toList()
     }
-    var bookedSlots = allPossibleSlots - availableSlots.toSet()
-    var expanded = remember { mutableStateOf(false) }
+
+    // Filter availableSlots to only include those that are in allPossibleSlots
+    val validAvailableSlots = remember(availableSlots, allPossibleSlots) {
+        availableSlots.filter { it in allPossibleSlots }.toSet()
+    }
+
+    val expanded = remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
         // Summary header
@@ -421,7 +439,7 @@ private fun TimeSlotsVisualization(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "${availableSlots.size} of ${allPossibleSlots.size} slots available",
+                "${validAvailableSlots.size} of ${allPossibleSlots.size} slots available",
                 style = MaterialTheme.typography.labelMedium.copy(
                     color = Color.Gray
                 )
@@ -452,7 +470,7 @@ private fun TimeSlotsVisualization(
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
                 allPossibleSlots.forEach { slotTime ->
-                    val isAvailable = availableSlots.contains(slotTime)
+                    val isAvailable = slotTime in validAvailableSlots
 
                     Box(
                         modifier = Modifier
@@ -516,7 +534,7 @@ private fun TimeSlotsVisualization(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         hourSlots.forEach { slotTime ->
-                            val isAvailable = availableSlots.contains(slotTime)
+                            val isAvailable = slotTime in validAvailableSlots
 
                             Box(
                                 modifier = Modifier

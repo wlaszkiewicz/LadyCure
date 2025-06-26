@@ -40,9 +40,11 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -69,67 +71,51 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+// Data class to hold all the state for the availability screens
+data class AvailabilityScreenState(
+    val selectedDates: Set<LocalDate> = emptySet(),
+    val showMonthPicker: Boolean = false,
+    val startTime: LocalTime = LocalTime.of(9, 0),
+    val endTime: LocalTime = LocalTime.of(17, 0),
+    val showTimePicker: Boolean = false,
+    val isStartTimePicker: Boolean = true,
+    val selectedDaysOfWeek: Set<DayOfWeek> = emptySet(),
+    val showRecurringOptions: Boolean = false,
+    val existingAvailabilities: List<DoctorAvailability> = emptyList(),
+    val currentMonth: YearMonth = YearMonth.now(),
+    val isLoading: Boolean = false
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetAvailabilityScreen(
+fun BaseAvailabilityScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
-    authRepo: AuthRepository = AuthRepository(),
-    doctorRepo: DoctorRepository = DoctorRepository()
+    state: AvailabilityScreenState,
+    onStateChange: (AvailabilityScreenState) -> Unit,
+    onSave: (dates: Set<LocalDate>, startTime: LocalTime, endTime: LocalTime) -> Unit,
+    headerTitle: String,
+    onViewAvailabilityClick: () -> Unit
 ) {
-    // State management
-    val selectedDates = remember { mutableStateOf<Set<LocalDate>>(emptySet()) }
-    val showMonthPicker = remember { mutableStateOf(false) }
-    val startTime = remember { mutableStateOf(LocalTime.of(9, 0)) }
-    val endTime = remember { mutableStateOf(LocalTime.of(17, 0)) }
-    val showTimePicker = remember { mutableStateOf(false) }
-    val isStartTimePicker = remember { mutableStateOf(true) }
-    val selectedDaysOfWeek = remember { mutableStateOf(setOf<DayOfWeek>()) }
-    val showRecurringOptions = remember { mutableStateOf(false) }
-    val existingAvailabilities = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
-
-    val currentMonth = remember { mutableStateOf(YearMonth.now()) }
+    val coroutineScope = rememberCoroutineScope()
     val today = LocalDate.now()
     val minMonth = YearMonth.from(today)
 
-    val coroutineScope = rememberCoroutineScope()
-    val isLoading = remember { mutableStateOf(false) }
+    // A mutable state for selectedDates that can be passed to children components.
+    // This state will be kept in sync with the parent's `state.selectedDates`.
+    val internalSelectedDates = remember { mutableStateOf(state.selectedDates) }
 
-    // Load existing availabilities when screen appears
-    LaunchedEffect(Unit) {
-        isLoading.value = true
-        try {
-            val result = doctorRepo.getDoctorAvailability(authRepo.getCurrentUserId().toString())
-            if (result.isSuccess) {
-                val availabilities = result.getOrThrow()
-                val today = LocalDate.now()
-
-                // Filter out past availabilities
-                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
-                val futureAvailabilities =
-                    availabilities.filter { it.date?.isBefore(today) == false }
-
-                // Delete past availabilities from Firestore
-                pastAvailabilities.forEach { pastAvailability ->
-                    doctorRepo.deleteDoctorAvailability(
-                        pastAvailability.doctorId,
-                        pastAvailability.date!!
-                    )
-                }
-
-                existingAvailabilities.value = futureAvailabilities
-            } else {
-                snackbarController.showMessage("Error loading existing availabilities")
-            }
-        } catch (e: Exception) {
-            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
-        } finally {
-            isLoading.value = false
-        }
+    // Use LaunchedEffect to update internalSelectedDates when the parent's state.selectedDates changes
+    LaunchedEffect(state.selectedDates) {
+        internalSelectedDates.value = state.selectedDates
     }
 
-
+    // Use LaunchedEffect to update the parent's state when internalSelectedDates changes
+    LaunchedEffect(internalSelectedDates.value) {
+        if (internalSelectedDates.value != state.selectedDates) {
+            onStateChange(state.copy(selectedDates = internalSelectedDates.value))
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -137,7 +123,6 @@ fun SetAvailabilityScreen(
             .background(DefaultBackground),
     ) {
         // Header with navigation
-        // Replace the current header Row with this:
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -150,7 +135,7 @@ fun SetAvailabilityScreen(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DefaultPrimary)
                 }
                 Text(
-                    "Set Availability",
+                    headerTitle,
                     style = MaterialTheme.typography.titleLarge.copy(
                         color = DefaultPrimary,
                         fontWeight = FontWeight.Bold
@@ -160,7 +145,7 @@ fun SetAvailabilityScreen(
 
             // New button style
             OutlinedButton(
-                onClick = { navController.navigate("availabilityList") },
+                onClick = onViewAvailabilityClick,
                 border = BorderStroke(1.dp, DefaultPrimary),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = DefaultPrimary
@@ -191,10 +176,10 @@ fun SetAvailabilityScreen(
             // Month selection row
             item {
                 CalendarHeader(
-                    currentMonth = currentMonth.value,
+                    currentMonth = state.currentMonth,
                     minMonth = minMonth,
-                    onMonthChange = { currentMonth.value = it },
-                    onShowMonthPicker = { showMonthPicker.value = true },
+                    onMonthChange = { newMonth -> onStateChange(state.copy(currentMonth = newMonth)) },
+                    onShowMonthPicker = { onStateChange(state.copy(showMonthPicker = true)) },
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
@@ -202,16 +187,17 @@ fun SetAvailabilityScreen(
             // Calendar grid
             item {
                 CalendarView(
-                    currentMonth = currentMonth.value,
-                    selectedDates = selectedDates.value,
-                    existingAvailabilities = existingAvailabilities.value,
+                    currentMonth = state.currentMonth,
+                    selectedDates = state.selectedDates, // Pass immutable set
+                    existingAvailabilities = state.existingAvailabilities,
                     today = today,
                     onDateSelected = { date ->
-                        selectedDates.value = if (selectedDates.value.contains(date)) {
-                            selectedDates.value - date
+                        val newSelectedDates = if (state.selectedDates.contains(date)) {
+                            state.selectedDates - date
                         } else {
-                            selectedDates.value + date
+                            state.selectedDates + date
                         }
+                        onStateChange(state.copy(selectedDates = newSelectedDates))
                     },
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -220,15 +206,13 @@ fun SetAvailabilityScreen(
             // Time range selection
             item {
                 TimeRangePicker(
-                    startTime = startTime.value,
-                    endTime = endTime.value,
+                    startTime = state.startTime,
+                    endTime = state.endTime,
                     onStartTimeClick = {
-                        isStartTimePicker.value = true
-                        showTimePicker.value = true
+                        onStateChange(state.copy(isStartTimePicker = true, showTimePicker = true))
                     },
                     onEndTimeClick = {
-                        isStartTimePicker.value = false
-                        showTimePicker.value = true
+                        onStateChange(state.copy(isStartTimePicker = false, showTimePicker = true))
                     },
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -237,8 +221,8 @@ fun SetAvailabilityScreen(
             // Quick selection buttons
             item {
                 QuickSelectionButtons(
-                    currentMonth = currentMonth.value,
-                    selectedDates = selectedDates,
+                    currentMonth = state.currentMonth,
+                    selectedDates = internalSelectedDates, // Pass the mutable state directly
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
@@ -246,7 +230,7 @@ fun SetAvailabilityScreen(
             // Recurring pattern button
             item {
                 Button(
-                    onClick = { showRecurringOptions.value = true },
+                    onClick = { onStateChange(state.copy(showRecurringOptions = true)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
@@ -269,14 +253,14 @@ fun SetAvailabilityScreen(
                         // Copy selected days/time to next 3 months
                         val datesToAdd = mutableSetOf<LocalDate>()
 
-                        selectedDates.value.forEach { date ->
+                        state.selectedDates.forEach { date ->
                             for (i in 1..3) {
                                 val newDate = date.plusMonths(i.toLong())
                                 datesToAdd.add(newDate)
                             }
                         }
 
-                        selectedDates.value = selectedDates.value + datesToAdd
+                        onStateChange(state.copy(selectedDates = state.selectedDates + datesToAdd))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -296,28 +280,19 @@ fun SetAvailabilityScreen(
         }
         // Save button at bottom
         SaveButton(
-            isLoading = isLoading.value,
-            enabled = selectedDates.value.isNotEmpty(),
+            isLoading = state.isLoading,
+            enabled = state.selectedDates.isNotEmpty(),
             onClick = {
                 coroutineScope.launch {
-                    isLoading.value = true
+                    onStateChange(state.copy(isLoading = true))
                     try {
-                        doctorRepo.updateAvailabilities(
-                            dates = selectedDates.value.toList(),
-                            startTime = startTime.value,
-                            endTime = endTime.value
-                        )
+                        onSave(state.selectedDates, state.startTime, state.endTime)
                         snackbarController.showMessage("Availability saved successfully!")
-                        // refresh the screen
-                        coroutineScope.launch {
-                            existingAvailabilities.value = doctorRepo.getDoctorAvailability(
-                                authRepo.getCurrentUserId().toString()
-                            ).getOrThrow()
-                        }
+                        // Refresh the screen after saving will be handled by the specific screen (admin or doctor)
                     } catch (e: Exception) {
                         snackbarController.showMessage("Error saving availability: ${e.message}")
                     } finally {
-                        isLoading.value = false
+                        onStateChange(state.copy(isLoading = false))
                     }
                 }
             },
@@ -326,49 +301,214 @@ fun SetAvailabilityScreen(
     }
 
     // Month picker dialog
-    if (showMonthPicker.value) {
+    if (state.showMonthPicker) {
         MonthYearPickerDialog(
-            currentMonth = currentMonth.value,
-            onDismiss = { showMonthPicker.value = false },
+            currentMonth = state.currentMonth,
+            onDismiss = { onStateChange(state.copy(showMonthPicker = false)) },
             onMonthSelected = {
-                currentMonth.value = it
-                showMonthPicker.value = false
+                onStateChange(state.copy(currentMonth = it, showMonthPicker = false))
             }
         )
     }
 
     // Time Picker Dialog
-    if (showTimePicker.value) {
+    if (state.showTimePicker) {
         TimePickerDialog(
-            isStartTimePicker = isStartTimePicker.value,
-            initialTime = if (isStartTimePicker.value) startTime.value else endTime.value,
+            isStartTimePicker = state.isStartTimePicker,
+            initialTime = if (state.isStartTimePicker) state.startTime else state.endTime,
             onTimeSelected = { time ->
-                if (isStartTimePicker.value) {
-                    startTime.value = time
+                if (state.isStartTimePicker) {
+                    onStateChange(state.copy(startTime = time, showTimePicker = false))
                 } else {
-                    endTime.value = time
+                    onStateChange(state.copy(endTime = time, showTimePicker = false))
                 }
-                showTimePicker.value = false
             },
-            onDismiss = { showTimePicker.value = false }
+            onDismiss = { onStateChange(state.copy(showTimePicker = false)) }
         )
     }
 
     // Recurring Options Dialog
-    if (showRecurringOptions.value) {
+    if (state.showRecurringOptions) {
         RecurringPatternDialog(
-            selectedDaysOfWeek = selectedDaysOfWeek.value,
+            selectedDaysOfWeek = state.selectedDaysOfWeek,
             onApply = { days, weeks ->
                 applyRecurringPattern(
                     days,
                     weeks,
-                    selectedDates
+                    internalSelectedDates // Pass the mutable state directly
                 )
-                showRecurringOptions.value = false
+                onStateChange(state.copy(showRecurringOptions = false))
             },
-            onDismiss = { showRecurringOptions.value = false }
+            onDismiss = { onStateChange(state.copy(showRecurringOptions = false)) }
         )
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SetAvailabilityScreen(
+    navController: NavHostController,
+    snackbarController: SnackbarController,
+    authRepo: AuthRepository = AuthRepository(),
+    doctorRepo: DoctorRepository = DoctorRepository(),
+    adminEditingDoctorId: String? = null // Add this new optional parameter
+) {
+    val state = remember { mutableStateOf(AvailabilityScreenState()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Determine the effective doctor ID for loading/saving
+    val effectiveDoctorId = adminEditingDoctorId ?: authRepo.getCurrentUserId().toString()
+
+    // Load existing availabilities when screen appears
+    LaunchedEffect(effectiveDoctorId) { // Relaunch if effectiveDoctorId changes
+        if (effectiveDoctorId == "null") { // Handle case where authRepo.getCurrentUserId() might return null and toString() is called
+            snackbarController.showMessage("Doctor ID is missing for availability management.")
+            return@LaunchedEffect
+        }
+        state.value = state.value.copy(isLoading = true)
+        try {
+            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId) // Use effectiveDoctorId
+            if (result.isSuccess) {
+                val availabilities = result.getOrThrow()
+                val today = LocalDate.now()
+
+                // Filter out past availabilities
+                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
+                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
+
+                // Delete past availabilities from Firestore
+                pastAvailabilities.forEach { pastAvailability ->
+                    doctorRepo.deleteDoctorAvailability(
+                        pastAvailability.doctorId,
+                        pastAvailability.date!!
+                    )
+                }
+
+                state.value = state.value.copy(existingAvailabilities = futureAvailabilities)
+            } else {
+                snackbarController.showMessage("Error loading existing availabilities")
+            }
+        } catch (e: Exception) {
+            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
+        } finally {
+            state.value = state.value.copy(isLoading = false)
+        }
+    }
+
+    BaseAvailabilityScreen(
+        navController = navController,
+        snackbarController = snackbarController,
+        state = state.value,
+        onStateChange = { newState -> state.value = newState },
+        onSave = { dates, startTime, endTime ->
+            coroutineScope.launch {
+                doctorRepo.updateAvailabilities(
+                    dates = dates.toList(),
+                    startTime = startTime,
+                    endTime = endTime,
+                    doctorId = effectiveDoctorId // Use effectiveDoctorId for saving
+                )
+                snackbarController.showMessage("Availability saved successfully!")
+                // Refresh the screen after saving for the current user or admin-edited doctor
+                val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
+                state.value = state.value.copy(existingAvailabilities = newAvailabilities)
+            }
+        },
+        headerTitle = if (adminEditingDoctorId != null) "Edit Doctor Availability" else "Set Availability", // Dynamic header
+        onViewAvailabilityClick = {
+            if (adminEditingDoctorId != null) {
+                navController.navigate("adminAvailabilityList/$effectiveDoctorId")
+            } else {
+                navController.navigate("availabilityList")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+
+@Composable
+fun SetAvailabilityScreenAdmin(
+    navController: NavHostController,
+    snackbarController: SnackbarController,
+    doctorId: String,
+    doctorRepo: DoctorRepository = DoctorRepository()
+) {
+    val state = remember { mutableStateOf(AvailabilityScreenState()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Use the passed doctorId directly
+    val effectiveDoctorId = doctorId
+
+    // Load existing availabilities when screen appears
+    LaunchedEffect(effectiveDoctorId) {
+        if (effectiveDoctorId.isBlank()) {
+            snackbarController.showMessage("Doctor ID is missing for availability management.")
+            return@LaunchedEffect
+        }
+
+        state.value = state.value.copy(isLoading = true)
+        try {
+            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId)
+            if (result.isSuccess) {
+                val availabilities = result.getOrThrow()
+                val today = LocalDate.now()
+
+                // Filter out past availabilities
+                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
+                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
+
+                // Delete past availabilities from Firestore
+                pastAvailabilities.forEach { pastAvailability ->
+                    doctorRepo.deleteDoctorAvailability(
+                        pastAvailability.doctorId,
+                        pastAvailability.date!!
+                    )
+                }
+
+                state.value = state.value.copy(existingAvailabilities = futureAvailabilities)
+            } else {
+                snackbarController.showMessage("Error loading existing availabilities")
+            }
+        } catch (e: Exception) {
+            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
+        } finally {
+            state.value = state.value.copy(isLoading = false)
+        }
+    }
+
+    BaseAvailabilityScreen(
+        navController = navController,
+        snackbarController = snackbarController,
+        state = state.value,
+        onStateChange = { newState -> state.value = newState },
+        onSave = { dates, startTime, endTime ->
+            coroutineScope.launch {
+                state.value = state.value.copy(isLoading = true)
+                try {
+                    doctorRepo.updateAvailabilities(
+                        dates = dates.toList(),
+                        startTime = startTime,
+                        endTime = endTime,
+                        doctorId = effectiveDoctorId // Use the passed doctorId
+                    )
+                    snackbarController.showMessage("Availability saved successfully!")
+                    // Refresh the screen after saving
+                    val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
+                    state.value = state.value.copy(existingAvailabilities = newAvailabilities)
+                } catch (e: Exception) {
+                    snackbarController.showMessage("Error saving availability: ${e.message}")
+                } finally {
+                    state.value = state.value.copy(isLoading = false)
+                }
+            }
+        },
+        headerTitle = "Edit Doctor Avail.",
+        onViewAvailabilityClick = {
+            navController.navigate("adminAvailabilityList/$effectiveDoctorId")
+        }
+    )
 }
 
 
@@ -488,7 +628,7 @@ fun MonthYearPickerDialog(
 fun applyRecurringPattern(
     selectedDays: Set<DayOfWeek>,
     durationWeeks: Int,
-    selectedDates: MutableState<Set<LocalDate>>
+    selectedDates: MutableState<Set<LocalDate>> // This is already a mutable state
 ) {
     if (selectedDays.isEmpty()) return
 
@@ -507,5 +647,5 @@ fun applyRecurringPattern(
         }
     }
 
-    selectedDates.value = selectedDates.value + newDates
+    selectedDates.value = selectedDates.value + newDates // Directly modify the mutable state
 }

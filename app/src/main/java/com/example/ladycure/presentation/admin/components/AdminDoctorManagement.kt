@@ -1,6 +1,7 @@
 package com.example.ladycure.presentation.admin.components
 
 import DefaultPrimary
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -310,7 +311,8 @@ fun EditDoctorDialog(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
     onDoctorChange: (Doctor) -> Unit,
-    isSaving: Boolean = false
+    isSaving: Boolean = false,
+    onEditAvailabilityClick: () -> Unit = {}
 ) {
     AlertDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
@@ -324,7 +326,8 @@ fun EditDoctorDialog(
         text = {
             DoctorForm(
                 doctor = doctor,
-                onDoctorChange = onDoctorChange
+                onDoctorChange = onDoctorChange,
+                onEditAvailabilityClick = onEditAvailabilityClick
             )
         },
         confirmButton = {
@@ -365,7 +368,8 @@ fun EditDoctorDialog(
 @Composable
 private fun DoctorForm(
     doctor: Doctor,
-    onDoctorChange: (Doctor) -> Unit
+    onDoctorChange: (Doctor) -> Unit,
+    onEditAvailabilityClick: () -> Unit  // Add this parameter
 ) {
     Column(
         modifier = Modifier
@@ -429,9 +433,24 @@ private fun DoctorForm(
                 }
             )
 
+            // Add Edit Availability button
+            Button(
+                onClick = onEditAvailabilityClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = DefaultPrimary
+                ),
+                border = BorderStroke(1.dp, DefaultPrimary)
+            ) {
+                Text("Edit Availability")
+            }
         }
     }
 }
+
 
 
 @Composable
