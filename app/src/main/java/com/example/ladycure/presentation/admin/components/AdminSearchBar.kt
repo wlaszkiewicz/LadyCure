@@ -26,7 +26,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-
+/**
+ * A search bar component for admin screens with a search icon, input field, and clear button.
+ *
+ * Displays a rounded text field with a search icon on the left and a clear (close) icon on the right
+ * when the search query is not empty. The text field supports single-line input and displays a placeholder text.
+ *
+ * @param text The placeholder text to display when the search query is empty. Default is `"Search..."`.
+ * @param searchQuery The current text input of the search field.
+ * @param onSearchQueryChange Callback triggered when the text input changes, providing the new query.
+ * @param modifier Optional [Modifier] to be applied to the search bar container.
+ */
 @Composable
 fun AdminSearchBar(
     text: String = "Search...",

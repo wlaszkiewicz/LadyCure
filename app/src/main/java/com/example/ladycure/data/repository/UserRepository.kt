@@ -6,10 +6,20 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Repository responsible for user-related operations in Firestore,
+ * such as updating user profiles, fetching user data, and managing user fields.
+ */
 class UserRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
+    /**
+     * Updates the profile picture URL of the current user.
+     *
+     * @param imageUrl The new profile picture URL.
+     * @return [Result] of the operation (success or failure).
+     */
     suspend fun updateProfilePicture(imageUrl: String): Result<Unit> {
         return try {
             val currentUser =
@@ -23,6 +33,13 @@ class UserRepository {
         }
     }
 
+    /**
+     * Updates fields of a user document by ID.
+     *
+     * @param userId The ID of the user document to update.
+     * @param updatedData A map of fields and values to update.
+     * @return [Result] indicating success or failure.
+     */
     suspend fun updateUser(userId: String, updatedData: Map<String, Any>): Result<Unit> {
         return try {
             firestore.collection("users").document(userId).update(updatedData).await()
@@ -33,6 +50,13 @@ class UserRepository {
         }
     }
 
+    /**
+     * Deletes a predefined set of fields from the user document, then updates it with new data.
+     *
+     * @param userId The ID of the user document to update.
+     * @param updatedData The new data to set after deleting specific fields.
+     * @return [Result] of the update operation.
+     */
     suspend fun docToUserUpdate(
         userId: String,
         updatedData: Map<String, Any>
@@ -69,6 +93,11 @@ class UserRepository {
         }
     }
 
+    /**
+     * Fetches all user documents from Firestore.
+     *
+     * @return [Result] containing a list of user data maps.
+     */
     suspend fun getUsers(): Result<List<Map<String, Any>>> {
         return try {
             val querySnapshot = firestore.collection("users").get().await()
@@ -80,6 +109,11 @@ class UserRepository {
         }
     }
 
+    /**
+     * Retrieves the role of the current authenticated user.
+     *
+     * @return [Result] with the role string or null, or an error.
+     */
     suspend fun getUserRole(): Result<String?> = try {
         val user = auth.currentUser
         if (user != null) {
@@ -96,6 +130,11 @@ class UserRepository {
         Result.failure(Exception("Failed to fetch user data: ${e.message}"))
     }
 
+    /**
+     * Retrieves the full data of the current authenticated user.
+     *
+     * @return [Result] with the user data map or null, or an error.
+     */
     suspend fun getCurrentUserData(): Result<Map<String, Any>?> {
         val user = auth.currentUser
         user?.let {
@@ -113,6 +152,11 @@ class UserRepository {
         } ?: return Result.failure(Exception("User not logged in"))
     }
 
+    /**
+     * Gets the current user's document from Firestore.
+     *
+     * @return [Result] with user data map or null, or an error.
+     */
     suspend fun getCurrentUser(): Result<Map<String, Any>?> {
         return try {
             val user = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
@@ -128,19 +172,22 @@ class UserRepository {
 
     }
 
-
+    /**
+     * Updates selected user fields and returns the updated document.
+     *
+     * @param updatedData Map of user fields to update: name, surname, dob, phone.
+     * @return [Result] containing the updated document or an error.
+     */
     suspend fun updateUserData(updatedData: Map<String, String>): Result<Map<String, Any>?> {
         return try {
             val user = auth.currentUser ?: return Result.failure(Exception("User not logged in"))
 
-            // Create a map with only the fields we want to update
             val updateMap = mutableMapOf<String, Any>()
             updatedData["name"]?.let { updateMap["name"] = it }
             updatedData["surname"]?.let { updateMap["surname"] = it }
             updatedData["dob"]?.let { updateMap["dob"] = it }
             updatedData["phone"]?.let { updateMap["phone"] = it }
 
-            // Update Firestore document
             try {
                 firestore.collection("users").document(user.uid)
                     .update(updateMap)
@@ -149,7 +196,7 @@ class UserRepository {
                 Log.e("AuthRepository", "Error updating user data", e)
                 return Result.failure(e)
             }
-            // Fetch the updated document
+
             val document = firestore.collection("users").document(user.uid).get().await()
             if (document.exists()) {
                 Result.success(document.data)
@@ -161,6 +208,12 @@ class UserRepository {
         }
     }
 
+    /**
+     * Retrieves a single string field from the current user's Firestore document.
+     *
+     * @param fieldName The name of the field to fetch.
+     * @return [Result] containing the field value or an error.
+     */
     suspend fun getUserField(fieldName: String): Result<String?> {
         return try {
             val currentUser =

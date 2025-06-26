@@ -17,11 +17,18 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
+/**
+ * Repository responsible for handling all operations related to doctors,
+ * including fetching doctor data, managing availability, updating profiles,
+ * and calculating earnings and statistics.
+ */
 class DoctorRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
-
+    /**
+     * Fetches all users with the role of 'doctor'.
+     */
     suspend fun getDoctors(): Result<List<Doctor>> {
         return try {
             val querySnapshot = firestore.collection("users")
@@ -37,7 +44,9 @@ class DoctorRepository {
         }
     }
 
-
+    /**
+     * Fetches availability for all doctors based on their [speciality] and [city].
+     */
     suspend fun getAllDoctorAvailabilitiesBySpeciality(
         speciality: String,
         city: String
@@ -69,7 +78,9 @@ class DoctorRepository {
         return allAvailabilities
     }
 
-
+    /**
+     * Retrieves availability for the current doctor or the provided [doctorId].
+     */
     suspend fun getDoctorAvailability(doctorId: String? = null): Result<List<DoctorAvailability>> {
         val effectiveDoctorId = doctorId ?: auth.currentUser?.uid
         ?: return Result.failure(Exception("No doctor ID provided"))
@@ -98,6 +109,10 @@ class DoctorRepository {
         }
     }
 
+    /**
+     * Updates the availability slots for the current doctor or [doctorId] on given [dates],
+     * from [startTime] to [endTime], considering 15-minute intervals.
+     */
     suspend fun updateAvailabilities(
         dates: List<LocalDate>,
         startTime: LocalTime,
@@ -108,7 +123,6 @@ class DoctorRepository {
         val effectiveDoctorId = doctorId ?: auth.currentUser?.uid
         ?: return Result.failure(Exception("No doctor ID provided"))
 
-        // Generate all possible slots for the new time range
         val newSlots = mutableSetOf<LocalTime>()
         var currentTime = startTime
         while (currentTime.isBefore(endTime)) {
@@ -125,7 +139,6 @@ class DoctorRepository {
                     .collection("availability")
                     .document(date.toString())
 
-                // Get existing document
                 val existingDoc = docRef.get().await()
 
                 if (existingDoc.exists()) {
@@ -184,6 +197,9 @@ class DoctorRepository {
         }
     }
 
+    /**
+     * Fetches a doctor's full profile by [doctorId].
+     */
     suspend fun getDoctorById(doctorId: String): Result<Doctor> {
         return try {
             val document = firestore.collection("users").document(doctorId).get().await()
@@ -200,7 +216,9 @@ class DoctorRepository {
         }
     }
 
-
+    /**
+     * Returns a list of doctors that match a specific [speciality].
+     */
     suspend fun getDoctorsBySpeciality(speciality: String): Result<List<Doctor>> {
         return try {
             val querySnapshot = firestore.collection("users")
@@ -222,7 +240,10 @@ class DoctorRepository {
         }
     }
 
-
+    /**
+     * Aggregates earnings data based on the given [timePeriod] (e.g. daily, weekly).
+     * Returns a list of [date, earnings] pairs sorted chronologically.
+     */
     suspend fun getEarningsData(timePeriod: TimePeriod): Result<List<Pair<String, Double>>> {
         return try {
             val currentDoctorId =
@@ -279,6 +300,9 @@ class DoctorRepository {
         }
     }
 
+    /**
+     * Returns a map of appointment types to total earnings for each type.
+     */
     suspend fun getEarningsByAppointmentType(): Result<Map<String, Double>> {
         return try {
             val currentDoctorId =
@@ -306,6 +330,10 @@ class DoctorRepository {
         }
     }
 
+    /**
+     * Provides statistics including total earnings, total appointments,
+     * and current month earnings.
+     */
     suspend fun getEarningsStats(): Result<Map<String, Any>> {
         return try {
             val currentDoctorId =
@@ -351,6 +379,10 @@ class DoctorRepository {
         }
     }
 
+    /**
+     * Finds the most frequently booked appointment type.
+     * Returns a pair of [appointmentType, count].
+     */
     suspend fun getMostPopularAppointmentType(): Result<Pair<String, Int>> {
         return try {
             val currentDoctorId =
@@ -382,6 +414,9 @@ class DoctorRepository {
         }
     }
 
+    /**
+     * Fetches a list of distinct cities where doctors are available.
+     */
     suspend fun getAvailableCities(): Result<List<String>> {
         return try {
             val querySnapshot = firestore.collection("users")
@@ -400,6 +435,9 @@ class DoctorRepository {
         }
     }
 
+    /**
+     * Fetches the current logged-in doctor's full data.
+     */
     suspend fun getCurrentDoctorData(): Result<Map<String, Any>?> {
         val user = auth.currentUser
         user?.let {
@@ -417,6 +455,10 @@ class DoctorRepository {
         } ?: return Result.failure(Exception("Doctor not logged in"))
     }
 
+    /**
+     * Updates the current doctor's profile using the provided [data] map.
+     * Fields are merged with existing ones.
+     */
     suspend fun updateDoctorProfile(data: Map<String, Any>): Result<Unit> {
         val user = auth.currentUser
         return if (user != null) {

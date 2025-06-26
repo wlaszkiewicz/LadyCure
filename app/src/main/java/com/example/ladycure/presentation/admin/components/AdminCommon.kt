@@ -54,6 +54,11 @@ import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.User
 
 
+/**
+ * Displays a badge representing the user's role with specific colors and styles.
+ *
+ * @param role The [Role] of the user to display.
+ */
 @Composable
 fun RoleBadge(role: Role) {
     val backgroundColor = when (role) {
@@ -82,7 +87,14 @@ fun RoleBadge(role: Role) {
     }
 }
 
-
+/**
+ * A customizable rating bar that shows stars and allows rating input by tapping or manual entry.
+ *
+ * @param rating The current rating value.
+ * @param onRatingChange Callback invoked when the rating changes.
+ * @param modifier Modifier to be applied to the rating bar.
+ * @param starCount The total number of stars to display (default is 5).
+ */
 @Composable
 fun RatingBar(
     rating: Double,
@@ -94,12 +106,10 @@ fun RatingBar(
     var manualRating by remember { mutableStateOf(rating.toString()) }
 
     Column(modifier = modifier) {
-        // Star rating and edit button
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Star rating interface
             Row {
                 for (i in 1..starCount) {
                     val starValue = i.toDouble()
@@ -159,7 +169,6 @@ fun RatingBar(
                 }
             }
 
-            // Rating value display
             Text(
                 text = "%.1f".format(rating),
                 style = MaterialTheme.typography.bodyMedium,
@@ -168,7 +177,6 @@ fun RatingBar(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Manual input toggle button
             IconButton(
                 onClick = {
                     showManualInput = !showManualInput
@@ -189,7 +197,6 @@ fun RatingBar(
             }
         }
 
-        // Manual input field (shown when enabled)
         if (showManualInput) {
             OutlinedTextField(
                 value = manualRating,
@@ -234,7 +241,12 @@ fun RatingBar(
     }
 }
 
-
+/**
+ * Displays a row of selectable role chips allowing the user to pick a role.
+ *
+ * @param selectedRole The currently selected [Role].
+ * @param onRoleSelected Callback invoked when a role is selected.
+ */
 @Composable
 fun RoleSelection(
     selectedRole: Role,
@@ -259,6 +271,13 @@ fun RoleSelection(
     }
 }
 
+/**
+ * Confirmation dialog for deleting a user.
+ *
+ * @param user The [User] to confirm deletion for.
+ * @param onDismiss Callback invoked when the dialog is dismissed.
+ * @param onConfirm Callback invoked when deletion is confirmed.
+ */
 @Composable
 fun DeleteConfirmationDialog(
     user: User,
@@ -288,6 +307,9 @@ fun DeleteConfirmationDialog(
     )
 }
 
+/**
+ * Displays a full-screen loading spinner with the primary theme color.
+ */
 @Composable
 fun LoadingView() {
     Box(
@@ -298,6 +320,11 @@ fun LoadingView() {
     }
 }
 
+/**
+ * Displays a full-screen message indicating no data found for the selected tab.
+ *
+ * @param selectedTab The name of the tab for which no data was found.
+ */
 @Composable
 fun EmptyView(selectedTab: String) {
     Box(
@@ -311,6 +338,13 @@ fun EmptyView(selectedTab: String) {
     }
 }
 
+/**
+ * Builds a map of user properties for updating a user document.
+ * If the user is a [Doctor], additional doctor-specific fields are included.
+ *
+ * @param user The [User] instance to convert to a map.
+ * @return A map containing the user data to update.
+ */
 fun buildUpdateMap(user: User): Map<String, Any> {
     return mutableMapOf<String, Any>().apply {
         put("name", user.name)

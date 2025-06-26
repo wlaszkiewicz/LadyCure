@@ -15,6 +15,16 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/**
+ * ViewModel for managing doctors in the admin panel.
+ *
+ * Handles loading, searching, editing, adding, and deleting doctors.
+ * Validates doctor data before saving and manages UI state such as dialogs,
+ * loading indicators, and error messages.
+ *
+ * @property userRepo Repository to access user data.
+ * @property authRepo Repository to manage authentication actions.
+ */
 class AdminDoctorManagementViewModel(
     private val userRepo: UserRepository = UserRepository(),
     private val authRepo: AuthRepository = AuthRepository(),
@@ -46,6 +56,7 @@ class AdminDoctorManagementViewModel(
     var users by mutableStateOf<List<Map<String, Any>>>(emptyList())
         private set
 
+    /** All doctors extracted from the list of users */
     val allDoctors
         get() = users
             .filter { it["role"] == Role.DOCTOR.value }
@@ -54,6 +65,7 @@ class AdminDoctorManagementViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         internal set
 
+    /** Filtered doctors based on the current search query */
     val filteredDoctors
         get() = if (searchQuery.isBlank()) allDoctors else {
             allDoctors.filter {
@@ -70,6 +82,7 @@ class AdminDoctorManagementViewModel(
         loadDoctors()
     }
 
+    /** Loads the list of users and updates the doctor list */
     fun loadDoctors() {
         viewModelScope.launch {
             isLoadingDoctors = true
@@ -122,9 +135,12 @@ class AdminDoctorManagementViewModel(
         editedDoctor = doctor
     }
 
+    /**
+     * Validates and saves changes to the edited doctor.
+     * Shows error messages if validation fails or update fails.
+     */
     fun saveDoctorChanges() {
         editedDoctor?.let { doctor ->
-            // Validate all fields before proceeding
             val validationError = validateDoctor(doctor)
             if (validationError != null) {
                 errorMessage = validationError
@@ -151,6 +167,8 @@ class AdminDoctorManagementViewModel(
             }
         }
     }
+
+    /** Validates the fields of a doctor, returns error message if invalid */
     private fun validateDoctor(doctor: Doctor): String? {
         return when {
             doctor.name.isBlank() -> "Name cannot be empty"
@@ -174,11 +192,12 @@ class AdminDoctorManagementViewModel(
         }
     }
 
-    // Validation helper functions
+    /** Validates email format using Android's built-in patterns */
     private fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
+    /** Validates birth date is in yyyy-MM-dd format and a valid date */
     private fun isValidBirthDate(date: String): Boolean {
         val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""")
         if (!pattern.matches(date)) return false
@@ -193,6 +212,7 @@ class AdminDoctorManagementViewModel(
         }
     }
 
+    /** Validates phone number with a regex allowing digits, spaces, + and - */
     private fun isValidPhone(phone: String): Boolean {
         return phone.matches(Regex("""^[+]?[\d\s-]{6,15}$"""))
     }

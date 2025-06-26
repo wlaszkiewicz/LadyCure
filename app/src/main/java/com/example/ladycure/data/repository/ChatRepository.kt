@@ -10,15 +10,33 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
+/**
+ * Repository responsible for handling chat-related operations such as
+ * message sending, file uploads, user information retrieval, and real-time listeners.
+ */
 class ChatRepository {
     private val auth = FirebaseAuth.getInstance()
     private val storage = FirebaseStorage.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
+
+    /**
+     * Gets the UID of the currently authenticated user.
+     *
+     * @return The UID of the current user.
+     * @throws IllegalStateException If the user is not authenticated.
+     */
     fun getCurrentUserId(): String {
         return auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
     }
 
+    /**
+     * Creates a chat document in Firestore if it doesn't already exist.
+     *
+     * @param chatId The ID of the chat.
+     * @param participants The list of user IDs participating in the chat.
+     * @return A [Result] indicating success or failure.
+     */
     suspend fun createChatIfNotExists(chatId: String, participants: List<String>): Result<Unit> {
         return try {
             val currentUserName = getCurrentUserName()
@@ -48,6 +66,12 @@ class ChatRepository {
         }
     }
 
+    /**
+     * Uploads a file to Firebase Storage and returns the download URL.
+     *
+     * @param uri The [Uri] of the file to upload.
+     * @return The download URL of the uploaded file.
+     */
     suspend fun uploadFile(uri: Uri): String {
         val fileExtension = MimeTypeMap.getSingleton().getExtensionFromMimeType(
             null
@@ -58,6 +82,13 @@ class ChatRepository {
         return storageRef.downloadUrl.await().toString()
     }
 
+    /**
+     * Sends a message to a specific chat.
+     *
+     * @param chatId The ID of the chat.
+     * @param message The [Message] object to send.
+     * @return A [Result] indicating success or failure.
+     */
     suspend fun sendMessage(chatId: String, message: Message): Result<Unit> {
         return try {
             firestore.collection("chats")
@@ -73,6 +104,12 @@ class ChatRepository {
         }
     }
 
+    /**
+     * Sets up a listener to receive real-time updates for messages in a chat.
+     *
+     * @param chatId The ID of the chat.
+     * @param onMessagesReceived Callback with a list of [Message] objects.
+     */
     fun getMessages(chatId: String, onMessagesReceived: (List<Message>) -> Unit) {
         firestore.collection("chats")
             .document(chatId)
@@ -93,6 +130,11 @@ class ChatRepository {
             }
     }
 
+    /**
+     * Retrieves the current user's full name (name + surname).
+     *
+     * @return The full name or a fallback string if not found.
+     */
     suspend fun getCurrentUserName(): String {
         val uid = getCurrentUserId()
         val snapshot = firestore.collection("users").document(uid).get().await()
@@ -103,6 +145,12 @@ class ChatRepository {
         else "the user is not found"
     }
 
+    /**
+     * Retrieves the URL of a user's profile picture from Firestore.
+     *
+     * @param userId The user's UID.
+     * @return The profile picture URL or null if not available.
+     */
     suspend fun getUserProfilePicture(userId: String): String? {
         return try {
             val snapshot = firestore.collection("users").document(userId).get().await()
@@ -113,6 +161,12 @@ class ChatRepository {
         }
     }
 
+    /**
+     * Retrieves a specific user's data from Firestore.
+     *
+     * @param userId The user's UID.
+     * @return A [Result] containing a map of user data or null.
+     */
     suspend fun getSpecificUserData(userId: String): Result<Map<String, Any>?> {
         return try {
             val document = firestore.collection("users").document(userId).get().await()
@@ -128,6 +182,12 @@ class ChatRepository {
         }
     }
 
+    /**
+     * Listens for real-time changes to a user's online status.
+     *
+     * @param userId The user's UID.
+     * @param onStatusChanged Callback with the user's online status.
+     */
     fun listenForUserStatus(userId: String, onStatusChanged: (Boolean) -> Unit) {
         firestore.collection("users").document(userId)
             .addSnapshotListener { snapshot, error ->

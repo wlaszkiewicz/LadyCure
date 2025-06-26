@@ -65,6 +65,14 @@ import com.example.ladycure.presentation.home.components.Screen.AdminAnalytics
 import com.example.ladycure.utility.SnackbarController
 import java.time.format.DateTimeFormatter
 
+/**
+ * Admin dashboard screen displaying key statistics, pending doctor applications,
+ * and logout functionality.
+ *
+ * @param navController Used to navigate between screens.
+ * @param snackbarController Controller to show snackbar messages.
+ * @param viewModel ViewModel providing data and state management for the dashboard.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
@@ -194,6 +202,13 @@ fun AdminDashboardScreen(
     }
 }
 
+/**
+ * Displays a summary card of analytics statistics with a clickable action
+ * to navigate to a detailed analytics screen.
+ *
+ * @param stats Map of statistic keys and their integer values to be displayed.
+ * @param onClick Callback invoked when the user taps on the card.
+ */
 @Composable
 fun AnalyticsSummaryCard(
     stats: Map<String, Int>,
@@ -272,6 +287,13 @@ fun AnalyticsSummaryCard(
     }
 }
 
+/**
+ * Displays a statistic item with a colored value and a label below it.
+ *
+ * @param label Descriptive label for the statistic.
+ * @param color Color to display the statistic value.
+ * @param value Statistic value displayed prominently.
+ */
 @Composable
 fun StatisticItem(label: String, color: Color, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -289,8 +311,12 @@ fun StatisticItem(label: String, color: Color, value: String) {
     }
 }
 
+/**
+ * Header row for the admin dashboard, showing the screen title and a logout button.
+ *
+ * @param onLogoutClick Callback invoked when the logout button is clicked.
+ */
 @Composable
-
 fun AdminDashboardHeader(
     onLogoutClick: () -> Unit
 ) {
@@ -323,6 +349,16 @@ fun AdminDashboardHeader(
     }
 }
 
+/**
+ * Card component representing a single doctor application item in the pending applications list.
+ *
+ * Shows the applicant's name, status, specialty, experience, submission date, and current workplace.
+ * Card background color is styled based on the application status.
+ *
+ * @param application The [DoctorApplication] data model representing the application.
+ * @param onClick Callback invoked when the card is clicked.
+ * @param modifier Optional [Modifier] for styling.
+ */
 @Composable
 fun ApplicationItemCard(
     application: DoctorApplication,

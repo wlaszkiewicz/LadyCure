@@ -34,6 +34,17 @@ import com.example.ladycure.presentation.admin.components.EmptyView
 import com.example.ladycure.presentation.admin.components.LoadingView
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * Composable screen for managing doctors in the admin panel.
+ *
+ * Displays a searchable list of doctors with options to refresh,
+ * edit, or delete doctors. Shows dialogs for editing and deleting doctors,
+ * and handles error messages using a snackbar.
+ *
+ * @param snackbarController Controller to show snackbar messages.
+ * @param navController Navigation controller to handle navigation events.
+ * @param viewModel ViewModel managing the doctor data and UI state.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDoctorManagementScreen(
@@ -46,7 +57,7 @@ fun AdminDoctorManagementScreen(
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarController.showMessage(it)
-            viewModel.errorMessage = null // Reset error message after showing
+            viewModel.errorMessage = null
         }
     }
     Column(

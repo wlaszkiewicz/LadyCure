@@ -16,17 +16,14 @@ import java.time.format.DateTimeFormatter
  */
 class PeriodTrackerRepository {
 
-    // FirebaseAuth instance to get the current user's ID
     private val auth = FirebaseAuth.getInstance()
 
     private val firestore = FirebaseFirestore.getInstance()
 
-    // The base collection path for user-specific period tracker data
     private fun getUserPeriodTrackerCollection() = firestore.collection("users")
         .document(auth.currentUser?.uid ?: throw IllegalStateException("User not logged in"))
         .collection("periodTracker")
 
-    // Date formatter for consistent date string representation in Firestore
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     /**
@@ -43,22 +40,19 @@ class PeriodTrackerRepository {
                 return Result.failure(Exception("User not logged in"))
             }
 
-            // Reference to the specific daily data document using the date as ID
             val docRef = getUserPeriodTrackerCollection()
-                .document("dailyData") // Subcollection for daily entries
-                .collection("entries") // Further subcollection for each day's entry
+                .document("dailyData")
+                .collection("entries")
                 .document(dailyData.date.format(dateFormatter))
 
-            // Convert DailyPeriodData object to a HashMap for Firestore
             val dataToSave = hashMapOf(
                 "isPeriodDay" to dailyData.isPeriodDay,
                 "notes" to dailyData.notes,
                 "moodEmoji" to dailyData.moodEmoji,
-                "flowIntensity" to dailyData.flowIntensity, // Add flowIntensity
-                "symptoms" to dailyData.symptoms // Add symptoms
+                "flowIntensity" to dailyData.flowIntensity,
+                "symptoms" to dailyData.symptoms
             )
 
-            // Use SetOptions.merge() to update existing fields or create the document if it doesn't exist
             docRef.set(dataToSave, SetOptions.merge()).await()
             Log.d("PeriodTrackerRepository", "Daily period data saved for ${dailyData.date}")
             Result.success(Unit)
@@ -89,16 +83,15 @@ class PeriodTrackerRepository {
             val documentSnapshot = docRef.get().await()
 
             if (documentSnapshot.exists()) {
-                // Convert Firestore document data back to DailyPeriodData object
                 val isPeriodDay = documentSnapshot.getBoolean("isPeriodDay") ?: false
                 val notes = documentSnapshot.getString("notes") ?: ""
                 val moodEmoji = documentSnapshot.getString("moodEmoji")
                 val flowIntensity =
-                    documentSnapshot.getString("flowIntensity") // Retrieve flowIntensity
+                    documentSnapshot.getString("flowIntensity")
 
-                @Suppress("UNCHECKED_CAST") // Firestore returns List<Any> for arrays, cast as String
+                @Suppress("UNCHECKED_CAST")
                 val symptoms = documentSnapshot.get("symptoms") as? List<String>
-                    ?: emptyList() // Retrieve symptoms
+                    ?: emptyList()
 
                 val dailyData =
                     DailyPeriodData(date, isPeriodDay, notes, moodEmoji, flowIntensity, symptoms)
@@ -130,7 +123,6 @@ class PeriodTrackerRepository {
             val startOfMonth = month.withDayOfMonth(1)
             val endOfMonth = month.withDayOfMonth(month.lengthOfMonth())
 
-            // Get all documents in the 'entries' collection for the current user
             val querySnapshot = getUserPeriodTrackerCollection()
                 .document("dailyData")
                 .collection("entries")
@@ -141,17 +133,16 @@ class PeriodTrackerRepository {
             for (document in querySnapshot.documents) {
                 try {
                     val date = LocalDate.parse(document.id, dateFormatter)
-                    // Filter documents to include only those within the requested month
                     if (!date.isBefore(startOfMonth) && !date.isAfter(endOfMonth)) {
                         val isPeriodDay = document.getBoolean("isPeriodDay") ?: false
                         val notes = document.getString("notes") ?: ""
                         val moodEmoji = document.getString("moodEmoji")
                         val flowIntensity =
-                            document.getString("flowIntensity") // Retrieve flowIntensity
+                            document.getString("flowIntensity")
 
                         @Suppress("UNCHECKED_CAST")
                         val symptoms = document.get("symptoms") as? List<String>
-                            ?: emptyList() // Retrieve symptoms
+                            ?: emptyList()
                         dailyDataMap[date] = DailyPeriodData(
                             date,
                             isPeriodDay,
@@ -201,7 +192,6 @@ class PeriodTrackerRepository {
 
             val docRef = getUserPeriodTrackerCollection().document("settings")
 
-            // Convert PeriodTrackerSettings object to a HashMap for Firestore
             val dataToSave = hashMapOf(
                 "averagePeriodLength" to settings.averagePeriodLength,
                 "averageCycleLength" to settings.averageCycleLength,
@@ -233,7 +223,6 @@ class PeriodTrackerRepository {
             val documentSnapshot = docRef.get().await()
 
             if (documentSnapshot.exists()) {
-                // Convert Firestore document data back to PeriodTrackerSettings object
                 val averagePeriodLength =
                     documentSnapshot.getLong("averagePeriodLength")?.toInt() ?: 5
                 val averageCycleLength =
@@ -254,7 +243,6 @@ class PeriodTrackerRepository {
                     "PeriodTrackerRepository",
                     "No period tracker settings found, returning default."
                 )
-                // Return default settings if no document exists
                 Result.success(PeriodTrackerSettings())
             }
         } catch (e: Exception) {

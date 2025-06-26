@@ -13,11 +13,20 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
+/**
+ * Repository class for fetching admin-related data from Firestore.
+ */
 class AdminRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
 
+    /**
+     * Retrieves user registration data grouped by the given [timePeriod].
+     *
+     * @param timePeriod The time interval to group data (e.g., daily, weekly).
+     * @return A [Result] containing a list of pairs (timeLabel, userCount).
+     */
     suspend fun getUserGrowthData(timePeriod: TimePeriod): Result<List<Pair<String, Int>>> {
         return try {
             val snapshot = firestore
@@ -64,6 +73,13 @@ class AdminRepository {
         }
     }
 
+    /**
+     * Retrieves patient registration data grouped by the given [timePeriod].
+     * Only includes users with the role "USER".
+     *
+     * @param timePeriod The time interval to group data.
+     * @return A [Result] with a list of (timeLabel, patientCount) pairs.
+     */
     suspend fun getPatientGrowthData(timePeriod: TimePeriod): Result<List<Pair<String, Int>>> {
         return try {
             val snapshot = firestore
@@ -112,6 +128,13 @@ class AdminRepository {
     }
 
 
+    /**
+     * Retrieves doctor registration data grouped by the specified [timePeriod].
+     * Only includes users with the role "DOCTOR".
+     *
+     * @param timePeriod The time interval to group data.
+     * @return A [Result] containing a list of (timeLabel, doctorCount) pairs.
+     */
     suspend fun getDoctorGrowthData(timePeriod: TimePeriod): Result<List<Pair<String, Int>>> {
         return try {
             val snapshot = firestore
@@ -159,6 +182,11 @@ class AdminRepository {
         }
     }
 
+    /**
+     * Retrieves the number of applications grouped by their status (e.g., PENDING, APPROVED).
+     *
+     * @return A [Result] containing a map of (status -> count).
+     */
     suspend fun getApplicationStats(): Result<Map<String, Int>> {
         return try {
             val snapshot = firestore
@@ -176,6 +204,11 @@ class AdminRepository {
         }
     }
 
+    /**
+     * Retrieves high-level admin statistics such as total users, active doctors, and pending applications.
+     *
+     * @return A [Result] with a map of stat names to their corresponding values.
+     */
     suspend fun getAdminStats(): Result<Map<String, Any>> {
         return try {
             val stats = mutableMapOf<String, Any>()
@@ -203,6 +236,11 @@ class AdminRepository {
     }
 
 
+    /**
+     * Retrieves users' age distribution grouped into age ranges (e.g., "21-30").
+     *
+     * @return A [Result] containing a list of (ageRange, userCount) pairs.
+     */
     suspend fun getUsersAgeData(): Result<List<Pair<String, Int>>> {
         return try {
             val snapshot = firestore
@@ -210,13 +248,10 @@ class AdminRepository {
                 .get()
                 .await()
 
-            // Calculate current date
             val currentDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
 
-            // Group ages into bins (e.g., 0-10, 11-20, etc.)
             val ageGroups = snapshot.documents
                 .mapNotNull { doc ->
-                    // Parse date of birth from Firestore
                     val dobString = doc.getString("dob")
                     if (dobString != null) {
                         val dob =
@@ -225,7 +260,7 @@ class AdminRepository {
                         if (currentDate.monthValue < dob.monthValue ||
                             (currentDate.monthValue == dob.monthValue && currentDate.dayOfMonth < dob.dayOfMonth)
                         ) {
-                            age - 1 // hasn't had birthday yet this year
+                            age - 1
                         } else {
                             age
                         }

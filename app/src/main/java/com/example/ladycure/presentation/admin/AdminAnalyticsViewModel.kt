@@ -9,14 +9,22 @@ import com.example.ladycure.data.repository.AdminRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for the Admin Analytics screen.
+ *
+ * Handles loading and managing analytics data including user growth, patient growth,
+ * doctor growth, application statuses, age distributions, and overall stats.
+ * Supports switching between different time periods for the data.
+ *
+ * @property adminRepo Repository providing analytics data from the backend or local source.
+ */
 class AdminAnalyticsViewModel(
     private val adminRepo: AdminRepository = AdminRepository(),
 ) : ViewModel() {
-    // Loading state
+
     var isLoading by mutableStateOf(true)
         private set
 
-    // Data states
     var userGrowthData by mutableStateOf<List<Pair<String, Int>>>(emptyList())
         private set
     var patientGrowthData by mutableStateOf<List<Pair<String, Int>>>(emptyList())
@@ -30,7 +38,6 @@ class AdminAnalyticsViewModel(
     var totalStats by mutableStateOf<Map<String, Any>>(emptyMap())
         private set
 
-    // Time period selection
     var selectedTimePeriod by mutableStateOf(TimePeriod.MONTHLY)
         private set
 
@@ -41,16 +48,26 @@ class AdminAnalyticsViewModel(
         loadAnalyticsData()
     }
 
+    /**
+     * Updates the selected time period and reloads analytics data.
+     *
+     * @param period The new time period to apply for analytics.
+     */
     fun updateTimePeriod(period: TimePeriod) {
         selectedTimePeriod = period
         loadAnalyticsData()
     }
 
+    /**
+     * Loads all relevant analytics data asynchronously.
+     *
+     * Uses Kotlin coroutines to concurrently fetch data from the repository.
+     * Sets error messages if any fetch fails and updates loading state accordingly.
+     */
     fun loadAnalyticsData() {
         viewModelScope.launch {
             isLoading = true
             try {
-                // Fetch all data in parallel
                 val userGrowthDeferred = async { adminRepo.getUserGrowthData(selectedTimePeriod) }
                 val patientGrowthDeferred =
                     async { adminRepo.getPatientGrowthData(selectedTimePeriod) }
@@ -60,7 +77,6 @@ class AdminAnalyticsViewModel(
                 val totalStatsDeferred = async { adminRepo.getAdminStats() }
                 val usersAgeDeferred = async { adminRepo.getUsersAgeData() }
 
-                // Handle results directly
                 userGrowthData = userGrowthDeferred.await().getOrElse {
                     errorMessage = "Failed to load user growth data: ${it.message}"
                     emptyList()

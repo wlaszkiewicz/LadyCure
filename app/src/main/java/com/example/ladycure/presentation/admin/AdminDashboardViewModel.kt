@@ -14,6 +14,17 @@ import com.example.ladycure.domain.model.ApplicationStatus
 import com.example.ladycure.domain.model.DoctorApplication
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for the Admin Dashboard screen.
+ *
+ * Handles loading and refreshing of doctor applications and admin statistics,
+ * manages UI state such as dialogs and loading indicators,
+ * and coordinates actions like logout and application status updates.
+ *
+ * @property applicationRepo Repository for fetching and updating doctor applications.
+ * @property adminRepo Repository for fetching admin-related statistics.
+ * @property authRepo Repository for handling authentication (e.g., logout).
+ */
 class AdminDashboardViewModel(
     private val applicationRepo: ApplicationRepository = ApplicationRepository(),
     private val adminRepo: AdminRepository = AdminRepository(),
@@ -49,6 +60,7 @@ class AdminDashboardViewModel(
         loadInitialData()
     }
 
+    /** Loads initial data including stats and doctor applications. */
     private fun loadInitialData() {
         viewModelScope.launch {
             loadStats()
@@ -56,6 +68,7 @@ class AdminDashboardViewModel(
         }
     }
 
+    /** Loads admin statistics from the repository and updates state. */
     private suspend fun loadStats() {
         val result = adminRepo.getAdminStats()
         if (result.isSuccess) {
@@ -69,6 +82,7 @@ class AdminDashboardViewModel(
         }
     }
 
+    /** Loads initial data including stats and doctor applications. */
     private suspend fun loadApplications() {
         isLoadingApplications = true
         val result = applicationRepo.getAllApplications()

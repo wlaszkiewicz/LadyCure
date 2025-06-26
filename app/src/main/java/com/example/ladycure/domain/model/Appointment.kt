@@ -6,6 +6,22 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 
+/**
+ * Represents a medical appointment.
+ *
+ * @property appointmentId Unique identifier for the appointment.
+ * @property doctorId Unique identifier for the doctor.
+ * @property patientId Unique identifier for the patient.
+ * @property dateTime Date and time of the appointment as a Firebase Timestamp.
+ * @property status Current status of the appointment.
+ * @property type Type of the appointment (specialization and procedure).
+ * @property price Price of the appointment.
+ * @property address Address where the appointment takes place.
+ * @property doctorName Name of the doctor.
+ * @property patientName Name of the patient.
+ * @property comments Additional comments about the appointment.
+ */
+
 data class Appointment(
     val appointmentId: String,
     val doctorId: String,
@@ -20,21 +36,37 @@ data class Appointment(
     var comments: String = "",
 ) {
 
+    /**
+     * Returns the date part of the appointment as [LocalDate].
+     */
     val date: LocalDate
         get() = dateTime.toDate().toInstant()
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
 
+
+    /**
+     * Returns the time part of the appointment as [LocalTime].
+     */
     val time: LocalTime
         get() = dateTime.toDate().toInstant()
             .atZone(ZoneId.systemDefault())
             .toLocalTime()
 
+    /**
+     * Returns the date and time of the appointment as [LocalDateTime].
+     */
     val localDateTime: LocalDateTime
         get() = dateTime.toDate().toInstant()
             .atZone(ZoneId.systemDefault())
             .toLocalDateTime()
 
+    /**
+     * Converts the appointment to a map for serialization.
+     *
+     * @param appointment The appointment to convert.
+     * @return Map representation of the appointment.
+     */
     fun toMap(appointment: Appointment): Map<String, Any> {
         return mapOf(
             "appointmentId" to appointment.appointmentId,
@@ -51,6 +83,12 @@ data class Appointment(
         )
     }
 
+
+    /**
+     * Converts the appointment to a summary object.
+     *
+     * @return [AppointmentSummary] with selected fields.
+     */
     fun toSummary(): AppointmentSummary {
         return AppointmentSummary(
             appointmentId = appointmentId,
@@ -63,6 +101,12 @@ data class Appointment(
         )
     }
 
+    /**
+     * Creates an [Appointment] from a map.
+     *
+     * @param map Map containing appointment data.
+     * @return [Appointment] instance.
+     */
     companion object {
         fun fromMap(map: Map<String, Any>): Appointment {
             return Appointment(
@@ -87,10 +131,15 @@ data class Appointment(
         }
     }
 
+    /**
+     * Status of the appointment.
+     *
+     * @property displayName Human-readable status name.
+     */
     enum class Status(val displayName: String) {
         PENDING("Pending"),
         CONFIRMED("Confirmed"),
-        CANCELLED("Cancelled"), // By patient or doctor or system (when doctor didn't confirm in time)
+        CANCELLED("Cancelled"),
         COMPLETED("Completed");
 
         companion object {
@@ -102,6 +151,17 @@ data class Appointment(
 }
 
 
+/**
+ * Enum representing different types of medical appointments.
+ *
+ * @property displayName Human-readable name of the appointment type.
+ * @property speciality Medical specialization for the appointment.
+ * @property price Default price for the appointment type.
+ * @property durationInMinutes Duration of the appointment in minutes.
+ * @property needsReferral Whether a referral is required for this appointment.
+ * @property additionalInfo Additional information about the appointment.
+ * @property preparationInstructions Instructions for preparing for the appointment.
+ */
 enum class AppointmentType(
     val displayName: String,
     val speciality: String,

@@ -19,6 +19,17 @@ import com.example.ladycure.presentation.availability.SetAvailabilityScreen
 import com.example.ladycure.presentation.availability.SetAvailabilityScreenAdmin
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * A screen composable for admins to edit a doctor's availability schedule.
+ *
+ * This screen includes a top app bar with a back button and a title,
+ * and embeds the [SetAvailabilityScreenAdmin] composable that handles
+ * the actual availability management UI and logic.
+ *
+ * @param navController The navigation controller used to handle navigation events.
+ * @param snackbarController Controller to show snackbar messages for feedback.
+ * @param doctorId The unique identifier of the doctor whose availability is being edited.
+ */
 @Composable
 fun AdminEditAvailabilityScreen(
     navController: NavController,
@@ -30,7 +41,6 @@ fun AdminEditAvailabilityScreen(
             .fillMaxSize()
             .background(DefaultBackground)
     ) {
-        // Header with back navigation
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -40,7 +50,6 @@ fun AdminEditAvailabilityScreen(
 
         }
 
-        // Pass the doctorId to SetAvailabilityScreenAdmin
         SetAvailabilityScreenAdmin(
             navController = navController as NavHostController,
             snackbarController = snackbarController,

@@ -16,6 +16,16 @@ import com.example.ladycure.presentation.availability.AvailabilityListScreen
 import com.example.ladycure.utility.SnackbarController
 import androidx.compose.foundation.background
 
+/**
+ * Composable screen displaying the availability list for a specific doctor from an admin perspective.
+ *
+ * This screen wraps the [AvailabilityListScreen] composable, enabling admin-specific functionality.
+ * It also sets up the basic layout with background and padding.
+ *
+ * @param navController Navigation controller used for handling navigation actions.
+ * @param snackbarController Controller for showing snackbars to the user.
+ * @param doctorId The unique identifier of the doctor whose availability is being managed/viewed.
+ */
 @Composable
 fun AdminAvailabilityListScreen(
     navController: NavController,
@@ -27,7 +37,6 @@ fun AdminAvailabilityListScreen(
             .fillMaxSize()
             .background(DefaultBackground)
     ) {
-        // Header with back navigation
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -37,7 +46,6 @@ fun AdminAvailabilityListScreen(
 
         }
 
-        // Reuse the existing AvailabilityListScreen but with admin context
         AvailabilityListScreen(
             navController = navController,
             snackbarController = snackbarController,

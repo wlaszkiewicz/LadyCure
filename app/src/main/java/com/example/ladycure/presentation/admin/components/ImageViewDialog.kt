@@ -31,7 +31,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import coil.compose.AsyncImage
 
-// Add this new composable function anywhere in your file
+/**
+ * A dialog that displays an image loaded from a URL with a title,
+ * and provides options to download the image or close the dialog.
+ *
+ * @param imageUrl The URL of the image to display.
+ * @param title The title to display at the top of the dialog and used as the download filename.
+ * @param onDismiss Callback invoked when the dialog should be dismissed.
+ */
 @Composable
 fun ImageViewDialog(
     imageUrl: String,
@@ -107,6 +114,18 @@ fun ImageViewDialog(
     }
 }
 
+/**
+ * Initiates a download of a file from the provided URL using Android's DownloadManager.
+ *
+ * The downloaded file will be saved to the device's public Downloads directory.
+ * A notification will be shown when the download completes.
+ *
+ * @param context The Android context required to access system services.
+ * @param url The URL of the file to download.
+ * @param fileName The name to use for the downloaded file.
+ * @param title The title to display in the download notification.
+ * @param description The description to display in the download notification.
+ */
 fun downloadFile(
     context: Context,
     url: String,

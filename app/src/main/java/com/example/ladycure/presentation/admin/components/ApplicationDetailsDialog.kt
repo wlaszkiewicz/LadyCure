@@ -60,6 +60,22 @@ import com.example.ladycure.R
 import com.example.ladycure.domain.model.ApplicationStatus
 import com.example.ladycure.domain.model.DoctorApplication
 
+/**
+ * Displays a detailed dialog for reviewing and managing a doctor's application.
+ *
+ * Shows personal details, contact info, documents (license, diploma),
+ * and the current application status with options to approve, reject,
+ * or request more information. Allows editing review notes and viewing documents.
+ *
+ * @param application The [DoctorApplication] object containing all application details.
+ * @param onDismiss Callback invoked when the dialog is dismissed.
+ * @param onStatusChange Callback invoked when the application status is changed.
+ *        Parameters:
+ *        - new status ([ApplicationStatus]),
+ *        - optional comment ([String]?) related to the status change,
+ *        - boolean indicating whether notes have been edited inline (`true`) or via dialog (`false`).
+ * @param onApprove Callback invoked specifically when the application is approved.
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ApplicationDetailsDialog(
@@ -69,7 +85,6 @@ fun ApplicationDetailsDialog(
     onApprove: () -> Unit,
 ) {
 
-    // Add these state variables at the top of the ApplicationDetailsDialog composable
     var showLicense by remember { mutableStateOf(false) }
     var showDiploma by remember { mutableStateOf(false) }
 
@@ -96,7 +111,7 @@ fun ApplicationDetailsDialog(
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-                // Header
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -135,7 +150,6 @@ fun ApplicationDetailsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Key details in a clean layout
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -149,7 +163,6 @@ fun ApplicationDetailsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Documents section
                 if (application.licensePhotoUrl.isNotEmpty() || application.diplomaPhotoUrl.isNotEmpty()) {
                     Text(
                         "Documents",
@@ -194,7 +207,6 @@ fun ApplicationDetailsDialog(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Notes section
                 Column {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -286,7 +298,6 @@ fun ApplicationDetailsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Action buttons
                 when (application.status) {
                     ApplicationStatus.PENDING -> {
                         OutlinedButton(
@@ -307,7 +318,6 @@ fun ApplicationDetailsDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Request More Info Button
                             OutlinedButton(
                                 onClick = {
                                     showStatusChangeDialog = ApplicationStatus.NEEDS_MORE_INFO
@@ -322,7 +332,6 @@ fun ApplicationDetailsDialog(
                                 Text("More Info")
                             }
 
-                            // Reject Button
                             OutlinedButton(
                                 onClick = { showStatusChangeDialog = ApplicationStatus.REJECTED },
                                 modifier = Modifier.weight(1f),
@@ -342,7 +351,6 @@ fun ApplicationDetailsDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Approve Button
                             OutlinedButton(
                                 onClick = {
                                     onStatusChange(
@@ -360,7 +368,6 @@ fun ApplicationDetailsDialog(
                                 Text("Approve")
                             }
 
-                            // Reject Button
                             OutlinedButton(
                                 onClick = { showStatusChangeDialog = ApplicationStatus.REJECTED },
                                 modifier = Modifier.weight(1f),
@@ -401,7 +408,6 @@ fun ApplicationDetailsDialog(
         }
     }
 
-    // Status change confirmation dialog
     showStatusChangeDialog?.let { newStatus ->
         var tempComment by remember { mutableStateOf(editedComment) }
 
@@ -478,7 +484,7 @@ fun ApplicationDetailsDialog(
                     enabled = when (newStatus) {
                         ApplicationStatus.APPROVED -> true
                         else -> tempComment.isNotEmpty()
-                    } // Ensure comment is provided for REJECTED and NEEDS_MORE_INFO
+                    }
                 ) {
                     Text(
                         when (newStatus) {
@@ -500,7 +506,6 @@ fun ApplicationDetailsDialog(
         )
     }
 
-// Add these dialogs at the bottom of the ApplicationDetailsDialog composable
     if (showLicense && application.licensePhotoUrl.isNotEmpty()) {
         ImageViewDialog(
             imageUrl = application.licensePhotoUrl,
@@ -518,7 +523,15 @@ fun ApplicationDetailsDialog(
     }
 }
 
-
+/**
+ * Displays a row with a label and a corresponding value, arranged
+ * horizontally with space between them.
+ *
+ * Typically used to display application or user information fields.
+ *
+ * @param label The label text describing the field.
+ * @param value The value text corresponding to the label.
+ */
 @Composable
 internal fun DetailRow(label: String, value: String) {
     Row(

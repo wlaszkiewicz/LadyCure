@@ -9,12 +9,24 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Repository class that handles Firebase Storage and Firestore operations
+ * related to file uploads, referrals, and document management.
+ */
 class StorageRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
     private val storage = FirebaseStorage.getInstance()
     private val storageRef = storage.reference
 
+    /**
+     * Uploads a referral PDF to Firebase Storage and saves metadata to Firestore.
+     *
+     * @param uri URI of the PDF file to upload.
+     * @param service The appointment type the referral is associated with.
+     * @param onProgress Callback to track upload progress.
+     * @return [Result] containing the ID of the uploaded referral or an error.
+     */
     suspend fun uploadReferralToFirestore(
         uri: Uri,
         service: AppointmentType?,
@@ -59,6 +71,16 @@ class StorageRepository {
         }
     }
 
+    /**
+     * Replaces an existing referral document with a new one.
+     *
+     * @param uri New file URI.
+     * @param oldUri URL of the old file to be replaced.
+     * @param referralId The Firestore document ID of the referral to update.
+     * @param service The updated service type.
+     * @param onProgress Callback to track upload progress.
+     * @return [Result] containing the new file URL or an error.
+     */
     suspend fun replaceReferralInFirestore(
         uri: Uri,
         oldUri: String,
@@ -94,6 +116,12 @@ class StorageRepository {
         }
     }
 
+    /**
+     * Retrieves a referral document by its ID from Firestore.
+     *
+     * @param referralId The Firestore document ID of the referral.
+     * @return [Result] containing a [Referral] object or an error.
+     */
     suspend fun getReferralById(referralId: String): Result<Referral> {
         return try {
             val userId = auth.currentUser?.uid
@@ -118,7 +146,14 @@ class StorageRepository {
         }
     }
 
-
+    /**
+     * Uploads a generic file to Firebase Storage at the specified path.
+     *
+     * @param uri URI of the file to upload.
+     * @param path Storage path (e.g., "users/{userId}/filename.pdf").
+     * @param onProgress Callback to track upload progress.
+     * @return [Result] containing the download URL or an error.
+     */
     suspend fun uploadFile(
         uri: Uri,
         path: String,
@@ -131,14 +166,12 @@ class StorageRepository {
             val fileRef = storage.reference.child(path)
             val uploadTask = fileRef.putFile(uri)
 
-            // Add progress listener
             uploadTask.addOnProgressListener { taskSnapshot ->
                 val bytesTransferred = taskSnapshot.bytesTransferred
                 val totalBytes = taskSnapshot.totalByteCount
                 onProgress(bytesTransferred, totalBytes)
             }
 
-            // Wait for upload to complete
             val task = uploadTask.await()
             val downloadUrl = task.storage.downloadUrl.await()
 
@@ -148,6 +181,12 @@ class StorageRepository {
         }
     }
 
+    /**
+     * Deletes a file from Firebase Storage using its download URL.
+     *
+     * @param url The download URL of the file to delete.
+     * @return [Result] indicating success (true) or failure.
+     */
     suspend fun deleteFile(url: String): Result<Boolean> {
         return try {
             val storageRef = storage.getReferenceFromUrl(url)

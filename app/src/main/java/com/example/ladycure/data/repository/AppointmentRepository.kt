@@ -17,11 +17,22 @@ import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Repository class responsible for managing appointment-related operations,
+ * including booking, updating, canceling, and retrieving appointments.
+ *
+ * Uses Firebase Firestore for data persistence and FirebaseAuth for authentication.
+ */
 class AppointmentRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
-
+    /**
+     * Books a new appointment and updates the doctor's availability.
+     *
+     * @param appointment The appointment to book.
+     * @return [Result] with the appointment ID if successful, or an error.
+     */
     suspend fun bookAppointment(
         appointment: Appointment
     ): Result<String> {
@@ -69,6 +80,12 @@ class AppointmentRepository {
         }
     }
 
+    /**
+     * Retrieves an appointment by its ID.
+     *
+     * @param id The appointment ID.
+     * @return [Result] with the appointment data or an error.
+     */
     suspend fun getAppointmentById(id: String): Result<Appointment> {
         return try {
             val document = firestore.collection("appointments").document(id).get().await()
@@ -85,6 +102,12 @@ class AppointmentRepository {
         }
     }
 
+    /**
+     * Retrieves all appointments for the current user based on their role.
+     *
+     * @param role The role of the user, either "doctor" or "patient".
+     * @return [Result] with a list of [Appointment] or an error.
+     */
     suspend fun getAppointments(role: String): Result<List<Appointment>> {
         return try {
             val id = if (role == "doctor") {
@@ -110,6 +133,13 @@ class AppointmentRepository {
         }
     }
 
+    /**
+     * Updates the status of a specific appointment.
+     *
+     * @param appointmentId The ID of the appointment.
+     * @param status The new status.
+     * @return [Result] of the operation.
+     */
     suspend fun updateAppointmentStatus(appointmentId: String, status: String): Result<Unit> {
         return try {
             val appointmentRef = firestore.collection("appointments").document(appointmentId)
@@ -120,7 +150,13 @@ class AppointmentRepository {
         }
     }
 
-
+    /**
+     * Updates the comment field of a specific appointment.
+     *
+     * @param appointmentId The ID of the appointment.
+     * @param comment The comment text.
+     * @return [Result] of the operation.
+     */
     suspend fun updateAppointmentComment(appointmentId: String, comment: String): Result<Unit> {
         return try {
             val appointmentRef = firestore.collection("appointments").document(appointmentId)
@@ -131,6 +167,13 @@ class AppointmentRepository {
         }
     }
 
+
+    /**
+     * Cancels an appointment and restores the doctor's availability.
+     *
+     * @param appointmentId The ID of the appointment to cancel.
+     * @return [Result] of the operation.
+     */
     suspend fun cancelAppointment(appointmentId: String): Result<Unit> {
         return try {
             firestore.runTransaction { transaction ->
@@ -197,6 +240,16 @@ class AppointmentRepository {
         }
     }
 
+
+    /**
+     * Reschedules an appointment by updating its time and date.
+     * Also adjusts doctor availability accordingly.
+     *
+     * @param appointmentId The ID of the appointment to reschedule.
+     * @param newTime The new time for the appointment.
+     * @param newDate The new date for the appointment.
+     * @return [Result] of the operation.
+     */
     suspend fun rescheduleAppointment(
         appointmentId: String,
         newTime: LocalTime,
@@ -227,7 +280,6 @@ class AppointmentRepository {
                 newTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
 
 
-            // Update the appointment with the new date and time
             val updatedAppointmentData = mapOf(
                 "dateTime" to Timestamp(
                     Date.from(
@@ -239,7 +291,6 @@ class AppointmentRepository {
 
             appointmentRef.update(updatedAppointmentData).await()
 
-            // get 15 minute slots that we can add back to the doctor's availability
             val againAvailableSlots = mutableSetOf<LocalTime>()
             var currentTime = oldStartTime
             while (currentTime.isBefore(oldEndTime)) {
@@ -325,7 +376,11 @@ class AppointmentRepository {
         }
     }
 
-
+    /**
+     * Retrieves a list of patients with whom the current doctor has appointments.
+     *
+     * @return [Result] with a list of [ChatParticipantInfo] or an error.
+     */
     suspend fun getPatientsFromAppointmentsWithUids(): Result<List<ChatParticipantInfo>> {
         return try {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -357,6 +412,11 @@ class AppointmentRepository {
         }
     }
 
+    /**
+     * Retrieves a list of doctors with whom the current patient has appointments.
+     *
+     * @return [Result] with a list of [ChatParticipantInfo] or an error.
+     */
     suspend fun getDoctorsFromAppointmentsWithUids(): Result<List<ChatParticipantInfo>> {
         return try {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -389,6 +449,12 @@ class AppointmentRepository {
         }
     }
 
+    /**
+     * Retrieves participants with whom the user has active chat sessions,
+     * including last message, unread count, and timestamps.
+     *
+     * @return [Result] with a list of [ChatParticipantInfo] or an error.
+     */
     suspend fun getActiveChatParticipants(): Result<List<ChatParticipantInfo>> {
         return try {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -466,7 +532,12 @@ class AppointmentRepository {
         }
     }
 
-
+    /**
+     * Retrieves appointment summaries for the current user.
+     *
+     * @param role The role of the user ("doctor" or "patient").
+     * @return [Result] with a list of [AppointmentSummary] or an error.
+     */
     suspend fun getAppointmentSummaries(role: String): Result<List<AppointmentSummary>> {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not logged in"))
@@ -488,6 +559,11 @@ class AppointmentRepository {
         }
     }
 
+    /**
+     * Retrieves upcoming appointment summaries for the current user.
+     *
+     * @return [Result] with a list of [AppointmentSummary] or an error.
+     */
     suspend fun getUpcomingAppointmentsSummaries(): Result<List<AppointmentSummary>> {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not logged in"))
@@ -510,6 +586,12 @@ class AppointmentRepository {
         }
     }
 
+    /**
+     * Retrieves appointment summaries for a specific month.
+     *
+     * @param monthKey The Firestore document ID representing the month (e.g., "2025-06").
+     * @return [Result] with a list of [AppointmentSummary] or an error.
+     */
     suspend fun getMonthlyAppointmentSummaries(
         monthKey: String
     ): Result<List<AppointmentSummary>> {

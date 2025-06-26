@@ -53,6 +53,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * Admin analytics screen displaying key metrics and charts.
+ *
+ * Shows user, doctor, and application statistics along with growth charts and
+ * a pie chart of application status. Supports selecting different time periods.
+ *
+ * @param navController Navigation controller for screen navigation.
+ * @param snackbarController Controller to show snackbar messages.
+ * @param viewModel ViewModel providing analytics data and state.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminAnalyticsScreen(
@@ -65,7 +75,7 @@ fun AdminAnalyticsScreen(
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarController.showMessage(it)
-            viewModel.errorMessage = null // Reset error message after showing
+            viewModel.errorMessage = null
         }
     }
     Column(
@@ -82,7 +92,6 @@ fun AdminAnalyticsScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Time period selector
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -150,7 +159,6 @@ fun AdminAnalyticsScreen(
                     )
                 }
 
-                // Growth Charts
                 AnalyticsChartCard(
                     title = "All User Growth",
                     color = DefaultPrimary,
@@ -169,7 +177,6 @@ fun AdminAnalyticsScreen(
                     data = viewModel.doctorGrowthData
                 )
 
-                // Application Stats
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -204,7 +211,6 @@ fun AdminAnalyticsScreen(
                     }
                 }
 
-                // Age Distribution Chart
                 AnalyticsChartCard(
                     title = "User Age Distribution",
                     color = Purple,
@@ -217,6 +223,16 @@ fun AdminAnalyticsScreen(
     }
 }
 
+/**
+ * Card composable that displays a chart with a title.
+ *
+ * Shows a bar chart if data is available, otherwise displays a "No data" message.
+ *
+ * @param title Title to display above the chart.
+ * @param color Color used for the chart bars and title.
+ * @param data List of pairs representing labels and values for the chart.
+ * @param modifier Modifier to be applied to the card.
+ */
 @Composable
 private fun AnalyticsChartCard(
     title: String,
@@ -257,7 +273,16 @@ private fun AnalyticsChartCard(
     }
 }
 
-
+/**
+ * A summary card showing a numeric value and title.
+ *
+ * Typically used to display key stats like total users, active doctors, etc.
+ *
+ * @param title Title describing the stat.
+ * @param value String value to display prominently.
+ * @param color Color used for the value text.
+ * @param modifier Modifier to be applied to the card.
+ */
 @Composable
 fun SummaryCard(
     title: String,
@@ -295,6 +320,13 @@ fun SummaryCard(
     }
 }
 
+/**
+ * A horizontally scrollable bar chart displaying data values with labels.
+ *
+ * @param data List of label-value pairs to plot.
+ * @param color Color of the bars.
+ * @param modifier Modifier to be applied to the canvas.
+ */
 @Composable
 fun BarChart(
     data: List<Pair<String, Int>>,
@@ -338,7 +370,6 @@ fun BarChart(
                 val left = index * (barWidthPx + barSpacing) + 4.dp.toPx()
                 val top = size.height - barHeight
 
-                // Draw bar
                 drawRoundRect(
                     color = color.copy(alpha = 0.7f),
                     topLeft = Offset(left, top),
@@ -359,7 +390,6 @@ fun BarChart(
                     )
                 }
 
-                // Draw time label below the bar, centered
                 drawContext.canvas.nativeCanvas.apply {
                     drawText(
                         label,
@@ -377,6 +407,14 @@ fun BarChart(
     }
 }
 
+/**
+ * A pie chart representing categorical data distribution.
+ *
+ * Displays slices for each category colored by status, along with a legend.
+ *
+ * @param data Map of category labels to their corresponding integer values.
+ * @param modifier Modifier to be applied to the pie chart layout.
+ */
 @Composable
 fun PieChart(
     data: Map<String, Int>,
@@ -450,6 +488,11 @@ fun PieChart(
     }
 }
 
+/**
+ * Enum representing selectable time periods for analytics.
+ *
+ * @property displayName User-friendly name of the time period.
+ */
 enum class TimePeriod(val displayName: String) {
     DAILY("Daily"),
     WEEKLY("Weekly"),
