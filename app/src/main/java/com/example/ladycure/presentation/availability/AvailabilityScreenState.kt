@@ -1,8 +1,8 @@
 package com.example.ladycure.presentation.availability
 
 import DefaultBackground
-import DefaultPrimary
 import DefaultOnPrimary
+import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,11 +42,9 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -236,10 +234,20 @@ fun BaseAvailabilityScreen(
                         startTime = state.startTime,
                         endTime = state.endTime,
                         onStartTimeClick = {
-                            onStateChange(state.copy(isStartTimePicker = true, showTimePicker = true))
+                            onStateChange(
+                                state.copy(
+                                    isStartTimePicker = true,
+                                    showTimePicker = true
+                                )
+                            )
                         },
                         onEndTimeClick = {
-                            onStateChange(state.copy(isStartTimePicker = false, showTimePicker = true))
+                            onStateChange(
+                                state.copy(
+                                    isStartTimePicker = false,
+                                    showTimePicker = true
+                                )
+                            )
                         },
                         modifier = Modifier.padding(16.dp)
                     )
@@ -410,24 +418,12 @@ fun SetAvailabilityScreen(
         }
         state.value = state.value.copy(isLoading = true)
         try {
-            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId) // Use effectiveDoctorId
+            val result =
+                doctorRepo.getDoctorAvailability(effectiveDoctorId) // Use effectiveDoctorId
             if (result.isSuccess) {
                 val availabilities = result.getOrThrow()
-                val today = LocalDate.now()
 
-                // Filter out past availabilities
-                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
-                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
-
-                // Delete past availabilities from Firestore
-                pastAvailabilities.forEach { pastAvailability ->
-                    doctorRepo.deleteDoctorAvailability(
-                        pastAvailability.doctorId,
-                        pastAvailability.date!!
-                    )
-                }
-
-                state.value = state.value.copy(existingAvailabilities = futureAvailabilities)
+                state.value = state.value.copy(existingAvailabilities = availabilities)
             } else {
                 snackbarController.showMessage("Error loading existing availabilities")
             }
@@ -445,17 +441,18 @@ fun SetAvailabilityScreen(
         onStateChange = { newState -> state.value = newState },
         onSave = { dates, startTime, endTime ->
             coroutineScope.launch {
-                state.value = state.value.copy(isLoading = true) // Set loading state for save operation
+                state.value = state.value.copy(isLoading = true)
                 try {
                     doctorRepo.updateAvailabilities(
                         dates = dates.toList(),
                         startTime = startTime,
                         endTime = endTime,
-                        doctorId = effectiveDoctorId // Use effectiveDoctorId for saving
+                        doctorId = effectiveDoctorId
                     )
                     snackbarController.showMessage("Availability saved successfully!")
                     // Refresh the screen after saving for the current user or admin-edited doctor
-                    val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
+                    val newAvailabilities =
+                        doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
                     state.value = state.value.copy(existingAvailabilities = newAvailabilities)
                 } catch (e: Exception) {
                     snackbarController.showMessage("Error saving availability: ${e.message}")
@@ -502,21 +499,8 @@ fun SetAvailabilityScreenAdmin(
             val result = doctorRepo.getDoctorAvailability(effectiveDoctorId)
             if (result.isSuccess) {
                 val availabilities = result.getOrThrow()
-                val today = LocalDate.now()
 
-                // Filter out past availabilities
-                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
-                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
-
-                // Delete past availabilities from Firestore
-                pastAvailabilities.forEach { pastAvailability ->
-                    doctorRepo.deleteDoctorAvailability(
-                        pastAvailability.doctorId,
-                        pastAvailability.date!!
-                    )
-                }
-
-                state.value = state.value.copy(existingAvailabilities = futureAvailabilities)
+                state.value = state.value.copy(existingAvailabilities = availabilities)
             } else {
                 snackbarController.showMessage("Error loading existing availabilities")
             }
@@ -544,7 +528,8 @@ fun SetAvailabilityScreenAdmin(
                     )
                     snackbarController.showMessage("Availability saved successfully!")
                     // Refresh the screen after saving
-                    val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
+                    val newAvailabilities =
+                        doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
                     state.value = state.value.copy(existingAvailabilities = newAvailabilities)
                 } catch (e: Exception) {
                     snackbarController.showMessage("Error saving availability: ${e.message}")
