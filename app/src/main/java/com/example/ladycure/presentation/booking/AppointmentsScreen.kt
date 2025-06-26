@@ -84,7 +84,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Appointment.Status
 import com.example.ladycure.domain.model.AppointmentSummary
 import com.example.ladycure.domain.model.Speciality
@@ -116,6 +115,8 @@ fun AppointmentsScreen(
     val showEditStatusDialog = viewModel.showEditStatusDialog
     val showFilters = viewModel.showFilters
     val role = viewModel.role
+    LaunchedEffect(viewModel.futureAppointments) {
+    }
 
     LaunchedEffect(error) {
         error?.let { err ->
@@ -142,7 +143,6 @@ fun AppointmentsScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Header with back button and title
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -312,7 +312,7 @@ fun AppointmentsScreen(
                             },
                             tab = page,
                             onCancelAppointment = { /* Not applicable for past appointments */ },
-                            onLoadMore = { viewModel.loadMorePastAppointments() } // Add this
+                            onLoadMore = { viewModel.loadMorePastAppointments() }
                         )
                     }
                 }
@@ -341,11 +341,19 @@ fun AppointmentsList(
     onCancelAppointment: (String) -> Unit,
     tab: Int,
     viewModel: AppointmentViewModel = viewModel(),
-    onLoadMore: (() -> Unit)? = null // Add this parameter
+    onLoadMore: (() -> Unit)? = null
 ) {
+    val currentAppointments by remember(
+        viewModel.filteredFutureAppointments,
+        viewModel.filteredPastAppointments
+    ) {
+        mutableStateOf(if (tab == 0) viewModel.filteredFutureAppointments else viewModel.filteredPastAppointments)
+    }
+
+
     var showCancelSuccessDialog by remember { mutableStateOf(false) }
 
-    if (appointments.isEmpty()) {
+    if (appointments.isEmpty() || currentAppointments.isEmpty()) {
         EmptyAppointmentsView(message = emptyMessage)
 
         if (tab == 1) {
@@ -453,7 +461,6 @@ fun AppointmentCard(
     var showDetailsDialog by remember { mutableStateOf(false) }
     var showCancelConfirmationDialog by remember { mutableStateOf(false) }
     var showEditStatusDialog by remember { mutableStateOf(false) }
-    var appointmentDetails by remember { mutableStateOf<Appointment?>(null) }
 
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Green
@@ -530,7 +537,11 @@ fun AppointmentCard(
                 InfoChip(
                     text = appointment.status.displayName,
                     color = statusColor,
-                    onClick = onClickStatus,
+                    onClick = {
+                        if (appointment.status == Status.PENDING) {
+                            showEditStatusDialog = true
+                        }
+                    },
                 )
             }
 
@@ -569,49 +580,40 @@ fun AppointmentCard(
         }
     }
 
-    if (showDetailsDialog) {
-        if (isLoadingDetails || viewModel.selectedAppointment == null) {
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = DefaultPrimary)
+    if (showDetailsDialog && viewModel.selectedAppointment != null) {
+        if (role == "doctor") {
+            DetailsDialog(
+                appointment = viewModel.selectedAppointment!!,
+                onDismiss = { showDetailsDialog = false },
+                onClickStatus = {
+                    if (viewModel.selectedAppointment!!.status == Status.PENDING
+                    ) {
+                        showEditStatusDialog = true
+                    }
+                },
+                onMessage = {},
+                onCommentUpdated = { newComment ->
+                    onCommentUpdated(appointment.appointmentId, newComment)
 
-            }
-        } else {
-            if (role == "doctor") {
-
-                DetailsDialog(
-                    appointment = viewModel.selectedAppointment!!,
-                    onDismiss = { showDetailsDialog = false },
-                    onClickStatus = {
-                        if (viewModel.selectedAppointment!!.status == Status.PENDING
-                        ) {
-                            showEditStatusDialog = true
-                        }
-                    },
-                    onMessage = {},
-                    onCommentUpdated = { newComment ->
-                        onCommentUpdated(appointment.appointmentId, newComment)
-                        showDetailsDialog = false
-                    },
-                )
-            } else if (role == "user") {
-                ShowDetailsDialog(
-                    appointment = viewModel.selectedAppointment!!,
-                    onDismiss = { showDetailsDialog = false },
-                    onCancel = {
-                        showDetailsDialog = false
-                        onCancel()
-                    },
-                    onReschedule = {
-                        navController.navigate("reschedule/${appointment.appointmentId}")
-                        showDetailsDialog = false
-                    },
-                )
-            }
+                    viewModel.updateAppointmentComment(
+                        appointment.appointmentId,
+                        newComment
+                    )
+                },
+            )
+        } else if (role == "user") {
+            ShowDetailsDialog(
+                appointment = viewModel.selectedAppointment!!,
+                onDismiss = { showDetailsDialog = false },
+                onCancel = {
+                    showDetailsDialog = false
+                    onCancel()
+                },
+                onReschedule = {
+                    navController.navigate("reschedule/${appointment.appointmentId}")
+                    showDetailsDialog = false
+                },
+            )
         }
     }
 
@@ -626,11 +628,33 @@ fun AppointmentCard(
         )
     }
 
+    var coroutineScope = rememberCoroutineScope()
+
+
     if (showEditStatusDialog) {
         ConfirmAppointmentDialog(
             onDismiss = { showEditStatusDialog = false },
             onConfirm = {
-                onClickStatus()
+                if (viewModel.selectedAppointment != null) {
+                    viewModel.updateAppointmentStatus(Status.CONFIRMED)
+                } else { // from the list
+                    coroutineScope.launch {
+                        val result = viewModel.appointmentRepo.updateAppointmentStatus(
+                            appointmentId = appointment.appointmentId,
+                            status = Status.CONFIRMED.displayName
+                        )
+                        if (result.isSuccess) {
+                            viewModel.futureAppointments = viewModel.futureAppointments.map {
+                                if (it.appointmentId == appointment.appointmentId) {
+                                    it.copy(status = Status.CONFIRMED)
+                                } else {
+                                    it
+                                }
+                            }
+                        }
+                    }
+
+                }
                 showEditStatusDialog = false
             }
         )

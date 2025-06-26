@@ -18,13 +18,12 @@ import java.time.format.DateTimeFormatter
 
 class AppointmentViewModel(
     private val userRepo: UserRepository = UserRepository(),
-    private val appointmentRepo: AppointmentRepository = AppointmentRepository()
+    val appointmentRepo: AppointmentRepository = AppointmentRepository()
 ) : ViewModel() {
 
     private var loadedPastMonths = mutableSetOf<String>()
     private val monthsToLoadInitially = 6
     var futureAppointments by mutableStateOf<List<AppointmentSummary>>(emptyList())
-        private set
     var pastAppointments by mutableStateOf<List<AppointmentSummary>>(emptyList())
         private set
     var isLoading by mutableStateOf(true)
@@ -77,7 +76,6 @@ class AppointmentViewModel(
                             ?: "Failed to load upcoming appointments"
                     }
 
-                    // Load initial past appointments (last X months)
                     loadInitialPastAppointments()
                 } else {
                     error = roleResult.exceptionOrNull()?.message ?: "Failed to load user role"
@@ -220,6 +218,8 @@ class AppointmentViewModel(
                 if (result.isFailure) {
                     error = result.exceptionOrNull()?.message
                 } else {
+                    selectedAppointment = appointment.copy(status = status)
+
                     futureAppointments = futureAppointments.map {
                         if (it.appointmentId == appointment.appointmentId) {
                             it.copy(status = status)
@@ -227,11 +227,14 @@ class AppointmentViewModel(
                             it
                         }
                     }
+
+                    futureAppointments = futureAppointments.toList()
                 }
             }
         }
         showEditStatusDialog = false
     }
+
 
     fun updateAppointmentComment(
         appointmentId: String,
@@ -242,13 +245,11 @@ class AppointmentViewModel(
             if (result.isFailure) {
                 error = result.exceptionOrNull()?.message ?: "Failed to update comment"
             } else {
-//                futureAppointments = futureAppointments.map {
-//                    if (it.appointmentId == appointmentId) {
-//                        it.copy(comments = newComment)
-//                    } else {
-//                        it
-//                    }
-//                }
+                selectedAppointment?.let { appointment ->
+                    if (appointment.appointmentId == appointmentId) {
+                        selectedAppointment = appointment.copy(comments = newComment)
+                    }
+                }
             }
         }
     }
