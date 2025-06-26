@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Home
@@ -51,7 +50,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -95,8 +93,10 @@ import com.example.ladycure.utility.rememberImagePickerLauncher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
@@ -399,17 +399,6 @@ fun ProfileScreen(navController: NavHostController) {
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    IconButton(
-                        onClick = { showSupportDialog = false },
-                        modifier = Modifier.align(Alignment.End),
-                        content = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = DefaultPrimary
-                            )
-                        }
-                    )
                     Icon(
                         imageVector = Icons.Default.Help,
                         contentDescription = "Help Icon",
@@ -427,7 +416,7 @@ fun ProfileScreen(navController: NavHostController) {
                     )
 
                     Text(
-                        text = "If you need assistance, please feel free to contact us via email!",
+                        text = "If you need assistance, please contact us via email.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -435,9 +424,22 @@ fun ProfileScreen(navController: NavHostController) {
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        OutlinedButton(
+                        Button(
+                            onClick = { showSupportDialog = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = DefaultPrimary
+                            ),
+                            border = BorderStroke(1.dp, DefaultPrimary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        Button(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_SENDTO).apply {
                                     setData("mailto:ladycure_admin@gmail.com".toUri())
@@ -445,12 +447,10 @@ fun ProfileScreen(navController: NavHostController) {
                                 navController.context.startActivity(intent)
                                 showSupportDialog = false
                             },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = DefaultPrimary,
-                                containerColor = Color.White
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DefaultPrimary,
+                                contentColor = Color.White
                             ),
-                            modifier = Modifier.fillMaxWidth(0.7f),
-                            border = BorderStroke(1.dp, DefaultPrimary),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text("Contact Us")
@@ -535,8 +535,11 @@ fun AccountSettingsDialog(
             onDismiss = onDismiss,
             onSave = { updatedData ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    doctorRepo.updateDoctorProfile(updatedData)
-                    onSave(updatedData as Map<String, String>)
+                    // Cast updatedData to Map<String, Any> for updateDoctorProfile
+                    doctorRepo.updateDoctorProfile(updatedData as Map<String, Any>)
+                    // Then cast back to Map<String, String> if needed by the original onSave
+                    // However, the original onSave expects Map<String, String>, so this might need adjustment in the calling component
+                    onSave(updatedData.mapValues { it.value.toString() })
                 }
             }
         )
@@ -559,6 +562,7 @@ fun DoctorAccountSettingsDialog(
             )
         )
     }
+    var nameError by remember { mutableStateOf("") }
     var surname by remember {
         mutableStateOf(
             TextFieldValue(
@@ -566,6 +570,7 @@ fun DoctorAccountSettingsDialog(
             )
         )
     }
+    var surnameError by remember { mutableStateOf("") }
 
     val initialDob = remember {
         try {
@@ -579,6 +584,7 @@ fun DoctorAccountSettingsDialog(
     var dob by remember { mutableStateOf(initialDob) }
     var dobText by remember { mutableStateOf(initialDob.format(DateTimeFormatter.ISO_LOCAL_DATE)) }
     var isAdult by remember { mutableStateOf(!dob.isAfter(LocalDate.now().minusYears(18))) }
+    var dobError by remember { mutableStateOf("") } // Added for DOB format error
 
     var selectedSpeciality by remember {
         mutableStateOf(
@@ -595,6 +601,7 @@ fun DoctorAccountSettingsDialog(
             )
         )
     }
+    var phoneError by remember { mutableStateOf("") }
     var address by remember {
         mutableStateOf(
             TextFieldValue(
@@ -602,6 +609,7 @@ fun DoctorAccountSettingsDialog(
             )
         )
     }
+    var addressError by remember { mutableStateOf("") }
     var city by remember {
         mutableStateOf(
             TextFieldValue(
@@ -609,20 +617,25 @@ fun DoctorAccountSettingsDialog(
             )
         )
     }
+    var cityError by remember { mutableStateOf("") }
+
+    // Correctly initialize consultationPrice and experience as TextFieldValue holding String
     var consultationPrice by remember {
         mutableStateOf(
             TextFieldValue(
-                (userData?.get("consultationPrice") as? String) ?: ""
+                (userData?.get("consultationPrice") as? Number)?.toString() ?: ""
             )
         )
     }
+    var consultationPriceError by remember { mutableStateOf("") }
     var experience by remember {
         mutableStateOf(
             TextFieldValue(
-                (userData?.get("experience") as? String) ?: ""
+                (userData?.get("experience") as? Number)?.toString() ?: ""
             )
         )
     }
+    var experienceError by remember { mutableStateOf("") }
     var languages by remember {
         mutableStateOf(
             TextFieldValue(
@@ -632,12 +645,125 @@ fun DoctorAccountSettingsDialog(
             )
         )
     }
-    var speciality by remember {
+    var languagesError by remember { mutableStateOf("") }
+    var specialityError by remember { mutableStateOf("") }
+
+    var bio by remember {
         mutableStateOf(
             TextFieldValue(
-                (userData?.get("speciality") as? String) ?: ""
+                (userData?.get("bio") as? String) ?: ""
             )
         )
+    }
+    var bioError by remember { mutableStateOf("") }
+
+    val validateInputs: () -> Boolean = {
+        var isValid = true
+
+        if (name.text.isBlank()) {
+            nameError = "Name cannot be empty"
+            isValid = false
+        } else if (name.text.length > 50) {
+            nameError = "Name is too long (max 50 characters)"
+            isValid = false
+        }
+        else {
+            nameError = ""
+        }
+
+        if (surname.text.isBlank()) {
+            surnameError = "Surname cannot be empty"
+            isValid = false
+        } else if (surname.text.length > 50) {
+            surnameError = "Surname is too long (max 50 characters)"
+            isValid = false
+        }
+        else {
+            surnameError = ""
+        }
+
+        if (dobText.isBlank()) {
+            dobError = "Date of birth cannot be empty"
+            isValid = false
+        } else if (!isValidBirthDate(dobText)) {
+            dobError = "Date of birth must be in OSCE-MM-dd format"
+            isValid = false
+        } else if (!isAdult) {
+            dobError = "You must be at least 18 years old"
+            isValid = false
+        }
+        else {
+            dobError = ""
+        }
+
+
+        if (phone.text.isBlank()) {
+            phoneError = "Phone number cannot be empty"
+            isValid = false
+        } else if (!isValidPhone(phone.text)) {
+            phoneError = "Please enter a valid phone number"
+            isValid = false
+        } else {
+            phoneError = ""
+        }
+
+        // Validate consultationPrice
+        val price = consultationPrice.text.toDoubleOrNull()
+        if (consultationPrice.text.isBlank()) {
+            consultationPriceError = "Consultation price cannot be empty"
+            isValid = false
+        } else if (price == null || price <= 0) {
+            consultationPriceError = "Consultation price must be a positive number"
+            isValid = false
+        } else {
+            consultationPriceError = ""
+        }
+
+        // Validate experience
+        val exp = experience.text.toIntOrNull()
+        if (experience.text.isBlank()) {
+            experienceError = "Experience cannot be empty"
+            isValid = false
+        } else if (exp == null || exp < 0) {
+            experienceError = "Experience must be a non-negative number"
+            isValid = false
+        } else {
+            experienceError = ""
+        }
+
+        if (languages.text.isBlank()) {
+            languagesError = "At least one language must be specified"
+            isValid = false
+        } else {
+            languagesError = ""
+        }
+
+
+        if (address.text.isBlank()) {
+            addressError = "Address cannot be empty"
+            isValid = false
+        } else {
+            addressError = ""
+        }
+
+        if (city.text.isBlank()) {
+            cityError = "City cannot be empty"
+            isValid = false
+        } else {
+            cityError = ""
+        }
+
+        if (bio.text.isBlank()) {
+            bioError = "Bio cannot be empty"
+            isValid = false
+        } else if (bio.text.length < 20) {
+            bioError = "Bio should be at least 20 characters"
+            isValid = false
+        } else {
+            bioError = ""
+        }
+
+        isValid
     }
 
     Box(
@@ -726,7 +852,7 @@ fun DoctorAccountSettingsDialog(
 
                         OutlinedTextField(
                             value = name,
-                            onValueChange = { name = it },
+                            onValueChange = { name = it; nameError = "" },
                             label = { Text("Name") },
                             leadingIcon = {
                                 Icon(
@@ -738,14 +864,16 @@ fun DoctorAccountSettingsDialog(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
                                 focusedLabelColor = DefaultPrimary
-                            )
+                            ),
+                            isError = nameError.isNotEmpty(),
+                            supportingText = { if (nameError.isNotEmpty()) Text(nameError) }
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = surname,
-                            onValueChange = { surname = it },
+                            onValueChange = { surname = it; surnameError = "" },
                             label = { Text("Surname") },
                             leadingIcon = {
                                 Icon(
@@ -760,14 +888,16 @@ fun DoctorAccountSettingsDialog(
                                 focusedLabelColor = DefaultPrimary,
                                 unfocusedLabelColor = Color.Gray,
                                 cursorColor = DefaultPrimary
-                            )
+                            ),
+                            isError = surnameError.isNotEmpty(),
+                            supportingText = { if (surnameError.isNotEmpty()) Text(surnameError) }
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = phone,
-                            onValueChange = { phone = it },
+                            onValueChange = { phone = it; phoneError = "" },
                             label = { Text("Phone Number") },
                             leadingIcon = {
                                 Icon(
@@ -780,7 +910,9 @@ fun DoctorAccountSettingsDialog(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
                                 focusedLabelColor = DefaultPrimary
-                            )
+                            ),
+                            isError = phoneError.isNotEmpty(),
+                            supportingText = { if (phoneError.isNotEmpty()) Text(phoneError) }
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -801,9 +933,9 @@ fun DoctorAccountSettingsDialog(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            if (!isAdult) {
+                            if (dobError.isNotEmpty()) {
                                 Text(
-                                    text = "You must be at least 18 years old",
+                                    text = dobError,
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(top = 4.dp)
@@ -835,7 +967,7 @@ fun DoctorAccountSettingsDialog(
 
                         OutlinedTextField(
                             value = experience,
-                            onValueChange = { experience = it },
+                            onValueChange = { experience = it; experienceError = "" },
                             label = { Text("Experience (years)") },
                             leadingIcon = {
                                 Icon(
@@ -848,14 +980,16 @@ fun DoctorAccountSettingsDialog(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
                                 focusedLabelColor = DefaultPrimary
-                            )
+                            ),
+                            isError = experienceError.isNotEmpty(),
+                            supportingText = { if (experienceError.isNotEmpty()) Text(experienceError) }
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = consultationPrice,
-                            onValueChange = { consultationPrice = it },
+                            onValueChange = { consultationPrice = it; consultationPriceError = "" },
                             label = { Text("Consultation Price") },
                             leadingIcon = {
                                 Icon(
@@ -869,14 +1003,16 @@ fun DoctorAccountSettingsDialog(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
                                 focusedLabelColor = DefaultPrimary
-                            )
+                            ),
+                            isError = consultationPriceError.isNotEmpty(),
+                            supportingText = { if (consultationPriceError.isNotEmpty()) Text(consultationPriceError) }
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = languages,
-                            onValueChange = { languages = it },
+                            onValueChange = { languages = it; languagesError = "" },
                             label = { Text("Languages (comma separated)") },
                             leadingIcon = {
                                 Icon(
@@ -888,7 +1024,30 @@ fun DoctorAccountSettingsDialog(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
                                 focusedLabelColor = DefaultPrimary
-                            )
+                            ),
+                            isError = languagesError.isNotEmpty(),
+                            supportingText = { if (languagesError.isNotEmpty()) Text(languagesError) }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = bio,
+                            onValueChange = { bio = it; bioError = "" },
+                            label = { Text("Bio") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Person, // Using person icon, could be a more specific 'description' icon
+                                    contentDescription = "Bio"
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = DefaultPrimary,
+                                focusedLabelColor = DefaultPrimary
+                            ),
+                            isError = bioError.isNotEmpty(),
+                            supportingText = { if (bioError.isNotEmpty()) Text(bioError) }
                         )
                     }
                 }
@@ -919,7 +1078,7 @@ fun DoctorAccountSettingsDialog(
                                     .clickable { expanded = true }
                                     .border(
                                         1.dp,
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                        if (specialityError.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
                                         RoundedCornerShape(8.dp)
                                     )
                                     .padding(16.dp)
@@ -940,22 +1099,31 @@ fun DoctorAccountSettingsDialog(
                                     )
                                 }
                             }
+                            if (specialityError.isNotEmpty()) {
+                                Text(
+                                    text = specialityError,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                                )
+                            }
 
                             DropdownMenu(
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false },
                                 modifier = Modifier.fillMaxWidth(0.9f)
                             ) {
-                                Speciality.entries.forEach { speciality ->
+                                Speciality.values().forEach { specialityItem ->
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                text = speciality.displayName,
+                                                text = specialityItem.displayName,
                                                 style = MaterialTheme.typography.bodyMedium
                                             )
                                         },
                                         onClick = {
-                                            selectedSpeciality = speciality
+                                            selectedSpeciality = specialityItem
+                                            specialityError = "" // Clear error on selection
                                             expanded = false
                                         }
                                     )
@@ -987,7 +1155,7 @@ fun DoctorAccountSettingsDialog(
 
                         OutlinedTextField(
                             value = address,
-                            onValueChange = { address = it },
+                            onValueChange = { address = it; addressError = "" },
                             label = { Text("Address") },
                             leadingIcon = {
                                 Icon(
@@ -999,21 +1167,25 @@ fun DoctorAccountSettingsDialog(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
                                 focusedLabelColor = DefaultPrimary
-                            )
+                            ),
+                            isError = addressError.isNotEmpty(),
+                            supportingText = { if (addressError.isNotEmpty()) Text(addressError) }
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
                             value = city,
-                            onValueChange = { city = it },
+                            onValueChange = { city = it; cityError = "" },
                             label = { Text("City") },
                             leadingIcon = { Icon(Icons.Default.Home, contentDescription = "City") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = DefaultPrimary,
                                 focusedLabelColor = DefaultPrimary
-                            )
+                            ),
+                            isError = cityError.isNotEmpty(),
+                            supportingText = { if (cityError.isNotEmpty()) Text(cityError) }
                         )
                     }
                 }
@@ -1037,25 +1209,28 @@ fun DoctorAccountSettingsDialog(
 
                     Button(
                         onClick = {
-                            val updatedData = mapOf(
-                                "name" to name.text,
-                                "surname" to surname.text,
-                                "dob" to dobText,
-                                "phone" to phone.text,
-                                "address" to address.text,
-                                "city" to city.text,
-                                "consultationPrice" to consultationPrice.text,
-                                "experience" to experience.text,
-                                "languages" to languages.text.split(",").map { it.trim() },
-                                "speciality" to selectedSpeciality.displayName
-                            )
-                            onSave(updatedData)
+                            if (validateInputs()) {
+                                val updatedData = mapOf(
+                                    "name" to name.text,
+                                    "surname" to surname.text,
+                                    "dob" to dobText,
+                                    "phone" to phone.text,
+                                    "address" to address.text,
+                                    "city" to city.text,
+                                    "consultationPrice" to (consultationPrice.text.toDoubleOrNull() ?: 0.0), // Convert to Double
+                                    "experience" to (experience.text.toIntOrNull() ?: 0), // Convert to Int
+                                    "languages" to languages.text.split(",").map { it.trim() },
+                                    "speciality" to selectedSpeciality.displayName,
+                                    "bio" to bio.text // Added bio
+                                )
+                                onSave(updatedData)
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DefaultPrimary,
                             contentColor = Color.White
                         ),
-                        enabled = isAdult,
+                        enabled = validateInputs(), // Button enabled based on validation
                         modifier = Modifier.width(140.dp),
                         elevation = ButtonDefaults.buttonElevation(
                             defaultElevation = 4.dp,
@@ -1083,6 +1258,7 @@ fun RegularAccountSettingsDialog(
             )
         )
     }
+    var nameError by remember { mutableStateOf("") }
     var surname by remember {
         mutableStateOf(
             TextFieldValue(
@@ -1090,6 +1266,7 @@ fun RegularAccountSettingsDialog(
             )
         )
     }
+    var surnameError by remember { mutableStateOf("") }
 
     val initialDob = remember {
         try {
@@ -1103,6 +1280,7 @@ fun RegularAccountSettingsDialog(
     var dob by remember { mutableStateOf(initialDob) }
     var dobText by remember { mutableStateOf(initialDob.format(DateTimeFormatter.ISO_LOCAL_DATE)) }
     var isAdult by remember { mutableStateOf(!dob.isAfter(LocalDate.now().minusYears(18))) }
+    var dobError by remember { mutableStateOf("") } // Added for DOB format error
 
     var phone by remember {
         mutableStateOf(
@@ -1110,6 +1288,59 @@ fun RegularAccountSettingsDialog(
                 (userData?.get("phone") as? String) ?: ""
             )
         )
+    }
+    var phoneError by remember { mutableStateOf("") }
+
+    val validateInputs: () -> Boolean = {
+        var isValid = true
+
+        if (name.text.isBlank()) {
+            nameError = "Name cannot be empty"
+            isValid = false
+        } else if (name.text.length > 50) {
+            nameError = "Name is too long (max 50 characters)"
+            isValid = false
+        }
+        else {
+            nameError = ""
+        }
+
+        if (surname.text.isBlank()) {
+            surnameError = "Surname cannot be empty"
+            isValid = false
+        } else if (surname.text.length > 50) {
+            surnameError = "Surname is too long (max 50 characters)"
+            isValid = false
+        }
+        else {
+            surnameError = ""
+        }
+
+        if (dobText.isBlank()) {
+            dobError = "Date of birth cannot be empty"
+            isValid = false
+        } else if (!isValidBirthDate(dobText)) {
+            dobError = "Date of birth must be in OSCE-MM-dd format"
+            isValid = false
+        } else if (!isAdult) {
+            dobError = "We are sorry, you must be at least 18 years old"
+            isValid = false
+        }
+        else {
+            dobError = ""
+        }
+
+        if (phone.text.isBlank()) {
+            phoneError = "Phone number cannot be empty"
+            isValid = false
+        } else if (!isValidPhone(phone.text)) {
+            phoneError = "Please enter a valid phone number"
+            isValid = false
+        } else {
+            phoneError = ""
+        }
+
+        isValid
     }
 
     Box(
@@ -1183,17 +1414,19 @@ fun RegularAccountSettingsDialog(
                     )
                     OutlinedTextField(
                         value = name,
-                        onValueChange = { name = it },
+                        onValueChange = { name = it; nameError = "" },
                         label = { Text("Name") },
                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = nameError.isNotEmpty(),
+                        supportingText = { if (nameError.isNotEmpty()) Text(nameError) }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
                         value = surname,
-                        onValueChange = { surname = it },
+                        onValueChange = { surname = it; surnameError = "" },
                         label = { Text("Surname") },
                         leadingIcon = {
                             Icon(
@@ -1201,18 +1434,22 @@ fun RegularAccountSettingsDialog(
                                 contentDescription = "Surname"
                             )
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = surnameError.isNotEmpty(),
+                        supportingText = { if (surnameError.isNotEmpty()) Text(surnameError) }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { phone = it },
+                        onValueChange = { phone = it; phoneError = "" },
                         label = { Text("Phone Number") },
                         leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone") },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("+48 123 456 789") }
+                        placeholder = { Text("+48 123 456 789") },
+                        isError = phoneError.isNotEmpty(),
+                        supportingText = { if (phoneError.isNotEmpty()) Text(phoneError) }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1233,9 +1470,9 @@ fun RegularAccountSettingsDialog(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        if (!isAdult) {
+                        if (dobError.isNotEmpty()) {
                             Text(
-                                text = "We are sorry, you must be at least 18 years old",
+                                text = dobError,
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
@@ -1253,30 +1490,30 @@ fun RegularAccountSettingsDialog(
                             onClick = onDismiss,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = DefaultOnPrimary.copy(alpha = 0.1f),
-                                contentColor = DefaultOnPrimary
+                                contentColor = DefaultPrimary
                             ),
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Text("Cancel")
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
                         Button(
                             onClick = {
-                                val updatedData = mapOf(
-                                    "name" to name.text,
-                                    "surname" to surname.text,
-                                    "dob" to dobText,
-                                    "phone" to phone.text
-                                )
-                                onSave(updatedData)
+                                if (validateInputs()) {
+                                    val updatedData = mapOf(
+                                        "name" to name.text,
+                                        "surname" to surname.text,
+                                        "dob" to dobText,
+                                        "phone" to phone.text
+                                    )
+                                    onSave(updatedData)
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = DefaultPrimary,
-                                contentColor = Color.White
+                                contentColor = DefaultOnPrimary
                             ),
-                            enabled = isAdult
+                            enabled = validateInputs() // Button enabled based on validation
                         ) {
                             Text("Save")
                         }
@@ -1291,4 +1528,27 @@ fun logOut(navController: NavHostController) {
     val authRepo = AuthRepository()
     authRepo.signOut()
     navController.navigate("welcome") { popUpTo(0) }
+}
+
+// Helper functions (Added for consistent validation rules)
+private fun isValidEmail(email: String): Boolean {
+    return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+}
+
+private fun isValidBirthDate(date: String): Boolean {
+    val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""")
+    if (!pattern.matches(date)) return false
+
+    return try {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        dateFormat.isLenient = false
+        dateFormat.parse(date)
+        true
+    } catch (e: Exception) {
+        false
+    }
+}
+
+private fun isValidPhone(phone: String): Boolean {
+    return phone.matches(Regex("""^[+]?[\d\s-]{6,15}$"""))
 }

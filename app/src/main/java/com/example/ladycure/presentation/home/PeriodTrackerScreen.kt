@@ -5,7 +5,6 @@ import DefaultOnPrimary
 import DefaultPrimary
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -14,6 +13,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -77,13 +78,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.ladycure.R
 import com.example.ladycure.data.repository.PeriodTrackerRepository
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -93,14 +97,14 @@ import java.time.temporal.TemporalAdjusters
 import kotlin.math.max
 import kotlin.math.min
 
-// --- Data Models (Moved to top for better visibility, though ideally in a separate 'data' package) ---
+// --- Data Models
 data class DailyPeriodData(
     val date: LocalDate,
     var isPeriodDay: Boolean = false,
     var notes: String = "",
     var moodEmoji: String? = null,
-    var flowIntensity: String? = null, // Added for flow intensity
-    var symptoms: List<String> = emptyList() // Added for symptoms
+    var flowIntensity: String? = null,
+    var symptoms: List<String> = emptyList()
 )
 
 data class PeriodTrackerSettings(
@@ -108,20 +112,6 @@ data class PeriodTrackerSettings(
     val averageCycleLength: Int = 28,
     val lastPeriodStartDate: LocalDate? = null
 )
-
-// --- Helper Functions ---
-fun calculateNextPeriodAndOvulation(
-    lastPeriodStartDate: LocalDate?,
-    averageCycleLength: Int
-): Pair<LocalDate?, LocalDate?> {
-    if (lastPeriodStartDate == null) {
-        return Pair(null, null)
-    }
-
-    val predictedNextPeriodStart = lastPeriodStartDate.plusDays(averageCycleLength.toLong())
-    val predictedOvulationDay = predictedNextPeriodStart.minusDays(14)
-    return Pair(predictedNextPeriodStart, predictedOvulationDay)
-}
 
 fun getPredictedPeriodStartDates(
     lastPeriodStartDate: LocalDate?,
@@ -166,35 +156,27 @@ fun getPredictedOvulationDates(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PeriodTrackerScreen(navController: NavHostController) {
-    // Initialize the repository
+
     val periodTrackerRepository = remember { PeriodTrackerRepository() }
-
-    // Coroutine scope for launching suspend functions from event handlers
     val scope = rememberCoroutineScope()
-
-    // State management
     var currentMonth by remember { mutableStateOf(LocalDate.now()) }
     var periodSettings by remember { mutableStateOf(PeriodTrackerSettings()) }
     val dailyDataMap = remember { mutableStateMapOf<LocalDate, DailyPeriodData>() }
-
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showDailyDetailDialog by remember { mutableStateOf(false) }
     var selectedDateForDetail by remember { mutableStateOf<LocalDate?>(null) }
-    var showDailySummarySheet by remember { mutableStateOf(false) } // New state for summary sheet
-    var selectedDateForSummary by remember { mutableStateOf<LocalDate?>(null) } // New state for summary date
+    var showDailySummarySheet by remember { mutableStateOf(false) }
+    var selectedDateForSummary by remember { mutableStateOf<LocalDate?>(null) }
 
-    // Effect to load initial data and settings from Firestore
     LaunchedEffect(Unit) {
-        // Load settings
+
         periodTrackerRepository.getPeriodTrackerSettings().onSuccess { settings ->
             periodSettings = settings
             Log.d("PeriodTrackerScreen", "Loaded settings: $settings")
         }.onFailure { e ->
             Log.e("PeriodTrackerScreen", "Failed to load settings: ${e.message}")
-            // Optionally, handle error by setting default settings or showing an error message
         }
 
-        // Load daily data for the current month
         periodTrackerRepository.getDailyPeriodDataForMonth(currentMonth).onSuccess { data ->
             dailyDataMap.clear()
             dailyDataMap.putAll(data)
@@ -210,7 +192,7 @@ fun PeriodTrackerScreen(navController: NavHostController) {
         }
     }
 
-    // Effect to reload daily data when the month changes
+
     LaunchedEffect(currentMonth) {
         periodTrackerRepository.getDailyPeriodDataForMonth(currentMonth).onSuccess { data ->
             dailyDataMap.clear()
@@ -227,7 +209,7 @@ fun PeriodTrackerScreen(navController: NavHostController) {
         }
     }
 
-    // Recalculate predictions whenever periodSettings changes
+
     val predictedPeriodStarts by remember(
         periodSettings.lastPeriodStartDate,
         periodSettings.averageCycleLength
@@ -258,134 +240,142 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                 title = {
                     Text(
                         "Period Tracker",
-                        color = DefaultOnPrimary,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = DefaultPrimary,
                         fontWeight = FontWeight.Bold
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = DefaultOnPrimary)
-                    }
-                },
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(Icons.Default.Settings, "Settings", tint = DefaultPrimary)
+                        Icon(
+                            Icons.Default.Settings,
+                            "Settings",
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = DefaultBackground
+                )
             )
         },
         content = { paddingValues ->
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(DefaultBackground)
                     .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
             ) {
-                // Main content
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                // Month navigation
+                MonthNavigationHeader(currentMonth, onMonthChange = { currentMonth = it })
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.5f)
+                    )
                 ) {
-                    // Month navigation
-                    MonthNavigationHeader(currentMonth, onMonthChange = { currentMonth = it })
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        WeekdayHeaders()
 
-                    // Weekday headers
-                    WeekdayHeaders()
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Calendar grid
-                    CalendarGrid(
-                        currentMonth = currentMonth,
-                        periodSettings = periodSettings,
-                        dailyDataMap = dailyDataMap,
-                        predictedPeriodStarts = predictedPeriodStarts,
-                        predictedOvulationDays = predictedOvulationDays,
-                        onDayClick = { date ->
-                            selectedDateForDetail = date // Always set this for detail dialog
-                            val dailyData = dailyDataMap[date]
-                            // Check if there's any info for the day
-                            if (dailyData?.isPeriodDay == true || dailyData?.notes?.isNotBlank() == true ||
-                                dailyData?.moodEmoji != null || dailyData?.symptoms?.isNotEmpty() == true ||
-                                dailyData?.flowIntensity != null
-                            ) {
-                                selectedDateForSummary = date // Set for summary sheet
-                                showDailySummarySheet = true
-                            } else {
-                                showDailyDetailDialog = true // Directly open detail for empty days
+                        CalendarGrid(
+                            currentMonth = currentMonth,
+                            periodSettings = periodSettings,
+                            dailyDataMap = dailyDataMap,
+                            predictedPeriodStarts = predictedPeriodStarts,
+                            predictedOvulationDays = predictedOvulationDays,
+                            onDayClick = { date ->
+                                selectedDateForDetail = date
+                                val dailyData = dailyDataMap[date]
+                                if (dailyData?.isPeriodDay == true || dailyData?.notes?.isNotBlank() == true ||
+                                    dailyData?.moodEmoji != null || dailyData?.symptoms?.isNotEmpty() == true ||
+                                    dailyData?.flowIntensity != null
+                                ) {
+                                    selectedDateForSummary = date
+                                    showDailySummarySheet = true
+                                } else {
+                                    showDailyDetailDialog = true
+                                }
                             }
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Prediction card
-                    PredictionCard(predictedPeriodStarts, predictedOvulationDays)
+                        )
+                    }
                 }
 
-                // Dialogs
-                if (showSettingsDialog) {
-                    SettingsDialog(
-                        currentSettings = periodSettings,
-                        onSave = { newSettings ->
-                            showSettingsDialog = false
-                            periodSettings = newSettings // Update local state immediately
-                            // Save new settings to Firestore using the coroutine scope
-                            scope.launch {
-                                periodTrackerRepository.savePeriodTrackerSettings(newSettings)
-                                    .onSuccess {
-                                        Log.d("PeriodTrackerScreen", "Settings saved successfully.")
-                                    }.onFailure { e ->
-                                        Log.e(
-                                            "PeriodTrackerScreen",
-                                            "Failed to save settings: ${e.message}"
-                                        )
-                                    }
-                            }
-                        },
-                        onCancel = { showSettingsDialog = false }
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
 
-                if (showDailyDetailDialog && selectedDateForDetail != null) {
-                    DailyDetailDialog(
-                        date = selectedDateForDetail!!,
-                        initialDailyData = dailyDataMap[selectedDateForDetail] ?: DailyPeriodData(
-                            selectedDateForDetail!!
-                        ),
-                        onSave = { updatedData ->
-                            showDailyDetailDialog = false
-                            // Update local state immediately
-                            dailyDataMap[updatedData.date] = updatedData
-                            // Save updated daily data to Firestore using the coroutine scope
-                            scope.launch {
-                                periodTrackerRepository.saveDailyPeriodData(updatedData).onSuccess {
-                                    Log.d(
-                                        "PeriodTrackerScreen",
-                                        "Daily data saved successfully for ${updatedData.date}."
-                                    )
+                PredictionCard(predictedPeriodStarts, predictedOvulationDays)
+            }
+
+            if (showSettingsDialog) {
+                SettingsDialog(
+                    currentSettings = periodSettings,
+                    onSave = { newSettings ->
+                        showSettingsDialog = false
+                        periodSettings = newSettings
+                        scope.launch {
+                            periodTrackerRepository.savePeriodTrackerSettings(newSettings)
+                                .onSuccess {
+                                    Log.d("PeriodTrackerScreen", "Settings saved successfully.")
                                 }.onFailure { e ->
                                     Log.e(
                                         "PeriodTrackerScreen",
-                                        "Failed to save daily data: ${e.message}"
+                                        "Failed to save settings: ${e.message}"
                                     )
                                 }
-                            }
-                        },
-                        onCancel = { showDailyDetailDialog = false }
-                    )
-                }
+                        }
+                    },
+                    onCancel = { showSettingsDialog = false }
+                )
+            }
 
-                // Daily Summary Sheet (appears at the bottom)
+            if (showDailyDetailDialog && selectedDateForDetail != null) {
+                DailyDetailDialog(
+                    date = selectedDateForDetail!!,
+                    initialDailyData = dailyDataMap[selectedDateForDetail] ?: DailyPeriodData(
+                        selectedDateForDetail!!
+                    ),
+                    onSave = { updatedData ->
+                        showDailyDetailDialog = false
+                        dailyDataMap[updatedData.date] = updatedData
+                        scope.launch {
+                            periodTrackerRepository.saveDailyPeriodData(updatedData).onSuccess {
+                                Log.d(
+                                    "PeriodTrackerScreen",
+                                    "Daily data saved successfully for ${updatedData.date}."
+                                )
+                            }.onFailure { e ->
+                                Log.e(
+                                    "PeriodTrackerScreen",
+                                    "Failed to save daily data: ${e.message}"
+                                )
+                            }
+                        }
+                    },
+                    onCancel = { showDailyDetailDialog = false }
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
                 AnimatedVisibility(
                     visible = showDailySummarySheet && selectedDateForSummary != null,
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                 ) {
                     selectedDateForSummary?.let { date ->
                         val dailyData = dailyDataMap[date] ?: DailyPeriodData(date)
@@ -393,9 +383,9 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                             date = date,
                             dailyData = dailyData,
                             onEdit = {
-                                showDailySummarySheet = false // Hide summary
-                                selectedDateForDetail = it // Set for detail dialog
-                                showDailyDetailDialog = true // Show detail dialog
+                                showDailySummarySheet = false
+                                selectedDateForDetail = it
+                                showDailyDetailDialog = true
                             },
                             onClose = { showDailySummarySheet = false }
                         )
@@ -406,22 +396,26 @@ fun PeriodTrackerScreen(navController: NavHostController) {
     )
 }
 
+data class MoodOption(
+    val drawableResId: Int,
+    val name: String
+)
+
+
 @Composable
 fun MoodGrid(
-    selectedEmoji: String?,
-    onEmojiSelected: (String) -> Unit,
+    selectedMood: String?,
+    onMoodSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val moods = remember {
         listOf(
-            "😊" to "Happy",
-            "😢" to "Sad",
-            "😠" to "Angry",
-            "😐" to "Neutral",
-            "🥳" to "Excited",
-            "😍" to "Loving",
-            "🤒" to "Sick",
-            "😴" to "Tired"
+            MoodOption(R.drawable.happy_kapi_emote, "Happy"),
+            MoodOption(R.drawable.love_kapi_emote, "Love"),
+            MoodOption(R.drawable.mad_kapi_emote, "Mad"),
+            MoodOption(R.drawable.sad_kapi_emote, "Sad"),
+            MoodOption(R.drawable.sick_kapi_emote, "Sick"),
+            MoodOption(R.drawable.tired_kapi_emote, "Tired")
         )
     }
 
@@ -430,25 +424,22 @@ fun MoodGrid(
             text = "How are you feeling?",
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary,
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
+
         LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            columns = GridCells.Fixed(3),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp) // Adjust height as needed
+                .height(180.dp)
         ) {
-            items(moods) { (emoji, name) ->
-                val isSelected = selectedEmoji == emoji
+            items(moods) { mood ->
+                val isSelected = selectedMood == mood.name
                 val scale by animateFloatAsState(
                     targetValue = if (isSelected) 1.1f else 1.0f,
-                    label = "emojiScale"
-                )
-                val borderColor by animateDpAsState(
-                    targetValue = if (isSelected) 2.dp else 0.dp,
-                    label = "emojiBorder"
+                    label = "moodScale"
                 )
 
                 Card(
@@ -456,32 +447,29 @@ fun MoodGrid(
                         .scale(scale)
                         .aspectRatio(1f)
                         .border(
-                            width = borderColor,
-                            color = if (isSelected) DefaultPrimary else Color.Transparent,
+                            width = if (isSelected) 2.dp else 0.dp,
+                            color = DefaultPrimary,
                             shape = RoundedCornerShape(16.dp)
                         )
-                        .clickable { onEmojiSelected(emoji) },
+                        .clickable { onMoodSelected(mood.name) },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = DefaultPrimary.copy(alpha = 0.08f) // Light pink background for mood cards
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        containerColor = if (isSelected)
+                            DefaultPrimary.copy(alpha = 0.2f)
+                        else
+                            Color.White.copy(alpha = 0.1f)
+                    )
                 ) {
-                    Column(
+                    Box(
                         modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = emoji,
-                            style = MaterialTheme.typography.headlineSmall, // Increased emoji size
-                        )
-                        Text(
-                            text = name,
-                            style = MaterialTheme.typography.labelMedium, // Adjusted text size
-                            color = DefaultOnPrimary.copy(alpha = 0.8f),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 4.dp) // Added horizontal padding
+                        Image(
+                            painter = painterResource(id = mood.drawableResId),
+                            contentDescription = mood.name,
+                            modifier = Modifier
+                                .fillMaxSize(0.9f)
+                                .padding(4.dp)
                         )
                     }
                 }
@@ -501,17 +489,33 @@ private fun MonthNavigationHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { onMonthChange(currentMonth.minusMonths(1)) }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Previous Month", tint = DefaultPrimary)
+        IconButton(
+            onClick = { onMonthChange(currentMonth.minusMonths(1)) },
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                "Previous Month",
+                tint = DefaultPrimary
+            )
         }
+
         Text(
-            text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM")),
-            style = MaterialTheme.typography.headlineSmall,
+            text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+            style = MaterialTheme.typography.titleLarge,
             color = DefaultPrimary,
             fontWeight = FontWeight.Bold
         )
-        IconButton(onClick = { onMonthChange(currentMonth.plusMonths(1)) }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, "Next Month", tint = DefaultPrimary)
+
+        IconButton(
+            onClick = { onMonthChange(currentMonth.plusMonths(1)) },
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                "Next Month",
+                tint = DefaultPrimary
+            )
         }
     }
 }
@@ -548,9 +552,9 @@ private fun PredictionCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Next Cycle Predictions",
+                text = "Cycle Predictions",
                 style = MaterialTheme.typography.titleLarge,
-                color = DefaultOnPrimary,
+                color = DefaultPrimary,
                 fontWeight = FontWeight.Bold
             )
 
@@ -558,7 +562,7 @@ private fun PredictionCard(
                 predictedPeriodStarts.filter { it.isAfter(LocalDate.now()) }.minOrNull()
             nextPredictedPeriod?.let {
                 Text(
-                    text = "Next Period Expected: ${it.format(DateTimeFormatter.ofPattern("MMM dd,yyyy"))}",
+                    text = "Next period: ${it.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = DefaultOnPrimary.copy(alpha = 0.8f)
                 )
@@ -572,7 +576,7 @@ private fun PredictionCard(
                 predictedOvulationDays.filter { it.isAfter(LocalDate.now()) }.minOrNull()
             nextPredictedOvulation?.let {
                 Text(
-                    text = "Ovulation Day: ${it.format(DateTimeFormatter.ofPattern("MMM dd,yyyy"))}",
+                    text = "Ovulation day: ${it.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = DefaultPrimary
                 )
@@ -605,9 +609,8 @@ private fun CalendarGrid(
                 add(tempDay)
                 tempDay = tempDay.plusDays(1)
             }
-            // Ensure full 6 weeks for visual consistency
             while (size < 42) {
-                add(last().plusDays(1)) // Corrected to add next day
+                add(last().plusDays(1))
             }
         }
     }
@@ -742,7 +745,7 @@ private fun SettingsDialog(
     Dialog(onDismissRequest = onCancel) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth(0.99f)
                 .fillMaxHeight(0.8f)
                 .clip(RoundedCornerShape(16.dp)),
             color = DefaultBackground,
@@ -773,13 +776,27 @@ private fun DailyDetailDialog(
     onSave: (DailyPeriodData) -> Unit,
     onCancel: () -> Unit
 ) {
-    Dialog(onDismissRequest = onCancel) {
-        DailyDetailContent(
-            date = date,
-            initialDailyData = initialDailyData,
-            onSave = onSave,
-            onCancel = onCancel
+    Dialog(
+        onDismissRequest = onCancel,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false
         )
+    ){
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.80f)
+                .fillMaxHeight(0.80f)
+                .clip(RoundedCornerShape(16.dp)),
+            color = DefaultBackground,
+            shadowElevation = 8.dp
+        ) {
+            DailyDetailContent(
+                date = date,
+                initialDailyData = initialDailyData,
+                onSave = onSave,
+                onCancel = onCancel,
+            )
+        }
     }
 }
 
@@ -806,7 +823,6 @@ private fun DailySummarySheet(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header with date and close button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -816,15 +832,18 @@ private fun DailySummarySheet(
                     text = date.format(DateTimeFormatter.ofPattern("EEEE, MMM d")),
                     style = MaterialTheme.typography.headlineSmall,
                     color = DefaultPrimary,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, "Close", tint = DefaultPrimary.copy(alpha = 0.7f))
+                    Icon(
+                        Icons.Default.Close,
+                        "Close",
+                        tint = DefaultPrimary.copy(alpha = 0.7f)
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Display Period Day status
             if (dailyData.isPeriodDay) {
                 Text(
                     text = "Period Day: Yes",
@@ -846,7 +865,6 @@ private fun DailySummarySheet(
                 )
             }
 
-            // Display Mood
             dailyData.moodEmoji?.let {
                 Text(
                     text = "Mood: $it",
@@ -855,7 +873,6 @@ private fun DailySummarySheet(
                 )
             }
 
-            // Display Notes
             if (dailyData.notes.isNotBlank()) {
                 Text(
                     text = "Notes: ${dailyData.notes}",
@@ -864,7 +881,6 @@ private fun DailySummarySheet(
                 )
             }
 
-            // Display Symptoms
             if (dailyData.symptoms.isNotEmpty()) {
                 Text(
                     text = "Symptoms: ${dailyData.symptoms.joinToString(", ")}",
@@ -875,7 +891,6 @@ private fun DailySummarySheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Edit Button
             Button(
                 onClick = { onEdit(date) },
                 modifier = Modifier.fillMaxWidth(),
@@ -907,7 +922,7 @@ private fun PeriodTrackerSettingsContent(
         Text(
             text = "Period Settings",
             style = MaterialTheme.typography.headlineMedium,
-            color = DefaultOnPrimary,
+            color = DefaultPrimary,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 4.dp)
         )
@@ -927,7 +942,7 @@ private fun PeriodTrackerSettingsContent(
 
         SettingCard(
             title = "Average Cycle Length",
-            description = "How many days are between the first day of one period and the first day of the next?",
+            description = "Days between the start of one period and the next",
             value = "$cycleLength days"
         ) {
             NumberSelector(
@@ -941,7 +956,7 @@ private fun PeriodTrackerSettingsContent(
         SettingCard(
             title = "Last Period Start Date",
             description = "When did your last period start?",
-            value = lastPeriodStartDate?.format(DateTimeFormatter.ofPattern("MMM dd,yyyy"))
+            value = lastPeriodStartDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
                 ?: "Select Date"
         ) {
             Button(
@@ -958,7 +973,7 @@ private fun PeriodTrackerSettingsContent(
                 Icon(Icons.Default.DateRange, "Select Date", modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = lastPeriodStartDate?.format(DateTimeFormatter.ofPattern("MMM dd,yyyy"))
+                    text = lastPeriodStartDate?.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
                         ?: "Select Date",
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -1026,19 +1041,18 @@ private fun DailyDetailContent(
 ) {
     var dailyData by remember { mutableStateOf(initialDailyData) }
     var noteText by remember { mutableStateOf(initialDailyData.notes) }
-    var selectedFlowIntensity by remember { mutableStateOf(initialDailyData.flowIntensity) } // State for flow intensity
-    // Changed to mutableStateOf(initial value.toSet()) and reassigning the set
+    var selectedFlowIntensity by remember { mutableStateOf(initialDailyData.flowIntensity) }
     var selectedSymptoms by remember { mutableStateOf(initialDailyData.symptoms.toSet()) }
 
     val maxNoteLength = 200
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+            .fillMaxWidth(0.85f)
+            .padding(0.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFFF0F5).copy(alpha = 0.95f) // Light pink background
+            containerColor = Color(0xFFFFF0F5).copy(alpha = 0.95f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
@@ -1047,9 +1061,8 @@ private fun DailyDetailContent(
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp) // Increased spacing
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header with date and close button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1058,33 +1071,31 @@ private fun DailyDetailContent(
                 Text(
                     text = date.format(DateTimeFormatter.ofPattern("EEEE, MMM d")),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = DefaultPrimary, // Changed header text color to DefaultPrimary
-                    fontWeight = FontWeight.ExtraBold // Made header bolder
+                    color = DefaultPrimary,
+                    fontWeight = FontWeight.Bold
                 )
                 IconButton(
                     onClick = onCancel,
                     modifier = Modifier.size(32.dp)
-                ) { // Increased icon size
+                ) {
                     Icon(
                         Icons.Default.Close,
                         "Close",
-                        tint = DefaultPrimary.copy(alpha = 0.7f) // Adjusted tint
+                        tint = DefaultPrimary.copy(alpha = 0.7f)
                     )
                 }
             }
 
-            // Period day toggle
             PeriodDayToggle(
                 isPeriodDay = dailyData.isPeriodDay,
                 onToggle = {
                     dailyData = dailyData.copy(isPeriodDay = it)
-                    if (!it) { // If period day is toggled off, clear flow intensity
+                    if (!it) {
                         selectedFlowIntensity = null
                     }
                 }
             )
 
-            // Flow intensity selector (only shown if period day)
             AnimatedVisibility(
                 visible = dailyData.isPeriodDay,
                 enter = expandVertically() + fadeIn(),
@@ -1102,25 +1113,24 @@ private fun DailyDetailContent(
                         fontWeight = FontWeight.SemiBold
                     )
                     FlowIntensitySelector(
-                        selectedFlowIntensity = selectedFlowIntensity, // Pass selected flow
+                        selectedFlowIntensity = selectedFlowIntensity,
                         onSelectionChanged = { selectedFlowIntensity = it }
                     )
                 }
             }
-            // Mood selector
+
             MoodGrid(
-                selectedEmoji = dailyData.moodEmoji,
-                onEmojiSelected = { emoji ->
-                    dailyData = if (dailyData.moodEmoji == emoji) {
-                        dailyData.copy(moodEmoji = null) // Deselect if tapped again
+                selectedMood = dailyData.moodEmoji,
+                onMoodSelected = { moodName ->
+                    dailyData = if (dailyData.moodEmoji == moodName) {
+                        dailyData.copy(moodEmoji = null)
                     } else {
-                        dailyData.copy(moodEmoji = emoji)
+                        dailyData.copy(moodEmoji = moodName)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Notes section
             NotesField(
                 noteText = noteText,
                 maxNoteLength = maxNoteLength,
@@ -1130,19 +1140,17 @@ private fun DailyDetailContent(
                 }
             )
 
-            // Symptom tracker
             SymptomTracker(
                 selectedSymptoms = selectedSymptoms,
                 onSymptomToggle = { symptom, isSelected ->
                     selectedSymptoms = if (isSelected) {
-                        selectedSymptoms + symptom // Create a new set to trigger recomposition
+                        selectedSymptoms + symptom
                     } else {
-                        selectedSymptoms - symptom // Create a new set to trigger recomposition
+                        selectedSymptoms - symptom
                     }
                 }
             )
 
-            // Save/Cancel buttons
             SaveCancelButtons(
                 onSave = {
                     onSave(
@@ -1366,12 +1374,12 @@ private fun PeriodDayToggle(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isPeriodDay) DefaultPrimary.copy(alpha = 0.2f)
-            else Color(0xFFFFF0F5).copy(alpha = 0.5f) // Light pink tint when off
+            else Color(0xFFFFF0F5).copy(alpha = 0.5f)
         ),
         border = BorderStroke(
             width = 1.dp,
             color = if (isPeriodDay) DefaultPrimary
-            else DefaultPrimary.copy(alpha = 0.3f) // Pink border when off
+            else DefaultPrimary.copy(alpha = 0.3f)
         )
     ) {
         Row(
@@ -1407,6 +1415,7 @@ private fun PeriodDayToggle(
     }
 }
 
+
 @Composable
 private fun FlowIntensitySelector(
     selectedFlowIntensity: String?,
@@ -1434,15 +1443,15 @@ private fun FlowIntensitySelector(
                     .clip(RoundedCornerShape(12.dp))
                     .background(
                         if (isSelected) colors[index]
-                        else Color(0xFFFFF0F5).copy(alpha = 0.5f) // Light pink tint when off
+                        else Color(0xFFFFF0F5).copy(alpha = 0.5f)
                     )
                     .border(
                         width = 1.dp,
                         color = if (isSelected) DefaultPrimary
-                        else DefaultPrimary.copy(alpha = 0.3f), // Pink border when off
+                        else DefaultPrimary.copy(alpha = 0.3f),
                         shape = RoundedCornerShape(12.dp)
                     )
-                    .clickable { onSelectionChanged(if (isSelected) null else intensity) }, // Toggle selection
+                    .clickable { onSelectionChanged(if (isSelected) null else intensity) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -1483,11 +1492,11 @@ private fun NotesField(
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = DefaultPrimary,
-                unfocusedBorderColor = DefaultPrimary.copy(alpha = 0.3f), // Pink border
+                unfocusedBorderColor = DefaultPrimary.copy(alpha = 0.3f),
                 focusedTextColor = DefaultOnPrimary,
                 unfocusedTextColor = DefaultOnPrimary,
-                focusedContainerColor = Color(0xFFFFF0F5).copy(alpha = 0.5f), // Light pink container
-                unfocusedContainerColor = Color(0xFFFFF0F5).copy(alpha = 0.3f) // Lighter pink container
+                focusedContainerColor = Color(0xFFFFF0F5).copy(alpha = 0.5f),
+                unfocusedContainerColor = Color(0xFFFFF0F5).copy(alpha = 0.3f)
             ),
             label = {
                 Text(
@@ -1583,7 +1592,7 @@ private fun SaveCancelButtons(
                 .weight(1f)
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = DefaultPrimary.copy(alpha = 0.2f) // Pink cancel button
+                containerColor = DefaultPrimary.copy(alpha = 0.2f)
             ),
             shape = RoundedCornerShape(12.dp)
         ) {
@@ -1611,7 +1620,7 @@ private fun SaveCancelButtons(
 
 
 @Composable
-fun SettingCard(
+private fun SettingCard(
     title: String,
     description: String,
     value: String,
@@ -1621,7 +1630,7 @@ fun SettingCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.5f) // Matches aesthetic
+            containerColor = Color.White.copy(alpha = 0.5f)
         )
     ) {
         Column(
@@ -1632,7 +1641,7 @@ fun SettingCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                color = DefaultOnPrimary,
+                color = DefaultPrimary,
                 fontWeight = FontWeight.Bold
             )
             Text(

@@ -70,10 +70,13 @@ class DoctorRepository {
     }
 
 
-    suspend fun getDoctorAvailability(doctorId: String): Result<List<DoctorAvailability>> {
+    suspend fun getDoctorAvailability(doctorId: String? = null): Result<List<DoctorAvailability>> {
+        val effectiveDoctorId = doctorId ?: auth.currentUser?.uid
+        ?: return Result.failure(Exception("No doctor ID provided"))
+
         return try {
             val snapshot = firestore.collection("users")
-                .document(doctorId)
+                .document(effectiveDoctorId)
                 .collection("availability")
                 .get()
                 .await()
@@ -82,7 +85,7 @@ class DoctorRepository {
                 try {
                     DoctorAvailability.fromMap(
                         doc.data ?: emptyMap(),
-                        doctorId = doctorId,
+                        doctorId = effectiveDoctorId,
                         documentId = doc.id
                     )
                 } catch (e: Exception) {
@@ -98,11 +101,12 @@ class DoctorRepository {
     suspend fun updateAvailabilities(
         dates: List<LocalDate>,
         startTime: LocalTime,
-        endTime: LocalTime
+        endTime: LocalTime,
+        doctorId: String? = null
     ): Result<Unit> {
         val batch = firestore.batch()
-        val doctorId =
-            auth.currentUser?.uid ?: return Result.failure(Exception("User not logged in"))
+        val effectiveDoctorId = doctorId ?: auth.currentUser?.uid
+        ?: return Result.failure(Exception("No doctor ID provided"))
 
         // Generate all possible slots for the new time range
         val newSlots = mutableSetOf<LocalTime>()
@@ -117,7 +121,7 @@ class DoctorRepository {
         return try {
             dates.forEach { date ->
                 val docRef = firestore.collection("users")
-                    .document(doctorId)
+                    .document(effectiveDoctorId)
                     .collection("availability")
                     .document(date.toString())
 

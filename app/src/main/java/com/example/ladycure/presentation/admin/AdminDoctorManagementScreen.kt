@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.ladycure.presentation.admin.components.AddUserDialog
 import com.example.ladycure.presentation.admin.components.AdminSearchBar
 import com.example.ladycure.presentation.admin.components.DeleteConfirmationDialog
@@ -37,6 +38,7 @@ import com.example.ladycure.utility.SnackbarController
 @Composable
 fun AdminDoctorManagementScreen(
     snackbarController: SnackbarController,
+    navController: NavController,
     viewModel: AdminDoctorManagementViewModel = viewModel()
 ) {
     val errorMessage = viewModel.errorMessage
@@ -103,29 +105,18 @@ fun AdminDoctorManagementScreen(
         }
     }
 
-    if (viewModel.showAddDoctorDialog) {
-        AddUserDialog(
-            user = viewModel.newDoctorAsUser,
-            onDismiss = { viewModel.dismissAddDoctorDialog() },
-            onSave = { viewModel.addDoctor() },
-            onUserChange = { viewModel.updateNewDoctor(it) }
-        )
-    }
 
     if (viewModel.showEditDoctorDialog && viewModel.editedDoctor != null) {
         EditDoctorDialog(
             doctor = viewModel.editedDoctor!!,
             onDismiss = { viewModel.dismissEditDoctorDialog() },
             onSave = { viewModel.saveDoctorChanges() },
-            onDoctorChange = { viewModel.updateEditedDoctor(it) }
-        )
-    }
-
-    if (viewModel.showDeleteDoctorDialog && viewModel.selectedDoctor != null) {
-        DeleteConfirmationDialog(
-            user = viewModel.selectedDoctor!!,
-            onDismiss = { viewModel.dismissDeleteDoctorDialog() },
-            onConfirm = { viewModel.deleteDoctor() }
+            onDoctorChange = { viewModel.updateEditedDoctor(it) },
+            onEditAvailabilityClick = {
+                viewModel.editedDoctor?.let { doctor ->
+                    navController.navigate("adminEditAvailability/${doctor.id}")
+                }
+            }
         )
     }
 }

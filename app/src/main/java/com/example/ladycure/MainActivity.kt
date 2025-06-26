@@ -38,8 +38,10 @@ import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.admin.AdminAnalyticsScreen
+import com.example.ladycure.presentation.admin.AdminAvailabilityListScreen
 import com.example.ladycure.presentation.admin.AdminDashboardScreen
 import com.example.ladycure.presentation.admin.AdminDoctorManagementScreen
+import com.example.ladycure.presentation.admin.AdminEditAvailabilityScreen
 import com.example.ladycure.presentation.admin.AdminUserManagementScreen
 import com.example.ladycure.presentation.applications.DoctorApplicationScreen
 import com.example.ladycure.presentation.applications.DoctorPendingMainScreen
@@ -183,7 +185,8 @@ fun MainScreen(navController: NavHostController) {
                 }
                 composable("admin_doctor_management") {
                     AdminDoctorManagementScreen(
-                        snackbarController
+                        snackbarController,
+                        navController
                     )
                 }
                 composable("admin_analytics") {
@@ -360,6 +363,24 @@ fun MainScreen(navController: NavHostController) {
 
                 composable("appointments") { AppointmentsScreen(navController, snackbarController) }
 
+                composable("adminEditAvailability/{doctorId}") { backStackEntry ->
+                    val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+                    AdminEditAvailabilityScreen(
+                        navController = navController,
+                        snackbarController = snackbarController,
+                        doctorId = doctorId
+                    )
+                }
+
+                composable("adminAvailabilityList/{doctorId}") { backStackEntry ->
+                    val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
+                    // You'll need to create this screen similar to AvailabilityListScreen but for admin
+                    AdminAvailabilityListScreen(
+                        navController = navController,
+                        snackbarController = snackbarController,
+                        doctorId = doctorId
+                    )
+                }
 
                 composable(
                     route = "chat/{otherUserId}/{otherUserName}", // Trasa z dwoma argumentami
