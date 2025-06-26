@@ -9,6 +9,8 @@ import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.User
 import com.example.ladycure.presentation.admin.components.buildUpdateMap
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class AdminUserManagementViewModel(
     private val userRepo: UserRepository = UserRepository(),
@@ -128,6 +130,34 @@ class AdminUserManagementViewModel(
     fun saveUserChanges() {
         viewModelScope.launch {
             selectedUser?.let { originalUser ->
+                // Validate before proceeding
+                when {
+                    editedUser?.name.isNullOrBlank() -> {
+                        errorMessage = "Name cannot be empty"
+                        return@let
+                    }
+                    editedUser?.surname.isNullOrBlank() -> {
+                        errorMessage = "Surname cannot be empty"
+                        return@let
+                    }
+                    editedUser?.email.isNullOrBlank() -> {
+                        errorMessage = "Email cannot be empty"
+                        return@let
+                    }
+                    !isValidEmail(editedUser?.email.orEmpty()) -> {
+                        errorMessage = "Please enter a valid email address"
+                        return@let
+                    }
+                    editedUser?.dateOfBirth.isNullOrBlank() -> {
+                        errorMessage = "Date of birth cannot be empty"
+                        return@let
+                    }
+                    !isValidBirthDate(editedUser?.dateOfBirth.orEmpty()) -> {
+                        errorMessage = "Date of birth must be in yyyy-MM-dd format"
+                        return@let
+                    }
+                }
+
                 val updates = buildUpdateMap(editedUser!!)
                 val result = userRepo.updateUser(originalUser.id, updates)
 
@@ -137,13 +167,30 @@ class AdminUserManagementViewModel(
                     } else {
                         "User updated successfully"
                     }
-
                     showEditUserDialog = false
                     loadUsers()
                 } else {
                     errorMessage = "Failed to update user: ${result.exceptionOrNull()?.message}"
                 }
             }
+        }
+    }
+
+    // Helper function for email validation
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+    private fun isValidBirthDate(date: String): Boolean {
+        val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""") // yyyy-MM-dd format
+        if (!pattern.matches(date)) return false
+
+        return try {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            dateFormat.isLenient = false // Strict parsing
+            dateFormat.parse(date)
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 

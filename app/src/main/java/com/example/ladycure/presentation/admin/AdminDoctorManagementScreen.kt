@@ -105,14 +105,6 @@ fun AdminDoctorManagementScreen(
         }
     }
 
-    if (viewModel.showAddDoctorDialog) {
-        AddUserDialog(
-            user = viewModel.newDoctorAsUser,
-            onDismiss = { viewModel.dismissAddDoctorDialog() },
-            onSave = { viewModel.addDoctor() },
-            onUserChange = { viewModel.updateNewDoctor(it) }
-        )
-    }
 
     if (viewModel.showEditDoctorDialog && viewModel.editedDoctor != null) {
         EditDoctorDialog(
@@ -125,14 +117,6 @@ fun AdminDoctorManagementScreen(
                     navController.navigate("adminEditAvailability/${doctor.id}")
                 }
             }
-        )
-    }
-
-    if (viewModel.showDeleteDoctorDialog && viewModel.selectedDoctor != null) {
-        DeleteConfirmationDialog(
-            user = viewModel.selectedDoctor!!,
-            onDismiss = { viewModel.dismissDeleteDoctorDialog() },
-            onConfirm = { viewModel.deleteDoctor() }
         )
     }
 }

@@ -12,6 +12,8 @@ import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.User
 import com.example.ladycure.presentation.admin.components.buildUpdateMap
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class AdminDoctorManagementViewModel(
     private val userRepo: UserRepository = UserRepository(),
@@ -122,14 +124,20 @@ class AdminDoctorManagementViewModel(
 
     fun saveDoctorChanges() {
         editedDoctor?.let { doctor ->
+            // Validate all fields before proceeding
+            val validationError = validateDoctor(doctor)
+            if (validationError != null) {
+                errorMessage = validationError
+                return@let
+            }
+
             viewModelScope.launch {
                 if (doctor.role == Role.DOCTOR) {
                     val updates = buildUpdateMap(doctor)
                     val result = userRepo.updateUser(doctor.id, updates)
                     errorMessage =
-                        if (result.isSuccess) "Doctor updated."
+                        if (result.isSuccess) "Doctor updated successfully."
                         else "Error: ${result.exceptionOrNull()?.message}"
-
                 } else {
                     val userToUpdate = doctor.toUser()
                     val updates = buildUpdateMap(userToUpdate)
@@ -137,41 +145,56 @@ class AdminDoctorManagementViewModel(
                     errorMessage =
                         if (result.isSuccess) "Doctor demoted to User."
                         else "Error: ${result.exceptionOrNull()?.message}"
-
                 }
                 loadDoctors()
                 showEditDoctorDialog = false
             }
         }
     }
-
-    fun deleteDoctor() {
-        selectedDoctor?.let { doctor ->
-            viewModelScope.launch {
-                // Uncomment when ready to implement
-                // val result = authRepo.deleteUserAccount(doctor.id)
-                // if (result.isSuccess) {
-                //     snackbarController.showMessage("Doctor deleted.")
-                //     loadDoctors()
-                // } else {
-                //     snackbarController.showMessage("Error: ${result.exceptionOrNull()?.message}")
-                // }
-                showDeleteDoctorDialog = false
-            }
+    private fun validateDoctor(doctor: Doctor): String? {
+        return when {
+            doctor.name.isBlank() -> "Name cannot be empty"
+            doctor.name.length > 50 -> "Name is too long (max 50 characters)"
+            doctor.surname.isBlank() -> "Surname cannot be empty"
+            doctor.surname.length > 50 -> "Surname is too long (max 50 characters)"
+            doctor.email.isBlank() -> "Email cannot be empty"
+            !isValidEmail(doctor.email) -> "Please enter a valid email address"
+            doctor.dateOfBirth.isBlank() -> "Date of birth cannot be empty"
+            !isValidBirthDate(doctor.dateOfBirth) -> "Date of birth must be in yyyy-MM-dd format"
+            doctor.phone.isBlank() -> "Phone number cannot be empty"
+            !isValidPhone(doctor.phone) -> "Please enter a valid phone number"
+            doctor.address.isBlank() -> "Address cannot be empty"
+            doctor.city.isBlank() -> "City cannot be empty"
+            doctor.consultationPrice <= 0 -> "Consultation price must be positive"
+            doctor.experience < 0 -> "Experience cannot be negative"
+            doctor.bio.isBlank() -> "Bio cannot be empty"
+            doctor.bio.length < 20 -> "Bio should be at least 20 characters"
+            doctor.languages.isEmpty() -> "At least one language must be specified"
+            else -> null
         }
     }
 
-    fun addDoctor() {
-        viewModelScope.launch {
-            // Uncomment when ready to implement
-            // val result = authRepo.createUserInAuthAndDb(newDoctorAsUser, "Password123")
-            // if (result.isSuccess) {
-            //     snackbarController.showMessage("Doctor created successfully.")
-            //     loadDoctors()
-            // } else {
-            //     snackbarController.showMessage("Error: ${result.exceptionOrNull()?.message}")
-            // }
-            showAddDoctorDialog = false
+    // Validation helper functions
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
+    private fun isValidBirthDate(date: String): Boolean {
+        val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""")
+        if (!pattern.matches(date)) return false
+
+        return try {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            dateFormat.isLenient = false
+            dateFormat.parse(date)
+            true
+        } catch (e: Exception) {
+            false
         }
     }
+
+    private fun isValidPhone(phone: String): Boolean {
+        return phone.matches(Regex("""^[+]?[\d\s-]{6,15}$"""))
+    }
+
 }
