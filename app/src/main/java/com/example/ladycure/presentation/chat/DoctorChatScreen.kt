@@ -104,6 +104,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Composable function for the Doctor Chat Screen.
+ *
+ * @param navController The NavController for navigation.
+ * @param otherUserId The ID of the other user in the chat.
+ * @param otherUserName The name of the other user in the chat.
+ * @param chatRepository The repository for chat operations.
+ * @param chatViewModel The ViewModel for chat operations.
+ * @param doctorRepository The repository for doctor-related operations.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorChatScreen(
@@ -152,11 +162,9 @@ fun DoctorChatScreen(
         chatRepository.getMessages(chatId) { messageList ->
             messages = messageList
         }
-        // Fetching profile pictures
         otherUserProfilePictureUrl = chatRepository.getUserProfilePicture(otherUserId)
         currentUserProfilePictureUrl = chatRepository.getUserProfilePicture(currentUserId)
 
-        // Fetch phone number
         chatRepository.getSpecificUserData(otherUserId).onSuccess { userData ->
             otherUserPhoneNumber = userData?.get("phone") as? String
             otherUserRole = userData?.get("role") as? String
@@ -284,24 +292,6 @@ fun DoctorChatScreen(
                             )
                         }
 
-//                        Box(
-//                            modifier = Modifier
-//                                .size(16.dp)
-//                                .align(Alignment.BottomEnd)
-//                                .background(Color.Green, shape = CircleShape)
-//                                .padding(2.dp)
-//                        ) {
-//                            Box(
-//                                modifier = Modifier
-//                                    .fillMaxSize()
-//                                    .background(Color.Green, shape = CircleShape)
-//                                    .border(
-//                                        width = 1.dp,
-//                                        color = DefaultPrimary,
-//                                        shape = CircleShape
-//                                    )
-//                            )
-//                        }
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -432,6 +422,17 @@ fun DoctorChatScreen(
     }
 }
 
+/**
+ * Composable function for the modern message input bar.
+ *
+ * @param messageText The current text in the message input field.
+ * @param onMessageChange Callback for when the message text changes.
+ * @param onSendMessage Callback for when the send button is clicked.
+ * @param onAttachFile Callback for when the attach file button is clicked.
+ * @param isSending Indicates if a message is currently being sent.
+ * @param hasAttachment Indicates if there is an attachment.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun ModernMessageInputBar(
     messageText: String,
@@ -553,6 +554,17 @@ fun ModernMessageInputBar(
     }
 }
 
+/**
+ * Composable function for a modern message bubble in the chat.
+ *
+ * @param message The message to display.
+ * @param isCurrentUser True if the message was sent by the current user, false otherwise.
+ * @param profilePictureUrl The URL of the sender's profile picture.
+ * @param modifier The modifier for this composable.
+ * @param snackbarHostState The SnackbarHostState to show snackbars.
+ * @param scope The CoroutineScope for launching coroutines.
+ * @param onProfileClick Callback for when the profile picture is clicked.
+ */
 @SuppressLint("ServiceCast")
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -830,6 +842,13 @@ fun ModernMessageBubble(
     }
 }
 
+/**
+ * Composable function for displaying a modern attachment preview.
+ *
+ * @param uri The URI of the attachment.
+ * @param onRemove Callback for when the remove attachment button is clicked.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun ModernAttachmentPreview(
     uri: Uri,
@@ -895,6 +914,14 @@ fun ModernAttachmentPreview(
     }
 }
 
+/**
+ * Composable function for displaying a modern attachment preview from a URL.
+ *
+ * @param url The URL of the attachment.
+ * @param fileName The name of the attachment file.
+ * @param textColor The color of the text.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun ModernAttachmentPreview(
     url: String,
@@ -936,6 +963,14 @@ fun ModernAttachmentPreview(
     }
 }
 
+/**
+ * Composable function for displaying a doctor profile in a dialog.
+ *
+ * @param doctor The doctor to display.
+ * @param onDismiss Callback for when the dialog is dismissed.
+ * @param onBookAppointment Callback for when the "Book Appointment" button is clicked.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun DoctorProfileDialog(
     doctor: Doctor,
@@ -966,6 +1001,11 @@ fun DoctorProfileDialog(
 }
 
 
+/**
+ * Formats a Date object to a time string (HH:mm).
+ *
+ * @return The formatted time string.
+ */
 fun Date.formatTime(): String {
     val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
     return formatter.format(this)

@@ -39,6 +39,15 @@ import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
 
+/**
+ * A Composable function that displays a dialog for setting a recurring pattern for availability.
+ * Users can select days of the week and specify a duration in weeks for the pattern to repeat.
+ *
+ * @param selectedDaysOfWeek The set of days of the week initially selected.
+ * @param onApply A callback function invoked when the "Apply" button is clicked.
+ * It provides the updated set of selected days and the chosen duration in weeks.
+ * @param onDismiss A callback function invoked when the dialog is dismissed (e.g., by clicking outside or pressing back).
+ */
 @Composable
 internal fun RecurringPatternDialog(
     selectedDaysOfWeek: Set<DayOfWeek>,
@@ -64,10 +73,8 @@ internal fun RecurringPatternDialog(
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // Day of week selection
-                val days = DayOfWeek.values()
                 LazyColumn {
-                    items(days) { day ->
+                    items(DayOfWeek.values()) { day ->
                         val isSelected = tempSelectedDays.value.contains(day)
                         Row(
                             modifier = Modifier
@@ -107,7 +114,6 @@ internal fun RecurringPatternDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Duration options
                 Text("Repeat for how many weeks?", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {

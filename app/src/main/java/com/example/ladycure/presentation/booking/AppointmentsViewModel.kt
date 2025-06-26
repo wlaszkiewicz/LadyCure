@@ -16,39 +16,92 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * ViewModel for managing appointments, including fetching, filtering, and updating appointment status and comments.
+ *
+ * @param userRepo The repository for user-related operations.
+ * @param appointmentRepo The repository for appointment-related operations.
+ */
 class AppointmentViewModel(
     private val userRepo: UserRepository = UserRepository(),
     private val appointmentRepo: AppointmentRepository = AppointmentRepository()
 ) : ViewModel() {
 
-    // State variables
+    /**
+     * List of future appointments.
+     */
     var futureAppointments by mutableStateOf<List<Appointment>>(emptyList())
         private set
+
+    /**
+     * List of past appointments.
+     */
     var pastAppointments by mutableStateOf<List<Appointment>>(emptyList())
         private set
+
+    /**
+     * Indicates if appointments are currently being loaded.
+     */
     var isLoading by mutableStateOf(true)
         private set
+
+    /**
+     * Stores any error message that occurs during appointment operations.
+     */
     var error by mutableStateOf<String?>(null)
         private set
 
+    /**
+     * The currently selected appointment.
+     */
     var selectedAppointment by mutableStateOf<Appointment?>(null)
         private set
+
+    /**
+     * Controls the visibility of the edit status dialog.
+     */
     var showEditStatusDialog by mutableStateOf(false)
         private set
 
-    // Filter state variables - now using lists for multiple selections
+    /**
+     * Controls the visibility of the filters.
+     */
     var showFilters by mutableStateOf(false)
         private set
+
+    /**
+     * List of selected specializations for filtering.
+     */
     var selectedSpecializations by mutableStateOf<List<String>>(emptyList())
         private set
+
+    /**
+     * List of selected doctors for filtering.
+     */
     var selectedDoctors by mutableStateOf<List<String>>(emptyList())
         private set
+
+    /**
+     * The selected date for filtering.
+     */
     var selectedDate by mutableStateOf<LocalDate?>(null)
         private set
+
+    /**
+     * List of selected appointment types for filtering.
+     */
     var selectedTypes by mutableStateOf<List<AppointmentType>>(emptyList())
         private set
+
+    /**
+     * List of selected patients for filtering.
+     */
     var selectedPatients by mutableStateOf<List<String>>(emptyList())
         private set
+
+    /**
+     * The role of the current user.
+     */
     var role by mutableStateOf<String?>(null)
         private set
 
@@ -56,6 +109,9 @@ class AppointmentViewModel(
         loadAppointments()
     }
 
+    /**
+     * Loads appointments based on the user's role.
+     */
     fun loadAppointments() {
         viewModelScope.launch(Dispatchers.IO) {
             isLoading = true
@@ -84,6 +140,11 @@ class AppointmentViewModel(
         }
     }
 
+    /**
+     * Updates the future and past appointment lists from a given list of all appointments.
+     *
+     * @param allAppointments The list of all appointments.
+     */
     private fun updateAppointmentsLists(allAppointments: List<Appointment>) {
         futureAppointments = allAppointments.filter {
             it.date.isAfter(LocalDate.now()) ||
@@ -96,6 +157,12 @@ class AppointmentViewModel(
         }.sortedWith(compareBy({ it.date }, { it.time })).reversed()
     }
 
+    /**
+     * Groups appointments by month.
+     *
+     * @param appointments The list of appointments to group.
+     * @return A map where keys are month strings and values are lists of appointments for that month.
+     */
     internal fun groupAppointmentsByMonth(appointments: List<Appointment>): Map<String, List<Appointment>> {
         val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
         return appointments.groupBy {
@@ -105,23 +172,47 @@ class AppointmentViewModel(
         })
     }
 
+    /**
+     * Updates the current error message.
+     *
+     * @param message The error message to set.
+     */
     fun updateError(message: String?) {
         error = message
     }
 
+    /**
+     * Sets the currently selected appointment.
+     *
+     * @param appointment The appointment to select.
+     */
     fun selectAppointment(appointment: Appointment) {
         selectedAppointment = appointment
     }
 
+    /**
+     * Toggles the visibility of the edit status dialog.
+     *
+     * @param show True to show the dialog, false to hide it.
+     */
     fun toggleEditStatusDialog(show: Boolean) {
         showEditStatusDialog = show
     }
 
+    /**
+     * Toggles the visibility of the filters.
+     *
+     * @param show True to show the filters, false to hide them.
+     */
     fun toggleFilters(show: Boolean) {
         showFilters = show
     }
 
-    // Updated filter functions to handle multiple selections
+    /**
+     * Toggles a specialization in the filter selection.
+     *
+     * @param specialization The specialization to toggle.
+     */
     fun toggleSpecializationFilter(specialization: String) {
         selectedSpecializations = if (selectedSpecializations.contains(specialization)) {
             selectedSpecializations - specialization
@@ -130,6 +221,11 @@ class AppointmentViewModel(
         }
     }
 
+    /**
+     * Toggles a doctor in the filter selection.
+     *
+     * @param doctor The doctor to toggle.
+     */
     fun toggleDoctorFilter(doctor: String) {
         selectedDoctors = if (selectedDoctors.contains(doctor)) {
             selectedDoctors - doctor
@@ -138,10 +234,20 @@ class AppointmentViewModel(
         }
     }
 
+    /**
+     * Sets the selected date for filtering.
+     *
+     * @param date The date to set.
+     */
     fun setDateFilter(date: LocalDate?) {
         selectedDate = date
     }
 
+    /**
+     * Toggles an appointment type in the filter selection.
+     *
+     * @param type The appointment type to toggle.
+     */
     fun toggleTypeFilter(type: AppointmentType) {
         selectedTypes = if (selectedTypes.contains(type)) {
             selectedTypes - type
@@ -150,6 +256,11 @@ class AppointmentViewModel(
         }
     }
 
+    /**
+     * Toggles a patient in the filter selection.
+     *
+     * @param patient The patient to toggle.
+     */
     fun togglePatientFilter(patient: String) {
         selectedPatients = if (selectedPatients.contains(patient)) {
             selectedPatients - patient
@@ -158,6 +269,9 @@ class AppointmentViewModel(
         }
     }
 
+    /**
+     * Clears all active filters.
+     */
     fun clearAllFilters() {
         selectedSpecializations = emptyList()
         selectedDoctors = emptyList()
@@ -166,6 +280,11 @@ class AppointmentViewModel(
         selectedPatients = emptyList()
     }
 
+    /**
+     * Updates the status of the currently selected appointment.
+     *
+     * @param status The new status to set.
+     */
     fun updateAppointmentStatus(status: Status) {
         selectedAppointment?.let { appointment ->
             viewModelScope.launch(Dispatchers.IO) {
@@ -189,6 +308,12 @@ class AppointmentViewModel(
         showEditStatusDialog = false
     }
 
+    /**
+     * Updates the comment for a specific appointment.
+     *
+     * @param appointmentId The ID of the appointment to update.
+     * @param newComment The new comment to set.
+     */
     fun updateAppointmentComment(
         appointmentId: String,
         newComment: String
@@ -209,6 +334,11 @@ class AppointmentViewModel(
         }
     }
 
+    /**
+     * Cancels a specific appointment.
+     *
+     * @param appointmentId The ID of the appointment to cancel.
+     */
     fun cancelAppointment(appointmentId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val result = appointmentRepo.cancelAppointment(appointmentId)
@@ -226,7 +356,9 @@ class AppointmentViewModel(
         }
     }
 
-    // Updated filtered lists to handle multiple selections
+    /**
+     * Returns a filtered list of future appointments based on selected filters and user role.
+     */
     val filteredFutureAppointments: List<Appointment>
         get() = if (role == "user") {
             futureAppointments.filter { appointment ->
@@ -242,6 +374,9 @@ class AppointmentViewModel(
             }
         }
 
+    /**
+     * Returns a filtered list of past appointments based on selected filters and user role.
+     */
     val filteredPastAppointments: List<Appointment>
         get() = if (role == "user") {
             pastAppointments.filter { appointment ->
@@ -257,16 +392,27 @@ class AppointmentViewModel(
             }
         }
 
-    // Computed properties for filter options
+    /**
+     * Returns a distinct list of all specializations from both future and past appointments.
+     */
     val allSpecializations: List<String>
         get() = (futureAppointments + pastAppointments).map { it.type.speciality }.distinct()
 
+    /**
+     * Returns a distinct list of all doctors from both future and past appointments.
+     */
     val allDoctors: List<String>
         get() = (futureAppointments + pastAppointments).map { it.doctorName }.distinct()
 
+    /**
+     * Returns a distinct list of all patients from both future and past appointments.
+     */
     val allPatients: List<String>
         get() = (futureAppointments + pastAppointments).map { it.patientName }.distinct()
 
+    /**
+     * Returns a distinct list of all appointment types from both future and past appointments.
+     */
     val allTypes: List<AppointmentType>
         get() = (futureAppointments + pastAppointments).map { it.type }.distinct()
 }

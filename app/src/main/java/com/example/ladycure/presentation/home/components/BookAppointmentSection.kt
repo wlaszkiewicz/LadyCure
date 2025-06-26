@@ -58,6 +58,17 @@ import androidx.compose.ui.unit.dp
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.utility.SharedPreferencesHelper
 
+/**
+ * Composable function for the "Book Appointment" section, allowing users to select a city and specialization.
+ *
+ * @param specialities A list of [Speciality] objects to display.
+ * @param selectedCity The currently selected city, nullable.
+ * @param initialCity The initial city to display, nullable.
+ * @param availableCities A list of available cities for selection.
+ * @param onCitySelected Lambda function invoked when a city is selected.
+ * @param onSpecializationSelected Lambda function invoked when a specialization is selected.
+ * @param context The Android [Context], defaults to [LocalContext.current].
+ */
 @Composable
 fun BookAppointmentSection(
     specialities: List<Speciality>,
@@ -163,11 +174,11 @@ fun BookAppointmentSection(
                     AnimatedVisibility(
                         visible = showRememberChoice,
                         enter = slideInVertically(
-                            initialOffsetY = { -it }, // Slides down from above
+                            initialOffsetY = { -it },
                             animationSpec = tween(durationMillis = 300)
                         ),
                         exit = slideOutVertically(
-                            targetOffsetY = { -it }, // Slides up to hide
+                            targetOffsetY = { -it },
                             animationSpec = tween(durationMillis = 300)
                         )
                     ) {
@@ -189,7 +200,7 @@ fun BookAppointmentSection(
                                         SharedPreferencesHelper.saveCity(
                                             context,
                                             ""
-                                        ) // Clear saved city
+                                        )
                                     }
                                 },
                                 colors = CheckboxDefaults.colors(
@@ -232,7 +243,6 @@ fun BookAppointmentSection(
                             selectedLocation = location
                             showLocationDropdown = false
                             onCitySelected(location)
-                            // Reset checkbox when selecting new city
                             rememberChoice = false
                         },
                         modifier = Modifier.padding(horizontal = 8.dp),
@@ -244,7 +254,6 @@ fun BookAppointmentSection(
             }
         }
 
-        // Horizontal scrollable list of specializations
         val scrollState = rememberScrollState()
         Row(
             modifier = Modifier
@@ -259,6 +268,12 @@ fun BookAppointmentSection(
     }
 }
 
+/**
+ * Composable function that displays a card for a single specialization.
+ *
+ * @param speciality The [Speciality] object to display.
+ * @param onSpecialitySelected Lambda function invoked when the speciality card is clicked.
+ */
 @Composable
 fun SpecialityCard(
     speciality: Speciality,
@@ -283,7 +298,7 @@ fun SpecialityCard(
                 .height(140.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = cardColor.copy(alpha = 0.9f) // Slightly transparent
+                containerColor = cardColor.copy(alpha = 0.9f)
             ),
             onClick = { onSpecialitySelected(speciality) }
         ) {

@@ -22,23 +22,45 @@ import com.google.firebase.auth.auth
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for the Welcome screen, handling user authentication and role management.
+ *
+ * @param authRepository Repository for authentication-related operations.
+ * @param userRepository Repository for user-related data operations.
+ */
 class WelcomeViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
-    // States
+    /** Indicates if the data is currently loading. */
     var isLoading by mutableStateOf(true)
-    var currentUser by mutableStateOf<FirebaseUser?>(null)
-    var userRole by mutableStateOf<String?>(null)
-    var showBiometricError by mutableStateOf(false)
-    var showPasswordDialog by mutableStateOf(false)
-    var password by mutableStateOf("")
-    var authenticationSuccess by mutableStateOf(false) // New state
 
-    // Biometric
+    /** The currently authenticated Firebase user. */
+    var currentUser by mutableStateOf<FirebaseUser?>(null)
+
+    /** The role of the current user. */
+    var userRole by mutableStateOf<String?>(null)
+
+    /** Indicates if a biometric error should be displayed. */
+    var showBiometricError by mutableStateOf(false)
+
+    /** Indicates if the password dialog should be shown. */
+    var showPasswordDialog by mutableStateOf(false)
+
+    /** The password entered by the user. */
+    var password by mutableStateOf("")
+
+    /** Indicates if biometric or password authentication was successful. */
+    var authenticationSuccess by mutableStateOf(false)
+
     private lateinit var biometricPrompt: BiometricPrompt
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
 
+    /**
+     * Initializes the biometric authentication components.
+     *
+     * @param context The Android context, typically a FragmentActivity.
+     */
     fun initializeBiometric(context: Context) {
         val executor = ContextCompat.getMainExecutor(context)
 
@@ -75,6 +97,10 @@ class WelcomeViewModel(
             .build()
     }
 
+    /**
+     * Sets up a listener for Firebase authentication state changes.
+     * Updates [currentUser] and [userRole] accordingly.
+     */
     fun setupAuthListener() {
         Firebase.auth.addAuthStateListener { auth ->
             currentUser = auth.currentUser
@@ -92,6 +118,12 @@ class WelcomeViewModel(
         }
     }
 
+    /**
+     * Initiates biometric authentication. Handles different biometric states
+     * and prompts the user accordingly or falls back to password authentication.
+     *
+     * @param context The Android context.
+     */
     fun authenticateWithBiometrics(context: Context) {
         authenticationSuccess = false
         val biometricManager = BiometricManager.from(context)
@@ -155,6 +187,12 @@ class WelcomeViewModel(
         }
     }
 
+    /**
+     * Authenticates the user with a password.
+     *
+     * @param navController The NavController for navigation actions.
+     * @param context The Android context.
+     */
     fun authenticateWithPassword(navController: NavController, context: Context) {
         viewModelScope.launch {
             try {
@@ -180,6 +218,9 @@ class WelcomeViewModel(
         }
     }
 
+    /**
+     * Resets the authentication success state.
+     */
     fun resetAuthState() {
         authenticationSuccess = false
     }

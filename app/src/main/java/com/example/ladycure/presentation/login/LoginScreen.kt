@@ -66,6 +66,12 @@ import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.presentation.login.components.NonWomanWelcomeDialog
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * Composable function for the Login Screen.
+ *
+ * @param navController The NavController for navigation events.
+ * @param snackbarHostState The SnackbarController for displaying messages.
+ */
 @Composable
 fun LoginScreen(navController: NavController, snackbarHostState: SnackbarController) {
     val authRepo = AuthRepository()
@@ -111,7 +117,6 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Login Form
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -195,7 +200,7 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            focusManager.clearFocus() // hide the keyboard
+                            focusManager.clearFocus()
                             if (viewModel.isValidInput()) {
                                 viewModel.login(navController)
                             }
@@ -275,4 +280,3 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
         )
     }
 }
-

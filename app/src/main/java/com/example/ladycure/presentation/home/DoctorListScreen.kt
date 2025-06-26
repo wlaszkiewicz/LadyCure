@@ -74,6 +74,14 @@ import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.presentation.booking.RatingBar
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * Composable function that displays a list of doctors based on a given speciality.
+ * It also provides a togglable swiping interface for doctor selection.
+ *
+ * @param navController The NavHostController for navigating between screens.
+ * @param speciality The medical speciality to filter doctors by.
+ * @param snackbarController The SnackbarController for displaying messages.
+ */
 @Composable
 fun DoctorsListScreen(
     navController: NavHostController,
@@ -315,6 +323,14 @@ fun DoctorsListScreen(
 }
 
 
+/**
+ * Composable function that displays a concise information card for a doctor.
+ * It includes the doctor's name, speciality, rating, experience, address, languages, and a collapsible bio.
+ *
+ * @param doctor The [Doctor] object to display.
+ * @param onSelect Lambda function to be invoked when the "Select" button is clicked.
+ * @param modifier The modifier to be applied to the Card.
+ */
 @Composable
 fun DoctorInfoCard(
     doctor: Doctor,
@@ -334,12 +350,10 @@ fun DoctorInfoCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header row with image and basic info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Doctor image
                 if (doctor.profilePictureUrl.isEmpty()) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
@@ -375,7 +389,6 @@ fun DoctorInfoCard(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Doctor basic info
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -395,7 +408,6 @@ fun DoctorInfoCard(
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
                     )
 
-                    // Rating
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -419,20 +431,18 @@ fun DoctorInfoCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Doctor details section
             Column {
-                // Experience
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Min), // Use intrinsic height
-                    verticalAlignment = Alignment.CenterVertically // Center all items vertically
+                        .height(IntrinsicSize.Min),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Work,
                         contentDescription = "Experience",
                         tint = DefaultPrimary.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp) // Fixed size for all icons
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -445,7 +455,6 @@ fun DoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Address
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -469,7 +478,6 @@ fun DoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Languages
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -494,7 +502,6 @@ fun DoctorInfoCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Bio (collapsible)
             var expanded by remember { mutableStateOf(false) }
             Column {
                 Row(
@@ -583,6 +590,13 @@ fun DoctorInfoCard(
     }
 }
 
+/**
+ * Composable function that displays an expanded information card for a doctor, typically used in a swiping context.
+ * It includes the doctor's name, speciality, rating, experience, address, languages, consultation fee, and a collapsible bio.
+ *
+ * @param doctor The [Doctor] object to display.
+ * @param modifier The modifier to be applied to the Card.
+ */
 @Composable
 private fun ExpandedDoctorInfoCard(
     doctor: Doctor,
@@ -604,7 +618,6 @@ private fun ExpandedDoctorInfoCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Doctor image
             if (doctor.profilePictureUrl.isEmpty()) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
@@ -638,14 +651,12 @@ private fun ExpandedDoctorInfoCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header row with image and basic info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
 
 
-                // Doctor basic info
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -665,7 +676,6 @@ private fun ExpandedDoctorInfoCard(
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
                     )
 
-                    // Rating
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -689,20 +699,18 @@ private fun ExpandedDoctorInfoCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Doctor details section
             Column {
-                // Experience
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Min), // Use intrinsic height
-                    verticalAlignment = Alignment.CenterVertically // Center all items vertically
+                        .height(IntrinsicSize.Min),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Work,
                         contentDescription = "Experience",
                         tint = DefaultPrimary.copy(alpha = 0.7f),
-                        modifier = Modifier.size(20.dp) // Fixed size for all icons
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -715,7 +723,6 @@ private fun ExpandedDoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Address
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -739,7 +746,6 @@ private fun ExpandedDoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Languages
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -842,4 +848,3 @@ private fun ExpandedDoctorInfoCard(
     }
 
 }
-

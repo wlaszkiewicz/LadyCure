@@ -41,6 +41,11 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+/**
+ * Composable that displays a legend for the availability calendar.
+ *
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun AvailabilityLegend(modifier: Modifier = Modifier) {
     Row(
@@ -65,6 +70,13 @@ fun AvailabilityLegend(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Composable that displays a single item in the availability legend.
+ *
+ * @param color The color of the legend item.
+ * @param text The text to display for the legend item.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun LegendItem(color: Color, text: String, modifier: Modifier = Modifier) {
     Row(
@@ -84,6 +96,15 @@ fun LegendItem(color: Color, text: String, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Composable that displays the header for the calendar, including month navigation and weekday headers.
+ *
+ * @param currentMonth The currently displayed month.
+ * @param minMonth The minimum month that can be navigated to.
+ * @param onMonthChange Lambda that is invoked when the month changes.
+ * @param onShowMonthPicker Lambda that is invoked when the month picker should be shown.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun CalendarHeader(
     currentMonth: YearMonth,
@@ -126,7 +147,6 @@ fun CalendarHeader(
         }
     }
 
-    // Weekday headers
     val weekDays = DayOfWeek.entries
     Row(
         Modifier
@@ -146,6 +166,16 @@ fun CalendarHeader(
     }
 }
 
+/**
+ * Composable that displays a calendar view for selecting dates.
+ *
+ * @param currentMonth The currently displayed month in the calendar.
+ * @param selectedDates A set of dates that are currently selected.
+ * @param existingAvailabilities A list of existing doctor availabilities.
+ * @param today The current date.
+ * @param onDateSelected Lambda that is invoked when a date is selected.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun CalendarView(
     currentMonth: YearMonth,
@@ -158,14 +188,14 @@ fun CalendarView(
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDay = currentMonth.atDay(1)
     val offset = (firstDay.dayOfWeek.value - DayOfWeek.MONDAY.value).let {
-        if (it < 0) 6 else it // Adjust for Sunday as first day
+        if (it < 0) 6 else it
     }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
         modifier = modifier.height(280.dp)
     ) {
-        items(offset) { Spacer(Modifier) } // Empty cells for alignment
+        items(offset) { Spacer(Modifier) }
 
         items(daysInMonth) { day ->
             val date = firstDay.plusDays(day.toLong())
@@ -217,7 +247,6 @@ fun CalendarView(
                         }
                     )
 
-                    // Show small indicator if there's existing availability
                     if (hasExistingAvailability && !isSelected) {
                         Spacer(Modifier.height(2.dp))
                         Box(

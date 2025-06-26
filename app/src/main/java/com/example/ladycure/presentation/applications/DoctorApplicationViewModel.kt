@@ -19,43 +19,80 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
+/**
+ * ViewModel for the Doctor Application screen.
+ * Handles the logic for doctor application submission, including data validation,
+ * user registration, file uploads, and application submission to repositories.
+ *
+ * @param authRepository Repository for authentication operations.
+ * @param appRepo Repository for application data operations.
+ * @param storageRepo Repository for file storage operations.
+ */
 class DoctorApplicationViewModel(
     private val authRepository: AuthRepository = AuthRepository(),
     private val appRepo: ApplicationRepository = ApplicationRepository(),
     private val storageRepo: StorageRepository = StorageRepository()
 ) : ViewModel() {
-    // Personal Information
+    /** First name of the applicant. */
     var firstName by mutableStateOf("")
+    /** Last name of the applicant. */
     var lastName by mutableStateOf("")
+    /** Email of the applicant. */
     var email by mutableStateOf("")
+    /** Password for the applicant's account. */
     var password by mutableStateOf("")
+    /** Confirmation of the password. */
     var confirmPassword by mutableStateOf("")
+    /** Date of birth of the applicant. */
     var dateOfBirth by mutableStateOf(LocalDate.of(2000, 1, 1))
+    /** Selected date for date of birth in the UI. */
     var selectedDate by mutableStateOf(LocalDate.of(2000, 1, 1))
 
-    // Professional Information
+    /** Selected medical speciality. */
     var speciality by mutableStateOf(Speciality.OTHER)
+    /** Medical license number. */
     var licenseNumber by mutableStateOf("")
+    /** Years of professional experience. */
     var yearsOfExperience by mutableStateOf("")
+    /** Current workplace or hospital. */
     var currentWorkplace by mutableStateOf("")
+    /** Phone number of the applicant. */
     var phoneNumber by mutableStateOf("")
+    /** Address of the applicant. */
     var address by mutableStateOf("")
+    /** City of residence. */
     var city by mutableStateOf("")
 
-    // Document Uploads
+    /** URI for the uploaded license photo. */
     var licensePhotoUri by mutableStateOf<Uri?>(null)
+    /** URI for the uploaded diploma photo. */
     var diplomaPhotoUri by mutableStateOf<Uri?>(null)
 
-    // UI State
+    /** Indicates if the application is currently loading/submitting. */
     var isLoading by mutableStateOf(false)
+    /** Current progress of the application submission (0.0 to 1.0). */
     var progress by mutableStateOf(0f)
+    /** Text representation of the progress (e.g., "50%"). */
     var progressText by mutableStateOf("0%")
+    /** Current step in the multi-step submission process. */
     var currentStep by mutableStateOf(1)
+    /** Total number of steps in the submission process. */
     val totalSteps = 4
+    /** Error message to be displayed, if any. */
     var errorMessage by mutableStateOf<String?>(null)
+    /** Indicates if the form has been submitted at least once. */
     var hasSubmitted by mutableStateOf(false)
+    /** Indicates if an uploaded file is too large. */
     var tooLarge by mutableStateOf(false)
 
+    /**
+     * Submits the doctor application.
+     * This function orchestrates the steps of creating a user account, uploading required documents,
+     * and submitting the application details to the backend.
+     *
+     * @param onSuccess Callback function to be invoked upon successful application submission.
+     * @param onError Callback function to be invoked if an error occurs during submission, with an error message.
+     */
     fun submitApplication(
         onSuccess: () -> Unit,
         onError: (String) -> Unit
@@ -67,7 +104,6 @@ class DoctorApplicationViewModel(
 
         viewModelScope.launch {
             try {
-                // 1. Create user account (step 1)
                 currentStep = 1
                 val authResult = authRepository.register(
                     email = email,
@@ -81,18 +117,15 @@ class DoctorApplicationViewModel(
                 if (authResult.isSuccess) {
                     val userId = authResult.getOrNull() ?: return@launch
 
-                    // Update progress (25%)
                     progress = 0.25f
                     progressText = "25%"
 
-                    // 2. Upload license (step 2)
                     currentStep = 2
                     val licensePhotoUrl = licensePhotoUri?.let { uri ->
                         storageRepo.uploadFile(
                             uri = uri,
                             path = "doctor_verification/$userId/license.jpg",
                             onProgress = { uploaded, total ->
-                                // Calculate progress for this step (25-50% range)
                                 val stepProgress = uploaded.toFloat() / total.toFloat()
                                 progress = 0.25f + (0.25f * stepProgress)
                                 progressText = "${(progress * 100).toInt()}%"
@@ -100,18 +133,15 @@ class DoctorApplicationViewModel(
                         ).getOrNull()
                     } ?: ""
 
-                    // Update progress (50%)
                     progress = 0.5f
                     progressText = "50%"
 
-                    // 3. Upload diploma (step 3)
                     currentStep = 3
                     val diplomaPhotoUrl = diplomaPhotoUri?.let { uri ->
                         storageRepo.uploadFile(
                             uri = uri,
                             path = "doctor_verification/$userId/diploma.jpg",
                             onProgress = { uploaded, total ->
-                                // Calculate progress for this step (50-75% range)
                                 val stepProgress = uploaded.toFloat() / total.toFloat()
                                 progress = 0.5f + (0.25f * stepProgress)
                                 progressText = "${(progress * 100).toInt()}%"
@@ -119,11 +149,9 @@ class DoctorApplicationViewModel(
                         ).getOrNull()
                     } ?: ""
 
-                    // Update progress (75%)
                     progress = 0.75f
                     progressText = "75%"
 
-                    // 4. Submit application (step 4)
                     currentStep = 4
                     val application = DoctorApplication(
                         userId = userId,
@@ -144,7 +172,6 @@ class DoctorApplicationViewModel(
                     )
                     appRepo.submitApplication(application)
 
-                    // Complete progress
                     progress = 1f
                     progressText = "100%"
 
@@ -170,11 +197,22 @@ class DoctorApplicationViewModel(
         }
     }
 
+    /**
+     * Validates the entire application form.
+     * Sets [hasSubmitted] to true to trigger validation messages in the UI.
+     *
+     * @return True if the form is valid, false otherwise.
+     */
     fun validateApplication(): Boolean {
         hasSubmitted = true
         return isFormValid()
     }
 
+    /**
+     * Checks if all fields in the application form are valid.
+     *
+     * @return True if all fields meet the validation criteria, false otherwise.
+     */
     fun isFormValid(): Boolean {
         return firstName.isNotBlank() &&
                 lastName.isNotBlank() &&
@@ -182,9 +220,9 @@ class DoctorApplicationViewModel(
                 android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() &&
                 password.isNotBlank() &&
                 password.length >= 8 &&
-                password.matches(Regex(".*[A-Z].*")) && // One upper case
-                password.matches(Regex(".*[0-9].*")) && // One number
-                password.matches(Regex(".*[!@#$%^&*].*")) && // One special character
+                password.matches(Regex(".*[A-Z].*")) &&
+                password.matches(Regex(".*[0-9].*")) &&
+                password.matches(Regex(".*[!@#$%^&*].*")) &&
                 confirmPassword.isNotBlank() &&
                 password == confirmPassword &&
                 licenseNumber.isNotBlank() &&

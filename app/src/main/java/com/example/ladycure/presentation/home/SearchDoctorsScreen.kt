@@ -55,6 +55,12 @@ import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.DoctorCard
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * Composable function for the Search Doctors Screen.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param snackbarController The SnackbarController for displaying messages.
+ */
 @Composable
 fun SearchDoctorsScreen(navController: NavHostController, snackbarController: SnackbarController) {
     val searchQuery = remember { mutableStateOf("") }
@@ -191,6 +197,13 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
     }
 }
 
+/**
+ * Composable function for the Search Bar.
+ *
+ * @param value The current value of the search query.
+ * @param onValueChange Callback for when the search query changes.
+ * @param modifier The modifier for the search bar.
+ */
 @Composable
 private fun SearchBar(
     value: String,
@@ -244,6 +257,11 @@ private fun SearchBar(
     )
 }
 
+/**
+ * Composable function for displaying Popular Categories.
+ *
+ * @param navController The NavHostController for navigation.
+ */
 @Composable
 private fun PopularCategories(navController: NavHostController) {
 
@@ -291,6 +309,13 @@ private fun PopularCategories(navController: NavHostController) {
     }
 }
 
+/**
+ * Composable function for a Popular Category Card.
+ *
+ * @param cardColor The background color of the card.
+ * @param category The Speciality object representing the category.
+ * @param onClick Callback for when the card is clicked.
+ */
 @Composable
 private fun PopularCategoryCard(
     cardColor: Color,
@@ -301,7 +326,7 @@ private fun PopularCategoryCard(
         modifier = Modifier.shadow(
             elevation = 2.dp,
             shape = RoundedCornerShape(20.dp)
-        ) // Apply shadow here
+        )
     ) {
         Card(
             onClick = onClick,
@@ -345,6 +370,13 @@ private fun PopularCategoryCard(
     }
 }
 
+/**
+ * Composable function for a Doctor Speciality Card.
+ *
+ * @param speciality The Speciality object for the card.
+ * @param navController The NavHostController for navigation.
+ * @param modifier The modifier for the card.
+ */
 @Composable
 private fun DoctorSpecialityCard(
     speciality: Speciality,
@@ -401,5 +433,3 @@ private fun DoctorSpecialityCard(
     }
 
 }
-
-

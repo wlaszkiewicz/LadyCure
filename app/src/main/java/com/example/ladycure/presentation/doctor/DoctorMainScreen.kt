@@ -102,6 +102,13 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
+/**
+ * Main screen for the doctor's home view, displaying appointments, stats, and news.
+ *
+ * @param navController The navigation controller for handling navigation events.
+ * @param snackbarController The snackbar controller for displaying messages.
+ * @param viewModel The view model providing data for the doctor home screen.
+ */
 @Composable
 fun DoctorHomeScreen(
     navController: NavHostController,
@@ -115,7 +122,6 @@ fun DoctorHomeScreen(
     val nearestAppointment by viewModel.nearestAppointment.collectAsState()
 
 
-    // Show error message if any
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
             snackbarController.showMessage(error)
@@ -210,11 +216,20 @@ fun DoctorHomeScreen(
     }
 }
 
-val BookedColor = BabyBlue.copy(alpha = 0.6f) // A distinct color for booked slots
-val AvailableColor = Purple.copy(alpha = 0.4f) // A lighter color for available slots
+val BookedColor = BabyBlue.copy(alpha = 0.6f)
+val AvailableColor = Purple.copy(alpha = 0.4f)
 val PastColor = Color(0xFFD6A6C2)
 val CurrentTimeColor = Purple
 
+/**
+ * Displays today's schedule with a timeline of appointments.
+ *
+ * @param allAppointments A list of all appointments.
+ * @param currentTime The current time.
+ * @param startOfWorkday The start time of the workday.
+ * @param endOfWorkday The end time of the workday.
+ * @param onSelectAppointment Callback when an appointment slot is selected.
+ */
 @Composable
 fun TodaysSchedule(
     allAppointments: List<Appointment>,
@@ -310,7 +325,6 @@ fun TodaysSchedule(
                     val totalWorkdayMinutes =
                         ChronoUnit.MINUTES.between(workDayStart, LocalTime.of(17, 0))
 
-                    // Layer 1: Base schedule
                     val todaysAppointments = allAppointments
                         .filter { it.date == LocalDate.now() }
                         .sortedBy { it.time }
@@ -320,7 +334,6 @@ fun TodaysSchedule(
                         val appointmentEnd =
                             appointment.time.plusMinutes(appointment.type.durationInMinutes.toLong())
 
-                        // Draw AVAILABLE slot
                         val freeTimeMinutes = ChronoUnit.MINUTES.between(lastTime, appointmentStart)
                         if (freeTimeMinutes > 0) {
                             val freeSlotWidth =
@@ -334,11 +347,10 @@ fun TodaysSchedule(
                                     .width(freeSlotWidth)
                                     .offset(x = freeSlotOffset)
                                     .background(AvailableColor)
-                                    .border(width = 1.dp, color = Color.White) // ADD BORDER
+                                    .border(width = 1.dp, color = Color.White)
                             )
                         }
 
-                        // Draw BOOKED slot
                         val bookedSlotWidth =
                             timelineWidth * (appointment.type.durationInMinutes.toFloat() / totalWorkdayMinutes)
                         val bookedSlotOffset = timelineWidth * (ChronoUnit.MINUTES.between(
@@ -354,12 +366,11 @@ fun TodaysSchedule(
                                 .clickable {
                                     onSelectAppointment(appointment)
                                 }
-                                .border(width = 1.dp, color = Color.White) // ADD BORDER
+                                .border(width = 1.dp, color = Color.White)
                         )
                         lastTime = appointmentEnd
                     }
 
-                    // Draw final AVAILABLE slot
                     val remainingMinutes = ChronoUnit.MINUTES.between(lastTime, LocalTime.of(17, 0))
                     if (remainingMinutes > 0) {
                         val freeSlotWidth =
@@ -373,11 +384,10 @@ fun TodaysSchedule(
                                 .width(freeSlotWidth)
                                 .offset(x = freeSlotOffset)
                                 .background(AvailableColor)
-                                .border(width = 1.dp, color = Color.White) // ADD BORDER
+                                .border(width = 1.dp, color = Color.White)
                         )
                     }
 
-                    // ... Layer 2 (Past Overlay) and Layer 3 (Current Time) remain the same ...
                     if (currentTime.isAfter(workDayStart)) {
                         val minutesIntoDay = ChronoUnit.MINUTES.between(workDayStart, currentTime)
                             .coerceAtMost(totalWorkdayMinutes)
@@ -437,7 +447,9 @@ fun TodaysSchedule(
     }
 }
 
-
+/**
+ * Displays a legend for the timeline colors.
+ */
 @Composable
 private fun TimelineLegend() {
     Row(
@@ -454,6 +466,12 @@ private fun TimelineLegend() {
     }
 }
 
+/**
+ * Represents a single item in the timeline legend.
+ *
+ * @param color The color of the legend item.
+ * @param label The text label for the legend item.
+ */
 @Composable
 private fun LegendItem(color: Color, label: String) {
     Row(
@@ -472,6 +490,14 @@ private fun LegendItem(color: Color, label: String) {
     }
 }
 
+/**
+ * Displays the next appointment card.
+ *
+ * @param nearestAppointment The nearest upcoming appointment.
+ * @param onShowEditStatusDialog Callback to show the edit status dialog.
+ * @param onViewAll Callback to navigate to all appointments.
+ * @param onShowDetailsDialog Callback to show the details dialog for an appointment.
+ */
 @Composable
 fun NextAppointmentCard(
     nearestAppointment: Appointment?,
@@ -512,6 +538,13 @@ fun NextAppointmentCard(
     }
 }
 
+/**
+ * Displays the content of an appointment card.
+ *
+ * @param appointment The appointment to display.
+ * @param onShowEditStatusDialog Callback to show the edit status dialog.
+ * @param onShowDetailsDialog Callback to show the details dialog for the appointment.
+ */
 @Composable
 private fun AppointmentCardContent(
     appointment: Appointment,
@@ -533,14 +566,11 @@ private fun AppointmentCardContent(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Calendar date box (unchanged)
             DateBox(appointment.date)
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Main content column
             Column(modifier = Modifier.weight(1f)) {
-                // Patient name and price
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -566,12 +596,10 @@ private fun AppointmentCardContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Time and appointment type - now in a cleaner row format
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Time with icon
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
@@ -586,7 +614,6 @@ private fun AppointmentCardContent(
                         )
                     }
 
-                    // Divider
                     Box(
                         modifier = Modifier
                             .height(16.dp)
@@ -594,7 +621,6 @@ private fun AppointmentCardContent(
                             .background(Color.LightGray)
                     )
 
-                    // Appointment type
                     Text(
                         text = appointment.type.displayName,
                         style = MaterialTheme.typography.labelMedium.copy(
@@ -608,7 +634,6 @@ private fun AppointmentCardContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Status and relative time
                 StatusRow(
                     status = appointment.status,
                     isToday = isToday,
@@ -625,6 +650,11 @@ private fun AppointmentCardContent(
     }
 }
 
+/**
+ * Displays a formatted date box for an appointment.
+ *
+ * @param date The date to display.
+ */
 @Composable
 private fun DateBox(date: LocalDate) {
     Box(
@@ -674,7 +704,15 @@ private fun DateBox(date: LocalDate) {
     }
 }
 
-
+/**
+ * Displays the status and relative time of an appointment.
+ *
+ * @param status The status of the appointment.
+ * @param isToday True if the appointment is today.
+ * @param isTomorrow True if the appointment is tomorrow.
+ * @param appointmentDate The date of the appointment.
+ * @param onClick Callback when the status is clicked.
+ */
 @Composable
 private fun StatusRow(
     status: Status,
@@ -693,9 +731,6 @@ private fun StatusRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Status indicator
-
-
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
@@ -710,8 +745,6 @@ private fun StatusRow(
             )
         }
 
-
-        // Relative time
         Text(
             text = when {
                 isToday -> "Today"
@@ -728,6 +761,9 @@ private fun StatusRow(
     }
 }
 
+/**
+ * Displays an empty state message when there are no upcoming appointments.
+ */
 @Composable
 private fun EmptyState() {
     Surface(
@@ -757,7 +793,12 @@ private fun EmptyState() {
     }
 }
 
-
+/**
+ * Displays a row of statistics cards.
+ *
+ * @param todaysCount The count of appointments for today.
+ * @param completedCount The count of completed appointments for today.
+ */
 @Composable
 private fun StatsRow(
     todaysCount: Int,
@@ -768,17 +809,14 @@ private fun StatsRow(
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
     ) {
-        // Appointments Today
         StatCard(
             value = todaysCount.toString(),
             label = "Today",
-
             icon = Icons.Default.Schedule,
             colorIcon = DefaultPrimary,
             modifier = Modifier.weight(1f)
         )
 
-        // Upcoming Appointments
         StatCard(
             value = (todaysCount - completedCount).toString(),
             label = "Upcoming",
@@ -787,7 +825,6 @@ private fun StatsRow(
             modifier = Modifier.weight(1f)
         )
 
-        // Completed Today
         StatCard(
             value = completedCount.toString(),
             label = "Completed",
@@ -798,7 +835,14 @@ private fun StatsRow(
     }
 }
 
-
+/**
+ * Displays the header for the doctor's home screen.
+ *
+ * @param doctorData A map containing the doctor's data, including name and profile picture URL.
+ * @param unreadNotificationsCount The number of unread notifications.
+ * @param onNotificationClick Callback for notification icon click.
+ * @param onProfileClick Callback for profile avatar click.
+ */
 @Composable
 private fun DoctorHeader(
     doctorData: Map<String, Any>?,
@@ -870,7 +914,6 @@ private fun DoctorHeader(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Doctor avatar
             Box(
                 modifier = Modifier
                     .size(56.dp)
@@ -915,8 +958,14 @@ private fun DoctorHeader(
     }
 }
 
-
-// Helper function for countdown
+/**
+ * Calculates the time remaining until the end of the workday.
+ *
+ * @param now The current time.
+ * @param startOfWorkday The start time of the workday.
+ * @param endOfWorkday The end time of the workday.
+ * @return A string representing the time remaining or workday status.
+ */
 fun calculateTimeRemaining(
     now: LocalTime,
     startOfWorkday: LocalTime,
@@ -934,7 +983,12 @@ fun calculateTimeRemaining(
     }
 }
 
-
+/**
+ * Displays a carousel of medical news items.
+ *
+ * @param navController The navigation controller.
+ * @param modifier The modifier for this composable.
+ */
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun NewsCarousel(
@@ -1011,7 +1065,6 @@ fun NewsCarousel(
             )
         }
 
-        // Add page indicators
         HorizontalPagerIndicator(
             pagerState = pagerState,
             modifier = Modifier
@@ -1023,7 +1076,15 @@ fun NewsCarousel(
     }
 }
 
-
+/**
+ * Data class representing a news item.
+ *
+ * @param title The title of the news.
+ * @param summary A brief summary of the news.
+ * @param category The category of the news.
+ * @param imageUrl The URL of the image for the news item.
+ * @param time The time when the news was published.
+ */
 data class NewsItemData(
     val title: String,
     val summary: String,
@@ -1032,6 +1093,17 @@ data class NewsItemData(
     val time: String
 )
 
+/**
+ * Displays a news card.
+ *
+ * @param title The title of the news.
+ * @param summary A brief summary of the news.
+ * @param category The category of the news.
+ * @param imageUrl The URL of the image for the news item.
+ * @param time The time when the news was published.
+ * @param modifier The modifier for this composable.
+ * @param onClick Callback when the news card is clicked.
+ */
 @Composable
 fun NewsCard(
     title: String,
@@ -1052,7 +1124,6 @@ fun NewsCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Image on the left
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -1087,9 +1158,7 @@ fun NewsCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Content on the right
             Column(modifier = Modifier.weight(1f)) {
-                // Category chip
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -1105,7 +1174,6 @@ fun NewsCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Title
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium.copy(
@@ -1117,7 +1185,6 @@ fun NewsCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Summary
                 Text(
                     text = summary,
                     style = MaterialTheme.typography.bodySmall,
@@ -1127,7 +1194,6 @@ fun NewsCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Time and read more
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1155,6 +1221,12 @@ fun NewsCard(
     }
 }
 
+/**
+ * Displays a confirmation dialog for an appointment.
+ *
+ * @param onDismiss Callback when the dialog is dismissed.
+ * @param onConfirm Callback when the confirm button is clicked.
+ */
 @Composable
 fun ConfirmAppointmentDialog(
     onDismiss: () -> Unit,
@@ -1182,6 +1254,15 @@ fun ConfirmAppointmentDialog(
     )
 }
 
+/**
+ * Displays a statistics card with an icon, value, and label.
+ *
+ * @param icon The icon to display.
+ * @param value The value to display.
+ * @param label The label for the statistic.
+ * @param colorIcon The color of the icon.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun StatCard(
     icon: ImageVector,
@@ -1234,7 +1315,15 @@ private fun StatCard(
     }
 }
 
-
+/**
+ * Displays a dialog with detailed information about an appointment.
+ *
+ * @param appointment The appointment to display details for.
+ * @param onDismiss Callback when the dialog is dismissed.
+ * @param onClickStatus Callback when the status chip is clicked.
+ * @param onMessage Callback when the message button is clicked.
+ * @param onCommentUpdated Callback when the appointment comment is updated.
+ */
 @Composable
 fun DetailsDialog(
     appointment: Appointment,
@@ -1247,7 +1336,6 @@ fun DetailsDialog(
     var showEditComment by remember { mutableStateOf(false) }
 
 
-    remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Green
         Status.PENDING -> Yellow
@@ -1267,7 +1355,6 @@ fun DetailsDialog(
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
             ) {
-                // Header with patient info
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1288,7 +1375,6 @@ fun DetailsDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Doctor avatar
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
@@ -1324,12 +1410,10 @@ fun DetailsDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Info chips
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            // Status chip
                             InfoChip(
                                 text = appointment.status.displayName,
                                 color = statusColor,
@@ -1340,13 +1424,11 @@ fun DetailsDialog(
                                 }
                             )
 
-                            // Duration chip
                             InfoChip(
                                 text = "${appointment.type.durationInMinutes} min",
                                 color = DefaultPrimary
                             )
 
-                            // Price chip
                             InfoChip(
                                 text = "$%.2f".format(appointment.price),
                                 color = BabyBlue
@@ -1355,11 +1437,9 @@ fun DetailsDialog(
                     }
                 }
 
-                // Appointment details
                 Column(
                     modifier = Modifier.padding(horizontal = 24.dp)
                 ) {
-                    // Date and time section
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1404,14 +1484,12 @@ fun DetailsDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Details section
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Location
                         AppointmentDetailItem(
                             icon = Icons.Default.LocationOn,
                             title = "Location",
@@ -1539,7 +1617,6 @@ fun DetailsDialog(
                     }
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Action buttons
                     if (appointment.status != Status.CANCELLED) {
                         Row(
                             modifier = Modifier
@@ -1564,7 +1641,6 @@ fun DetailsDialog(
                                     color = DefaultPrimary
                                 )
                             }
-                            // Reschedule button
                             Button(
                                 onClick = onMessage,
                                 shape = RoundedCornerShape(14.dp),
@@ -1587,5 +1663,4 @@ fun DetailsDialog(
             }
         }
     }
-
 }

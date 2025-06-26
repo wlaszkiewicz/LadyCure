@@ -15,17 +15,28 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/**
+ * ViewModel for the booking success screen, responsible for managing appointment details and calendar integration.
+ */
 class BookingSuccessViewModel(
     private val appointmentRepo: AppointmentRepository = AppointmentRepository()
 ) : ViewModel() {
-    // State variables
+    /** Indicates whether the appointment data is currently being loaded. */
     var isLoading by mutableStateOf(true)
         private set
+
+    /** Holds any error message that occurs during appointment loading or calendar integration. */
     var errorMessage by mutableStateOf<String?>(null)
         internal set
+
+    /** The loaded appointment details. */
     var appointment by mutableStateOf<Appointment?>(null)
         private set
 
+    /**
+     * Loads the appointment details from the repository based on the provided [appointmentId].
+     * @param appointmentId The ID of the appointment to load.
+     */
     fun loadAppointment(appointmentId: String) {
         viewModelScope.launch {
             try {
@@ -44,6 +55,10 @@ class BookingSuccessViewModel(
         }
     }
 
+    /**
+     * Adds the current appointment to the user's calendar.
+     * @param context The [Context] used to start the calendar activity.
+     */
     fun addToCalendar(context: Context) {
         val appointment = appointment ?: return
 
@@ -78,13 +93,14 @@ class BookingSuccessViewModel(
         }
     }
 
-    // Helper properties for formatted date/time
+    /** Returns the formatted date of the appointment, or "Date unavailable" if not set. */
     val formattedDate: String
         get() = appointment?.let {
             SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
                 .format(it.dateTime.toDate())
         } ?: "Date unavailable"
 
+    /** Returns the formatted time of the appointment, or "Time unavailable" if not set. */
     val formattedTime: String
         get() = appointment?.let {
             SimpleDateFormat("h:mm a", Locale.getDefault())

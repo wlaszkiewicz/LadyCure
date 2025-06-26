@@ -66,6 +66,14 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Composable function for the Reschedule Appointment screen.
+ *
+ * @param appointmentId The ID of the appointment to reschedule.
+ * @param navController The NavController for navigation.
+ * @param snackbarController The SnackbarController to show messages.
+ * @param viewModel The ViewModel for the reschedule screen.
+ */
 @Composable
 fun RescheduleScreen(
     appointmentId: String,
@@ -73,7 +81,6 @@ fun RescheduleScreen(
     snackbarController: SnackbarController,
     viewModel: RescheduleViewModel = viewModel()
 ) {
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val error = viewModel.error
     val appointment = viewModel.appointment
@@ -81,12 +88,10 @@ fun RescheduleScreen(
     val showRescheduleDialog = viewModel.showRescheduleDialog
     val showRescheduleSuccessDialog = viewModel.showRescheduleSuccessDialog
 
-    // Initialize data loading
     LaunchedEffect(appointmentId) {
         viewModel.loadAppointmentData(appointmentId)
     }
 
-    // Handle errors
     LaunchedEffect(error) {
         if (error.isNotEmpty()) {
             snackbarController.showMessage(error)
@@ -119,7 +124,6 @@ fun RescheduleScreen(
                 .background(DefaultBackground)
                 .padding(16.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -144,7 +148,6 @@ fun RescheduleScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Doctor info
             AppointmentInfoHeader(
                 doctor = doctor,
                 appointment = appointment,
@@ -153,7 +156,6 @@ fun RescheduleScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Date selection
             if (viewModel.availableDates.isNotEmpty()) {
                 Text(
                     text = "Select New Date",
@@ -170,7 +172,6 @@ fun RescheduleScreen(
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
-                // Time slots - only show if we have a selected date
                 viewModel.selectedDate?.let {
                     Text(
                         text = "Available Time Slots",
@@ -226,7 +227,6 @@ fun RescheduleScreen(
                 viewModel.rescheduleAppointment(
                     appointmentId = appointmentId,
                     onSuccess = {
-                        // Success handled in ViewModel
                     },
                     onError = { errorMessage ->
                         snackbarController.showMessage(errorMessage)
@@ -258,6 +258,14 @@ fun RescheduleScreen(
     }
 }
 
+/**
+ * Composable for selecting a new date for rescheduling.
+ *
+ * @param availableDates List of dates available for selection.
+ * @param selectedDate The currently selected date.
+ * @param onDateSelected Callback when a date is selected.
+ * @param modifier Modifier for the layout.
+ */
 @Composable
 private fun DateSelectorRes(
     availableDates: List<LocalDate>,
@@ -296,6 +304,13 @@ private fun DateSelectorRes(
 }
 
 
+/**
+ * Composable to display the current appointment and doctor information.
+ *
+ * @param doctor The Doctor object for the appointment.
+ * @param appointment The Appointment object.
+ * @param modifier Modifier for the layout.
+ */
 @Composable
 private fun AppointmentInfoHeader(
     doctor: Doctor,
@@ -316,12 +331,10 @@ private fun AppointmentInfoHeader(
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
-            // First row - Doctor and service
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Doctor avatar
                 Box(
                     modifier = Modifier
                         .size(50.dp)
@@ -365,7 +378,6 @@ private fun AppointmentInfoHeader(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Doctor name and speciality
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -384,7 +396,6 @@ private fun AppointmentInfoHeader(
                     )
                 }
 
-                // Service icon
                 Icon(
                     painter = painterResource(speciality.icon),
                     contentDescription = "Service",
@@ -395,12 +406,10 @@ private fun AppointmentInfoHeader(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Second row - Service details and time
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Service name and duration
                 Text(
                     text = "${appointment.type.displayName} • ${appointment.type.durationInMinutes}min",
                     style = MaterialTheme.typography.bodySmall,
@@ -408,7 +417,6 @@ private fun AppointmentInfoHeader(
                     color = DefaultOnPrimary
                 )
 
-                // Price
                 Text(
                     text = "$${"%.2f".format(appointment.price)}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -419,7 +427,6 @@ private fun AppointmentInfoHeader(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Third row - Date and time
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -463,6 +470,14 @@ private fun AppointmentInfoHeader(
 }
 
 
+/**
+ * Composable for displaying a success dialog after an appointment has been rescheduled.
+ *
+ * @param onDismiss Callback when the dialog is dismissed.
+ * @param onViewAppointments Callback when the "View Appointments" button is clicked.
+ * @param newDate The new date of the rescheduled appointment.
+ * @param newTime The new time of the rescheduled appointment.
+ */
 @Composable
 fun RescheduleSuccessDialog(
     onDismiss: () -> Unit,
@@ -482,7 +497,6 @@ fun RescheduleSuccessDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Celebration icon
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -501,7 +515,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Title with emoji
                 Text(
                     text = "Rescheduled Successfully!",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -513,7 +526,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // New appointment details card
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = BabyBlue.copy(alpha = 0.05f),
@@ -551,7 +563,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Additional message
                 Text(
                     text = "We've sent a confirmation to your email. You can view all your appointments in the 'My Appointments' section.",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -563,7 +574,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Action button
                 OutlinedButton(
                     onClick = onViewAppointments,
                     shape = RoundedCornerShape(14.dp),
@@ -588,6 +598,15 @@ fun RescheduleSuccessDialog(
     }
 }
 
+/**
+ * Composable for displaying a confirmation dialog before rescheduling an appointment.
+ *
+ * @param oldAppointment The original Appointment object.
+ * @param newDate The newly selected date for the appointment.
+ * @param newTime The newly selected time for the appointment.
+ * @param onConfirm Callback when the reschedule is confirmed.
+ * @param onDismiss Callback when the dialog is dismissed.
+ */
 @Composable
 private fun RescheduleConfirmationDialog(
     oldAppointment: Appointment,
@@ -615,7 +634,6 @@ private fun RescheduleConfirmationDialog(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Current appointment
                 Text(
                     text = "Current Appointment",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -681,7 +699,6 @@ private fun RescheduleConfirmationDialog(
                     }
                 }
 
-                // Arrow icon
                 Icon(
                     imageVector = Icons.Default.ArrowDownward,
                     contentDescription = "Reschedule to",
@@ -692,7 +709,6 @@ private fun RescheduleConfirmationDialog(
                         .padding(vertical = 8.dp)
                 )
 
-                // New appointment
                 Text(
                     text = "New Appointment",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -758,7 +774,6 @@ private fun RescheduleConfirmationDialog(
                     }
                 }
 
-                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)

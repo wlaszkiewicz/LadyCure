@@ -36,6 +36,13 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
+/**
+ * Composable that displays quick selection buttons for dates (Weekdays, This Week, Clear).
+ *
+ * @param currentMonth The currently displayed month in the calendar.
+ * @param selectedDates The mutable state of the set of currently selected dates.
+ * @param modifier Modifier for the layout of this composable.
+ */
 @Composable
 internal fun QuickSelectionButtons(
     currentMonth: YearMonth,
@@ -66,6 +73,14 @@ internal fun QuickSelectionButtons(
     }
 }
 
+/**
+ * Composable for a save button with a loading indicator.
+ *
+ * @param isLoading Whether the save operation is currently in progress.
+ * @param enabled Whether the button is enabled for interaction.
+ * @param onClick The action to perform when the button is clicked.
+ * @param modifier Modifier for the layout of this composable.
+ */
 @Composable
 internal fun SaveButton(
     isLoading: Boolean,
@@ -96,6 +111,15 @@ internal fun SaveButton(
     }
 }
 
+/**
+ * Composable for picking a time range with "From" and "To" chips and a visual progress bar.
+ *
+ * @param startTime The currently selected start time.
+ * @param endTime The currently selected end time.
+ * @param onStartTimeClick The action to perform when the "From" time chip is clicked.
+ * @param onEndTimeClick The action to perform when the "To" time chip is clicked.
+ * @param modifier Modifier for the layout of this composable.
+ */
 @Composable
 fun TimeRangePicker(
     startTime: LocalTime,
@@ -125,7 +149,6 @@ fun TimeRangePicker(
             )
         }
 
-        // Visual time bar
         if (startTime.isBefore(endTime)) {
             Spacer(Modifier.height(16.dp))
             LinearProgressIndicator(
@@ -147,6 +170,14 @@ fun TimeRangePicker(
     }
 }
 
+/**
+ * Composable for a time picker chip displaying a time and a label.
+ *
+ * @param time The [LocalTime] to display in the chip.
+ * @param label The label to display next to the time.
+ * @param onClick The action to perform when the chip is clicked.
+ * @param modifier Modifier for the layout of this composable.
+ */
 @Composable
 fun TimePickerChip(
     time: LocalTime,
@@ -172,7 +203,14 @@ fun TimePickerChip(
     }
 }
 
-// Progress calculation for visual time bar
+/**
+ * Calculates the progress for a linear progress indicator based on a start and end time.
+ * The progress is relative to the current time within the given time range.
+ *
+ * @param start The start time of the range.
+ * @param end The end time of the range.
+ * @return A float representing the progress, clamped between 0f and 1f.
+ */
 private fun calculateProgress(start: LocalTime, end: LocalTime): Float {
     val totalMinutes = ChronoUnit.MINUTES.between(start, end)
     val currentMinutes = ChronoUnit.MINUTES.between(start, LocalTime.now())

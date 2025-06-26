@@ -89,6 +89,17 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.floor
 
+/**
+ * Main composable for the Book Appointment Screen.
+ * Handles the overall flow of booking an appointment, including date/time selection and doctor selection.
+ *
+ * @param navController NavController for navigation actions.
+ * @param snackbarController Optional SnackbarController for displaying messages.
+ * @param city The city for which to book the appointment.
+ * @param selectedService The type of appointment being booked.
+ * @param referralId Optional referral ID.
+ * @param viewModel The BookingViewModel instance.
+ */
 @Composable
 fun BookAppointmentScreen(
     navController: NavController,
@@ -100,17 +111,14 @@ fun BookAppointmentScreen(
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
 
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val showDoctorsForSlot = viewModel.showDoctorsForSlot
 
-    // Initialize data loading
     LaunchedEffect(selectedSpeciality) {
         viewModel.loadDoctorsBySpeciality(selectedSpeciality, city)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let { err ->
             snackbarController?.showMessage(err)
@@ -123,7 +131,6 @@ fun BookAppointmentScreen(
             .fillMaxSize()
             .background(DefaultBackground)
     ) {
-        // Header
         AppointmentHeader(
             showDoctorsForSlot = showDoctorsForSlot,
             onBackClick = {
@@ -177,6 +184,13 @@ fun BookAppointmentScreen(
     }
 }
 
+/**
+ * Composable for the header of the appointment screen.
+ * Displays a back button and the title based on the current step of the booking process.
+ *
+ * @param showDoctorsForSlot Boolean indicating if the doctor selection view is currently shown.
+ * @param onBackClick Lambda to be invoked when the back button is clicked.
+ */
 @Composable
 private fun AppointmentHeader(
     showDoctorsForSlot: Boolean,
@@ -215,6 +229,12 @@ private fun AppointmentHeader(
 }
 
 
+/**
+ * Composable for displaying service information as a chip.
+ *
+ * @param service The AppointmentType to display.
+ * @param modifier Modifier for this composable.
+ */
 @Composable
 fun ServiceInfoChip(
     service: AppointmentType,
@@ -254,6 +274,12 @@ fun ServiceInfoChip(
     }
 }
 
+/**
+ * Composable for displaying the selected city and speciality.
+ *
+ * @param city The selected city.
+ * @param speciality The selected speciality.
+ */
 @Composable
 internal fun LocationSpecialtyRow(
     city: String,
@@ -292,6 +318,15 @@ internal fun LocationSpecialtyRow(
 }
 
 
+/**
+ * Composable for displaying the list of available doctors for a selected time slot.
+ *
+ * @param selectedDate The currently selected date.
+ * @param selectedTimeSlot The currently selected time slot.
+ * @param doctors The list of doctors to display.
+ * @param onBackClick Lambda to be invoked when the back button is clicked (to change time slot).
+ * @param onDoctorSelected Lambda to be invoked when a doctor is selected, providing the doctor's ID.
+ */
 @Composable
 private fun DoctorSelectionView(
     selectedDate: LocalDate,
@@ -305,7 +340,6 @@ private fun DoctorSelectionView(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // Selected time info
         SelectedTimeInfo(
             date = selectedDate,
             time = selectedTimeSlot,
@@ -339,6 +373,14 @@ private fun DoctorSelectionView(
     }
 }
 
+/**
+ * Composable for displaying the selected date and time, with an option to change it.
+ *
+ * @param date The selected date.
+ * @param time The selected time.
+ * @param onBackClick Lambda to be invoked when the "Change" button or the info box is clicked.
+ * @param modifier Modifier for this composable.
+ */
 @Composable
 private fun SelectedTimeInfo(
     date: LocalDate,
@@ -428,7 +470,6 @@ private fun SelectedTimeInfo(
                 }
             }
 
-            // Change button with icon
             TextButton(
                 onClick = onBackClick,
                 colors = ButtonDefaults.textButtonColors(
@@ -454,14 +495,21 @@ private fun SelectedTimeInfo(
     }
 }
 
+/**
+ * Remembers the current local indication for ripple effects.
+ *
+ * @return An Indication.
+ */
 @Composable
 private fun rememberRippleIndication(): Indication {
     return LocalIndication.current
 }
 
+/**
+ * Composable for displaying a message when no doctors are available.
+ */
 @Composable
 private fun EmptyDoctorsView() {
-    // Technically, this should never happen if the filtering logic is correct but you never know so its here just in case
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -485,6 +533,13 @@ private fun EmptyDoctorsView() {
 }
 
 
+/**
+ * Composable for displaying a single doctor's information in a card.
+ *
+ * @param doctor The Doctor object to display.
+ * @param onSelect Lambda to be invoked when the doctor card is clicked.
+ * @param modifier Modifier for this composable.
+ */
 @Composable
 fun DoctorCard(
     doctor: Doctor,
@@ -504,12 +559,10 @@ fun DoctorCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header row with image and basic info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Doctor image
                 if (doctor.profilePictureUrl.isEmpty()) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
@@ -544,7 +597,6 @@ fun DoctorCard(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Doctor basic info
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -557,7 +609,6 @@ fun DoctorCard(
                         color = DefaultOnPrimary
                     )
 
-                    // Rating and experience in one line
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = 2.dp)
@@ -588,7 +639,6 @@ fun DoctorCard(
                         )
                     }
 
-                    // Languages in one line
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = 4.dp)
@@ -638,7 +688,6 @@ fun DoctorCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Bio (collapsible)
             var expanded by remember { mutableStateOf(false) }
             Column {
                 Row(
@@ -704,6 +753,12 @@ fun DoctorCard(
     }
 }
 
+/**
+ * Composable for displaying a star rating bar.
+ *
+ * @param rating The numerical rating to display (0.0 to 5.0).
+ * @param modifier Modifier for this composable.
+ */
 @Composable
 fun RatingBar(
     rating: Double,
@@ -742,6 +797,9 @@ fun RatingBar(
 }
 
 
+/**
+ * Composable for displaying a loading indicator and message.
+ */
 @Composable
 private fun LoadingView() {
     Column(
@@ -754,4 +812,3 @@ private fun LoadingView() {
         Text("Loading appointment data...", color = DefaultOnPrimary)
     }
 }
-

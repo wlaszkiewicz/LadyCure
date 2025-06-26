@@ -80,11 +80,23 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Data class representing information about a chat participant.
+ *
+ * @property uid The unique ID of the participant.
+ * @property fullName The full name of the participant.
+ * @property specialty The specialty of the participant, if applicable (e.g., for doctors).
+ * @property lastSeen Timestamp of when the participant was last seen online.
+ * @property lastMessage The content of the last message exchanged with this participant.
+ * @property lastMessageTime The timestamp of the last message.
+ * @property lastMessageSender The UID of the sender of the last message.
+ * @property unreadCount The number of unread messages from this participant.
+ * @property lastMessageSenderName The name of the sender of the last message.
+ */
 data class ChatParticipantInfo(
     val uid: String,
     val fullName: String,
     val specialty: String? = null,
-    //val isOnline: Boolean = false,
     val lastSeen: Long? = null,
     val lastMessage: String? = null,
     val lastMessageTime: Long? = null,
@@ -93,6 +105,13 @@ data class ChatParticipantInfo(
     val lastMessageSenderName: String? = null
 )
 
+/**
+ * Composable function for the Chat Screen.
+ * Displays a list of active conversations and allows users to start new chats.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param snackbarController The SnackbarController for displaying messages.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(navController: NavHostController, snackbarController: SnackbarController?) {
@@ -265,10 +284,8 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                                         ignoreCase = true
                                     )) &&
                                     when (filter) {
-//                                        "Online" -> participant.isOnline
-//                                        "Offline" -> !participant.isOnline
                                         "Unread" -> participant.unreadCount > 0
-                                        else -> true // "All"
+                                        else -> true
                                     }
                         }
                         .sortedByDescending { it.lastMessageTime ?: 0 }
@@ -349,6 +366,16 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
     }
 }
 
+/**
+ * Composable function for displaying a full-screen view of chat participants.
+ *
+ * @param role The role of the current user (e.g., "user", "doctor").
+ * @param participants The list of chat participants to display.
+ * @param isLoading Indicates whether the participant list is currently loading.
+ * @param onBack Callback for when the back button is pressed.
+ * @param onParticipantSelected Callback for when a participant is selected.
+ * @param modifier The Modifier for this composable.
+ */
 @Composable
 private fun ParticipantsFullScreenView(
     role: String,
@@ -449,6 +476,13 @@ private fun ParticipantsFullScreenView(
 }
 
 
+/**
+ * Composable function for displaying a single chat participant item in a list.
+ *
+ * @param participant The [ChatParticipantInfo] object to display.
+ * @param onClick Callback for when the participant item is clicked.
+ * @param modifier The Modifier for this composable.
+ */
 @Composable
 private fun ChatParticipantItem(
     participant: ChatParticipantInfo,
@@ -459,7 +493,6 @@ private fun ChatParticipantItem(
     var currentUserId by remember { mutableStateOf<String?>(null) }
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
-    //var isOnline by remember { mutableStateOf(participant.isOnline) }
 
     LaunchedEffect(participant.uid) {
         isLoading = true
@@ -471,9 +504,6 @@ private fun ChatParticipantItem(
             }
 
             profilePictureUrl = chatRepository.getUserProfilePicture(participant.uid)
-//            chatRepository.listenForUserStatus(participant.uid) { onlineStatus ->
-//                isOnline = onlineStatus
-//            }
         } finally {
             isLoading = false
         }
@@ -535,21 +565,6 @@ private fun ChatParticipantItem(
                         )
                     }
                 }
-
-//                Box(
-//                    modifier = Modifier
-//                        .size(12.dp)
-//                        .align(Alignment.BottomEnd)
-//                        .background(
-//                            color = if (isOnline) Color.Green else Color.Red,
-//                            shape = CircleShape
-//                        )
-//                        .border(
-//                            width = 1.dp,
-//                            color = Color.White,
-//                            shape = CircleShape
-//                        )
-//                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -621,6 +636,12 @@ private fun ChatParticipantItem(
     }
 }
 
+/**
+ * Formats a given timestamp into a string showing time and date.
+ *
+ * @param timestamp The timestamp in milliseconds.
+ * @return A formatted string (e.g., "HH:mm, d MMM").
+ */
 private fun formatMessageTimeWithDate(timestamp: Long): String {
     val date = Date(timestamp)
     val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -630,6 +651,13 @@ private fun formatMessageTimeWithDate(timestamp: Long): String {
     return "${timeFormat.format(date)}, ${dayFormat.format(date)} ${monthNameFormat.format(date)}"
 }
 
+/**
+ * Composable function for displaying a support dialog.
+ * Allows users to contact support via email.
+ *
+ * @param onDismiss Callback for when the dialog is dismissed.
+ * @param navController The NavHostController for navigation.
+ */
 @Composable
 private fun SupportDialog(
     onDismiss: () -> Unit,
@@ -686,6 +714,14 @@ private fun SupportDialog(
     )
 }
 
+/**
+ * Composable function for displaying the initial chat view when no active conversations exist.
+ *
+ * @param role The role of the current user.
+ * @param onFindDoctorsClick Callback for when the "Find Doctors" button is clicked.
+ * @param onUrgentHelpClick Callback for when the "Urgent Help" button is clicked.
+ * @param modifier The Modifier for this composable.
+ */
 @Composable
 private fun InitialChatView(
     role: String,
@@ -797,6 +833,13 @@ private fun InitialChatView(
     }
 }
 
+/**
+ * Composable function for displaying a list of doctors.
+ *
+ * @param participants The list of [ChatParticipantInfo] representing doctors.
+ * @param onParticipantSelected Callback for when a doctor is selected.
+ * @param modifier The Modifier for this composable.
+ */
 @Composable
 private fun DoctorsListView(
     participants: List<ChatParticipantInfo>,
@@ -862,7 +905,7 @@ private fun DoctorsListView(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Available now", // This might need a real-time status
+                            text = "Available now",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = DefaultOnPrimary.copy(alpha = 0.6f)
                             )
@@ -881,6 +924,13 @@ private fun DoctorsListView(
     }
 }
 
+/**
+ * Composable function for a search bar.
+ *
+ * @param value The current text in the search bar.
+ * @param onValueChange Callback for when the text in the search bar changes.
+ * @param modifier The Modifier for this composable.
+ */
 @Composable
 private fun SearchBar(
     value: String,
@@ -934,6 +984,14 @@ private fun SearchBar(
     )
 }
 
+/**
+ * Composable function for a filter chip, typically used for date or status filtering.
+ *
+ * @param label The text label for the chip.
+ * @param selected Whether the chip is currently selected.
+ * @param onSelected Callback for when the chip is selected.
+ * @param modifier The Modifier for this composable.
+ */
 @Composable
 fun DateFilterChip(
     label: String,
@@ -960,6 +1018,9 @@ fun DateFilterChip(
     }
 }
 
+/**
+ * Preview function for the ChatScreen composable.
+ */
 @Preview
 @Composable
 fun ChatScreenPreview() {

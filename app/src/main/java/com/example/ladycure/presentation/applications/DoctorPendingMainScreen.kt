@@ -81,6 +81,13 @@ import com.example.ladycure.utility.SnackbarController
 import java.time.format.DateTimeFormatter
 
 
+/**
+ * Main screen for displaying the doctor's application status.
+ *
+ * @param navController The navigation controller for navigating between screens.
+ * @param snackbarController The snackbar controller for displaying messages.
+ * @param viewModel The view model for managing doctor pending application data.
+ */
 @Composable
 fun DoctorPendingMainScreen(
     navController: NavController,
@@ -100,7 +107,6 @@ fun DoctorPendingMainScreen(
     }
 
     if (applicationData == null) {
-        // Show loading or error state
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -121,11 +127,10 @@ fun DoctorPendingMainScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp), // Consistent with HomeScreen Header padding
+                    .padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -182,7 +187,6 @@ fun DoctorPendingMainScreen(
     }
 
     if (showLogoutConfirmation) {
-        // Show logout confirmation dialog
         AlertDialog(
             onDismissRequest = { viewModel.dismissLogoutConfirmation() },
             title = { Text("Confirm Logout") },
@@ -209,6 +213,13 @@ fun DoctorPendingMainScreen(
     }
 }
 
+/**
+ * Displays the current status of the doctor's application.
+ *
+ * @param data The doctor application data.
+ * @param status The current status of the application.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun StatusCard(
     data: DoctorApplication,
@@ -316,6 +327,13 @@ private fun StatusCard(
     }
 }
 
+/**
+ * Displays a preview of the doctor's application.
+ *
+ * @param application The doctor application data.
+ * @param onViewDetails The callback for when the "View Full Application" button is clicked.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun ApplicationPreviewCard(
     application: DoctorApplication,
@@ -360,7 +378,6 @@ private fun ApplicationPreviewCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Doctor info section
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -400,12 +417,10 @@ private fun ApplicationPreviewCard(
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // First row with 2 items
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // License Number
                     GridItem(
                         icon = Icons.Default.Badge,
                         title = "License Number",
@@ -413,7 +428,6 @@ private fun ApplicationPreviewCard(
                         modifier = Modifier.weight(1f)
                     )
 
-                    // Experience
                     GridItem(
                         icon = Icons.Default.WorkHistory,
                         title = "Experience",
@@ -422,12 +436,10 @@ private fun ApplicationPreviewCard(
                     )
                 }
 
-                // Second row with 2 items
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Workplace
                     GridItem(
                         icon = Icons.Default.LocalHospital,
                         title = "Workplace",
@@ -447,7 +459,6 @@ private fun ApplicationPreviewCard(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // More subtle button
             OutlinedButton(
                 onClick = onViewDetails,
                 modifier = Modifier.fillMaxWidth(),
@@ -469,6 +480,14 @@ private fun ApplicationPreviewCard(
     }
 }
 
+/**
+ * A composable for displaying a grid item with an icon, title, and value.
+ *
+ * @param icon The icon to display.
+ * @param title The title of the item.
+ * @param value The value of the item.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun GridItem(
     icon: ImageVector,
@@ -506,12 +525,17 @@ private fun GridItem(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(start = 26.dp) // Align with icon
+                modifier = Modifier.padding(start = 26.dp)
             )
         }
     }
 }
 
+/**
+ * A card composable for contacting support.
+ *
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun ContactSupportCard(modifier: Modifier = Modifier) {
     Surface(
@@ -557,6 +581,13 @@ private fun ContactSupportCard(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * A dialog displaying the full details of a doctor's application.
+ *
+ * @param application The doctor application data to display.
+ * @param onDismiss The callback for when the dialog is dismissed.
+ * @param viewModel The view model for managing doctor pending application data.
+ */
 @Composable
 private fun FullApplicationDialog(
     application: DoctorApplication,
@@ -579,7 +610,6 @@ private fun FullApplicationDialog(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                // Header with close button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -632,7 +662,6 @@ private fun FullApplicationDialog(
                         .padding(horizontal = 24.dp)
                         .weight(1f)
                 ) {
-                    // Personal Information Section
                     SectionHeader(
                         title = "Personal Information",
                         icon = Icons.Default.Person
@@ -668,7 +697,6 @@ private fun FullApplicationDialog(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Professional Information Section
                     SectionHeader(
                         title = "Professional Information",
                         icon = Icons.Default.Work
@@ -699,7 +727,6 @@ private fun FullApplicationDialog(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Documents Section
                     SectionHeader(
                         title = "Documents",
                         icon = Icons.Default.Description
@@ -707,7 +734,6 @@ private fun FullApplicationDialog(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // License Photo
                     DocumentPreviewItem(
                         title = "Medical License",
                         imageUrl = application.licensePhotoUrl,
@@ -716,7 +742,6 @@ private fun FullApplicationDialog(
                         viewModel = viewModel
                     )
 
-                    // Diploma
                     DocumentPreviewItem(
                         title = "Medical Diploma",
                         imageUrl = application.diplomaPhotoUrl,
@@ -726,7 +751,6 @@ private fun FullApplicationDialog(
                     )
                 }
 
-                // Footer with submission date
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -755,6 +779,13 @@ private fun FullApplicationDialog(
     }
 }
 
+/**
+ * A composable for displaying a section header with a title and an icon.
+ *
+ * @param title The title of the section.
+ * @param icon The icon for the section.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun SectionHeader(
     title: String,
@@ -782,6 +813,15 @@ private fun SectionHeader(
     }
 }
 
+/**
+ * A composable for displaying a document preview item with a title, image, and download button.
+ *
+ * @param title The title of the document.
+ * @param imageUrl The URL of the document image.
+ * @param context The context.
+ * @param modifier The modifier for this composable.
+ * @param viewModel The view model for managing doctor pending application data.
+ */
 @Composable
 private fun DocumentPreviewItem(
     title: String,
@@ -843,6 +883,14 @@ private fun DocumentPreviewItem(
     }
 }
 
+/**
+ * A composable for displaying a single detail row in the application details.
+ *
+ * @param icon The icon to display next to the detail.
+ * @param title The title of the detail.
+ * @param value The value of the detail.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun ApplicationDetailRow(
     icon: ImageVector,

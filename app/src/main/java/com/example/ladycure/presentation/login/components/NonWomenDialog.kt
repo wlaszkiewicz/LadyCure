@@ -37,6 +37,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.ladycure.R
 
+/**
+ * A dialog displayed to users who are not identified as women,
+ * informing them about the app's primary focus on women's health.
+ *
+ * @param onContinue Lambda to be invoked when the user chooses to continue to the app.
+ * @param onUninstall Lambda to be invoked when the user chooses that the app is not for them (suggesting uninstallation).
+ * @param onDismiss Lambda to be invoked when the dialog is dismissed.
+ */
 @Composable
 fun NonWomanWelcomeDialog(
     onContinue: () -> Unit,

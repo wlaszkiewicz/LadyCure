@@ -25,6 +25,16 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * ViewModel for the confirmation screen, handling the display of appointment details,
+ * referral uploads, and appointment booking.
+ *
+ * @param userRepo Repository for user-related operations.
+ * @param authRepo Repository for authentication-related operations.
+ * @param doctorRepo Repository for doctor-related operations.
+ * @param appointmentRepo Repository for appointment-related operations.
+ * @param referralRepo Repository for referral storage operations.
+ */
 class ConfirmationViewModel(
     private val userRepo: UserRepository = UserRepository(),
     private val authRepo: AuthRepository = AuthRepository(),
@@ -33,28 +43,73 @@ class ConfirmationViewModel(
     private val referralRepo: StorageRepository = StorageRepository()
 ) : ViewModel() {
 
-    // State variables
+    /**
+     * Holds the doctor's information as a map.
+     */
     var doctorInfo by mutableStateOf<Map<String, Any>?>(null)
         private set
+
+    /**
+     * Indicates whether data is currently being loaded.
+     */
     var isLoading by mutableStateOf(true)
         private set
+
+    /**
+     * Holds any error message that occurs during operations.
+     */
     var errorMessage by mutableStateOf<String?>(null)
         internal set
+
+    /**
+     * Holds the name of the patient.
+     */
     var userName by mutableStateOf("Patient unavailable")
         private set
+
+    /**
+     * Holds the referral document information.
+     */
     var referral by mutableStateOf<Referral?>(null)
         private set
+
+    /**
+     * Indicates whether a referral is currently being uploaded.
+     */
     var isUploading by mutableStateOf(false)
         private set
+
+    /**
+     * Indicates whether the referral upload was successful.
+     */
     var showUploadSuccess by mutableStateOf(false)
         private set
+
+    /**
+     * Current progress of the referral upload (0f to 1f).
+     */
     var uploadProgress by mutableStateOf(0f)
         private set
+
+    /**
+     * The timestamp of the appointment.
+     */
     var dateTime by mutableStateOf(Timestamp.now())
 
+    /**
+     * Indicates if the selected file is too large for upload.
+     */
     var tooLarge by mutableStateOf(false)
         internal set
 
+    /**
+     * Loads initial data required for the confirmation screen, including user name,
+     * doctor information, and optional referral details.
+     *
+     * @param doctorId The ID of the selected doctor.
+     * @param timestamp The timestamp of the selected appointment.
+     * @param referralId The optional ID of the referral document.
+     */
     fun loadInitialData(
         doctorId: String,
         timestamp: Timestamp,
@@ -62,16 +117,13 @@ class ConfirmationViewModel(
     ) {
         viewModelScope.launch {
             try {
-
                 dateTime = timestamp
-                // Load user name
                 userName = withContext(Dispatchers.IO) {
                     "${userRepo.getUserField("name").getOrNull()} ${
                         userRepo.getUserField("surname").getOrNull()
                     }"
                 }
 
-                // Load doctor info
                 val result = withContext(Dispatchers.IO) {
                     doctorRepo.getDoctorById(doctorId)
                 }
@@ -82,7 +134,6 @@ class ConfirmationViewModel(
                     errorMessage = "Failed to load doctor details"
                 }
 
-                // Load referral if exists
                 if (referralId != null) {
                     val referralResult = withContext(Dispatchers.IO) {
                         referralRepo.getReferralById(referralId)
@@ -102,6 +153,16 @@ class ConfirmationViewModel(
         }
     }
 
+    /**
+     * Uploads or replaces a referral PDF document.
+     *
+     * @param uri The URI of the PDF file to upload.
+     * @param referralId The ID of the referral document.
+     * @param appointmentType The type of appointment, used for service identification.
+     * @param context The Android context, used for file size checking.
+     * @param onSuccess Callback function to be invoked upon successful upload.
+     * @param onError Callback function to be invoked if an error occurs during upload.
+     */
     fun uploadReferral(
         uri: Uri,
         referralId: String,
@@ -151,6 +212,15 @@ class ConfirmationViewModel(
         }
     }
 
+    /**
+     * Books a new appointment.
+     *
+     * @param doctorId The ID of the doctor for the appointment.
+     * @param timestamp The timestamp of the appointment.
+     * @param appointmentType The type of appointment.
+     * @param onSuccess Callback function to be invoked upon successful booking, providing the appointment ID.
+     * @param onError Callback function to be invoked if an error occurs during booking.
+     */
     fun bookAppointment(
         doctorId: String,
         timestamp: Timestamp,
@@ -175,6 +245,14 @@ class ConfirmationViewModel(
         }
     }
 
+    /**
+     * Creates an [Appointment] object based on the provided details.
+     *
+     * @param doctorId The ID of the doctor.
+     * @param timestamp The timestamp of the appointment.
+     * @param appointmentType The type of the appointment.
+     * @return An [Appointment] object.
+     */
     private fun createAppointment(
         doctorId: String,
         timestamp: Timestamp,
@@ -196,7 +274,9 @@ class ConfirmationViewModel(
         )
     }
 
-    // Helper properties for date/time display
+    /**
+     * Formatted date string for display.
+     */
     val formattedDate: String
         get() = doctorInfo?.let {
             val date = dateTime.toDate().toInstant()
@@ -205,6 +285,9 @@ class ConfirmationViewModel(
             date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d"))
         } ?: "Date unavailable"
 
+    /**
+     * Formatted time string for display.
+     */
     val formattedTime: String
         get() = doctorInfo?.let {
             val time = dateTime.toDate().toInstant()
@@ -212,6 +295,4 @@ class ConfirmationViewModel(
                 .toLocalTime()
             time.format(DateTimeFormatter.ofPattern("h:mm a", Locale.US))
         } ?: "Time unavailable"
-
-
 }

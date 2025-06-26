@@ -55,6 +55,15 @@ import androidx.navigation.NavController
 import com.example.ladycure.R
 import com.example.ladycure.utility.SnackbarController
 
+/**
+ * Composable function that displays the booking success screen.
+ *
+ * @param navController The NavController used for navigation.
+ * @param appointmentId The ID of the successfully booked appointment.
+ * @param referralId The ID of the referral, if applicable.
+ * @param snackbarController The SnackbarController to show messages.
+ * @param viewModel The BookingSuccessViewModel to manage state and logic.
+ */
 @Composable
 fun BookingSuccessScreen(
     navController: NavController,
@@ -63,25 +72,21 @@ fun BookingSuccessScreen(
     snackbarController: SnackbarController,
     viewModel: BookingSuccessViewModel = viewModel()
 ) {
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val appointment = viewModel.appointment
     val context = LocalContext.current
 
-    // Initialize data loading
     LaunchedEffect(appointmentId) {
         viewModel.loadAppointment(appointmentId)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarController.showMessage(it)
             viewModel.errorMessage = null
         }
     }
-
 
     if (isLoading || appointment == null) {
         Box(
@@ -180,7 +185,6 @@ fun BookingSuccessScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Appointment summary card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -281,7 +285,7 @@ fun BookingSuccessScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "$${"%.2f".format(appointment.type.price * 1.09)}", // Price + 9% tax
+                                text = "$${"%.2f".format(appointment.type.price * 1.09)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = DefaultPrimary
@@ -332,7 +336,6 @@ fun BookingSuccessScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Reminder card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(

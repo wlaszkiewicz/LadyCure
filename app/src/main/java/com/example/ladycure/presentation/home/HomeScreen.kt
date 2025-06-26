@@ -82,7 +82,6 @@ fun HomeScreen(
     snackbarController: SnackbarController? = null,
     homeViewModel: HomeViewModel = viewModel()
 ) {
-    // Observe the state from the ViewModel
     val uiState by homeViewModel.uiState.collectAsState()
 
     val locationPermissionState = rememberPermissionState(
@@ -162,7 +161,7 @@ fun HomeScreen(
                 initialCity = uiState.initialCity,
                 availableCities = uiState.availableCities,
                 onCitySelected = { city ->
-                    homeViewModel.onCitySelected(city) // Send event to ViewModel
+                    homeViewModel.onCitySelected(city)
                 },
                 onSpecializationSelected = { specialization ->
                     val cityToUse = uiState.selectedCity ?: uiState.initialCity
@@ -296,7 +295,14 @@ fun HomeScreen(
     }
 }
 
-
+/**
+ * Finds the nearest city from a predefined list of cities based on given latitude and longitude.
+ * Uses the haversine formula to calculate the distance between two geographical points.
+ *
+ * @param latitude The latitude of the current location.
+ * @param longitude The longitude of the current location.
+ * @return The name of the nearest city, or "Warszawa" if no cities are defined or an error occurs.
+ */
 fun findNearestCity(latitude: Double, longitude: Double): String {
     val cities = mapOf(
         "Warszawa" to Pair(52.2297, 21.0122),
@@ -312,6 +318,15 @@ fun findNearestCity(latitude: Double, longitude: Double): String {
     }?.key ?: "Warszawa"
 }
 
+/**
+ * Calculates the great-circle distance between two points on a sphere (earth) given their longitudes and latitudes.
+ *
+ * @param lat1 Latitude of the first point in degrees.
+ * @param lon1 Longitude of the first point in degrees.
+ * @param lat2 Latitude of the second point in degrees.
+ * @param lon2 Longitude of the second point in degrees.
+ * @return The distance between the two points in kilometers.
+ */
 fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val R = 6371.0 // earth radius in km
     val dLat = Math.toRadians(lat2 - lat1)
@@ -327,6 +342,13 @@ fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
 }
 
 
+/**
+ * A composable function that displays a daily health tip with options to refresh or view today's tip.
+ *
+ * @param dailyTip The health tip string to be displayed.
+ * @param onRefreshClick Lambda function to be invoked when the refresh button is clicked.
+ * @param onTodayClick Lambda function to be invoked when the "Today's Tip" button is clicked.
+ */
 @Composable
 fun HealthTipCard(
     dailyTip: String,
@@ -397,6 +419,15 @@ fun HealthTipCard(
     }
 }
 
+/**
+ * A composable function that displays the header section of the home screen, including user greeting,
+ * notification icon with unread count, and user profile picture.
+ *
+ * @param userData A map containing user data, typically including "name" and "profilePictureUrl".
+ * @param unreadCount The number of unread notifications to display on the badge.
+ * @param onProfileClick Lambda function to be invoked when the profile picture is clicked.
+ * @param onNotificationClick Lambda function to be invoked when the notification icon is clicked.
+ */
 @Composable
 fun Header(
     userData: Map<String, Any>,
@@ -460,7 +491,6 @@ fun Header(
 
             Spacer(modifier = Modifier.size(16.dp))
 
-            // User avatar
             Box(
                 modifier = Modifier
                     .size(56.dp)

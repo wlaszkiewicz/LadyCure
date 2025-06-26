@@ -63,6 +63,12 @@ import com.example.ladycure.presentation.register.components.RegisterForm
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 
+/**
+ * Composable function for the registration screen.
+ *
+ * @param navController The NavController for navigating between screens.
+ * @param snackbarController The SnackbarController for displaying snackbar messages.
+ */
 @Composable
 fun RegisterScreen(navController: NavController, snackbarController: SnackbarController) {
     val viewModel: RegisterViewModel = viewModel(factory = RegisterViewModelFactory())
@@ -70,14 +76,12 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
     val coroutineScope = rememberCoroutineScope()
     var showContactUsDialog by remember { mutableStateOf(false) }
 
-    // Show snackbar when error occurs
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
             coroutineScope.launch {
                 snackbarController.showMessage(
                     message = error
                 )
-                // Clear error after showing
                 viewModel.clearError()
             }
         }
@@ -92,7 +96,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Header Section
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -150,12 +153,11 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Registration Form
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 140.dp) // Adjust padding to position the form below the image
-                    .zIndex(0f), // Ensure the form is below the image
+                    .padding(top = 140.dp)
+                    .zIndex(0f),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
                 colors = CardDefaults.cardColors(
@@ -183,7 +185,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Footer Section
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(
             onClick = { navController.navigate("login") },
@@ -216,7 +217,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    // Title
                     Text(
                         text = "Apply!",
                         style = MaterialTheme.typography.titleLarge.copy(
@@ -228,7 +228,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Message
                     Text(
                         text = "If you're a doctor and wish to join our team, please fill out the application form. After submission, our admin will review your application and get back to you via email.",
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -251,7 +250,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -306,7 +304,16 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
     }
 }
 
+/**
+ * Factory for creating [RegisterViewModel] instances.
+ */
 class RegisterViewModelFactory : ViewModelProvider.Factory {
+    /**
+     * Creates a new instance of the given [Class].
+     * @param modelClass The Class to create a ViewModel for.
+     * @return A new instance of the ViewModel.
+     * @throws IllegalArgumentException if the given [modelClass] is not [RegisterViewModel].
+     */
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {

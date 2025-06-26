@@ -47,6 +47,12 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
 
+/**
+ * Composable function for the Welcome Screen.
+ * Handles user authentication, biometric prompts, and navigates based on user roles.
+ *
+ * @param navController The NavController to navigate between destinations.
+ */
 @Composable
 fun WelcomeScreen(navController: NavController) {
     val context = LocalContext.current
@@ -166,6 +172,14 @@ fun WelcomeScreen(navController: NavController) {
     }
 }
 
+/**
+ * Composable function for the welcome screen when a user is already logged in.
+ * Displays user information and provides options to continue with the current account or use a different one.
+ *
+ * @param user The FirebaseUser object representing the currently logged-in user.
+ * @param onContinue Lambda function to be invoked when the user chooses to continue with the current account.
+ * @param onUseDifferentAccount Lambda function to be invoked when the user chooses to use a different account.
+ */
 @Composable
 fun LoggedInWelcomeScreen(
     user: FirebaseUser,
@@ -258,6 +272,11 @@ fun LoggedInWelcomeScreen(
 }
 
 
+/**
+ * Composable function to display a loading indicator.
+ *
+ * @param isLoading Boolean state to control the visibility of the loading indicator.
+ */
 @Composable
 fun LoadingScreen(isLoading: Boolean) {
     if (isLoading) {
@@ -269,4 +288,3 @@ fun LoadingScreen(isLoading: Boolean) {
         }
     }
 }
-

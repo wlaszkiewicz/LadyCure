@@ -69,6 +69,14 @@ import com.example.ladycure.domain.model.NotificationType
 import com.example.ladycure.utility.SnackbarController
 import java.time.format.DateTimeFormatter
 
+/**
+ * Composable function for displaying the Notifications screen.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param snackbarController The SnackbarController for showing messages.
+ * @param role The role of the current user (e.g., "doctor", "patient").
+ * @param viewModel The NotificationsViewModel for managing notification data.
+ */
 @Composable
 fun NotificationsScreen(
     navController: NavHostController,
@@ -108,6 +116,25 @@ fun NotificationsScreen(
     )
 }
 
+/**
+ * Composable function for the main content of the Notifications screen.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param snackbarController The SnackbarController for showing messages.
+ * @param notifications The list of notifications to display.
+ * @param unreadCount The number of unread notifications.
+ * @param isDoctor True if the current user is a doctor, false otherwise.
+ * @param onNotificationClick Callback for when a notification is clicked.
+ * @param onReadNotification Callback for marking a notification as read.
+ * @param onUnreadNotification Callback for marking a notification as unread.
+ * @param onFilterChange Callback for when the notification filter changes.
+ * @param onTypeChange Callback for when the notification type filter changes.
+ * @param onMarkAllAsRead Callback for marking all notifications as read.
+ * @param onDeleteNotification Callback for deleting a notification.
+ * @param selectedFilter The currently selected notification filter.
+ * @param selectedType The currently selected notification type filter.
+ * @param errors An optional error message to display in a snackbar.
+ */
 @Composable
 private fun NotificationsContent(
     navController: NavHostController,
@@ -172,6 +199,18 @@ private fun NotificationsContent(
     }
 }
 
+/**
+ * Composable function for the notification filter controls.
+ *
+ * @param modifier The modifier for this composable.
+ * @param selectedFilter The currently selected notification filter.
+ * @param onFilterChange Callback for when the notification filter changes.
+ * @param unreadCount The number of unread notifications.
+ * @param onMarkAllAsRead Callback for marking all notifications as read.
+ * @param isDoctor True if the current user is a doctor, false otherwise.
+ * @param selectedType The currently selected notification type filter.
+ * @param onTypeSelected Callback for when the notification type filter changes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NotificationsFilterControls(
@@ -271,6 +310,12 @@ private fun NotificationsFilterControls(
 }
 
 
+/**
+ * Composable function for the top bar of the Notifications screen.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param unreadCount The number of unread notifications to display in the badge.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NotificationsTopBar(
@@ -329,6 +374,16 @@ private fun NotificationsTopBar(
 }
 
 
+/**
+ * Composable function for displaying a list of notifications with swipe-to-dismiss functionality.
+ *
+ * @param notifications The list of notifications to display.
+ * @param onNotificationClick Callback for when a notification is clicked.
+ * @param onReadNotification Callback for marking a notification as read.
+ * @param onUnreadNotification Callback for marking a notification as unread.
+ * @param modifier The modifier for this composable.
+ * @param onDeleteNotification Callback for deleting a notification.
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 private fun NotificationsList(
@@ -408,8 +463,8 @@ private fun NotificationsList(
                     }
                 },
                 directions = setOf(
-                    DismissDirection.StartToEnd, // right swipe to mark as read
-                    DismissDirection.EndToStart  // left swipe to delete
+                    DismissDirection.StartToEnd,
+                    DismissDirection.EndToStart
                 ),
                 dismissContent = {
                     NotificationItem(
@@ -421,6 +476,13 @@ private fun NotificationsList(
     }
 }
 
+/**
+ * Composable function for displaying a single notification item.
+ *
+ * @param notification The notification to display.
+ * @param onClick Callback for when the notification item is clicked.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun NotificationItem(
     notification: Notification,
@@ -528,6 +590,9 @@ private fun NotificationItem(
     }
 }
 
+/**
+ * Composable function for displaying a message when there are no notifications.
+ */
 @Composable
 private fun EmptyNotifications() {
     Box(
@@ -563,12 +628,25 @@ private fun EmptyNotifications() {
     }
 }
 
+/**
+ * Enum class representing different notification filters.
+ *
+ * @property displayName The display name for the filter.
+ */
 enum class NotificationFilter(val displayName: String) {
     ALL("All"),
     UNREAD("Unread"),
     READ("Read");
 
     companion object {
+        /**
+         * Returns a NotificationFilter based on the given NotificationType and base filter.
+         * This function currently just returns the base filter, but can be extended for more complex logic.
+         *
+         * @param type The NotificationType to consider.
+         * @param baseFilter The base NotificationFilter.
+         * @return The determined NotificationFilter.
+         */
         fun byType(type: NotificationType?, baseFilter: NotificationFilter): NotificationFilter {
             return baseFilter
         }

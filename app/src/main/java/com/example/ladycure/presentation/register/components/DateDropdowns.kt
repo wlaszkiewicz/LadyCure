@@ -27,6 +27,13 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+        /**
+         * A Composable function that displays a button which, when clicked, opens a date picker dialog.
+         *
+         * @param selectedDate The [LocalDate] currently selected and displayed on the button.
+         * @param onDateSelected A callback function invoked when a new date is selected in the dialog.
+         * @param modifier [Modifier] to be applied to the button.
+         */
 fun DatePickerButton(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,

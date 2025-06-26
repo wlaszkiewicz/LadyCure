@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -79,6 +78,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * Composable function for the Select Service Screen, allowing users to choose an appointment type.
+ *
+ * @param navController The NavController for navigating between screens.
+ * @param snackbarController The SnackbarController for displaying messages.
+ * @param doctorId The ID of the doctor if a specific doctor was selected.
+ * @param city The city if a general search was performed.
+ * @param speciality The medical speciality to display services for.
+ */
 @Composable
 fun SelectServiceScreen(
     navController: NavController,
@@ -231,7 +239,6 @@ fun SelectServiceScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            // Services list
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -333,7 +340,7 @@ fun SelectServiceScreen(
         }
 
         if (showUploadSuccessDialog) {
-            Dialog(onDismissRequest = {/* do nothing */ }) { // we dont want them to go back
+            Dialog(onDismissRequest = {/* do nothing */ }) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
@@ -387,6 +394,11 @@ fun SelectServiceScreen(
     }
 }
 
+/**
+ * Composable function for displaying a dialog when a selected file is too large.
+ *
+ * @param onDismiss Lambda to be invoked when the dialog is dismissed.
+ */
 @Composable
 fun FileTooLargeDialog(
     onDismiss: () -> Unit,
@@ -470,6 +482,13 @@ fun FileTooLargeDialog(
 }
 
 
+/**
+ * Composable function for displaying an individual service card.
+ *
+ * @param service The AppointmentType object representing the service.
+ * @param onClick Lambda to be invoked when the service card is clicked.
+ * @param modifier Modifier for customizing the layout of the service card.
+ */
 @Composable
 fun ServiceCard(
     service: AppointmentType,
@@ -501,7 +520,6 @@ fun ServiceCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Price badge
                 Text(
                     text = "$${service.price}",
                     style = MaterialTheme.typography.titleMedium,
@@ -516,7 +534,6 @@ fun ServiceCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Duration and referral info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -551,7 +568,6 @@ fun ServiceCard(
                 }
             }
 
-            // Additional info
             Text(
                 text = service.additionalInfo,
                 style = MaterialTheme.typography.bodyMedium,
@@ -559,7 +575,6 @@ fun ServiceCard(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Preparation instructions (collapsible)
             var showPreparation by remember { mutableStateOf(false) }
             Column {
                 Row(
@@ -595,7 +610,6 @@ fun ServiceCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Book button
             Button(
                 onClick = onClick,
                 modifier = Modifier.fillMaxWidth(),
@@ -611,6 +625,15 @@ fun ServiceCard(
     }
 }
 
+/**
+ * Composable function for displaying a dialog when a referral is required for a service.
+ *
+ * @param service The AppointmentType that requires a referral.
+ * @param onDismiss Lambda to be invoked when the dialog is dismissed.
+ * @param onUploadReferral Lambda to be invoked when the user chooses to upload the referral now.
+ * @param onBringLater Lambda to be invoked when the user chooses to bring the referral in person later.
+ * @param modifier Modifier for customizing the layout of the dialog.
+ */
 @Composable
 fun ReferralRequiredDialog(
     service: AppointmentType?,
@@ -630,7 +653,6 @@ fun ReferralRequiredDialog(
             Column(
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Header with icon
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -650,7 +672,6 @@ fun ReferralRequiredDialog(
                     )
                 }
 
-                // Content
                 Column(
                     modifier = Modifier.padding(bottom = 24.dp)
                 ) {
@@ -666,7 +687,6 @@ fun ReferralRequiredDialog(
                     )
                 }
 
-                // Action buttons
                 Column {
                     Button(
                         onClick = onUploadReferral,
@@ -712,6 +732,9 @@ fun ReferralRequiredDialog(
     }
 }
 
+/**
+ * Preview for the SelectServiceScreen composable.
+ */
 @Preview
 @Composable
 fun SpecializationServicesScreenPreview() {
@@ -725,6 +748,9 @@ fun SpecializationServicesScreenPreview() {
     )
 }
 
+/**
+ * Preview for the ServiceCard composable.
+ */
 @Preview
 @Composable
 fun ServiceCardPreview() {
@@ -734,6 +760,9 @@ fun ServiceCardPreview() {
     )
 }
 
+/**
+ * Preview for the ReferralRequiredDialog composable.
+ */
 @Preview
 @Composable
 fun ReferralRequiredDialogPreview() {

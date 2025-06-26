@@ -70,6 +70,14 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
+/**
+ * Composable function for displaying the availability list screen.
+ *
+ * @param navController The NavController for navigation.
+ * @param snackbarController The SnackbarController for displaying messages.
+ * @param isAdminView Boolean indicating if the screen is viewed by an admin.
+ * @param doctorId The ID of the doctor whose availability is to be displayed (only if [isAdminView] is true).
+ */
 @Composable
 fun AvailabilityListScreen(
     navController: NavController,
@@ -212,6 +220,9 @@ fun AvailabilityListScreen(
     }
 }
 
+/**
+ * Composable function to display an empty availability state.
+ */
 @Composable
 private fun EmptyAvailabilityState() {
     Box(
@@ -249,6 +260,11 @@ private fun EmptyAvailabilityState() {
     }
 }
 
+/**
+ * Composable function to display the availability content.
+ *
+ * @param availabilitiesInMonth A map where the key is LocalDate and the value is a list of DoctorAvailability for that date.
+ */
 @Composable
 private fun AvailabilityContent(
     availabilitiesInMonth: Map<LocalDate?, List<DoctorAvailability>>
@@ -277,6 +293,13 @@ private fun AvailabilityContent(
     }
 }
 
+/**
+ * Composable function to display a single day's existing availability.
+ *
+ * @param date The LocalDate for which the availability is displayed.
+ * @param availabilities A list of DoctorAvailability for the given [date].
+ * @param modifier The Modifier to be applied to the layout.
+ */
 @Composable
 private fun ExistingAvailabilityDayItem(
     date: LocalDate?,
@@ -305,7 +328,6 @@ private fun ExistingAvailabilityDayItem(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Date header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -345,7 +367,6 @@ private fun ExistingAvailabilityDayItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Time slots
             availabilities.forEachIndexed { index, availability ->
                 val startTime = availability.startTime
                 val endTime = availability.endTime
@@ -410,6 +431,14 @@ private fun ExistingAvailabilityDayItem(
     }
 }
 
+/**
+ * Composable function to visualize time slots.
+ *
+ * @param startTime The start time of the availability block.
+ * @param endTime The end time of the availability block.
+ * @param availableSlots A list of LocalTime representing the available slots within the block.
+ * @param modifier The Modifier to be applied to the layout.
+ */
 @Composable
 private fun TimeSlotsVisualization(
     startTime: LocalTime,
@@ -417,14 +446,13 @@ private fun TimeSlotsVisualization(
     availableSlots: List<LocalTime>,
     modifier: Modifier = Modifier
 ) {
-    val slotDuration = 15 // minutes
+    val slotDuration = 15
     val allPossibleSlots = remember(startTime, endTime) {
         generateSequence(startTime) { it.plusMinutes(slotDuration.toLong()) }
             .takeWhile { it.isBefore(endTime) }
             .toList()
     }
 
-    // Filter availableSlots to only include those that are in allPossibleSlots
     val validAvailableSlots = remember(availableSlots, allPossibleSlots) {
         availableSlots.filter { it in allPossibleSlots }.toSet()
     }
@@ -432,7 +460,6 @@ private fun TimeSlotsVisualization(
     val expanded = remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        // Summary header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -460,7 +487,6 @@ private fun TimeSlotsVisualization(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Visual timeline bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -487,7 +513,6 @@ private fun TimeSlotsVisualization(
             }
         }
 
-        // Time markers
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -502,7 +527,6 @@ private fun TimeSlotsVisualization(
             )
         }
 
-        // Detailed slot list (expandable)
         AnimatedVisibility(
             visible = expanded.value,
             enter = fadeIn() + expandVertically(),
@@ -513,7 +537,6 @@ private fun TimeSlotsVisualization(
                     .fillMaxWidth()
                     .padding(top = 8.dp)
             ) {
-                // Group slots by hour for better readability
                 val slotsByHour = allPossibleSlots.groupBy { it.hour }
 
                 slotsByHour.forEach { (hour, hourSlots) ->

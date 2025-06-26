@@ -107,6 +107,13 @@ import com.example.ladycure.utility.SnackbarController
 import com.example.ladycure.utility.rememberImagePickerLauncher
 import java.time.LocalDate
 
+/**
+ * Composable function for the Doctor Application Screen.
+ * Allows doctors to submit their application with personal, professional, and address information.
+ *
+ * @param navController The NavController for navigation within the application.
+ * @param snackbarController The SnackbarController to display messages.
+ */
 @Composable
 fun DoctorApplicationScreen(
     navController: NavController,
@@ -118,7 +125,6 @@ fun DoctorApplicationScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var tooLarge = viewModel.tooLarge
 
-    // Show error messages
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let { error ->
             snackbarController.showMessage(error)
@@ -145,7 +151,7 @@ fun DoctorApplicationScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Spacer(modifier = Modifier.width(48.dp)) // Placeholder for left side
+                Spacer(modifier = Modifier.width(48.dp))
 
                 Box(
                     modifier = Modifier.weight(1f),
@@ -193,7 +199,9 @@ fun DoctorApplicationScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Personal Information Card
+            /**
+             * Card for Personal Information.
+             */
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -214,7 +222,6 @@ fun DoctorApplicationScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    // Email
                     OutlinedTextField(
                         value = viewModel.email,
                         onValueChange = { viewModel.email = it },
@@ -233,7 +240,6 @@ fun DoctorApplicationScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Name
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -259,7 +265,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Dob
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = "Date of Birth",
@@ -287,7 +292,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Password
                     OutlinedTextField(
                         value = viewModel.password,
                         onValueChange = { viewModel.password = it },
@@ -336,7 +340,9 @@ fun DoctorApplicationScreen(
                 }
             }
 
-            // Specialization card
+            /**
+             * Card for Specialization.
+             */
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -366,7 +372,9 @@ fun DoctorApplicationScreen(
                 }
             }
 
-            // Professional inf card
+            /**
+             * Card for Professional Information.
+             */
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -436,7 +444,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Years of experience
                     OutlinedTextField(
                         value = viewModel.yearsOfExperience,
                         onValueChange = { viewModel.yearsOfExperience = it },
@@ -459,7 +466,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Workplace
                     OutlinedTextField(
                         value = viewModel.currentWorkplace,
                         onValueChange = { viewModel.currentWorkplace = it },
@@ -475,7 +481,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    // Phone
                     OutlinedTextField(
                         value = viewModel.phoneNumber,
                         onValueChange = { viewModel.phoneNumber = it },
@@ -500,7 +505,9 @@ fun DoctorApplicationScreen(
                     )
                 }
             }
-            // Address inf card
+            /**
+             * Card for Address Information.
+             */
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -637,6 +644,9 @@ fun DoctorApplicationScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+        /**
+         * Loading overlay and progress indicator while submitting the application.
+         */
         if (viewModel.isLoading) {
             Box(
                 modifier = Modifier
@@ -659,7 +669,6 @@ fun DoctorApplicationScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    // Step indicator
                     Text(
                         text = "Step ${viewModel.currentStep} of ${viewModel.totalSteps}",
                         style = MaterialTheme.typography.bodySmall,
@@ -668,7 +677,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Linear progress with percentage
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         LinearProgressIndicator(
                             progress = { viewModel.progress },
@@ -702,6 +710,9 @@ fun DoctorApplicationScreen(
         }
     }
 
+    /**
+     * Success dialog displayed after successful application submission.
+     */
     if (showSuccessDialog) {
         Dialog(onDismissRequest = { showSuccessDialog = false }) {
             Surface(
@@ -714,7 +725,6 @@ fun DoctorApplicationScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(24.dp)
                 ) {
-                    // Success icon
                     Box(
                         modifier = Modifier
                             .size(80.dp)
@@ -783,6 +793,9 @@ fun DoctorApplicationScreen(
             }
         }
     }
+    /**
+     * Dialog to inform the user if a selected file is too large.
+     */
     if (tooLarge) {
         FileTooLargeDialog(
             onDismiss = { viewModel.tooLarge = false },
@@ -790,6 +803,12 @@ fun DoctorApplicationScreen(
     }
 }
 
+/**
+ * Composable function for a dropdown menu to select a medical speciality.
+ *
+ * @param selectedSpeciality The currently selected speciality.
+ * @param onSpecialitySelected Callback function when a speciality is selected.
+ */
 @Composable
 fun SpecialityDropdown(
     selectedSpeciality: Speciality,
@@ -836,6 +855,18 @@ fun SpecialityDropdown(
     }
 }
 
+/**
+ * Composable function for a file upload section, allowing users to select and display a file (image).
+ *
+ * @param title The title for the file upload section.
+ * @param fileUri The URI of the currently selected file.
+ * @param onFileSelected Callback function when a file is selected.
+ * @param onFileTooLarge Callback function when the selected file is too large.
+ * @param isError Boolean indicating if there is an error with the file selection.
+ * @param errorText The error message to display if [isError] is true.
+ * @param context The Android context.
+ * @param modifier The Modifier for this composable.
+ */
 @Composable
 fun FileUploadSection(
     title: String,
@@ -876,7 +907,6 @@ fun FileUploadSection(
                 contentScale = ContentScale.Crop
             )
 
-            // Remove file button
             OutlinedButton(
                 onClick = { onFileSelected(null) },
                 modifier = Modifier
@@ -917,4 +947,3 @@ fun FileUploadSection(
         }
     }
 }
-

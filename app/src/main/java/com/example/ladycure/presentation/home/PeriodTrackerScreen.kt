@@ -97,7 +97,15 @@ import java.time.temporal.TemporalAdjusters
 import kotlin.math.max
 import kotlin.math.min
 
-// --- Data Models
+/**
+ * Data class representing daily period tracking information for a specific date.
+ * @param date The date for which the data is recorded.
+ * @param isPeriodDay True if it's a period day, false otherwise.
+ * @param notes Any additional notes for the day.
+ * @param moodEmoji An optional emoji representing the mood for the day.
+ * @param flowIntensity An optional string indicating the intensity of the period flow (e.g., "Light", "Medium", "Heavy").
+ * @param symptoms A list of symptoms experienced on the day.
+ */
 data class DailyPeriodData(
     val date: LocalDate,
     var isPeriodDay: Boolean = false,
@@ -107,12 +115,25 @@ data class DailyPeriodData(
     var symptoms: List<String> = emptyList()
 )
 
+/**
+ * Data class representing the user's period tracker settings.
+ * @param averagePeriodLength The average duration of the user's period in days.
+ * @param averageCycleLength The average length of the user's menstrual cycle in days.
+ * @param lastPeriodStartDate The start date of the user's last period.
+ */
 data class PeriodTrackerSettings(
     val averagePeriodLength: Int = 5,
     val averageCycleLength: Int = 28,
     val lastPeriodStartDate: LocalDate? = null
 )
 
+/**
+ * Calculates a set of predicted period start dates based on the last period start date and average cycle length.
+ * Predicts future periods for the next 12 cycles and up to 3 past cycles.
+ * @param lastPeriodStartDate The start date of the user's last period.
+ * @param averageCycleLength The average length of the user's menstrual cycle in days.
+ * @return A set of predicted period start dates.
+ */
 fun getPredictedPeriodStartDates(
     lastPeriodStartDate: LocalDate?,
     averageCycleLength: Int
@@ -123,13 +144,11 @@ fun getPredictedPeriodStartDates(
     predictedStarts.add(lastPeriodStartDate)
     var currentPrediction = lastPeriodStartDate
 
-    // Predict future periods for the next 12 cycles
     repeat(12) {
         currentPrediction = currentPrediction?.plusDays(averageCycleLength.toLong())
         currentPrediction?.let { predictedStarts.add(it) }
     }
 
-    // Predict up to 3 past cycles
     currentPrediction = lastPeriodStartDate
     repeat(3) {
         currentPrediction = currentPrediction?.minusDays(averageCycleLength.toLong())
@@ -139,6 +158,13 @@ fun getPredictedPeriodStartDates(
     return predictedStarts
 }
 
+/**
+ * Calculates a set of predicted ovulation dates based on the last period start date and average cycle length.
+ * Ovulation is typically predicted to be 14 days before the start of the next period.
+ * @param lastPeriodStartDate The start date of the user's last period.
+ * @param averageCycleLength The average length of the user's menstrual cycle in days.
+ * @return A set of predicted ovulation dates.
+ */
 fun getPredictedOvulationDates(
     lastPeriodStartDate: LocalDate?,
     averageCycleLength: Int
@@ -152,7 +178,12 @@ fun getPredictedOvulationDates(
     return predictedOvulations
 }
 
-// --- Period Tracker Screen ---
+/**
+ * Composable function for the main Period Tracker Screen.
+ * Displays a calendar, allows navigation between months, shows predicted period and ovulation days,
+ * and provides options to track daily details and configure settings.
+ * @param navController The NavHostController for navigating between screens.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PeriodTrackerScreen(navController: NavHostController) {
@@ -268,7 +299,6 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp)
             ) {
-                // Month navigation
                 MonthNavigationHeader(currentMonth, onMonthChange = { currentMonth = it })
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -396,12 +426,24 @@ fun PeriodTrackerScreen(navController: NavHostController) {
     )
 }
 
+/**
+ * Data class representing an option for mood selection.
+ * @param drawableResId The drawable resource ID for the mood emoji.
+ * @param name The name of the mood (e.g., "Happy", "Sad").
+ */
 data class MoodOption(
     val drawableResId: Int,
     val name: String
 )
 
 
+/**
+ * Composable function for displaying a grid of mood options.
+ * Allows the user to select their mood for a specific day.
+ * @param selectedMood The currently selected mood.
+ * @param onMoodSelected Callback function to be invoked when a mood is selected.
+ * @param modifier Modifier for customizing the layout of the mood grid.
+ */
 @Composable
 fun MoodGrid(
     selectedMood: String?,
@@ -478,7 +520,12 @@ fun MoodGrid(
     }
 }
 
-
+/**
+ * Composable function for the month navigation header in the calendar.
+ * Allows the user to navigate to the previous or next month.
+ * @param currentMonth The currently displayed month.
+ * @param onMonthChange Callback function to be invoked when the month changes.
+ */
 @Composable
 private fun MonthNavigationHeader(
     currentMonth: LocalDate,
@@ -501,7 +548,7 @@ private fun MonthNavigationHeader(
         }
 
         Text(
-            text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+            text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM")),
             style = MaterialTheme.typography.titleLarge,
             color = DefaultPrimary,
             fontWeight = FontWeight.Bold
@@ -520,6 +567,9 @@ private fun MonthNavigationHeader(
     }
 }
 
+/**
+ * Composable function for displaying the weekday headers (Sun, Mon, Tue, etc.) in the calendar.
+ */
 @Composable
 private fun WeekdayHeaders() {
     Row(modifier = Modifier.fillMaxWidth()) {
@@ -535,6 +585,11 @@ private fun WeekdayHeaders() {
     }
 }
 
+/**
+ * Composable function for displaying a card with cycle predictions (next period and ovulation day).
+ * @param predictedPeriodStarts A set of predicted period start dates.
+ * @param predictedOvulationDays A set of predicted ovulation dates.
+ */
 @Composable
 private fun PredictionCard(
     predictedPeriodStarts: Set<LocalDate>,
@@ -585,6 +640,16 @@ private fun PredictionCard(
     }
 }
 
+/**
+ * Composable function for displaying the calendar grid.
+ * Shows days of the month with indications for period days, predicted period starts, ovulation days, and days with notes/mood.
+ * @param currentMonth The currently displayed month.
+ * @param periodSettings The current period tracker settings.
+ * @param dailyDataMap A map containing daily period data for different dates.
+ * @param predictedPeriodStarts A set of predicted period start dates.
+ * @param predictedOvulationDays A set of predicted ovulation dates.
+ * @param onDayClick Callback function to be invoked when a day in the calendar is clicked.
+ */
 @Composable
 private fun CalendarGrid(
     currentMonth: LocalDate,
@@ -654,6 +719,19 @@ private fun CalendarGrid(
     }
 }
 
+/**
+ * Composable function for displaying a single day in the calendar grid.
+ * Renders the date and visual indicators based on its properties (e.g., period day, predicted day).
+ * @param date The date to display.
+ * @param isCurrentMonth True if the date belongs to the currently displayed month, false otherwise.
+ * @param isToday True if the date is today, false otherwise.
+ * @param isPeriodDay True if it's a recorded period day, false otherwise.
+ * @param isPredictedPeriodStart True if it's a predicted start date of a period, false otherwise.
+ * @param isPredictedPeriodDayRange True if it falls within a predicted period day range, false otherwise.
+ * @param isPredictedOvulationDay True if it's a predicted ovulation day, false otherwise.
+ * @param hasNotesOrMood True if the day has associated notes or a mood recorded, false otherwise.
+ * @param onClick Callback function to be invoked when the day is clicked.
+ */
 @Composable
 private fun CalendarDay(
     date: LocalDate,
@@ -736,6 +814,13 @@ private fun CalendarDay(
     }
 }
 
+/**
+ * Composable function for displaying the Period Tracker Settings dialog.
+ * Allows the user to configure their average period length, average cycle length, and last period start date.
+ * @param currentSettings The current period tracker settings.
+ * @param onSave Callback function to be invoked when the settings are saved.
+ * @param onCancel Callback function to be invoked when the dialog is cancelled.
+ */
 @Composable
 private fun SettingsDialog(
     currentSettings: PeriodTrackerSettings,
@@ -769,6 +854,14 @@ private fun SettingsDialog(
     }
 }
 
+/**
+ * Composable function for displaying the Daily Detail dialog.
+ * Allows the user to record details for a specific day, including period status, flow intensity, mood, notes, and symptoms.
+ * @param date The date for which to record daily details.
+ * @param initialDailyData The initial DailyPeriodData for the selected date.
+ * @param onSave Callback function to be invoked when the daily details are saved.
+ * @param onCancel Callback function to be invoked when the dialog is cancelled.
+ */
 @Composable
 private fun DailyDetailDialog(
     date: LocalDate,
@@ -800,6 +893,14 @@ private fun DailyDetailDialog(
     }
 }
 
+/**
+ * Composable function for displaying a summary sheet of daily period data.
+ * Shows recorded information for a specific day and provides an option to edit the details.
+ * @param date The date for which to display the summary.
+ * @param dailyData The DailyPeriodData for the selected date.
+ * @param onEdit Callback function to be invoked when the "Edit Details" button is clicked.
+ * @param onClose Callback function to be invoked when the summary sheet is closed.
+ */
 @Composable
 private fun DailySummarySheet(
     date: LocalDate,
@@ -903,6 +1004,13 @@ private fun DailySummarySheet(
     }
 }
 
+/**
+ * Composable function for the content of the Period Tracker Settings dialog.
+ * Manages the state and UI for setting period and cycle lengths, and the last period start date.
+ * @param currentPeriodSettings The current period tracker settings.
+ * @param onSave Callback function to be invoked when the settings are saved.
+ * @param onCancel Callback function to be invoked when the settings dialog is cancelled.
+ */
 @Composable
 private fun PeriodTrackerSettingsContent(
     currentPeriodSettings: PeriodTrackerSettings,
@@ -1032,6 +1140,14 @@ private fun PeriodTrackerSettingsContent(
     }
 }
 
+/**
+ * Composable function for the content of the Daily Detail dialog.
+ * Allows the user to input and save daily period tracking data.
+ * @param date The date for which to record daily details.
+ * @param initialDailyData The initial DailyPeriodData for the selected date.
+ * @param onSave Callback function to be invoked when the daily details are saved.
+ * @param onCancel Callback function to be invoked when the dialog is cancelled.
+ */
 @Composable
 private fun DailyDetailContent(
     date: LocalDate,
@@ -1166,6 +1282,14 @@ private fun DailyDetailContent(
     }
 }
 
+/**
+ * Composable function for a number selector with increment and decrement buttons.
+ * Used for selecting numerical values within a specified range.
+ * @param value The current numerical value.
+ * @param minValue The minimum allowed value.
+ * @param maxValue The maximum allowed value.
+ * @param onValueChange Callback function to be invoked when the value changes.
+ */
 @Composable
 private fun NumberSelector(
     value: Int,
@@ -1203,6 +1327,13 @@ private fun NumberSelector(
     }
 }
 
+/**
+ * Composable function for a custom Date Picker Dialog.
+ * Allows the user to select a date from a calendar view.
+ * @param initialDate The initial date to display in the picker.
+ * @param onDateSelected Callback function to be invoked when a date is selected.
+ * @param onDismiss Callback function to be invoked when the dialog is dismissed.
+ */
 @Composable
 private fun DatePickerDialog(
     initialDate: LocalDate,
@@ -1224,7 +1355,6 @@ private fun DatePickerDialog(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Month navigation
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1254,22 +1384,10 @@ private fun DatePickerDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Weekday headers
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
-                        Text(
-                            text = day,
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = DefaultOnPrimary.copy(alpha = 0.7f)
-                        )
-                    }
-                }
+                WeekdayHeaders()
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Calendar grid
                 val daysInCalendar = remember(currentMonth) {
                     val firstDayOfMonth = currentMonth.with(TemporalAdjusters.firstDayOfMonth())
                     val lastDayOfMonth = currentMonth.with(TemporalAdjusters.lastDayOfMonth())
@@ -1364,6 +1482,11 @@ private fun DatePickerDialog(
     }
 }
 
+/**
+ * Composable function for a toggle switch to indicate if a day is a "Period Day".
+ * @param isPeriodDay The current state of the toggle.
+ * @param onToggle Callback function to be invoked when the toggle state changes.
+ */
 @Composable
 private fun PeriodDayToggle(
     isPeriodDay: Boolean,
@@ -1415,7 +1538,11 @@ private fun PeriodDayToggle(
     }
 }
 
-
+/**
+ * Composable function for selecting period flow intensity (Light, Medium, Heavy).
+ * @param selectedFlowIntensity The currently selected flow intensity.
+ * @param onSelectionChanged Callback function to be invoked when the selection changes.
+ */
 @Composable
 private fun FlowIntensitySelector(
     selectedFlowIntensity: String?,
@@ -1466,6 +1593,12 @@ private fun FlowIntensitySelector(
     }
 }
 
+/**
+ * Composable function for an OutlinedTextField to input notes.
+ * @param noteText The current text in the notes field.
+ * @param maxNoteLength The maximum allowed length for the note.
+ * @param onNoteChange Callback function to be invoked when the note text changes.
+ */
 @Composable
 private fun NotesField(
     noteText: String,
@@ -1518,6 +1651,11 @@ private fun NotesField(
     }
 }
 
+/**
+ * Composable function for tracking symptoms with selectable chips.
+ * @param selectedSymptoms A set of currently selected symptoms.
+ * @param onSymptomToggle Callback function to be invoked when a symptom chip is toggled.
+ */
 @Composable
 private fun SymptomTracker(
     selectedSymptoms: Set<String>,
@@ -1554,11 +1692,16 @@ private fun SymptomTracker(
     }
 }
 
+/**
+ * Composable function for a customizable chip (e.g., for symptom selection).
+ * @param text The text to display on the chip.
+ * @param isSelected True if the chip is selected, false otherwise.
+ * @param onClick Callback function to be invoked when the chip is clicked.
+ */
 @Composable
 private fun Chip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(8.dp),
-        // Adjusted colors based on isSelected
         color = if (isSelected) DefaultPrimary else DefaultPrimary.copy(alpha = 0.2f),
         border = BorderStroke(
             1.dp,
@@ -1570,13 +1713,16 @@ private fun Chip(text: String, isSelected: Boolean, onClick: () -> Unit) {
             text = text,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             style = MaterialTheme.typography.bodySmall,
-            // Adjusted text color based on isSelected
             color = if (isSelected) Color.White else DefaultPrimary
         )
     }
 }
 
-
+/**
+ * Composable function for a row of "Save" and "Cancel" buttons.
+ * @param onSave Callback function to be invoked when the "Save" button is clicked.
+ * @param onCancel Callback function to be invoked when the "Cancel" button is clicked.
+ */
 @Composable
 private fun SaveCancelButtons(
     onSave: () -> Unit,
@@ -1600,7 +1746,7 @@ private fun SaveCancelButtons(
                 "Cancel",
                 color = DefaultPrimary,
                 style = MaterialTheme.typography.titleMedium
-            ) // Pink text
+            )
         }
         Spacer(modifier = Modifier.width(16.dp))
         Button(
@@ -1618,7 +1764,14 @@ private fun SaveCancelButtons(
     }
 }
 
-
+/**
+ * Composable function for a generic settings card.
+ * Displays a title, description, and accepts a composable content for the setting controls.
+ * @param title The title of the setting.
+ * @param description A brief description of the setting.
+ * @param value The current value of the setting (for display).
+ * @param content The composable content for the setting's interactive elements.
+ */
 @Composable
 private fun SettingCard(
     title: String,
@@ -1656,7 +1809,9 @@ private fun SettingCard(
     }
 }
 
-
+/**
+ * Preview Composable for the PeriodTrackerScreen.
+ */
 @Preview(showBackground = true)
 @Composable
 fun PeriodTrackerScreenPreview() {

@@ -51,6 +51,17 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Composable function for the "Book Appointment Directly" screen.
+ * Allows users to select a date and time for an appointment with a specific doctor.
+ *
+ * @param navController The [NavController] for navigation actions.
+ * @param snackbarController The [SnackbarController] for displaying snackbar messages.
+ * @param doctorId The ID of the doctor for whom the appointment is being booked.
+ * @param selectedService The [AppointmentType] representing the selected service.
+ * @param referralId An optional referral ID.
+ * @param viewModel The [BookingViewModel] for managing booking-related data and logic.
+ */
 @Composable
 fun BookAppointmentDirectlyScreen(
     navController: NavController,
@@ -62,17 +73,14 @@ fun BookAppointmentDirectlyScreen(
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
 
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val doctors = viewModel.doctors
 
-    // Initialize data loading
     LaunchedEffect(doctorId) {
         viewModel.loadDoctorById(doctorId)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let { err ->
             snackbarController?.showMessage(err)
@@ -143,6 +151,11 @@ fun BookAppointmentDirectlyScreen(
     }
 }
 
+/**
+ * Composable function for the appointment header, displaying a back button and title.
+ *
+ * @param onBackClick The action to perform when the back button is clicked.
+ */
 @Composable
 private fun AppointmentHeader(
     onBackClick: () -> Unit
@@ -180,6 +193,13 @@ private fun AppointmentHeader(
 }
 
 
+/**
+ * Composable function to display the doctor's information header.
+ *
+ * @param doctor The [Doctor] object to display.
+ * @param modifier The [Modifier] for this composable.
+ * @param onClick The action to perform when the doctor info card is clicked.
+ */
 @Composable
 private fun DoctorInfoHeader(
     doctor: Doctor,
@@ -204,7 +224,6 @@ private fun DoctorInfoHeader(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Doctor Image
             if (doctor.profilePictureUrl.isEmpty()) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
@@ -227,7 +246,6 @@ private fun DoctorInfoHeader(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Doctor Details
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -247,7 +265,6 @@ private fun DoctorInfoHeader(
                     modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
                 )
 
-                // Rating and Experience
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -291,6 +308,9 @@ private fun DoctorInfoHeader(
 }
 
 
+/**
+ * Composable function to display a loading indicator and message.
+ */
 @Composable
 private fun LoadingView() {
     Column(
@@ -303,4 +323,3 @@ private fun LoadingView() {
         Text("Loading appointment data...", color = DefaultOnPrimary)
     }
 }
-

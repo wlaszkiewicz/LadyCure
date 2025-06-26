@@ -95,6 +95,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Composable function for the confirmation screen of an appointment booking.
+ * Displays appointment details, doctor information, location, payment, and referral information.
+ * Allows users to confirm the booking or upload a referral document.
+ *
+ * @param navController The NavController for navigation actions.
+ * @param snackbarController The SnackbarController for displaying messages.
+ * @param doctorId The ID of the selected doctor.
+ * @param timestamp The timestamp of the selected appointment.
+ * @param appointmentType The type of appointment.
+ * @param referralId The optional ID of an existing referral document.
+ * @param viewModel The ViewModel for managing confirmation screen data and logic.
+ */
 @Composable
 fun ConfirmationScreen(
     navController: NavController,
@@ -105,7 +118,6 @@ fun ConfirmationScreen(
     referralId: String? = null,
     viewModel: ConfirmationViewModel = viewModel()
 ) {
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val doctorInfo = viewModel.doctorInfo
@@ -116,12 +128,10 @@ fun ConfirmationScreen(
     val tooLarge = viewModel.tooLarge
     val context = LocalContext.current
 
-    // Initialize data loading
     LaunchedEffect(Unit) {
         viewModel.loadInitialData(doctorId, timestamp, referralId)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let { err ->
             snackbarController?.showMessage(err)
@@ -129,7 +139,6 @@ fun ConfirmationScreen(
         }
     }
 
-    // PDF upload launcher
     val pdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
@@ -139,7 +148,7 @@ fun ConfirmationScreen(
                     referralId = referralId.toString(),
                     appointmentType = appointmentType,
                     context = context,
-                    onSuccess = { /* Success handled in ViewModel */ },
+                    onSuccess = { },
                     onError = { message ->
                         snackbarController?.showMessage(message)
                     }
@@ -164,7 +173,6 @@ fun ConfirmationScreen(
                 .background(DefaultBackground)
                 .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
         ) {
-            // Header with back button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -197,7 +205,6 @@ fun ConfirmationScreen(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        // Appointment confirmation card
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -267,7 +274,6 @@ fun ConfirmationScreen(
                             )
                         }
 
-                        // Doctor information card
                         DoctorConfirmationCard(
                             doctor = doctorInfo,
                             modifier = Modifier.padding(bottom = 16.dp)
@@ -278,13 +284,11 @@ fun ConfirmationScreen(
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-                        // Payment information card
                         PaymentCard(
                             modifier = Modifier.padding(bottom = 24.dp),
                             appointmentType = appointmentType
                         )
 
-                        // Action buttons
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -305,7 +309,7 @@ fun ConfirmationScreen(
                             }
 
                             Button(
-                                enabled = !isUploading, // Disable if uploading
+                                enabled = !isUploading,
                                 onClick = {
                                     viewModel.bookAppointment(
                                         doctorId = doctorId,
@@ -345,6 +349,9 @@ fun ConfirmationScreen(
     }
 }
 
+/**
+ * Composable that displays a loading indicator and message.
+ */
 @Composable
 private fun LoadingView() {
     Box(
@@ -363,6 +370,13 @@ private fun LoadingView() {
     }
 }
 
+/**
+ * Composable that displays the appointment type details.
+ *
+ * @param appointmentType The type of appointment to display.
+ * @param referralId The ID of the referral, if one exists.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun AppointmentTypeCard(
     appointmentType: AppointmentType,
@@ -380,7 +394,6 @@ private fun AppointmentTypeCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header with service name and duration
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -404,7 +417,6 @@ private fun AppointmentTypeCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Service description
             Text(
                 text = "Service Description",
                 style = MaterialTheme.typography.labelLarge,
@@ -417,7 +429,6 @@ private fun AppointmentTypeCard(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Preparation instructions
             Text(
                 text = "Preparation Instructions",
                 style = MaterialTheme.typography.labelLarge,
@@ -430,7 +441,6 @@ private fun AppointmentTypeCard(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Requirements chip
             if (appointmentType.needsReferral && referralId == null) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -454,13 +464,19 @@ private fun AppointmentTypeCard(
     }
 }
 
-// Update PaymentCard to use appointmentType.price
+/**
+ * Composable that displays payment information for the appointment.
+ * Calculates service fee, tax, and total amount based on the appointment type.
+ *
+ * @param appointmentType The type of appointment, used to retrieve the price.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun PaymentCard(
     appointmentType: AppointmentType,
     modifier: Modifier = Modifier
 ) {
-    val taxRate = 0.09 // 9% tax
+    val taxRate = 0.09
     val taxAmount = appointmentType.price * taxRate
     val totalAmount = appointmentType.price + taxAmount
 
@@ -542,6 +558,12 @@ private fun PaymentCard(
     }
 }
 
+/**
+ * Composable that displays the doctor's clinic location on a map and contact details.
+ *
+ * @param doctor A map containing the doctor's information, including address and phone.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun LocationCard(
     doctor: Map<String, Any>,
@@ -576,7 +598,6 @@ private fun LocationCard(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Google Map
             if (latLng != null) {
                 GoogleMap(
                     modifier = Modifier
@@ -609,7 +630,6 @@ private fun LocationCard(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Contact details
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -666,7 +686,6 @@ private fun LocationCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Directions button
             Button(
                 onClick = {
                     val gmmIntentUri = if (latLng != null) {
@@ -702,7 +721,12 @@ private fun LocationCard(
     }
 }
 
-
+/**
+ * Composable that displays the confirmed doctor's information.
+ *
+ * @param doctor A map containing the doctor's details like name, specialization, profile picture, bio, experience, and rating.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun DoctorConfirmationCard(
     doctor: Map<String, Any>,
@@ -729,7 +753,6 @@ private fun DoctorConfirmationCard(
         is String -> rat.toDouble()
         else -> 4.5
     }
-
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -840,6 +863,18 @@ private fun DoctorConfirmationCard(
     }
 }
 
+/**
+ * Composable that displays information about a referral document.
+ * Provides options to view the existing referral or upload a new one.
+ * Shows upload progress and success messages when a new referral is being uploaded.
+ *
+ * @param referral The Referral object containing details of the uploaded document.
+ * @param onUploadNew Lambda to be invoked when the "Upload New" or "Change Document" button is clicked.
+ * @param modifier The modifier for this composable.
+ * @param isUploading Boolean indicating if a referral document is currently being uploaded.
+ * @param uploadProgress The current progress of the upload, from 0.0f to 1.0f.
+ * @param showUploadSuccess Boolean to trigger the display of a success message after upload.
+ */
 @Composable
 fun ReferralInfoCard(
     referral: Referral?,
@@ -856,12 +891,11 @@ fun ReferralInfoCard(
     val pdfIconPainter = rememberVectorPainter(Icons.Default.PictureAsPdf)
     val fileSize = remember(referralUrl) { calculateFileSize(context, referralUrl) }
 
-    // Animation for success message
     var showSuccessMessage by remember { mutableStateOf(false) }
     LaunchedEffect(showUploadSuccess) {
         if (showUploadSuccess) {
             showSuccessMessage = true
-            delay(2000) // Show for 2 seconds
+            delay(2000)
             showSuccessMessage = false
         }
     }
@@ -877,7 +911,6 @@ fun ReferralInfoCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -892,7 +925,6 @@ fun ReferralInfoCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Upload progress section
             if (isUploading) {
                 Column(
                     modifier = Modifier
@@ -1007,7 +1039,6 @@ fun ReferralInfoCard(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Metadata
                 Column(
                     modifier = Modifier.padding(horizontal = 4.dp)
                 ) {
@@ -1044,7 +1075,6 @@ fun ReferralInfoCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Upload/Change Button (disabled during upload)
             Button(
                 onClick = onUploadNew,
                 modifier = Modifier
@@ -1075,6 +1105,13 @@ fun ReferralInfoCard(
     }
 }
 
+/**
+ * Helper composable to display a row with an icon, label, and value.
+ *
+ * @param icon The ImageVector for the icon.
+ * @param label The text label.
+ * @param value The value to display.
+ */
 @Composable
 private fun InfoRow(icon: ImageVector, label: String, value: String) {
     Row(
@@ -1102,6 +1139,13 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
     }
 }
 
+/**
+ * Calculates the file size from a given URI string and returns a formatted string (e.g., "5 MB", "100 KB").
+ *
+ * @param context The Android context.
+ * @param uriString The URI string of the file.
+ * @return A formatted string representing the file size, or null if calculation fails.
+ */
 private fun calculateFileSize(context: Context, uriString: String?): String? {
     if (uriString == null) return null
 
@@ -1135,6 +1179,12 @@ private fun calculateFileSize(context: Context, uriString: String?): String? {
     }
 }
 
+/**
+ * Opens a PDF document using an implicit intent.
+ *
+ * @param context The Android context.
+ * @param pdfUrl The URL of the PDF document.
+ */
 private fun openPdf(context: Context, pdfUrl: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -1146,5 +1196,3 @@ private fun openPdf(context: Context, pdfUrl: String) {
         Toast.makeText(context, "No PDF viewer installed", Toast.LENGTH_SHORT).show()
     }
 }
-
-

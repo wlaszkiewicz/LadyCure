@@ -62,7 +62,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -109,6 +108,14 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Composable function for displaying the Appointments screen.
+ * Allows users to view upcoming and past appointments, apply filters, and interact with appointment details.
+ *
+ * @param navController The [NavController] for navigation actions.
+ * @param snackbarController The [SnackbarController] for displaying snackbar messages.
+ * @param viewModel The [AppointmentViewModel] providing data and logic for the screen.
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppointmentsScreen(
@@ -130,7 +137,6 @@ fun AppointmentsScreen(
         }
     }
 
-    // Show loading state while role is being determined
     if (isLoading || role == null) {
         LoadingView()
         return
@@ -148,7 +154,6 @@ fun AppointmentsScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Header with back button and title
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -189,7 +194,6 @@ fun AppointmentsScreen(
                 }
             }
 
-            // Filter panel
             AnimatedVisibility(
                 visible = showFilters,
                 enter = fadeIn() + expandVertically(),
@@ -204,7 +208,6 @@ fun AppointmentsScreen(
                 )
             }
 
-            // Active filters row
             ActiveFiltersRow(
                 selectedSpecializations = if (role == "user") viewModel.selectedSpecializations else emptyList(),
                 selectedDoctors = if (role == "user") viewModel.selectedDoctors else emptyList(),
@@ -332,6 +335,19 @@ fun AppointmentsScreen(
     }
 }
 
+/**
+ * Composable function to display a list of appointments.
+ *
+ * @param role The role of the current user ("user" or "doctor").
+ * @param appointments The list of appointments to display.
+ * @param emptyMessage The message to display when the list of appointments is empty.
+ * @param navController The [NavController] for navigation.
+ * @param onClickStatus Callback for when the status chip of an appointment is clicked.
+ * @param onCommentUpdated Callback for when an appointment's comment is updated.
+ * @param onCancelAppointment Callback for when an appointment is cancelled.
+ * @param tab The current tab index (0 for upcoming, 1 for history).
+ * @param viewModel The [AppointmentViewModel] providing data and logic.
+ */
 @Composable
 fun AppointmentsList(
     role: String,
@@ -354,7 +370,6 @@ fun AppointmentsList(
         }.toMutableMap()
 
         if (tab == 1) {
-            // Sort past appointments by date descending
             groupedAppointments.forEach { (key, monthAppointments) ->
                 groupedAppointments[key] = monthAppointments.sortedByDescending { it.date }
             }
@@ -368,7 +383,6 @@ fun AppointmentsList(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             groupedAppointments.forEach { (monthYear, monthAppointments) ->
-                // Month header
                 item {
                     Text(
                         text = monthYear,
@@ -382,7 +396,6 @@ fun AppointmentsList(
                     )
                 }
 
-                // Appointments for this month
                 items(monthAppointments) { appointment ->
                     AnimatedVisibility(
                         visible = true,
@@ -415,6 +428,16 @@ fun AppointmentsList(
     }
 }
 
+/**
+ * Composable function to display an individual appointment card.
+ *
+ * @param role The role of the current user ("user" or "doctor").
+ * @param appointment The [Appointment] to display.
+ * @param navController The [NavController] for navigation.
+ * @param onCancel Callback for when the cancel action is triggered.
+ * @param onCommentUpdated Callback for when the appointment comment is updated.
+ * @param onClickStatus Callback for when the status chip is clicked.
+ */
 @Composable
 fun AppointmentCard(
     role: String,
@@ -428,7 +451,6 @@ fun AppointmentCard(
     var showDetailsDialog by remember { mutableStateOf(false) }
     var showCancelConfirmationDialog by remember { mutableStateOf(false) }
 
-    // Status colors
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Green
         Status.PENDING -> Yellow
@@ -449,18 +471,15 @@ fun AppointmentCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Doctor/Patient info
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    // Avatar with speciality icon
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -508,7 +527,6 @@ fun AppointmentCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Date and time row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -586,6 +604,16 @@ fun AppointmentCard(
     }
 }
 
+/**
+ * Composable function to display the details of an appointment in a dialog.
+ *
+ * @param role The role of the current user ("user" or "doctor").
+ * @param appointment The [Appointment] to display details for.
+ * @param onDismiss Callback for when the dialog is dismissed.
+ * @param onCancel Callback for when the appointment is cancelled from the dialog.
+ * @param onReschedule Callback for when the appointment is rescheduled from the dialog.
+ * @param onCommentUpdated Callback for when the appointment's comment is updated.
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppointmentDetailsDialog(
@@ -602,7 +630,6 @@ fun AppointmentDetailsDialog(
     var editedComment by remember { mutableStateOf(appointment.comments) }
     var isPreparationExpanded by remember { mutableStateOf(false) }
 
-    // Status colors
     val statusColor = when (appointment.status) {
         Status.CONFIRMED -> Green
         Status.PENDING -> Yellow
@@ -611,7 +638,7 @@ fun AppointmentDetailsDialog(
     val statusBackgroundColor = statusColor.copy(alpha = 0.1f)
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
+        androidx.compose.material3.Surface(
             shape = RoundedCornerShape(28.dp),
             color = Color.White,
             shadowElevation = 16.dp,
@@ -624,7 +651,6 @@ fun AppointmentDetailsDialog(
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 16.dp)
             ) {
-                // Header with gradient background
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -643,7 +669,6 @@ fun AppointmentDetailsDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Avatar
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
@@ -677,13 +702,11 @@ fun AppointmentDetailsDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Info chips
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Status chip
-                            Surface(
+                            androidx.compose.material3.Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = statusBackgroundColor,
                                 border = BorderStroke(1.dp, statusColor)
@@ -695,8 +718,7 @@ fun AppointmentDetailsDialog(
                                 )
                             }
 
-                            // Duration chip
-                            Surface(
+                            androidx.compose.material3.Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = DefaultPrimary.copy(alpha = 0.1f),
                                 border = BorderStroke(1.dp, DefaultPrimary)
@@ -708,8 +730,7 @@ fun AppointmentDetailsDialog(
                                 )
                             }
 
-                            // Price chip
-                            Surface(
+                            androidx.compose.material3.Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = BabyBlue.copy(alpha = 0.1f),
                                 border = BorderStroke(1.dp, BabyBlue)
@@ -724,12 +745,10 @@ fun AppointmentDetailsDialog(
                     }
                 }
 
-                // Main content
                 Column(
                     modifier = Modifier.padding(horizontal = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Date and time
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -767,7 +786,6 @@ fun AppointmentDetailsDialog(
                         }
                     }
 
-                    // Location
                     Column {
                         Text(
                             text = "Location",
@@ -783,7 +801,6 @@ fun AppointmentDetailsDialog(
                         )
                     }
 
-                    // Preparation instructions
                     if (appointment.type.preparationInstructions.isNotEmpty()) {
                         Column {
                             Row(
@@ -826,7 +843,6 @@ fun AppointmentDetailsDialog(
                         }
                     }
 
-                    // Notes section
                     if (role == "doctor" || appointment.comments.isNotEmpty()) {
                         Column {
                             Row(
@@ -911,7 +927,6 @@ fun AppointmentDetailsDialog(
                     }
                 }
 
-                // Action buttons
                 if (appointment.status != Status.CANCELLED) {
                     Row(
                         modifier = Modifier
@@ -969,6 +984,11 @@ fun AppointmentDetailsDialog(
     }
 }
 
+/**
+ * Composable function to display a view when there are no appointments.
+ *
+ * @param message The message to display.
+ */
 @Composable
 fun EmptyAppointmentsView(message: String) {
     Column(
@@ -996,6 +1016,9 @@ fun EmptyAppointmentsView(message: String) {
     }
 }
 
+/**
+ * Composable function to display a loading indicator.
+ */
 @Composable
 private fun LoadingView() {
     Column(
@@ -1017,20 +1040,26 @@ private fun LoadingView() {
     }
 }
 
-
+/**
+ * Composable function for the enhanced filters section.
+ *
+ * @param role The role of the current user ("user" or "doctor").
+ * @param viewModel The [AppointmentViewModel] to interact with filter logic.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun EnhancedFiltersSection(
     role: String,
     viewModel: AppointmentViewModel,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    androidx.compose.material3.Surface(
         modifier = modifier
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         shadowElevation = 2.dp,
     ) {
-        Surface(
+        androidx.compose.material3.Surface(
             modifier = modifier
                 .fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -1042,7 +1071,6 @@ fun EnhancedFiltersSection(
                     .heightIn(max = 300.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1123,6 +1151,15 @@ fun EnhancedFiltersSection(
     }
 }
 
+/**
+ * Composable for a multi-select filter section.
+ *
+ * @param title The title of the filter section.
+ * @param items The list of available items to filter by.
+ * @param selectedItems The list of currently selected items.
+ * @param onItemSelected Callback when an item is selected or deselected.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun MultiSelectFilterSection(
     title: String,
@@ -1158,7 +1195,14 @@ private fun MultiSelectFilterSection(
     }
 }
 
-
+/**
+ * Composable for a date filter section, allowing selection of "Today", "Tomorrow", or a custom date.
+ *
+ * @param selectedDate The currently selected date.
+ * @param onDateSelected Callback when a date is selected.
+ * @param onDateCleared Callback when the selected date is cleared.
+ * @param modifier The modifier for this composable.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateFilterSection(
@@ -1254,6 +1298,14 @@ fun DateFilterSection(
     }
 }
 
+/**
+ * Composable for an enhanced filter chip.
+ *
+ * @param label The text label for the chip.
+ * @param selected Whether the chip is currently selected.
+ * @param onSelected Callback when the chip is clicked.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun EnhancedFilterChip(
     label: String,
@@ -1261,7 +1313,7 @@ fun EnhancedFilterChip(
     onSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    androidx.compose.material3.Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         color = if (selected) DefaultPrimary else Color.White,
@@ -1296,6 +1348,22 @@ fun EnhancedFilterChip(
     }
 }
 
+/**
+ * Composable function to display a row of active filters.
+ *
+ * @param selectedSpecializations List of selected specializations for filtering.
+ * @param selectedDoctors List of selected doctors for filtering.
+ * @param selectedTypes List of selected appointment types for filtering.
+ * @param selectedPatients List of selected patients for filtering.
+ * @param selectedDate The selected date for filtering.
+ * @param onRemoveSpecialization Callback to remove a specialization filter.
+ * @param onRemoveDoctor Callback to remove a doctor filter.
+ * @param onRemoveType Callback to remove an appointment type filter.
+ * @param onRemovePatient Callback to remove a patient filter.
+ * @param onRemoveDate Callback to remove the date filter.
+ * @param role The role of the current user ("user" or "doctor").
+ */
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ActiveFiltersRow(
     selectedSpecializations: List<String>,
@@ -1381,13 +1449,20 @@ fun ActiveFiltersRow(
     }
 }
 
+/**
+ * Composable for an active filter chip, displaying a label and a remove button.
+ *
+ * @param label The text label for the chip.
+ * @param onRemove Callback when the remove button is clicked.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 fun ActiveFilterChip(
     label: String,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    androidx.compose.material3.Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         color = DefaultPrimary.copy(alpha = 0.1f),
@@ -1417,5 +1492,3 @@ fun ActiveFilterChip(
         }
     }
 }
-
-

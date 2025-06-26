@@ -73,7 +73,21 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
-// Data class to hold all the state for the availability screens
+/**
+ * Data class to hold all the state for the availability screens.
+ *
+ * @param selectedDates A set of dates currently selected by the user.
+ * @param showMonthPicker Boolean to control the visibility of the month picker dialog.
+ * @param startTime The selected start time for availability.
+ * @param endTime The selected end time for availability.
+ * @param showTimePicker Boolean to control the visibility of the time picker dialog.
+ * @param isStartTimePicker Boolean to differentiate between picking start and end time.
+ * @param selectedDaysOfWeek A set of days of the week selected for recurring patterns.
+ * @param showRecurringOptions Boolean to control the visibility of the recurring options dialog.
+ * @param existingAvailabilities A list of existing doctor availabilities.
+ * @param currentMonth The currently displayed month in the calendar.
+ * @param isLoading Boolean to indicate if a data loading or saving operation is in progress.
+ */
 data class AvailabilityScreenState(
     val selectedDates: Set<LocalDate> = emptySet(),
     val showMonthPicker: Boolean = false,
@@ -88,6 +102,17 @@ data class AvailabilityScreenState(
     val isLoading: Boolean = false
 )
 
+/**
+ * Base Composable for availability screens, providing common UI elements and logic.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param snackbarController The SnackbarController to display messages.
+ * @param state The current [AvailabilityScreenState].
+ * @param onStateChange Callback to update the [AvailabilityScreenState].
+ * @param onSave Callback to trigger the save availability action.
+ * @param headerTitle The title to display in the header.
+ * @param onViewAvailabilityClick Callback for when the "View" button is clicked.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BaseAvailabilityScreen(
@@ -103,16 +128,12 @@ fun BaseAvailabilityScreen(
     val today = LocalDate.now()
     val minMonth = YearMonth.from(today)
 
-    // A mutable state for selectedDates that can be passed to children components.
-    // This state will be kept in sync with the parent's `state.selectedDates`.
     val internalSelectedDates = remember { mutableStateOf(state.selectedDates) }
 
-    // Use LaunchedEffect to update internalSelectedDates when the parent's state.selectedDates changes
     LaunchedEffect(state.selectedDates) {
         internalSelectedDates.value = state.selectedDates
     }
 
-    // Use LaunchedEffect to update the parent's state when internalSelectedDates changes
     LaunchedEffect(internalSelectedDates.value) {
         if (internalSelectedDates.value != state.selectedDates) {
             onStateChange(state.copy(selectedDates = internalSelectedDates.value))
@@ -124,7 +145,6 @@ fun BaseAvailabilityScreen(
             .fillMaxSize()
             .background(DefaultBackground),
     ) {
-        // Header with navigation
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = DefaultBackground,
@@ -142,14 +162,13 @@ fun BaseAvailabilityScreen(
                     }
                     Text(
                         headerTitle,
-                        style = MaterialTheme.typography.headlineMedium.copy( // Changed from headlineLarge to headlineMedium
+                        style = MaterialTheme.typography.headlineMedium.copy(
                             color = DefaultPrimary,
                             fontWeight = FontWeight.Bold
                         )
                     )
                 }
 
-                // New button style
                 OutlinedButton(
                     onClick = onViewAvailabilityClick,
                     border = BorderStroke(1.dp, DefaultPrimary),
@@ -174,7 +193,6 @@ fun BaseAvailabilityScreen(
             modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
         )
 
-        // Main content with scroll
         LazyColumn(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
@@ -182,7 +200,6 @@ fun BaseAvailabilityScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // Consolidated Calendar card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -193,18 +210,18 @@ fun BaseAvailabilityScreen(
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) { // Added Column inside Card
+                    Column(modifier = Modifier.padding(16.dp)) {
                         CalendarHeader(
                             currentMonth = state.currentMonth,
                             minMonth = minMonth,
                             onMonthChange = { newMonth -> onStateChange(state.copy(currentMonth = newMonth)) },
                             onShowMonthPicker = { onStateChange(state.copy(showMonthPicker = true)) },
-                            modifier = Modifier.fillMaxWidth() // Modifier applied to Header
+                            modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(Modifier.height(8.dp)) // Spacer between header and view
+                        Spacer(Modifier.height(8.dp))
                         CalendarView(
                             currentMonth = state.currentMonth,
-                            selectedDates = state.selectedDates, // Pass immutable set
+                            selectedDates = state.selectedDates,
                             existingAvailabilities = state.existingAvailabilities,
                             today = today,
                             onDateSelected = { date ->
@@ -215,13 +232,12 @@ fun BaseAvailabilityScreen(
                                 }
                                 onStateChange(state.copy(selectedDates = newSelectedDates))
                             },
-                            modifier = Modifier.fillMaxWidth() // Modifier applied to View
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
             }
 
-            // Time range selection
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -246,16 +262,14 @@ fun BaseAvailabilityScreen(
                 }
             }
 
-            // Quick selection buttons
             item {
                 QuickSelectionButtons(
                     currentMonth = state.currentMonth,
-                    selectedDates = internalSelectedDates, // Pass the mutable state directly
+                    selectedDates = internalSelectedDates,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            // Recurring pattern button
             item {
                 Button(
                     onClick = { onStateChange(state.copy(showRecurringOptions = true)) },
@@ -273,11 +287,9 @@ fun BaseAvailabilityScreen(
                 }
             }
 
-            // Copy to other months button
             item {
                 Button(
                     onClick = {
-                        // Copy selected days/time to next 3 months
                         val datesToAdd = mutableSetOf<LocalDate>()
 
                         state.selectedDates.forEach { date ->
@@ -303,7 +315,6 @@ fun BaseAvailabilityScreen(
                 }
             }
         }
-        // Save button at bottom
         SaveButton(
             isLoading = state.isLoading,
             enabled = state.selectedDates.isNotEmpty(),
@@ -313,7 +324,6 @@ fun BaseAvailabilityScreen(
                     try {
                         onSave(state.selectedDates, state.startTime, state.endTime)
                         snackbarController.showMessage("Availability saved successfully!")
-                        // Refresh the screen after saving will be handled by the specific screen (admin or doctor)
                     } catch (e: Exception) {
                         snackbarController.showMessage("Error saving availability: ${e.message}")
                     } finally {
@@ -325,7 +335,6 @@ fun BaseAvailabilityScreen(
         )
     }
 
-    // Month picker dialog
     if (state.showMonthPicker) {
         MonthYearPickerDialog(
             currentMonth = state.currentMonth,
@@ -336,7 +345,6 @@ fun BaseAvailabilityScreen(
         )
     }
 
-    // Time Picker Dialog
     if (state.showTimePicker) {
         val timePickerState = rememberTimePickerState(
             initialHour = if (state.isStartTimePicker) state.startTime.hour else state.endTime.hour,
@@ -369,7 +377,6 @@ fun BaseAvailabilityScreen(
         }
     }
 
-    // Recurring Options Dialog
     if (state.showRecurringOptions) {
         RecurringPatternDialog(
             selectedDaysOfWeek = state.selectedDaysOfWeek,
@@ -377,7 +384,7 @@ fun BaseAvailabilityScreen(
                 applyRecurringPattern(
                     days,
                     weeks,
-                    internalSelectedDates // Pass the mutable state directly
+                    internalSelectedDates
                 )
                 onStateChange(state.copy(selectedDaysOfWeek = days, showRecurringOptions = false))
             },
@@ -386,7 +393,15 @@ fun BaseAvailabilityScreen(
     }
 }
 
-
+/**
+ * Composable screen for setting a doctor's availability.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param snackbarController The SnackbarController to display messages.
+ * @param authRepo The [AuthRepository] for authentication-related operations.
+ * @param doctorRepo The [DoctorRepository] for doctor data operations.
+ * @param adminEditingDoctorId Optional parameter for when an admin is editing another doctor's availability.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetAvailabilityScreen(
@@ -394,109 +409,18 @@ fun SetAvailabilityScreen(
     snackbarController: SnackbarController,
     authRepo: AuthRepository = AuthRepository(),
     doctorRepo: DoctorRepository = DoctorRepository(),
-    adminEditingDoctorId: String? = null // Add this new optional parameter
+    adminEditingDoctorId: String? = null
 ) {
     val state = remember { mutableStateOf(AvailabilityScreenState()) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Determine the effective doctor ID for loading/saving
     val effectiveDoctorId = adminEditingDoctorId ?: authRepo.getCurrentUserId().toString()
 
-    // Load existing availabilities when screen appears
-    LaunchedEffect(effectiveDoctorId) { // Relaunch if effectiveDoctorId changes
-        if (effectiveDoctorId == "null" || effectiveDoctorId.isBlank()) { // Handle null and blank string case
-            snackbarController.showMessage("Doctor ID is missing for availability management.")
-            return@LaunchedEffect
-        }
-        state.value = state.value.copy(isLoading = true)
-        try {
-            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId) // Use effectiveDoctorId
-            if (result.isSuccess) {
-                val availabilities = result.getOrThrow()
-                val today = LocalDate.now()
-
-                // Filter out past availabilities
-                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
-                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
-
-                // Delete past availabilities from Firestore
-                pastAvailabilities.forEach { pastAvailability ->
-                    doctorRepo.deleteDoctorAvailability(
-                        pastAvailability.doctorId,
-                        pastAvailability.date!!
-                    )
-                }
-
-                state.value = state.value.copy(existingAvailabilities = futureAvailabilities)
-            } else {
-                snackbarController.showMessage("Error loading existing availabilities")
-            }
-        } catch (e: Exception) {
-            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
-        } finally {
-            state.value = state.value.copy(isLoading = false)
-        }
-    }
-
-    BaseAvailabilityScreen(
-        navController = navController,
-        snackbarController = snackbarController,
-        state = state.value,
-        onStateChange = { newState -> state.value = newState },
-        onSave = { dates, startTime, endTime ->
-            coroutineScope.launch {
-                state.value = state.value.copy(isLoading = true) // Set loading state for save operation
-                try {
-                    doctorRepo.updateAvailabilities(
-                        dates = dates.toList(),
-                        startTime = startTime,
-                        endTime = endTime,
-                        doctorId = effectiveDoctorId // Use effectiveDoctorId for saving
-                    )
-                    snackbarController.showMessage("Availability saved successfully!")
-                    // Refresh the screen after saving for the current user or admin-edited doctor
-                    val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
-                    state.value = state.value.copy(existingAvailabilities = newAvailabilities)
-                } catch (e: Exception) {
-                    snackbarController.showMessage("Error saving availability: ${e.message}")
-                } finally {
-                    state.value = state.value.copy(isLoading = false) // Reset loading state
-                }
-            }
-        },
-        headerTitle = if (adminEditingDoctorId != null) "Edit Doctor Availability" else "Set Availability", // Dynamic header
-        onViewAvailabilityClick = {
-            if (adminEditingDoctorId != null) {
-                navController.navigate("adminAvailabilityList/$effectiveDoctorId")
-            } else {
-                navController.navigate("availabilityList")
-            }
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-
-@Composable
-fun SetAvailabilityScreenAdmin(
-    navController: NavHostController,
-    snackbarController: SnackbarController,
-    doctorId: String,
-    doctorRepo: DoctorRepository = DoctorRepository()
-) {
-    val state = remember { mutableStateOf(AvailabilityScreenState()) }
-    val coroutineScope = rememberCoroutineScope()
-
-    // Use the passed doctorId directly
-    val effectiveDoctorId = doctorId
-
-    // Load existing availabilities when screen appears
     LaunchedEffect(effectiveDoctorId) {
-        if (effectiveDoctorId.isBlank()) {
+        if (effectiveDoctorId == "null" || effectiveDoctorId.isBlank()) {
             snackbarController.showMessage("Doctor ID is missing for availability management.")
             return@LaunchedEffect
         }
-
         state.value = state.value.copy(isLoading = true)
         try {
             val result = doctorRepo.getDoctorAvailability(effectiveDoctorId)
@@ -504,11 +428,9 @@ fun SetAvailabilityScreenAdmin(
                 val availabilities = result.getOrThrow()
                 val today = LocalDate.now()
 
-                // Filter out past availabilities
                 val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
                 val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
 
-                // Delete past availabilities from Firestore
                 pastAvailabilities.forEach { pastAvailability ->
                     doctorRepo.deleteDoctorAvailability(
                         pastAvailability.doctorId,
@@ -540,10 +462,100 @@ fun SetAvailabilityScreenAdmin(
                         dates = dates.toList(),
                         startTime = startTime,
                         endTime = endTime,
-                        doctorId = effectiveDoctorId // Use the passed doctorId
+                        doctorId = effectiveDoctorId
                     )
                     snackbarController.showMessage("Availability saved successfully!")
-                    // Refresh the screen after saving
+                    val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
+                    state.value = state.value.copy(existingAvailabilities = newAvailabilities)
+                } catch (e: Exception) {
+                    snackbarController.showMessage("Error saving availability: ${e.message}")
+                } finally {
+                    state.value = state.value.copy(isLoading = false)
+                }
+            }
+        },
+        headerTitle = if (adminEditingDoctorId != null) "Edit Doctor Availability" else "Set Availability",
+        onViewAvailabilityClick = {
+            if (adminEditingDoctorId != null) {
+                navController.navigate("adminAvailabilityList/$effectiveDoctorId")
+            } else {
+                navController.navigate("availabilityList")
+            }
+        }
+    )
+}
+
+/**
+ * Composable screen for an admin to set a doctor's availability.
+ *
+ * @param navController The NavHostController for navigation.
+ * @param snackbarController The SnackbarController to display messages.
+ * @param doctorId The ID of the doctor whose availability is being set.
+ * @param doctorRepo The [DoctorRepository] for doctor data operations.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SetAvailabilityScreenAdmin(
+    navController: NavHostController,
+    snackbarController: SnackbarController,
+    doctorId: String,
+    doctorRepo: DoctorRepository = DoctorRepository()
+) {
+    val state = remember { mutableStateOf(AvailabilityScreenState()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val effectiveDoctorId = doctorId
+
+    LaunchedEffect(effectiveDoctorId) {
+        if (effectiveDoctorId.isBlank()) {
+            snackbarController.showMessage("Doctor ID is missing for availability management.")
+            return@LaunchedEffect
+        }
+
+        state.value = state.value.copy(isLoading = true)
+        try {
+            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId)
+            if (result.isSuccess) {
+                val availabilities = result.getOrThrow()
+                val today = LocalDate.now()
+
+                val pastAvailabilities = availabilities.filter { it.date?.isBefore(today) == true }
+                val futureAvailabilities = availabilities.filter { it.date?.isBefore(today) == false }
+
+                pastAvailabilities.forEach { pastAvailability ->
+                    doctorRepo.deleteDoctorAvailability(
+                        pastAvailability.doctorId,
+                        pastAvailability.date!!
+                    )
+                }
+
+                state.value = state.value.copy(existingAvailabilities = futureAvailabilities)
+            } else {
+                snackbarController.showMessage("Error loading existing availabilities")
+            }
+        } catch (e: Exception) {
+            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
+        } finally {
+            state.value = state.value.copy(isLoading = false)
+        }
+    }
+
+    BaseAvailabilityScreen(
+        navController = navController,
+        snackbarController = snackbarController,
+        state = state.value,
+        onStateChange = { newState -> state.value = newState },
+        onSave = { dates, startTime, endTime ->
+            coroutineScope.launch {
+                state.value = state.value.copy(isLoading = true)
+                try {
+                    doctorRepo.updateAvailabilities(
+                        dates = dates.toList(),
+                        startTime = startTime,
+                        endTime = endTime,
+                        doctorId = effectiveDoctorId
+                    )
+                    snackbarController.showMessage("Availability saved successfully!")
                     val newAvailabilities = doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
                     state.value = state.value.copy(existingAvailabilities = newAvailabilities)
                 } catch (e: Exception) {
@@ -560,7 +572,14 @@ fun SetAvailabilityScreenAdmin(
     )
 }
 
-
+/**
+ * A custom Time Picker Dialog Composable.
+ *
+ * @param isStartTimePicker Boolean to indicate if the picker is for start time or end time.
+ * @param initialTime The initial time to display in the picker.
+ * @param onTimeSelected Callback for when a time is selected.
+ * @param onDismiss Callback for when the dialog is dismissed.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimePickerDialog(
@@ -596,7 +615,12 @@ private fun TimePickerDialog(
     }
 }
 
-
+/**
+ * Selects all weekdays (Monday to Friday) for the given month and adds them to the selected dates.
+ *
+ * @param month The [YearMonth] for which to select weekdays.
+ * @param selectedDates A [MutableState] containing the set of currently selected dates.
+ */
 fun selectWeekdays(month: YearMonth, selectedDates: MutableState<Set<LocalDate>>) {
     val dates = (1..month.lengthOfMonth())
         .map { month.atDay(it) }
@@ -604,13 +628,24 @@ fun selectWeekdays(month: YearMonth, selectedDates: MutableState<Set<LocalDate>>
     selectedDates.value = selectedDates.value + dates
 }
 
+/**
+ * Selects all dates in the current week (starting from today) and adds them to the selected dates.
+ *
+ * @param selectedDates A [MutableState] containing the set of currently selected dates.
+ */
 fun selectThisWeek(selectedDates: MutableState<Set<LocalDate>>) {
     val today = LocalDate.now()
     val dates = (0..6).map { today.plusDays(it.toLong()) }
     selectedDates.value = selectedDates.value + dates
 }
 
-
+/**
+ * A dialog Composable for selecting a month and year.
+ *
+ * @param currentMonth The currently selected [YearMonth].
+ * @param onDismiss Callback for when the dialog is dismissed.
+ * @param onMonthSelected Callback for when a month is selected.
+ */
 @Composable
 fun MonthYearPickerDialog(
     currentMonth: YearMonth,
@@ -678,6 +713,13 @@ fun MonthYearPickerDialog(
     }
 }
 
+/**
+ * Applies a recurring pattern of selected days over a specified number of weeks to the set of selected dates.
+ *
+ * @param selectedDays A set of [DayOfWeek] to be included in the recurring pattern.
+ * @param durationWeeks The number of weeks for which the pattern should be applied.
+ * @param selectedDates A [MutableState] containing the set of currently selected dates to which the new dates will be added.
+ */
 fun applyRecurringPattern(
     selectedDays: Set<DayOfWeek>,
     durationWeeks: Int,

@@ -38,6 +38,19 @@ import androidx.compose.ui.unit.dp
 import com.example.ladycure.presentation.register.RegisterUiState
 import java.time.LocalDate
 
+/**
+ * Composable function for the registration form.
+ *
+ * @param state The current UI state of the registration form.
+ * @param onEmailChange Callback for when the email address changes.
+ * @param onNameChange Callback for when the name changes.
+ * @param onSurnameChange Callback for when the surname changes.
+ * @param onDateSelected Callback for when a date of birth is selected.
+ * @param onPasswordChange Callback for when the password changes.
+ * @param onConfirmPasswordChange Callback for when the confirm password changes.
+ * @param onRegisterClick Callback for when the register button is clicked.
+ * @param modifier Modifier for the Column layout.
+ */
 @Composable
 fun RegisterForm(
     state: RegisterUiState,
@@ -61,7 +74,6 @@ fun RegisterForm(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        // Email Field
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmailChange,
@@ -84,7 +96,6 @@ fun RegisterForm(
                 .focusRequester(emailFocus)
         )
 
-        // Name Fields Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -116,7 +127,6 @@ fun RegisterForm(
             )
         }
 
-        // Date of Birth Section
         Text(
             text = "Date of Birth",
             style = MaterialTheme.typography.labelLarge,
@@ -132,7 +142,6 @@ fun RegisterForm(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Error message for date of birth
         if (state.selectedDate.isAfter(LocalDate.now().minusYears(18))) {
             Text(
                 text =
@@ -144,7 +153,6 @@ fun RegisterForm(
         }
 
 
-        // Password Fields
         OutlinedTextField(
             value = state.password,
             onValueChange = onPasswordChange,
@@ -202,7 +210,6 @@ fun RegisterForm(
                         "lastName" -> lastNameFocus.requestFocus()
                         "password" -> passwordFocus.requestFocus()
                         "confirmPassword" -> confirmPasswordFocus.requestFocus()
-                        // For date of birth, you might need special handling
                         "dob" -> {}
                     }
                 }
@@ -212,7 +219,6 @@ fun RegisterForm(
                 .focusRequester(confirmPasswordFocus)
         )
 
-        // Register Button
         Button(
             onClick = onRegisterClick,
             enabled = state.isValid() && !state.isLoading,
@@ -243,4 +249,3 @@ fun RegisterForm(
         }
     }
 }
-

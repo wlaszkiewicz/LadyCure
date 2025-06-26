@@ -63,8 +63,9 @@ import com.example.ladycure.presentation.admin.TimePeriod
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.async
 
-
-// Define this at the top of your file with other color definitions
+/**
+ * A list of colors used for different appointment types in charts.
+ */
 val appointmentTypeColors = listOf(
     Purple,
     BabyBlue,
@@ -75,10 +76,25 @@ val appointmentTypeColors = listOf(
     BabyBlue.copy(alpha = 0.5f),
 )
 
+/**
+ * Retrieves a color for a given appointment type index.
+ * The colors cycle through the [appointmentTypeColors] list.
+ *
+ * @param index The index of the appointment type.
+ * @return The [Color] for the given index.
+ */
 fun getColorForAppointmentType(index: Int): Color {
     return appointmentTypeColors[index % appointmentTypeColors.size]
 }
 
+/**
+ * Composable function for displaying the doctor's earnings overview.
+ * It fetches and displays earnings data, including total earnings, earnings by type,
+ * and a bar chart showing earnings over time.
+ *
+ * @param navController The [NavController] for navigation actions.
+ * @param snackbarController The [SnackbarController] for displaying messages.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorEarningsScreen(
@@ -96,14 +112,11 @@ fun DoctorEarningsScreen(
     var thisMonthEarnings by remember { mutableStateOf(0.0) }
     var mostPopularType by remember { mutableStateOf<Pair<String, Int>?>(null) }
 
-    // Time period selection
     var selectedTimePeriod by remember { mutableStateOf(TimePeriod.MONTHLY) }
 
-    // Fetch data on first load or when time period changes
     LaunchedEffect(selectedTimePeriod) {
         isLoading = true
         try {
-            // Fetch all data in parallel
             val earningsDeferred = coroutineScope.async {
                 doctorRepo.getEarningsData(selectedTimePeriod)
             }
@@ -118,7 +131,6 @@ fun DoctorEarningsScreen(
                 doctorRepo.getMostPopularAppointmentType()
             }
 
-            // Wait for all requests to complete
             earningsData = earningsDeferred.await().getOrElse { emptyList() }
             earningsByType = earningsByTypeDeferred.await().getOrElse { emptyMap() }
 
@@ -166,7 +178,6 @@ fun DoctorEarningsScreen(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        // Time period selector
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -208,7 +219,6 @@ fun DoctorEarningsScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Summary cards
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -235,7 +245,6 @@ fun DoctorEarningsScreen(
                     )
                 }
 
-                // Earnings Chart
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -268,11 +277,10 @@ fun DoctorEarningsScreen(
                     }
                 }
 
-
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 200.dp, max = 400.dp), // Adjust as needed
+                        .heightIn(min = 200.dp, max = 400.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
@@ -302,10 +310,6 @@ fun DoctorEarningsScreen(
                     }
                 }
 
-
-                // Earnings by Type Bar Chart
-                // In your DoctorEarningsScreen, update the second bar chart section:
-
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -325,7 +329,6 @@ fun DoctorEarningsScreen(
                                 earningsByType.map { it.key to it.value.toInt() }
                             val totalEarningsByType = earningsByType.values.sum()
 
-                            // Use the same colors as the pie chart
                             BarChart(
                                 data = earningsByTypeList,
                                 isCurrency = true,
@@ -336,7 +339,6 @@ fun DoctorEarningsScreen(
                                     .padding(top = 8.dp)
                             )
 
-                            // Add the legend below the chart
                             AppointmentTypeLegend(
                                 data = earningsByTypeList,
                                 showPercentage = false,
@@ -365,7 +367,14 @@ fun DoctorEarningsScreen(
     }
 }
 
-
+/**
+ * Composable function for displaying a legend for appointment types, typically used with charts.
+ *
+ * @param data A list of pairs, where each pair consists of the appointment type label (String) and its corresponding value (Int).
+ * @param modifier The [Modifier] to be applied to the legend.
+ * @param showPercentage A boolean indicating whether to display the percentage for each item.
+ * @param total The total value, required if [showPercentage] is true.
+ */
 @Composable
 fun AppointmentTypeLegend(
     data: List<Pair<String, Int>>,
@@ -407,6 +416,12 @@ fun AppointmentTypeLegend(
     }
 }
 
+/**
+ * Composable function for drawing a pie chart.
+ *
+ * @param data A map where keys are labels (String) and values are numerical contributions (Double).
+ * @param modifier The [Modifier] to be applied to the pie chart.
+ */
 @Composable
 fun PieChart(
     data: Map<String, Double>,
@@ -426,7 +441,6 @@ fun PieChart(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Pie Chart
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -452,7 +466,6 @@ fun PieChart(
             }
         }
 
-        // Use the shared legend component
         val dataList = data.map { it.key to it.value.toInt() }
         AppointmentTypeLegend(
             data = dataList,
@@ -463,17 +476,24 @@ fun PieChart(
     }
 }
 
+/**
+ * Composable function for drawing a bar chart.
+ *
+ * @param data A list of pairs, where each pair consists of a label (String) and its corresponding integer value (Int).
+ * @param isCurrency A boolean indicating whether the values represent currency, in which case a "$" prefix is added.
+ * @param modifier The [Modifier] to be applied to the bar chart.
+ * @param useTypeColors A boolean indicating whether to use type-specific colors for the bars based on their index.
+ */
 @Composable
 fun BarChart(
     data: List<Pair<String, Int>>,
     isCurrency: Boolean = false,
     modifier: Modifier = Modifier,
-    useTypeColors: Boolean = false // Add this parameter
+    useTypeColors: Boolean = false
 ) {
     val maxValue = data.maxOfOrNull { it.second }?.toFloat() ?: 1f
 
     Column(modifier = modifier) {
-        // The chart itself
         Row(
             modifier = Modifier
                 .padding(bottom = 16.dp)
@@ -508,14 +528,12 @@ fun BarChart(
                     val left = index * (barWidthPx + barSpacing) + 4.dp.toPx()
                     val top = size.height - barHeight
 
-                    // Use type-specific color if requested, otherwise use default
                     val barColor = if (useTypeColors) {
                         getColorForAppointmentType(index)
                     } else {
                         DefaultPrimary.copy(alpha = 0.7f)
                     }
 
-                    // Draw bar
                     drawRoundRect(
                         color = barColor,
                         topLeft = Offset(left, top),
@@ -537,9 +555,7 @@ fun BarChart(
                         )
                     }
 
-                    if (!useTypeColors) { // If not using type colors, draw the label below the bar
-
-                        // Draw time label below the bar, centered
+                    if (!useTypeColors) {
                         drawContext.canvas.nativeCanvas.apply {
                             drawText(
                                 label,

@@ -43,6 +43,19 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Composable that displays the date and time selection view for booking an appointment.
+ *
+ * @param city The selected city for the appointment, if available.
+ * @param selectedSpeciality The selected specialty for the appointment, if available.
+ * @param selectedService The service type chosen for the appointment.
+ * @param availableDates A list of dates when appointments are available.
+ * @param selectedDate The currently selected date.
+ * @param onDateSelected Callback function triggered when a date is selected.
+ * @param timeSlots A list of available time slots for the [selectedDate].
+ * @param selectedTimeSlot The currently selected time slot.
+ * @param onTimeSlotSelected Callback function triggered when a time slot is selected.
+ */
 @Composable
 internal fun DateAndTimeSelectionView(
     city: String? = null,
@@ -60,15 +73,12 @@ internal fun DateAndTimeSelectionView(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
-        // Service info chip
         ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = 16.dp))
 
-        // Location and specialty if available
         if (city != null && selectedSpeciality != null) {
             LocationSpecialtyRow(city, selectedSpeciality)
         }
 
-        // Date selection
         Text(
             text = "Select Date",
             style = MaterialTheme.typography.titleMedium,
@@ -77,7 +87,6 @@ internal fun DateAndTimeSelectionView(
             modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
         )
 
-        // Enhanced date selector
         DateSelector(
             availableDates = availableDates,
             selectedDate = selectedDate,
@@ -85,7 +94,6 @@ internal fun DateAndTimeSelectionView(
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Time slots
         if (selectedDate != null) {
             Text(
                 text = "Available Time Slots",
@@ -112,6 +120,14 @@ internal fun DateAndTimeSelectionView(
     }
 }
 
+/**
+ * Composable that displays a horizontal scrollable list of available dates for selection.
+ *
+ * @param availableDates A list of dates to display.
+ * @param selectedDate The currently selected date.
+ * @param onDateSelected Callback function triggered when a date is selected.
+ * @param modifier The modifier to be applied to the layout.
+ */
 @Composable
 private fun DateSelector(
     availableDates: List<LocalDate>,
@@ -149,6 +165,14 @@ private fun DateSelector(
     }
 }
 
+/**
+ * Composable that displays a card for a single date, indicating if it's selected.
+ *
+ * @param date The date to display.
+ * @param isSelected Boolean indicating if the date is currently selected.
+ * @param onSelect Callback function triggered when the card is clicked.
+ * @param modifier The modifier to be applied to the layout.
+ */
 @Composable
 fun DateCard(
     date: LocalDate,
@@ -212,6 +236,13 @@ fun DateCard(
     }
 }
 
+/**
+ * Composable that displays a grid of available time slots.
+ *
+ * @param timeSlots A list of time strings to display.
+ * @param selectedTimeSlot The currently selected time slot string.
+ * @param onTimeSlotSelected Callback function triggered when a time slot is selected.
+ */
 @Composable
 fun TimeSlotGrid(
     timeSlots: List<String>,
@@ -237,6 +268,13 @@ fun TimeSlotGrid(
     }
 }
 
+/**
+ * Composable that displays a card for a single time slot, indicating if it's selected.
+ *
+ * @param time The time string to display.
+ * @param isSelected Boolean indicating if the time slot is currently selected.
+ * @param onSelect Callback function triggered when the card is clicked.
+ */
 @Composable
 fun TimeSlotCard(
     time: String,
@@ -268,6 +306,9 @@ fun TimeSlotCard(
     }
 }
 
+/**
+ * Composable that displays a message when no time slots are available.
+ */
 @Composable
 fun EmptyTimeSlotsView() {
     Column(
@@ -296,6 +337,9 @@ fun EmptyTimeSlotsView() {
     }
 }
 
+/**
+ * Composable that prompts the user to select a date to view time slots.
+ */
 @Composable
 fun PromptToSelectDate() {
     Row(
@@ -319,7 +363,13 @@ fun PromptToSelectDate() {
     }
 }
 
-// Helper function for date formatting
+/**
+ * Helper function to format a [LocalDate] for display.
+ * Displays "Today", "Tomorrow", or the full date in "dd MMMM" format.
+ *
+ * @param date The [LocalDate] to format.
+ * @return The formatted date string.
+ */
 fun formatDateForDisplay(date: LocalDate): String {
     return try {
         when (date) {
@@ -331,6 +381,3 @@ fun formatDateForDisplay(date: LocalDate): String {
         date.toString() + " (${e.message})"
     }
 }
-
-
-
