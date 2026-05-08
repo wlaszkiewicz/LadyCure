@@ -1,7 +1,5 @@
 package com.example.ladycure.presentation.home.components
 
-import DefaultOnPrimary
-import DefaultPrimary
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -56,6 +54,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.ui.theme.AliceBlue
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Honeydew
+import com.example.ladycure.ui.theme.Lavender
+import com.example.ladycure.ui.theme.LavenderBlush
+import com.example.ladycure.ui.theme.LightGoldenrod
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SharedPreferencesHelper
 
 @Composable
@@ -69,6 +75,7 @@ fun BookAppointmentSection(
     context: Context = LocalContext.current
 ) {
 
+    val dimens = rememberResponsiveDimens()
     val lastFetchedCity = remember(initialCity) { mutableStateOf<String?>(initialCity) }
 
     if (initialCity == "Detecting City...") {
@@ -106,7 +113,7 @@ fun BookAppointmentSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = dimens.h(0.0175f))
     ) {
         Text(
             text = "Book Appointment",
@@ -120,7 +127,7 @@ fun BookAppointmentSection(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = dimens.h(0.0175f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -174,8 +181,8 @@ fun BookAppointmentSection(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 16.dp, bottom = 8.dp, top = 4.dp)
-                                .height(30.dp),
+                                .padding(start = dimens.w(0.039f), bottom = 8.dp, top = 4.dp)
+                                .height(dimens.h(0.033f)),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
@@ -213,7 +220,7 @@ fun BookAppointmentSection(
                 onDismissRequest = { showLocationDropdown = false },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .heightIn(max = 300.dp)
+                    .heightIn(max = dimens.h(0.328f))
                     .background(
                         color = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(12.dp)
@@ -265,12 +272,13 @@ fun SpecialityCard(
     onSpecialitySelected: (Speciality) -> Unit
 ) {
 
+    val dimens = rememberResponsiveDimens()
     val specializationColors = listOf(
-        Color(0xFFFFF0F5),
-        Color(0xFFF0F8FF),
-        Color(0xFFFAFAD2),
-        Color(0xFFE9FFEB),
-        Color(0xFFE2DCFA)
+        LavenderBlush,
+        AliceBlue,
+        LightGoldenrod,
+        Honeydew,
+        Lavender
     )
 
     val cardColor = specializationColors[speciality.ordinal % specializationColors.size]
@@ -279,8 +287,8 @@ fun SpecialityCard(
     ) {
         Card(
             modifier = Modifier
-                .width(150.dp)
-                .height(140.dp),
+                .width(dimens.w(0.365f))
+                .height(dimens.h(0.153f)),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = cardColor.copy(alpha = 0.9f) // Slightly transparent
@@ -297,7 +305,7 @@ fun SpecialityCard(
                 Icon(
                     painter = painterResource(speciality.icon),
                     contentDescription = speciality.displayName,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(dimens.w(0.078f)),
                     tint = DefaultPrimary
                 )
                 Spacer(modifier = Modifier.height(8.dp))

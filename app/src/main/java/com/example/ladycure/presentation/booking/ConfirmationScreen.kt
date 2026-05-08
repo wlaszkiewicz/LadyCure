@@ -1,10 +1,5 @@
 package com.example.ladycure.presentation.booking
 
-import BabyBlue
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import Red
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -79,6 +74,13 @@ import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Referral
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.YellowOrange
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -105,6 +107,7 @@ fun ConfirmationScreen(
     referralId: String? = null,
     viewModel: ConfirmationViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
@@ -162,7 +165,12 @@ fun ConfirmationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+                .padding(
+                    top = dimens.h(20 / 914f),
+                    bottom = dimens.h(16 / 914f),
+                    start = dimens.w(16 / 411f),
+                    end = dimens.w(16 / 411f)
+                ),
         ) {
             // Header with back button
             Row(
@@ -171,7 +179,7 @@ fun ConfirmationScreen(
             ) {
                 IconButton(
                     onClick = { navController.popBackStack() },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(dimens.w(48 / 411f))
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -179,7 +187,7 @@ fun ConfirmationScreen(
                         tint = DefaultOnPrimary,
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
                 Text(
                     text = "Confirm Appointment",
                     style = MaterialTheme.typography.titleLarge,
@@ -201,7 +209,7 @@ fun ConfirmationScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp),
+                                .padding(vertical = dimens.h(16 / 914f)),
                             colors = CardDefaults.cardColors(
                                 containerColor = Color.White,
                                 contentColor = DefaultPrimary
@@ -209,7 +217,10 @@ fun ConfirmationScreen(
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier.padding(
+                                    horizontal = dimens.w(16 / 411f),
+                                    vertical = dimens.h(16 / 914f)
+                                )
                             ) {
                                 Text(
                                     text = "Appointment Scheduled",
@@ -251,7 +262,7 @@ fun ConfirmationScreen(
                         AppointmentTypeCard(
                             appointmentType = appointmentType,
                             referralId = referralId,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                         )
 
                         if (referralId != null) {
@@ -260,7 +271,7 @@ fun ConfirmationScreen(
                                 onUploadNew = {
                                     pdfLauncher.launch("application/pdf")
                                 },
-                                modifier = Modifier.padding(bottom = 16.dp),
+                                modifier = Modifier.padding(bottom = dimens.h(16 / 914f)),
                                 isUploading = isUploading,
                                 uploadProgress = uploadProgress,
                                 showUploadSuccess = showUploadSuccess
@@ -270,17 +281,17 @@ fun ConfirmationScreen(
                         // Doctor information card
                         DoctorConfirmationCard(
                             doctor = doctorInfo,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                         )
 
                         LocationCard(
                             doctor = doctorInfo,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                         )
 
                         // Payment information card
                         PaymentCard(
-                            modifier = Modifier.padding(bottom = 24.dp),
+                            modifier = Modifier.padding(bottom = dimens.h(24 / 914f)),
                             appointmentType = appointmentType
                         )
 
@@ -288,8 +299,8 @@ fun ConfirmationScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                .padding(bottom = dimens.h(16 / 914f)),
+                            horizontalArrangement = Arrangement.spacedBy(dimens.w(16 / 411f))
                         ) {
                             OutlinedButton(
                                 onClick = { navController.popBackStack() },
@@ -347,6 +358,7 @@ fun ConfirmationScreen(
 
 @Composable
 private fun LoadingView() {
+    val dimens = rememberResponsiveDimens()
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -357,7 +369,7 @@ private fun LoadingView() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(color = DefaultPrimary)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
             Text("Loading appointment details...", color = DefaultOnPrimary)
         }
     }
@@ -369,6 +381,7 @@ private fun AppointmentTypeCard(
     referralId: String?,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
@@ -378,7 +391,10 @@ private fun AppointmentTypeCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            )
         ) {
             // Header with service name and duration
             Row(
@@ -402,7 +418,7 @@ private fun AppointmentTypeCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
             // Service description
             Text(
@@ -414,7 +430,7 @@ private fun AppointmentTypeCard(
             Text(
                 text = appointmentType.additionalInfo,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
             )
 
             // Preparation instructions
@@ -427,7 +443,7 @@ private fun AppointmentTypeCard(
             Text(
                 text = appointmentType.preparationInstructions,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
             )
 
             // Requirements chip
@@ -439,14 +455,14 @@ private fun AppointmentTypeCard(
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "Referral required",
-                        tint = Color(0xFFFFA000),
+                        tint = YellowOrange,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Medical referral required",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFFFFA000)
+                        color = YellowOrange
                     )
                 }
             }
@@ -460,6 +476,7 @@ private fun PaymentCard(
     appointmentType: AppointmentType,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val taxRate = 0.09 // 9% tax
     val taxAmount = appointmentType.price * taxRate
     val totalAmount = appointmentType.price + taxAmount
@@ -473,7 +490,10 @@ private fun PaymentCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            )
         ) {
             Text(
                 text = "Payment Information",
@@ -516,7 +536,7 @@ private fun PaymentCard(
             }
 
             Divider(
-                modifier = Modifier.padding(vertical = 12.dp),
+                modifier = Modifier.padding(vertical = dimens.h(12 / 914f)),
                 color = Color.LightGray,
                 thickness = 1.dp
             )
@@ -547,6 +567,7 @@ private fun LocationCard(
     doctor: Map<String, Any>,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val address = doctor["address"] as? String ?: "Address unavailable"
     val city = doctor["city"] as? String ?: ""
     val fullAddress = "$address, $city"
@@ -567,13 +588,16 @@ private fun LocationCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            )
         ) {
             Text(
                 text = "Location",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
             )
 
             // Google Map
@@ -581,7 +605,7 @@ private fun LocationCard(
                 GoogleMap(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
+                        .height(dimens.h(200 / 914f))
                         .clip(RoundedCornerShape(8.dp)),
                     cameraPositionState = rememberCameraPositionState {
                         position = CameraPosition.fromLatLngZoom(latLng, 15f)
@@ -599,7 +623,7 @@ private fun LocationCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
+                        .height(dimens.h(200 / 914f))
                         .background(Color.LightGray),
                     contentAlignment = Alignment.Center
                 ) {
@@ -607,7 +631,7 @@ private fun LocationCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
 
             // Contact details
             Row(
@@ -620,7 +644,7 @@ private fun LocationCard(
                     tint = DefaultPrimary,
                     modifier = Modifier.padding(top = 4.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(dimens.w(12 / 411f)))
                 Column {
                     Text(
                         text = "Clinic Address",
@@ -636,7 +660,7 @@ private fun LocationCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -648,7 +672,7 @@ private fun LocationCard(
                     tint = DefaultPrimary,
                     modifier = Modifier.padding(top = 4.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(dimens.w(12 / 411f)))
                 Column {
                     Text(
                         text = "Contact Number",
@@ -708,6 +732,7 @@ private fun DoctorConfirmationCard(
     doctor: Map<String, Any>,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val name = doctor["name"] as? String ?: "Dr. Unknown"
     val surname = doctor["surname"] as? String ?: "Unknown"
     val specialization = doctor["speciality"] as? String ?: "Specialist"
@@ -741,7 +766,7 @@ private fun DoctorConfirmationCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
                 .fillMaxWidth()
         ) {
             Text(
@@ -753,13 +778,13 @@ private fun DoctorConfirmationCard(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
             ) {
                 SubcomposeAsyncImage(
                     model = imageUrl,
                     contentDescription = "Doctor $name",
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(dimens.w(80 / 411f))
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop,
                     loading = {
@@ -778,14 +803,14 @@ private fun DoctorConfirmationCard(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = "Doctor $name",
                             modifier = Modifier
-                                .size(80.dp)
+                                .size(dimens.w(80 / 411f))
                                 .clip(CircleShape),
                             tint = Color.Gray
                         )
                     }
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
                 Column {
                     Text(
@@ -807,7 +832,7 @@ private fun DoctorConfirmationCard(
                         Text(
                             text = "⭐ $rating",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color(0xFFFFA000)
+                            color = YellowOrange
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -849,6 +874,7 @@ fun ReferralInfoCard(
     uploadProgress: Float = 0f,
     showUploadSuccess: Boolean = false
 ) {
+    val dimens = rememberResponsiveDimens()
     val referralUrl = referral?.url
     val serviceName = referral?.service
     val uploadDate = referral?.uploadedAt
@@ -875,7 +901,10 @@ fun ReferralInfoCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            )
         ) {
             // Header
             Row(
@@ -890,7 +919,7 @@ fun ReferralInfoCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
             // Upload progress section
             if (isUploading) {
@@ -923,7 +952,7 @@ fun ReferralInfoCard(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
                         .background(BabyBlue.copy(alpha = 0.1f))
-                        .padding(12.dp),
+                        .padding(dimens.w(12 / 411f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -944,7 +973,7 @@ fun ReferralInfoCard(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
             }
 
             if (!isUploading && referralUrl != null) {
@@ -953,17 +982,17 @@ fun ReferralInfoCard(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .padding(12.dp),
+                        .padding(dimens.w(12 / 411f)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         painter = pdfIconPainter,
                         contentDescription = "PDF",
                         tint = Red.copy(alpha = 0.8f),
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(dimens.w(40 / 411f))
                     )
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(12 / 411f)))
 
                     Column {
                         Text(
@@ -985,7 +1014,7 @@ fun ReferralInfoCard(
 
                     IconButton(
                         onClick = { openPdf(context, referralUrl) },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(dimens.w(36 / 411f))
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -1005,7 +1034,7 @@ fun ReferralInfoCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                 // Metadata
                 Column(
@@ -1030,7 +1059,7 @@ fun ReferralInfoCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp)
+                        .height(dimens.h(100 / 914f))
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center
@@ -1042,7 +1071,7 @@ fun ReferralInfoCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
             // Upload/Change Button (disabled during upload)
             Button(

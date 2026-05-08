@@ -1,11 +1,5 @@
 package com.example.ladycure.presentation.applications
 
-import BabyBlue
-import DefaultBackground
-import DefaultPrimary
-import Green
-import Red
-import YellowOrange
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -77,6 +71,14 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.ladycure.domain.model.ApplicationStatus
 import com.example.ladycure.domain.model.DoctorApplication
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.OffWhite
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.YellowOrange
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.time.format.DateTimeFormatter
 
@@ -87,6 +89,7 @@ fun DoctorPendingMainScreen(
     snackbarController: SnackbarController,
     viewModel: DoctorPendingViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     val applicationData by viewModel.applicationData.collectAsState()
     val error by viewModel.error.collectAsState()
     val showFullApplicationDialog by viewModel.showFullApplicationDialog.collectAsState()
@@ -107,10 +110,10 @@ fun DoctorPendingMainScreen(
             verticalArrangement = Arrangement.Center
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(dimens.w(0.117f)),
                 color = DefaultPrimary
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
             Text(text = "Loading application data...", fontSize = 18.sp)
         }
     } else {
@@ -118,14 +121,14 @@ fun DoctorPendingMainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .padding(16.dp)
+                .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
                 .verticalScroll(rememberScrollState())
         ) {
             // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp), // Consistent with HomeScreen Header padding
+                    .padding(vertical = dimens.h(0.017f)), // Consistent with HomeScreen Header padding
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -139,7 +142,7 @@ fun DoctorPendingMainScreen(
 
                 IconButton(
                     onClick = { viewModel.showLogoutConfirmation() },
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(dimens.w(0.073f))
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.Logout,
@@ -150,7 +153,7 @@ fun DoctorPendingMainScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
             StatusCard(
                 data = applicationData!!,
@@ -158,7 +161,7 @@ fun DoctorPendingMainScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
 
             ApplicationPreviewCard(
@@ -167,7 +170,7 @@ fun DoctorPendingMainScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
             ContactSupportCard(modifier = Modifier.fillMaxWidth())
         }
@@ -215,6 +218,8 @@ private fun StatusCard(
     status: ApplicationStatus,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
+
     data class StatusInfo(
         val icon: ImageVector,
         val title: String,
@@ -259,7 +264,7 @@ private fun StatusCard(
         color = Color.White
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.049f), vertical = dimens.h(0.022f)),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -268,7 +273,7 @@ private fun StatusCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(dimens.w(0.117f))
                         .clip(CircleShape)
                         .background(color.copy(alpha = 0.1f))
                         .padding(8.dp),
@@ -298,17 +303,20 @@ private fun StatusCard(
             }
 
             if (status == ApplicationStatus.REJECTED || status == ApplicationStatus.NEEDS_MORE_INFO) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.013f)))
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFFAFAFA),
+                    color = OffWhite,
                     border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
                 ) {
                     Text(
                         text = "Feedback: ${data.reviewNotes ?: "No additional feedback provided"}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray,
-                        modifier = Modifier.padding(12.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.029f),
+                            vertical = dimens.h(0.013f)
+                        )
                     )
                 }
             }
@@ -322,6 +330,7 @@ private fun ApplicationPreviewCard(
     onViewDetails: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
@@ -329,7 +338,7 @@ private fun ApplicationPreviewCard(
         color = Color.White
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.049f), vertical = dimens.h(0.022f)),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -358,7 +367,7 @@ private fun ApplicationPreviewCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
             // Doctor info section
             Row(
@@ -367,7 +376,7 @@ private fun ApplicationPreviewCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(dimens.w(0.146f))
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f))
                         .padding(12.dp),
@@ -377,7 +386,7 @@ private fun ApplicationPreviewCard(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Doctor",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(dimens.w(0.068f))
                     )
                 }
 
@@ -395,7 +404,7 @@ private fun ApplicationPreviewCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -445,7 +454,7 @@ private fun ApplicationPreviewCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
             // More subtle button
             OutlinedButton(
@@ -476,6 +485,7 @@ private fun GridItem(
     value: String,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -483,7 +493,7 @@ private fun GridItem(
         border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.1f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.029f), vertical = dimens.h(0.013f)),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
@@ -506,7 +516,7 @@ private fun GridItem(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(start = 26.dp) // Align with icon
+                modifier = Modifier.padding(start = dimens.w(0.063f)) // Align with icon
             )
         }
     }
@@ -514,6 +524,7 @@ private fun GridItem(
 
 @Composable
 private fun ContactSupportCard(modifier: Modifier = Modifier) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
@@ -521,7 +532,7 @@ private fun ContactSupportCard(modifier: Modifier = Modifier) {
         color = Color.White
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.049f), vertical = dimens.h(0.022f)),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
@@ -563,6 +574,7 @@ private fun FullApplicationDialog(
     onDismiss: () -> Unit,
     viewModel: DoctorPendingViewModel
 ) {
+    val dimens = rememberResponsiveDimens()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
@@ -597,7 +609,7 @@ private fun FullApplicationDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(horizontal = dimens.w(0.058f), vertical = dimens.h(0.026f)),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -613,7 +625,7 @@ private fun FullApplicationDialog(
                         IconButton(
                             onClick = onDismiss,
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(dimens.w(0.088f))
                                 .clip(CircleShape)
                                 .background(DefaultPrimary.copy(alpha = 0.1f))
                         ) {
@@ -629,7 +641,7 @@ private fun FullApplicationDialog(
                 Column(
                     modifier = Modifier
                         .verticalScroll(scrollState)
-                        .padding(horizontal = 24.dp)
+                        .padding(horizontal = dimens.w(0.058f))
                         .weight(1f)
                 ) {
                     // Personal Information Section
@@ -666,7 +678,7 @@ private fun FullApplicationDialog(
                         value = "${application.address}, ${application.city}"
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
                     // Professional Information Section
                     SectionHeader(
@@ -697,7 +709,7 @@ private fun FullApplicationDialog(
                         value = application.currentWorkplace
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
                     // Documents Section
                     SectionHeader(
@@ -712,7 +724,7 @@ private fun FullApplicationDialog(
                         title = "Medical License",
                         imageUrl = application.licensePhotoUrl,
                         context = context,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                        modifier = Modifier.padding(bottom = dimens.h(0.017f)),
                         viewModel = viewModel
                     )
 
@@ -721,7 +733,7 @@ private fun FullApplicationDialog(
                         title = "Medical Diploma",
                         imageUrl = application.diplomaPhotoUrl,
                         context = context,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                        modifier = Modifier.padding(bottom = dimens.h(0.017f)),
                         viewModel = viewModel
                     )
                 }
@@ -730,7 +742,7 @@ private fun FullApplicationDialog(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f)),
                     shape = RoundedCornerShape(12.dp),
                     color = DefaultPrimary.copy(alpha = 0.1f),
                     border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f))
@@ -746,7 +758,7 @@ private fun FullApplicationDialog(
                         style = MaterialTheme.typography.labelMedium,
                         color = DefaultPrimary,
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = dimens.w(0.039f), vertical = 8.dp)
                             .align(Alignment.CenterHorizontally)
                     )
                 }
@@ -790,6 +802,7 @@ private fun DocumentPreviewItem(
     modifier: Modifier = Modifier,
     viewModel: DoctorPendingViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -835,7 +848,7 @@ private fun DocumentPreviewItem(
             contentDescription = title,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
+                .height(dimens.h(0.131f))
                 .clip(RoundedCornerShape(12.dp)),
             error = rememberVectorPainter(Icons.Default.ImageNotSupported),
             contentScale = ContentScale.Crop

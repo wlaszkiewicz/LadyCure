@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.home.components
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -33,6 +30,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.ladycure.data.repository.UserRepository
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
 
 sealed class Screen(
     val route: String,

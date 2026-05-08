@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.home
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import android.Manifest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,6 +58,10 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.home.components.AppointmentsSection
 import com.example.ladycure.presentation.home.components.BookAppointmentSection
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.HealthTips.getDailyTip
 import com.example.ladycure.utility.HealthTips.getRandomTip
 import com.example.ladycure.utility.SnackbarController
@@ -82,8 +83,9 @@ fun HomeScreen(
     snackbarController: SnackbarController? = null,
     homeViewModel: HomeViewModel = viewModel()
 ) {
-    // Observe the state from the ViewModel
+
     val uiState by homeViewModel.uiState.collectAsState()
+    val dimens = rememberResponsiveDimens()
 
     val locationPermissionState = rememberPermissionState(
         Manifest.permission.ACCESS_FINE_LOCATION
@@ -128,7 +130,7 @@ fun HomeScreen(
         ) {
             CircularProgressIndicator(
                 color = DefaultPrimary,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(dimens.w(0.117f))
             )
         }
     } else {
@@ -136,7 +138,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = dimens.w(0.039f))
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
@@ -331,6 +333,7 @@ fun HealthTipCard(
     onRefreshClick: () -> Unit,
     onTodayClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     val setToTodays = remember { mutableStateOf(false) }
 
     setToTodays.value = dailyTip == getDailyTip()
@@ -343,7 +346,10 @@ fun HealthTipCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(
+                horizontal = dimens.w(0.039f),
+                vertical = dimens.h(0.0175f)
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row {
@@ -381,7 +387,8 @@ fun HealthTipCard(
                         Icon(
                             imageVector = Icons.Default.CalendarToday,
                             contentDescription = "Todays Tip",
-                            tint = DefaultPrimary
+                            tint = DefaultPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -402,11 +409,11 @@ fun Header(
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit
 ) {
-
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, start = 2.dp),
+            .padding(top = dimens.h(0.0175f), start = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -442,7 +449,7 @@ fun Header(
                             imageVector = Icons.Default.NotificationsNone,
                             contentDescription = "Notifications",
                             tint = DefaultPrimary,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(dimens.w(0.068f))
                         )
                     }
                 } else {
@@ -450,18 +457,18 @@ fun Header(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Notifications",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(dimens.w(0.068f))
                     )
                 }
 
             }
 
-            Spacer(modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.size(dimens.w(0.039f)))
 
             // User avatar
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(dimens.w(0.136f))
                     .clip(CircleShape)
                     .background(DefaultPrimary.copy(alpha = 0.2f))
                     .clickable { onProfileClick() },

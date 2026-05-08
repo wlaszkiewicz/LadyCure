@@ -43,6 +43,7 @@ class AdminDoctorManagementViewModel(
     var isLoadingDoctors by mutableStateOf(false)
         private set
 
+    // TODO: replace with List<Doctor> — Doctor.fromMap() already exists; update repository call site
     var users by mutableStateOf<List<Map<String, Any>>>(emptyList())
         private set
 

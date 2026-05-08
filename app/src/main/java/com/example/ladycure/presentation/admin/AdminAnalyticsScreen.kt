@@ -1,12 +1,5 @@
 package com.example.ladycure.presentation.admin
 
-import BabyBlue
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
-import Purple
-import Red
-import Yellow
 import android.graphics.Paint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -51,6 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.Purple
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,6 +61,7 @@ fun AdminAnalyticsScreen(
     snackbarController: SnackbarController,
     viewModel: AdminAnalyticsViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     var errorMessage = viewModel.errorMessage
 
     LaunchedEffect(errorMessage) {
@@ -71,7 +73,7 @@ fun AdminAnalyticsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = dimens.w(0.039f), vertical = 8.dp)
     ) {
         Text(
             text = "Admin Analytics",
@@ -79,14 +81,14 @@ fun AdminAnalyticsScreen(
                 fontWeight = FontWeight.Bold
             ),
             color = DefaultPrimary,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = dimens.h(0.017f))
         )
 
         // Time period selector
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = dimens.h(0.017f)),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             TimePeriod.entries.forEach { period ->
@@ -122,12 +124,12 @@ fun AdminAnalyticsScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(dimens.h(0.017f))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = dimens.h(0.017f)),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SummaryCard(
@@ -175,7 +177,12 @@ fun AdminAnalyticsScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.029f),
+                            vertical = dimens.h(0.013f)
+                        )
+                    ) {
                         Text(
                             "Application Status",
                             style = MaterialTheme.typography.titleLarge.copy(
@@ -193,12 +200,12 @@ fun AdminAnalyticsScreen(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp)
+                                    .height(dimens.h(0.219f))
                             )
                         } else {
                             Text(
                                 "No application data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
+                                modifier = Modifier.padding(vertical = dimens.h(0.017f))
                             )
                         }
                     }
@@ -211,7 +218,7 @@ fun AdminAnalyticsScreen(
                     data = viewModel.usersAgeData
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.017f)))
             }
         }
     }
@@ -224,12 +231,18 @@ private fun AnalyticsChartCard(
     data: List<Pair<String, Int>>,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = dimens.w(0.029f),
+                vertical = dimens.h(0.013f)
+            )
+        ) {
             Text(
                 title,
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -244,13 +257,13 @@ private fun AnalyticsChartCard(
                     color = color,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(180.dp)
+                        .height(dimens.h(0.197f))
                         .padding(top = 8.dp)
                 )
             } else {
                 Text(
                     "No data available",
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = dimens.h(0.017f))
                 )
             }
         }
@@ -265,6 +278,7 @@ fun SummaryCard(
     color: Color,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -272,7 +286,7 @@ fun SummaryCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(horizontal = dimens.w(0.029f), vertical = dimens.h(0.013f))
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -301,11 +315,12 @@ fun BarChart(
     color: Color,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val maxValue = data.maxOfOrNull { it.second }?.toFloat() ?: 1f
 
     Row(
         modifier = modifier
-            .padding(bottom = 16.dp)
+            .padding(bottom = dimens.h(0.017f))
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.Center
     ) {
@@ -382,6 +397,7 @@ fun PieChart(
     data: Map<String, Int>,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val total = data.values.sum().toFloat()
 
     Column(
@@ -391,7 +407,7 @@ fun PieChart(
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .height(dimens.h(0.175f))
         ) {
             var startAngle = -90f
             val radius = size.minDimension / 2f - 20.dp.toPx()

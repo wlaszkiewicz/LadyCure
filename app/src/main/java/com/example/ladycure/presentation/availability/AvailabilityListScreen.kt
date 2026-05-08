@@ -1,7 +1,5 @@
 package com.example.ladycure.presentation.availability
 
-import DefaultBackground
-import DefaultPrimary
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
@@ -62,6 +60,10 @@ import androidx.navigation.NavController
 import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.DoctorAvailability
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.FractionDimens
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
@@ -131,6 +133,7 @@ fun AvailabilityListScreen(
         }
     }
 
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -140,15 +143,18 @@ fun AvailabilityListScreen(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(
+                    horizontal = dimens.w(FractionDimens.paddingSmallW),
+                    vertical = dimens.h(FractionDimens.paddingSmallH)
+                )
         ) {
             IconButton(
                 onClick = { navController.popBackStack() },
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(dimens.w(FractionDimens.iconSmallW))
             ) {
                 Icon(Icons.Default.ArrowBack, "Back", tint = DefaultPrimary)
             }
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(dimens.w(FractionDimens.paddingSmallW)))
             Text(
                 if (isAdminView) "Doctor Availability" else "My Availability",
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -164,7 +170,7 @@ fun AvailabilityListScreen(
             }
         } else {
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(FractionDimens.paddingSmallH)))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -172,7 +178,7 @@ fun AvailabilityListScreen(
             ) {
                 IconButton(
                     onClick = { chosenMonth = chosenMonth.minus(1, ChronoUnit.MONTHS) },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(dimens.w(FractionDimens.iconSmallW))
                 ) {
                     Icon(
                         Icons.Default.ArrowBack,
@@ -193,7 +199,7 @@ fun AvailabilityListScreen(
                     onClick = {
                         chosenMonth = chosenMonth.plus(1, ChronoUnit.MONTHS)
                     },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(dimens.w(FractionDimens.iconSmallW))
                 ) {
                     Icon(
                         Icons.Default.ArrowForward,
@@ -214,23 +220,27 @@ fun AvailabilityListScreen(
 
 @Composable
 private fun EmptyAvailabilityState() {
+    val dimens = rememberResponsiveDimens()
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(FractionDimens.paddingMediumW),
+                vertical = dimens.h(FractionDimens.paddingMediumH)
+            )
         )
         {
             Icon(
                 Icons.Default.Schedule,
                 contentDescription = "No availability",
                 tint = DefaultPrimary.copy(alpha = 0.5f),
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(dimens.w(FractionDimens.iconLargeW))
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(FractionDimens.paddingSmallH)))
 
             Text(
                 "No availability scheduled",
@@ -253,10 +263,11 @@ private fun EmptyAvailabilityState() {
 private fun AvailabilityContent(
     availabilitiesInMonth: Map<LocalDate?, List<DoctorAvailability>>
 ) {
+    val dimens = rememberResponsiveDimens()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = dimens.w(FractionDimens.paddingSmallW))
     ) {
 
         availabilitiesInMonth.forEach { (date, availabilities) ->
@@ -272,7 +283,7 @@ private fun AvailabilityContent(
         }
 
         item {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(dimens.h(FractionDimens.paddingMediumH)))
         }
     }
 }
@@ -283,6 +294,7 @@ private fun ExistingAvailabilityDayItem(
     availabilities: List<DoctorAvailability>,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val elevation by animateDpAsState(
         targetValue = 2.dp,
         animationSpec = tween(durationMillis = 100)
@@ -303,7 +315,10 @@ private fun ExistingAvailabilityDayItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(
+                    horizontal = dimens.w(FractionDimens.paddingSmallW),
+                    vertical = dimens.h(FractionDimens.paddingSmallH)
+                )
         ) {
             // Date header
             Row(
@@ -327,7 +342,7 @@ private fun ExistingAvailabilityDayItem(
 
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(dimens.w(FractionDimens.paddingMediumW))
                         .background(
                             color = DefaultPrimary.copy(alpha = 0.1f),
                             shape = CircleShape
@@ -343,7 +358,7 @@ private fun ExistingAvailabilityDayItem(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(FractionDimens.spacingTinyH)))
 
             // Time slots
             availabilities.forEachIndexed { index, availability ->
@@ -366,7 +381,7 @@ private fun ExistingAvailabilityDayItem(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(dimens.w(FractionDimens.iconSmallW))
                                 .background(
                                     color = DefaultPrimary.copy(alpha = 0.1f),
                                     shape = RoundedCornerShape(8.dp)
@@ -382,7 +397,7 @@ private fun ExistingAvailabilityDayItem(
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(dimens.w(FractionDimens.spacingTinyW)))
 
                         Column {
                             Text(
@@ -417,6 +432,7 @@ private fun TimeSlotsVisualization(
     availableSlots: List<LocalTime>,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val slotDuration = 15 // minutes
     val allPossibleSlots = remember(startTime, endTime) {
         generateSequence(startTime) { it.plusMinutes(slotDuration.toLong()) }
@@ -464,7 +480,7 @@ private fun TimeSlotsVisualization(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(16.dp)
+                .height(dimens.h(FractionDimens.paddingSmallH))
                 .clip(RoundedCornerShape(4.dp))
                 .background(Color.LightGray.copy(alpha = 0.1f))
         ) {
@@ -549,7 +565,10 @@ private fun TimeSlotsVisualization(
                                         else Color.Gray,
                                         RoundedCornerShape(4.dp)
                                     )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    .padding(
+                                        horizontal = dimens.w(FractionDimens.spacingTinyW),
+                                        vertical = dimens.h(FractionDimens.paddingTinyH)
+                                    )
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(

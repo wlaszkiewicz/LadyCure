@@ -1,9 +1,5 @@
 package com.example.ladycure.presentation.chat
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import Grey
 import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
@@ -21,7 +17,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -96,6 +91,10 @@ import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Message
 import com.example.ladycure.presentation.booking.FileTooLargeDialog
 import com.example.ladycure.presentation.home.DoctorInfoCard
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.PdfUploader
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
@@ -114,6 +113,7 @@ fun DoctorChatScreen(
     chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
     doctorRepository: DoctorRepository = DoctorRepository(),
 ) {
+    val dimens = rememberResponsiveDimens()
     val currentUserId = chatRepository.getCurrentUserId()
     val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
     val context = LocalContext.current
@@ -241,13 +241,13 @@ fun DoctorChatScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp)
-                        .padding(horizontal = 16.dp),
+                        .height(dimens.h(0.088f))
+                        .padding(horizontal = dimens.w(0.039f)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
                         onClick = { navController.popBackStack() },
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(dimens.w(0.097f))
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -260,7 +260,7 @@ fun DoctorChatScreen(
 
                     Box(
                         modifier = Modifier
-                            .size(45.dp)
+                            .size(dimens.w(0.109f))
                             .clip(CircleShape)
                             .background(DefaultBackground)
                             .clickable { onProfileClick() },
@@ -279,7 +279,7 @@ fun DoctorChatScreen(
                             Icon(
                                 imageVector = Icons.Default.AccountCircle,
                                 contentDescription = "Profile",
-                                modifier = Modifier.size(50.dp),
+                                modifier = Modifier.size(dimens.w(0.122f)),
                                 tint = DefaultOnPrimary.copy(alpha = 0.6f)
                             )
                         }
@@ -304,7 +304,7 @@ fun DoctorChatScreen(
 //                        }
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(0.039f)))
 
                     Column(
                         modifier = Modifier
@@ -340,7 +340,7 @@ fun DoctorChatScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(dimens.w(0.097f))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Phone,
@@ -442,10 +442,11 @@ fun ModernMessageInputBar(
     hasAttachment: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp),
+            .height(dimens.h(0.088f)),
         tonalElevation = 8.dp,
         shadowElevation = 4.dp,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -454,14 +455,14 @@ fun ModernMessageInputBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = dimens.w(0.039f), vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             IconButton(
                 onClick = onAttachFile,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(dimens.w(0.107f))
                     .background(
                         color = Color.White.copy(alpha = 0.2f),
                         shape = CircleShape
@@ -481,12 +482,12 @@ fun ModernMessageInputBar(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 48.dp)
+                    .heightIn(min = dimens.h(0.053f))
                     .background(
                         color = Color.White.copy(alpha = 0.3f),
                         shape = RoundedCornerShape(24.dp)
                     )
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = dimens.w(0.039f), vertical = 4.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (messageText.isEmpty()) {
@@ -519,9 +520,9 @@ fun ModernMessageInputBar(
 
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(dimens.w(0.117f))
                     .background(
-                        color = if (sendButtonEnabled) Color.White else Grey.copy(alpha = 0.7f),
+                        color = if (sendButtonEnabled) Color.White else Color.White.copy(alpha = 0.7f),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -535,7 +536,7 @@ fun ModernMessageInputBar(
                 } else {
                     IconButton(
                         onClick = onSendMessage,
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(dimens.w(0.117f)),
                         enabled = sendButtonEnabled,
                         colors = IconButtonDefaults.iconButtonColors(
                             contentColor = DefaultPrimary
@@ -576,8 +577,9 @@ fun ModernMessageBubble(
         label = "Text color"
     )
 
+    val dimens = rememberResponsiveDimens()
     val senderDisplayName = if (isCurrentUser) "Me" else message.senderName
-    val profilePictureSize = 36.dp
+    val profilePictureSize = dimens.w(0.088f)
     val context = LocalContext.current
     var showImageDialog by remember { mutableStateOf(false) }
     var currentImageUrl by remember { mutableStateOf("") }
@@ -656,10 +658,13 @@ fun ModernMessageBubble(
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     modifier = Modifier
                         .animateContentSize()
-                        .widthIn(max = 280.dp)
+                        .widthIn(max = dimens.w(0.681f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.039f),
+                            vertical = dimens.h(0.013f)
+                        )
                     ) {
                         if (targetMessage.text.isNotEmpty()) {
                             Text(
@@ -679,7 +684,7 @@ fun ModernMessageBubble(
                                         contentDescription = "Attached image",
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(150.dp)
+                                            .height(dimens.h(0.164f))
                                             .clip(RoundedCornerShape(8.dp))
                                             .clickable {
                                                 currentImageUrl = url
@@ -770,7 +775,7 @@ fun ModernMessageBubble(
                         contentDescription = "Full image preview",
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(32.dp),
+                            .padding(horizontal = dimens.w(0.078f), vertical = dimens.h(0.035f)),
                         contentScale = ContentScale.Fit
                     )
 
@@ -792,7 +797,7 @@ fun ModernMessageBubble(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(15.dp)
-                            .size(48.dp)
+                            .size(dimens.w(0.117f))
                             .background(
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                 shape = CircleShape
@@ -811,7 +816,7 @@ fun ModernMessageBubble(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(15.dp)
-                            .size(48.dp)
+                            .size(dimens.w(0.117f))
                             .background(
                                 color = Color.Gray.copy(alpha = 0.6f),
                                 shape = CircleShape
@@ -836,6 +841,7 @@ fun ModernAttachmentPreview(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val context = LocalContext.current
     val fileName = remember(uri) {
         context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
@@ -848,14 +854,14 @@ fun ModernAttachmentPreview(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = dimens.w(0.039f), vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         color = DefaultPrimary.copy(alpha = 0.08f),
         border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.1f)),
         tonalElevation = 2.dp
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.029f), vertical = dimens.h(0.013f)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -869,7 +875,7 @@ fun ModernAttachmentPreview(
                     tint = DefaultPrimary,
                     modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(dimens.w(0.029f)))
                 Text(
                     text = fileName,
                     maxLines = 1,
@@ -883,7 +889,7 @@ fun ModernAttachmentPreview(
 
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(dimens.w(0.088f))
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -902,6 +908,7 @@ fun ModernAttachmentPreview(
     textColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val context = LocalContext.current
 
     Surface(
@@ -917,7 +924,7 @@ fun ModernAttachmentPreview(
         color = textColor.copy(alpha = 0.28f),
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.029f), vertical = dimens.h(0.013f)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -925,7 +932,7 @@ fun ModernAttachmentPreview(
                 contentDescription = "Attachment",
                 tint = textColor
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(dimens.w(0.029f)))
             Text(
                 text = fileName,
                 style = MaterialTheme.typography.bodyMedium.copy(color = textColor),
@@ -943,6 +950,7 @@ fun DoctorProfileDialog(
     onBookAppointment: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -950,7 +958,7 @@ fun DoctorProfileDialog(
         Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f)),
             shape = RoundedCornerShape(16.dp),
             color = DefaultBackground
         ) {
@@ -958,7 +966,10 @@ fun DoctorProfileDialog(
                 DoctorInfoCard(
                     doctor = doctor,
                     onSelect = onBookAppointment,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.039f),
+                        vertical = dimens.h(0.017f)
+                    )
                 )
             }
         }

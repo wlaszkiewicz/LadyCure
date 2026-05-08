@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.ladycure.presentation.register.RegisterUiState
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import java.time.LocalDate
 
 @Composable
@@ -51,6 +52,7 @@ fun RegisterForm(
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
+    val dimens = rememberResponsiveDimens()
 
     val (emailFocus, firstNameFocus, lastNameFocus, passwordFocus, confirmPasswordFocus) = remember {
         List(5) { FocusRequester() }
@@ -60,7 +62,7 @@ fun RegisterForm(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
         // Email Field
         OutlinedTextField(
             value = state.email,
@@ -139,7 +141,7 @@ fun RegisterForm(
                     "We are sorry, you must be at least 18 years old",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp)
+                modifier = Modifier.padding(start = dimens.w(0.039f))
             )
         }
 
@@ -218,7 +220,7 @@ fun RegisterForm(
             enabled = state.isValid() && !state.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp),
+                .height(dimens.h(0.055f)),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,

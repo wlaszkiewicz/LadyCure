@@ -14,4 +14,12 @@
 .cxx
 local.properties
 .idea
-/service-account.json
+serviceAccountKey.json
+serviceAccountKey_new.json
+serviceaccount*.json
+
+app/google-services.json
+.google-services.json
+
+.kotlin
+node_modules/

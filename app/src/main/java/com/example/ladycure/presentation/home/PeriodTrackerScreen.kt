@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.home
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -33,7 +30,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -89,6 +85,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.R
 import com.example.ladycure.data.repository.PeriodTrackerRepository
+import com.example.ladycure.ui.theme.DarkMagenta
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.LavenderBlush
+import com.example.ladycure.ui.theme.Lilac
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -156,7 +159,7 @@ fun getPredictedOvulationDates(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PeriodTrackerScreen(navController: NavHostController) {
-
+    val dimens = rememberResponsiveDimens()
     val periodTrackerRepository = remember { PeriodTrackerRepository() }
     val scope = rememberCoroutineScope()
     var currentMonth by remember { mutableStateOf(LocalDate.now()) }
@@ -251,7 +254,7 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                             Icons.Default.Settings,
                             "Settings",
                             tint = DefaultPrimary,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(dimens.w(28 / 411f))
                         )
                     }
                 },
@@ -266,12 +269,12 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                     .fillMaxSize()
                     .background(DefaultBackground)
                     .padding(paddingValues)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = dimens.w(16 / 411f))
             ) {
                 // Month navigation
                 MonthNavigationHeader(currentMonth, onMonthChange = { currentMonth = it })
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
 
                 Card(
@@ -282,7 +285,7 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(dimens.w(16 / 411f))
                     ) {
 
                         WeekdayHeaders()
@@ -312,7 +315,7 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                 PredictionCard(predictedPeriodStarts, predictedOvulationDays)
             }
@@ -369,7 +372,7 @@ fun PeriodTrackerScreen(navController: NavHostController) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = dimens.h(16 / 914f)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 AnimatedVisibility(
@@ -408,6 +411,7 @@ fun MoodGrid(
     onMoodSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val moods = remember {
         listOf(
             MoodOption(R.drawable.happy_kapi_emote, "Happy"),
@@ -424,7 +428,7 @@ fun MoodGrid(
             text = "How are you feeling?",
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
         )
 
         LazyVerticalGrid(
@@ -433,7 +437,7 @@ fun MoodGrid(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(dimens.h(180 / 914f))
         ) {
             items(moods) { mood ->
                 val isSelected = selectedMood == mood.name
@@ -484,6 +488,7 @@ private fun MonthNavigationHeader(
     currentMonth: LocalDate,
     onMonthChange: (LocalDate) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -491,7 +496,7 @@ private fun MonthNavigationHeader(
     ) {
         IconButton(
             onClick = { onMonthChange(currentMonth.minusMonths(1)) },
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(dimens.w(40 / 411f))
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
@@ -509,7 +514,7 @@ private fun MonthNavigationHeader(
 
         IconButton(
             onClick = { onMonthChange(currentMonth.plusMonths(1)) },
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(dimens.w(40 / 411f))
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
@@ -540,6 +545,7 @@ private fun PredictionCard(
     predictedPeriodStarts: Set<LocalDate>,
     predictedOvulationDays: Set<LocalDate>
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -548,7 +554,10 @@ private fun PredictionCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
@@ -674,7 +683,7 @@ private fun CalendarDay(
                 when {
                     isPeriodDay -> DefaultPrimary.copy(alpha = 0.8f)
                     isPredictedPeriodDayRange -> DefaultPrimary.copy(alpha = 0.2f)
-                    isPredictedOvulationDay -> Color(0xFFC8A2C8).copy(alpha = 0.4f)
+                    isPredictedOvulationDay -> Lilac.copy(alpha = 0.4f)
                     isToday -> DefaultPrimary.copy(alpha = 0.1f)
                     else -> Color.White.copy(alpha = if (isCurrentMonth) 0.05f else 0.02f)
                 }
@@ -696,7 +705,7 @@ private fun CalendarDay(
                 color = when {
                     isPeriodDay -> Color.White
                     isPredictedPeriodDayRange -> DefaultPrimary
-                    isPredictedOvulationDay -> Color(0xFF8B008B)
+                    isPredictedOvulationDay -> DarkMagenta
                     isToday -> DefaultPrimary
                     isCurrentMonth -> DefaultOnPrimary
                     else -> DefaultOnPrimary.copy(alpha = 0.4f)
@@ -729,7 +738,7 @@ private fun CalendarDay(
                     modifier = Modifier
                         .size(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF8B008B))
+                        .background(DarkMagenta)
                 )
             }
         }
@@ -742,6 +751,7 @@ private fun SettingsDialog(
     onSave: (PeriodTrackerSettings) -> Unit,
     onCancel: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(onDismissRequest = onCancel) {
         Surface(
             modifier = Modifier
@@ -754,7 +764,7 @@ private fun SettingsDialog(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
@@ -781,7 +791,7 @@ private fun DailyDetailDialog(
         properties = DialogProperties(
             usePlatformDefaultWidth = false
         )
-    ){
+    ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.80f)
@@ -807,11 +817,12 @@ private fun DailySummarySheet(
     onEdit: (LocalDate) -> Unit,
     onClose: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(16.dp)
+            .padding(dimens.w(16 / 411f))
             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
@@ -819,7 +830,7 @@ private fun DailySummarySheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(dimens.w(16 / 411f)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -889,7 +900,7 @@ private fun DailySummarySheet(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
             Button(
                 onClick = { onEdit(date) },
@@ -909,6 +920,7 @@ private fun PeriodTrackerSettingsContent(
     onSave: (PeriodTrackerSettings) -> Unit,
     onCancel: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     var periodLength by remember { mutableStateOf(currentPeriodSettings.averagePeriodLength) }
     var cycleLength by remember { mutableStateOf(currentPeriodSettings.averageCycleLength) }
     var lastPeriodStartDate by remember { mutableStateOf(currentPeriodSettings.lastPeriodStartDate) }
@@ -917,7 +929,7 @@ private fun PeriodTrackerSettingsContent(
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
     ) {
         Text(
             text = "Period Settings",
@@ -963,7 +975,7 @@ private fun PeriodTrackerSettingsContent(
                 onClick = { showDatePicker = true },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .height(dimens.h(48 / 914f)),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DefaultPrimary.copy(alpha = 0.1f),
                     contentColor = DefaultPrimary
@@ -991,7 +1003,7 @@ private fun PeriodTrackerSettingsContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1001,7 +1013,7 @@ private fun PeriodTrackerSettingsContent(
                 onClick = onCancel,
                 modifier = Modifier
                     .weight(1f)
-                    .height(50.dp),
+                    .height(dimens.h(50 / 914f)),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DefaultOnPrimary.copy(alpha = 0.2f)
                 ),
@@ -1013,14 +1025,14 @@ private fun PeriodTrackerSettingsContent(
                     style = MaterialTheme.typography.titleMedium
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
             Button(
                 onClick = {
                     onSave(PeriodTrackerSettings(periodLength, cycleLength, lastPeriodStartDate))
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .height(50.dp),
+                    .height(dimens.h(50 / 914f)),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DefaultPrimary
                 ),
@@ -1039,6 +1051,7 @@ private fun DailyDetailContent(
     onSave: (DailyPeriodData) -> Unit,
     onCancel: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     var dailyData by remember { mutableStateOf(initialDailyData) }
     var noteText by remember { mutableStateOf(initialDailyData.notes) }
     var selectedFlowIntensity by remember { mutableStateOf(initialDailyData.flowIntensity) }
@@ -1052,16 +1065,16 @@ private fun DailyDetailContent(
             .padding(0.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFFF0F5).copy(alpha = 0.95f)
+            containerColor = LavenderBlush.copy(alpha = 0.95f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(24.dp)
+                .padding(horizontal = dimens.w(24 / 411f), vertical = dimens.h(24 / 914f))
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1076,7 +1089,7 @@ private fun DailyDetailContent(
                 )
                 IconButton(
                     onClick = onCancel,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(dimens.w(32 / 411f))
                 ) {
                     Icon(
                         Icons.Default.Close,
@@ -1173,6 +1186,7 @@ private fun NumberSelector(
     maxValue: Int,
     onValueChange: (Int) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceAround,
@@ -1181,7 +1195,7 @@ private fun NumberSelector(
         IconButton(
             onClick = { onValueChange(max(minValue, value - 1)) },
             modifier = Modifier
-                .size(40.dp)
+                .size(dimens.w(40 / 411f))
                 .background(DefaultPrimary.copy(alpha = 0.1f), CircleShape)
         ) {
             Text("-", color = DefaultPrimary, fontWeight = FontWeight.Bold)
@@ -1190,12 +1204,12 @@ private fun NumberSelector(
             text = value.toString(),
             style = MaterialTheme.typography.headlineSmall,
             color = DefaultOnPrimary,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(16 / 411f))
         )
         IconButton(
             onClick = { onValueChange(min(maxValue, value + 1)) },
             modifier = Modifier
-                .size(40.dp)
+                .size(dimens.w(40 / 411f))
                 .background(DefaultPrimary.copy(alpha = 0.1f), CircleShape)
         ) {
             Text("+", color = DefaultPrimary, fontWeight = FontWeight.Bold)
@@ -1209,19 +1223,20 @@ private fun DatePickerDialog(
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     var currentMonth by remember { mutableStateOf(initialDate) }
     var selectedDate by remember { mutableStateOf(initialDate) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
-                .width(320.dp)
+                .width(dimens.w(320 / 411f))
                 .wrapContentHeight(),
             shape = RoundedCornerShape(16.dp),
             color = DefaultBackground
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(dimens.w(16 / 411f)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Month navigation
@@ -1252,7 +1267,7 @@ private fun DatePickerDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                 // Weekday headers
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -1290,7 +1305,7 @@ private fun DatePickerDialog(
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(7),
-                    modifier = Modifier.height(240.dp),
+                    modifier = Modifier.height(dimens.h(240 / 914f)),
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -1326,7 +1341,7 @@ private fun DatePickerDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1343,7 +1358,7 @@ private fun DatePickerDialog(
                         Text("Cancel", color = DefaultOnPrimary)
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
                     Button(
                         onClick = {
@@ -1369,12 +1384,13 @@ private fun PeriodDayToggle(
     isPeriodDay: Boolean,
     onToggle: (Boolean) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isPeriodDay) DefaultPrimary.copy(alpha = 0.2f)
-            else Color(0xFFFFF0F5).copy(alpha = 0.5f)
+            else LavenderBlush.copy(alpha = 0.5f)
         ),
         border = BorderStroke(
             width = 1.dp,
@@ -1385,7 +1401,7 @@ private fun PeriodDayToggle(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(12 / 914f)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -1421,6 +1437,7 @@ private fun FlowIntensitySelector(
     selectedFlowIntensity: String?,
     onSelectionChanged: (String?) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     val intensities = listOf("Light", "Medium", "Heavy")
     val colors = listOf(
         DefaultPrimary.copy(alpha = 0.3f),
@@ -1439,11 +1456,11 @@ private fun FlowIntensitySelector(
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = if (index < intensities.size - 1) 8.dp else 0.dp)
-                    .height(48.dp)
+                    .height(dimens.h(48 / 914f))
                     .clip(RoundedCornerShape(12.dp))
                     .background(
                         if (isSelected) colors[index]
-                        else Color(0xFFFFF0F5).copy(alpha = 0.5f)
+                        else LavenderBlush.copy(alpha = 0.5f)
                     )
                     .border(
                         width = 1.dp,
@@ -1495,8 +1512,8 @@ private fun NotesField(
                 unfocusedBorderColor = DefaultPrimary.copy(alpha = 0.3f),
                 focusedTextColor = DefaultOnPrimary,
                 unfocusedTextColor = DefaultOnPrimary,
-                focusedContainerColor = Color(0xFFFFF0F5).copy(alpha = 0.5f),
-                unfocusedContainerColor = Color(0xFFFFF0F5).copy(alpha = 0.3f)
+                focusedContainerColor = LavenderBlush.copy(alpha = 0.5f),
+                unfocusedContainerColor = LavenderBlush.copy(alpha = 0.3f)
             ),
             label = {
                 Text(
@@ -1556,6 +1573,7 @@ private fun SymptomTracker(
 
 @Composable
 private fun Chip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         shape = RoundedCornerShape(8.dp),
         // Adjusted colors based on isSelected
@@ -1568,7 +1586,7 @@ private fun Chip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(12 / 411f), vertical = 6.dp),
             style = MaterialTheme.typography.bodySmall,
             // Adjusted text color based on isSelected
             color = if (isSelected) Color.White else DefaultPrimary
@@ -1582,6 +1600,7 @@ private fun SaveCancelButtons(
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceAround
@@ -1590,7 +1609,7 @@ private fun SaveCancelButtons(
             onClick = onCancel,
             modifier = Modifier
                 .weight(1f)
-                .height(50.dp),
+                .height(dimens.h(50 / 914f)),
             colors = ButtonDefaults.buttonColors(
                 containerColor = DefaultPrimary.copy(alpha = 0.2f)
             ),
@@ -1602,12 +1621,12 @@ private fun SaveCancelButtons(
                 style = MaterialTheme.typography.titleMedium
             ) // Pink text
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
         Button(
             onClick = onSave,
             modifier = Modifier
                 .weight(1f)
-                .height(50.dp),
+                .height(dimens.h(50 / 914f)),
             colors = ButtonDefaults.buttonColors(
                 containerColor = DefaultPrimary
             ),
@@ -1626,6 +1645,7 @@ private fun SettingCard(
     value: String,
     content: @Composable () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -1634,7 +1654,10 @@ private fun SettingCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {

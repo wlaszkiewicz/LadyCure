@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import java.io.File
 
 class StorageRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -16,6 +17,7 @@ class StorageRepository {
     private val storageRef = storage.reference
 
     suspend fun uploadReferralToFirestore(
+        context: android.content.Context,
         uri: Uri,
         service: AppointmentType?,
         onProgress: (PdfUploader.UploadProgress) -> Unit
@@ -25,7 +27,7 @@ class StorageRepository {
 
         return try {
 
-            val pdfUrl = PdfUploader.uploadReferral(uri, userId, onProgress)
+            val pdfUrl = PdfUploader.uploadReferral(context, uri, userId, onProgress)
 
             firestore.runTransaction { transaction ->
                 val userRef = firestore.collection("users")
@@ -60,6 +62,7 @@ class StorageRepository {
     }
 
     suspend fun replaceReferralInFirestore(
+        context: android.content.Context,
         uri: Uri,
         oldUri: String,
         referralId: String,
@@ -70,7 +73,7 @@ class StorageRepository {
             ?: return Result.failure(Exception("User not logged in"))
 
         return try {
-            val pdfUrl = PdfUploader.replaceReferral(uri, oldUri, userId, onProgress)
+            val pdfUrl = PdfUploader.replaceReferral(context, uri, oldUri, userId, onProgress)
 
             firestore.runTransaction { transaction ->
                 val userRef = firestore.collection("users")
@@ -120,6 +123,7 @@ class StorageRepository {
 
 
     suspend fun uploadFile(
+        context: android.content.Context,
         uri: Uri,
         path: String,
         onProgress: (uploadedBytes: Long, totalBytes: Long) -> Unit
@@ -129,7 +133,11 @@ class StorageRepository {
                 auth.currentUser?.uid ?: return Result.failure(Exception("User not authenticated"))
 
             val fileRef = storage.reference.child(path)
-            val uploadTask = fileRef.putFile(uri)
+
+            val tempFile = File.createTempFile("upload", null, context.cacheDir)
+
+            context.contentResolver.openInputStream(uri)?.use { it.copyTo(tempFile.outputStream()) }
+            val uploadTask = fileRef.putFile(android.net.Uri.fromFile(tempFile))
 
             // Add progress listener
             uploadTask.addOnProgressListener { taskSnapshot ->

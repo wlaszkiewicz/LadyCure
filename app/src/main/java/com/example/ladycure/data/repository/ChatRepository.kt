@@ -95,16 +95,25 @@ class ChatRepository {
 
     suspend fun getCurrentUserName(): String {
         val uid = getCurrentUserId()
+        if (uid.isBlank()) {
+            Log.w("ChatRepository", "Blank user ID in getCurrentUserName")
+            return "the user is not found"
+        }
         val snapshot = firestore.collection("users").document(uid).get().await()
         val name = snapshot.getString("name") ?: ""
         val surname = snapshot.getString("surname") ?: ""
         return if (name.isNotBlank() && surname.isNotBlank()) "$name $surname"
-        else if (name.isNotBlank()) name
-        else "the user is not found"
+        else name.ifBlank { "the user is not found" }
     }
 
     suspend fun getUserProfilePicture(userId: String): String? {
         return try {
+            // Ensure userId is not empty
+            if (userId.isBlank()) {
+                Log.w("ChatRepository", "Blank user ID provided for profile picture")
+                return null
+            }
+
             val snapshot = firestore.collection("users").document(userId).get().await()
             snapshot.getString("profilePictureUrl")
         } catch (e: Exception) {
@@ -115,6 +124,11 @@ class ChatRepository {
 
     suspend fun getSpecificUserData(userId: String): Result<Map<String, Any>?> {
         return try {
+            if (userId.isBlank()) {
+                Log.w("ChatRepository", "Blank user ID provided for user data")
+                return Result.success(null)
+            }
+
             val document = firestore.collection("users").document(userId).get().await()
             if (document.exists()) {
                 Result.success(document.data)

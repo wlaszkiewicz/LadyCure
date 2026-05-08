@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.availability
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,6 +59,9 @@ import com.example.ladycure.presentation.availability.components.QuickSelectionB
 import com.example.ladycure.presentation.availability.components.RecurringPatternDialog
 import com.example.ladycure.presentation.availability.components.SaveButton
 import com.example.ladycure.presentation.availability.components.TimeRangePicker
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -71,7 +71,6 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
-// Data class to hold all the state for the availability screens
 data class AvailabilityScreenState(
     val selectedDates: Set<LocalDate> = emptySet(),
     val showMonthPicker: Boolean = false,
@@ -101,16 +100,12 @@ fun BaseAvailabilityScreen(
     val today = LocalDate.now()
     val minMonth = YearMonth.from(today)
 
-    // A mutable state for selectedDates that can be passed to children components.
-    // This state will be kept in sync with the parent's `state.selectedDates`.
     val internalSelectedDates = remember { mutableStateOf(state.selectedDates) }
 
-    // Use LaunchedEffect to update internalSelectedDates when the parent's state.selectedDates changes
     LaunchedEffect(state.selectedDates) {
         internalSelectedDates.value = state.selectedDates
     }
 
-    // Use LaunchedEffect to update the parent's state when internalSelectedDates changes
     LaunchedEffect(internalSelectedDates.value) {
         if (internalSelectedDates.value != state.selectedDates) {
             onStateChange(state.copy(selectedDates = internalSelectedDates.value))
@@ -254,16 +249,14 @@ fun BaseAvailabilityScreen(
                 }
             }
 
-            // Quick selection buttons
             item {
                 QuickSelectionButtons(
                     currentMonth = state.currentMonth,
-                    selectedDates = internalSelectedDates, // Pass the mutable state directly
+                    selectedDates = internalSelectedDates,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            // Recurring pattern button
             item {
                 Button(
                     onClick = { onStateChange(state.copy(showRecurringOptions = true)) },
@@ -271,7 +264,7 @@ fun BaseAvailabilityScreen(
                         .fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DefaultPrimary,
-                        contentColor = DefaultOnPrimary
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -281,11 +274,9 @@ fun BaseAvailabilityScreen(
                 }
             }
 
-            // Copy to other months button
             item {
                 Button(
                     onClick = {
-                        // Copy selected days/time to next 3 months
                         val datesToAdd = mutableSetOf<LocalDate>()
 
                         state.selectedDates.forEach { date ->
@@ -301,7 +292,7 @@ fun BaseAvailabilityScreen(
                         .fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DefaultPrimary.copy(alpha = 0.8f),
-                        contentColor = DefaultOnPrimary
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -311,7 +302,7 @@ fun BaseAvailabilityScreen(
                 }
             }
         }
-        // Save button at bottom
+
         SaveButton(
             isLoading = state.isLoading,
             enabled = state.selectedDates.isNotEmpty(),

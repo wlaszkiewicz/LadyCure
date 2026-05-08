@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.booking
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +43,11 @@ import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.components.DateAndTimeSelectionView
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.YellowOrange
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -60,6 +62,7 @@ fun BookAppointmentDirectlyScreen(
     referralId: String? = null,
     viewModel: BookingViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
 
     // Collect state from ViewModel
@@ -87,7 +90,7 @@ fun BookAppointmentDirectlyScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(color = DefaultPrimary)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
             Text("Loading doctor data...", color = DefaultOnPrimary)
         }
     } else {
@@ -102,7 +105,7 @@ fun BookAppointmentDirectlyScreen(
 
             DoctorInfoHeader(
                 doctor = doctors.first(),
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = dimens.w(16 / 411f)),
                 onClick = {
                     navController.popBackStack(
                         "doctors/${selectedSpeciality.displayName}",
@@ -147,16 +150,22 @@ fun BookAppointmentDirectlyScreen(
 private fun AppointmentHeader(
     onBackClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+            .padding(
+                top = dimens.h(20 / 914f),
+                bottom = dimens.h(16 / 914f),
+                start = dimens.w(16 / 411f),
+                end = dimens.w(16 / 411f)
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
         IconButton(
             onClick = onBackClick,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(dimens.w(48 / 411f))
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -165,7 +174,7 @@ private fun AppointmentHeader(
             )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
         Text(
             text = "Select Time",
@@ -175,7 +184,7 @@ private fun AppointmentHeader(
             modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.width(48.dp))
+        Spacer(modifier = Modifier.width(dimens.w(48 / 411f)))
     }
 }
 
@@ -186,11 +195,12 @@ private fun DoctorInfoHeader(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    val dimens = rememberResponsiveDimens()
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp),
+            .padding(bottom = dimens.h(16 / 914f)),
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.5f),
             contentColor = DefaultOnPrimary
@@ -201,7 +211,7 @@ private fun DoctorInfoHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Doctor Image
@@ -210,7 +220,7 @@ private fun DoctorInfoHeader(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(dimens.w(64 / 411f))
                         .clip(CircleShape),
                     tint = DefaultPrimary
                 )
@@ -219,13 +229,13 @@ private fun DoctorInfoHeader(
                     model = doctor.profilePictureUrl,
                     contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(dimens.w(64 / 411f))
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
             // Doctor Details
             Column(
@@ -253,15 +263,15 @@ private fun DoctorInfoHeader(
                 ) {
                     RatingBar(
                         rating = doctor.rating,
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(dimens.w(80 / 411f))
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "(${"%.1f".format(doctor.rating)})",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFFFFA000)
+                        color = YellowOrange
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(12 / 411f)))
                     Icon(
                         imageVector = Icons.Default.Work,
                         contentDescription = "Experience",
@@ -278,7 +288,7 @@ private fun DoctorInfoHeader(
             }
             IconButton(
                 onClick = onClick,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(dimens.w(32 / 411f))
             ) {
                 Icon(
                     imageVector = Icons.Default.Edit,
@@ -293,14 +303,14 @@ private fun DoctorInfoHeader(
 
 @Composable
 private fun LoadingView() {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CircularProgressIndicator(color = DefaultPrimary)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
         Text("Loading appointment data...", color = DefaultOnPrimary)
     }
 }
-

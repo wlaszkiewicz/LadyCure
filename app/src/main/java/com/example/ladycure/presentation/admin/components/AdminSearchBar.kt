@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
 
 @Composable
@@ -34,11 +35,12 @@ fun AdminSearchBar(
     onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-            .height(56.dp)
+            .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.018f))
+            .height(dimens.h(0.061f))
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = 0.9f))
             .border(
@@ -46,7 +48,7 @@ fun AdminSearchBar(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = dimens.w(0.029f)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -63,7 +65,7 @@ fun AdminSearchBar(
             onValueChange = onSearchQueryChange,
             modifier = Modifier
                 .weight(1f)
-                .height(50.dp),
+                .height(dimens.h(0.055f)),
             textStyle = MaterialTheme.typography.bodyMedium,
             placeholder = {
                 Text(

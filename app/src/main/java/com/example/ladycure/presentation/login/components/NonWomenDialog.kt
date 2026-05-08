@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.login.components
 
-import DefaultPrimary
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.ladycure.R
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
 @Composable
 fun NonWomanWelcomeDialog(
@@ -43,6 +44,7 @@ fun NonWomanWelcomeDialog(
     onUninstall: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -62,7 +64,7 @@ fun NonWomanWelcomeDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = dimens.h(0.018f)),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     Image(
@@ -72,15 +74,15 @@ fun NonWomanWelcomeDialog(
                             .fillMaxWidth()
                             .align(Alignment.TopCenter)
                             .zIndex(1f)
-                            .height(170.dp)
+                            .height(dimens.h(0.186f))
                             .offset(y = (0).dp),
                         contentScale = ContentScale.Fit
                     )
 
                     Card(
                         modifier = Modifier
-                            .width(280.dp)
-                            .padding(top = 170.dp),
+                            .width(dimens.w(0.681f))
+                            .padding(top = dimens.h(0.186f)),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = Color.White
@@ -91,7 +93,10 @@ fun NonWomanWelcomeDialog(
                             text = "Our app is designed primarily for women's health needs. " +
                                     "However, if you still find our services helpful, you're welcome to continue.",
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
+                            modifier = Modifier.padding(
+                                vertical = dimens.h(0.022f),
+                                horizontal = dimens.w(0.039f)
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -99,7 +104,7 @@ fun NonWomanWelcomeDialog(
 
                 Button(
                     onClick = onContinue,
-                    modifier = Modifier.width(200.dp),
+                    modifier = Modifier.width(dimens.w(0.487f)),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DefaultPrimary
                     ),
@@ -122,7 +127,7 @@ fun NonWomanWelcomeDialog(
 
                 OutlinedButton(
                     onClick = onUninstall,
-                    modifier = Modifier.width(200.dp),
+                    modifier = Modifier.width(dimens.w(0.487f)),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = DefaultPrimary
                     ),

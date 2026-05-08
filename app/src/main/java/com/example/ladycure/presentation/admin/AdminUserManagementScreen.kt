@@ -1,7 +1,6 @@
 package com.example.ladycure.presentation.admin
 
 import AdminUserManagementViewModel
-import DefaultPrimary
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,7 +22,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ladycure.presentation.admin.components.AddUserDialog
 import com.example.ladycure.presentation.admin.components.AdminSearchBar
@@ -32,6 +30,8 @@ import com.example.ladycure.presentation.admin.components.EditUserDialog
 import com.example.ladycure.presentation.admin.components.EmptyView
 import com.example.ladycure.presentation.admin.components.LoadingView
 import com.example.ladycure.presentation.admin.components.UserList
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,6 +40,7 @@ fun AdminUserManagementScreen(
     snackbarController: SnackbarController,
     viewModel: AdminUserManagementViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     val errorMessage = viewModel.errorMessage
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -50,12 +51,12 @@ fun AdminUserManagementScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = dimens.w(0.039f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 20.dp),
+                .padding(vertical = dimens.h(0.022f)),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -69,7 +70,7 @@ fun AdminUserManagementScreen(
 
             IconButton(
                 onClick = { viewModel.loadUsers() },
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.size(dimens.w(0.073f))
             ) {
                 Icon(
                     Icons.Filled.Refresh,
@@ -85,7 +86,7 @@ fun AdminUserManagementScreen(
             onSearchQueryChange = { viewModel.updateSearchQuery(it) }
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.011f)))
 
         if (viewModel.isLoadingUsers) {
             LoadingView()

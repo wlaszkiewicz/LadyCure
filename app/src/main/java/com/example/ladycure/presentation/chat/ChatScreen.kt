@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.chat
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -75,6 +72,10 @@ import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.data.repository.ChatRepository
 import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.domain.model.Role
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -96,6 +97,7 @@ data class ChatParticipantInfo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(navController: NavHostController, snackbarController: SnackbarController?) {
+    val dimens = rememberResponsiveDimens()
     var role by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
     var isLoadingAdditional by remember { mutableStateOf(false) }
@@ -185,7 +187,10 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             ) {
                 Column {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.039f),
+                            vertical = dimens.h(0.017f)
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -209,13 +214,13 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                     SearchBar(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = dimens.w(0.039f), vertical = 8.dp)
                     )
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                            .padding(horizontal = dimens.w(0.039f), vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         filters.forEach { filterOption ->
@@ -291,7 +296,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                             modifier = Modifier
                                 .fillMaxSize()
                                 .weight(1f)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                .padding(horizontal = dimens.w(0.039f), vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(filteredParticipants) { participant ->
@@ -322,14 +327,14 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 52.dp, end = 36.dp),
+                    .padding(bottom = dimens.h(0.057f), end = dimens.w(0.088f)),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 FloatingActionButton(
                     onClick = { showParticipantsView = true },
                     containerColor = DefaultPrimary,
                     contentColor = Color.White,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(dimens.w(0.136f))
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -358,11 +363,12 @@ private fun ParticipantsFullScreenView(
     onParticipantSelected: (ChatParticipantInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(DefaultBackground)
-            .padding(16.dp)
+            .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -388,10 +394,10 @@ private fun ParticipantsFullScreenView(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.width(48.dp))
+            Spacer(modifier = Modifier.width(dimens.w(0.117f)))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
         if (isLoading) {
             Box(
@@ -417,9 +423,9 @@ private fun ParticipantsFullScreenView(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = "No contacts",
                             tint = DefaultPrimary.copy(alpha = 0.3f),
-                            modifier = Modifier.size(64.dp)
+                            modifier = Modifier.size(dimens.w(0.156f))
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(0.017f)))
                         Text(
                             text = if (Role.USER == Role.fromValue(role))
                                 "No available doctors"
@@ -439,7 +445,7 @@ private fun ParticipantsFullScreenView(
                         ChatParticipantItem(
                             participant = participant,
                             onClick = { onParticipantSelected(participant) },
-                            modifier = Modifier.padding(horizontal = 8.dp)
+                            modifier = Modifier.padding(horizontal = dimens.w(0.019f))
                         )
                     }
                 }
@@ -455,6 +461,7 @@ private fun ChatParticipantItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val chatRepository = remember { ChatRepository() }
     var currentUserId by remember { mutableStateOf<String?>(null) }
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
@@ -495,13 +502,13 @@ private fun ChatParticipantItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f)),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier.size(56.dp)) {
+            Box(modifier = Modifier.size(dimens.w(0.136f))) {
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(dimens.w(0.136f))
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.05f))
                         .border(
@@ -531,7 +538,7 @@ private fun ChatParticipantItem(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = "Profile icon",
                             tint = DefaultPrimary.copy(alpha = 0.6f),
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(dimens.w(0.097f))
                         )
                     }
                 }
@@ -552,7 +559,7 @@ private fun ChatParticipantItem(
 //                )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(dimens.w(0.039f)))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -693,6 +700,7 @@ private fun InitialChatView(
     onUrgentHelpClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -700,23 +708,23 @@ private fun InitialChatView(
     ) {
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(dimens.w(0.487f))
                 .background(
                     color = DefaultPrimary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(24.dp)
                 )
-                .padding(24.dp),
+                .padding(horizontal = dimens.w(0.058f), vertical = dimens.h(0.026f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.Chat,
                 contentDescription = "Chat illustration",
                 tint = DefaultPrimary,
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(dimens.w(0.195f))
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.035f)))
 
         Text(
             text = "No active conversations",
@@ -737,10 +745,10 @@ private fun InitialChatView(
             style = MaterialTheme.typography.bodyMedium,
             color = DefaultOnPrimary.copy(alpha = 0.6f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(0.058f))
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.035f)))
 
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -751,7 +759,7 @@ private fun InitialChatView(
                 onClick = onFindDoctorsClick as () -> Unit,
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
-                    .height(56.dp),
+                    .height(dimens.h(0.061f)),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DefaultPrimary,
                     contentColor = Color.White
@@ -782,7 +790,7 @@ private fun InitialChatView(
                     onClick = onUrgentHelpClick,
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
-                        .height(56.dp),
+                        .height(dimens.h(0.061f)),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
                         contentColor = DefaultPrimary
@@ -803,8 +811,9 @@ private fun DoctorsListView(
     onParticipantSelected: (ChatParticipantInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     LazyColumn(
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = modifier.padding(horizontal = dimens.w(0.039f), vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(participants) { participant ->
@@ -824,12 +833,12 @@ private fun DoctorsListView(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(dimens.w(0.136f))
                             .clip(CircleShape)
                             .background(DefaultPrimary.copy(alpha = 0.05f))
                             .border(
@@ -843,11 +852,11 @@ private fun DoctorsListView(
                             imageVector = Icons.Default.AccountCircle,
                             contentDescription = "User profile icon",
                             tint = DefaultPrimary.copy(alpha = 0.6f),
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(dimens.w(0.097f))
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(0.039f)))
 
                     Column(
                         modifier = Modifier.weight(1f),
@@ -887,12 +896,13 @@ private fun SearchBar(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(dimens.h(0.061f)),
         shape = RoundedCornerShape(16.dp),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = DefaultBackground,
@@ -941,6 +951,7 @@ fun DateFilterChip(
     onSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -955,7 +966,7 @@ fun DateFilterChip(
             text = label,
             style = MaterialTheme.typography.labelLarge,
             color = if (selected) Color.White else DefaultOnPrimary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(0.039f), vertical = 8.dp)
         )
     }
 }

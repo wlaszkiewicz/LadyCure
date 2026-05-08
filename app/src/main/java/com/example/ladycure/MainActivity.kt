@@ -1,9 +1,5 @@
 package com.example.ladycure
 
-import LadyCureTheme
-import SnackbarActionColor
-import SnackbarBackground
-import SnackbarContentColor
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
@@ -68,6 +64,10 @@ import com.example.ladycure.presentation.home.components.BottomNavBar
 import com.example.ladycure.presentation.login.LoginScreen
 import com.example.ladycure.presentation.register.RegisterScreen
 import com.example.ladycure.presentation.welcome.WelcomeScreen
+import com.example.ladycure.ui.theme.LadyCureTheme
+import com.example.ladycure.ui.theme.SnackbarActionColor
+import com.example.ladycure.ui.theme.SnackbarBackground
+import com.example.ladycure.ui.theme.SnackbarContentColor
 import com.example.ladycure.utility.SnackbarController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted

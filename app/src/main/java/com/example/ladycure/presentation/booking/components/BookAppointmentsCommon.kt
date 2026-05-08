@@ -1,7 +1,5 @@
 package com.example.ladycure.presentation.booking.components
 
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +36,9 @@ import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.LocationSpecialtyRow
 import com.example.ladycure.presentation.booking.ServiceInfoChip
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -55,13 +56,14 @@ internal fun DateAndTimeSelectionView(
     selectedTimeSlot: LocalTime?,
     onTimeSlotSelected: (String) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
     ) {
         // Service info chip
-        ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = 16.dp))
+        ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = dimens.h(16 / 914f)))
 
         // Location and specialty if available
         if (city != null && selectedSpeciality != null) {
@@ -74,7 +76,7 @@ internal fun DateAndTimeSelectionView(
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
+            modifier = Modifier.padding(bottom = dimens.h(12 / 914f), top = 8.dp)
         )
 
         // Enhanced date selector
@@ -82,7 +84,7 @@ internal fun DateAndTimeSelectionView(
             availableDates = availableDates,
             selectedDate = selectedDate,
             onDateSelected = onDateSelected,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = dimens.h(24 / 914f))
         )
 
         // Time slots
@@ -92,7 +94,7 @@ internal fun DateAndTimeSelectionView(
                 style = MaterialTheme.typography.titleMedium,
                 color = DefaultOnPrimary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
             )
 
             if (timeSlots.isEmpty()) {
@@ -119,6 +121,7 @@ private fun DateSelector(
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier) {
@@ -127,7 +130,7 @@ private fun DateSelector(
                 text = "We are sorry, there's no available dates",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(vertical = dimens.h(16 / 914f))
             )
         } else {
             Row(
@@ -141,7 +144,7 @@ private fun DateSelector(
                         date = date,
                         isSelected = date == selectedDate,
                         onSelect = { onDateSelected(date) },
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(dimens.w(80 / 411f))
                     )
                 }
             }
@@ -156,6 +159,7 @@ fun DateCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val formattedDate = formatDateForDisplay(date)
     val dayOfWeek = try {
         date.dayOfWeek.toString().take(3)
@@ -181,7 +185,7 @@ fun DateCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(dimens.w(12 / 411f))
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -218,11 +222,12 @@ fun TimeSlotGrid(
     selectedTimeSlot: String?,
     onTimeSlotSelected: (String) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = Modifier
             .fillMaxHeight()
-            .padding(bottom = 30.dp),
+            .padding(bottom = dimens.h(30 / 914f)),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -243,9 +248,10 @@ fun TimeSlotCard(
     isSelected: Boolean,
     onSelect: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         onClick = onSelect,
-        modifier = Modifier.height(60.dp),
+        modifier = Modifier.height(dimens.h(60 / 914f)),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) DefaultPrimary else Color.White,
@@ -270,17 +276,18 @@ fun TimeSlotCard(
 
 @Composable
 fun EmptyTimeSlotsView() {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = dimens.h(16 / 914f)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
             imageVector = Icons.Default.Schedule,
             contentDescription = "No slots",
             tint = DefaultOnPrimary.copy(alpha = 0.4f),
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(dimens.w(48 / 411f))
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
@@ -298,10 +305,11 @@ fun EmptyTimeSlotsView() {
 
 @Composable
 fun PromptToSelectDate() {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = dimens.h(16 / 914f)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -331,6 +339,5 @@ fun formatDateForDisplay(date: LocalDate): String {
         date.toString() + " (${e.message})"
     }
 }
-
 
 

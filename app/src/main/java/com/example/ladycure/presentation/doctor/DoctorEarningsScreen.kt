@@ -1,10 +1,5 @@
 package com.example.ladycure.presentation.doctor
 
-import BabyBlue
-import DefaultOnPrimary
-import DefaultPrimary
-import Purple
-import Yellow
 import android.graphics.Paint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -60,6 +55,12 @@ import androidx.navigation.NavController
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.presentation.admin.SummaryCard
 import com.example.ladycure.presentation.admin.TimePeriod
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Purple
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.async
 
@@ -85,6 +86,7 @@ fun DoctorEarningsScreen(
     navController: NavController,
     snackbarController: SnackbarController
 ) {
+    val dimens = rememberResponsiveDimens()
     val doctorRepo = remember { DoctorRepository() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -136,7 +138,7 @@ fun DoctorEarningsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = dimens.w(0.039f), vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -165,7 +167,7 @@ fun DoctorEarningsScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = dimens.h(0.017f)),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             TimePeriod.entries.forEach { period ->
@@ -206,7 +208,7 @@ fun DoctorEarningsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = dimens.h(0.017f)),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SummaryCard(
@@ -235,7 +237,12 @@ fun DoctorEarningsScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.029f),
+                            vertical = dimens.h(0.013f)
+                        )
+                    ) {
                         Text(
                             "Earnings Over Time",
                             style = MaterialTheme.typography.titleLarge.copy(
@@ -250,13 +257,13 @@ fun DoctorEarningsScreen(
                                 isCurrency = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(180.dp)
+                                    .height(dimens.h(0.197f))
                                     .padding(top = 8.dp)
                             )
                         } else {
                             Text(
                                 "No earnings data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
+                                modifier = Modifier.padding(vertical = dimens.h(0.017f))
                             )
                         }
                     }
@@ -266,12 +273,18 @@ fun DoctorEarningsScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 200.dp, max = 400.dp), // Adjust as needed
+                        .heightIn(
+                            min = dimens.h(0.219f),
+                            max = dimens.h(0.438f)
+                        ), // Adjust as needed
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(12.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.029f),
+                            vertical = dimens.h(0.013f)
+                        )
                     ) {
                         Text(
                             "Earnings by Appointment Type",
@@ -290,7 +303,7 @@ fun DoctorEarningsScreen(
                         } else {
                             Text(
                                 "No earnings by type data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
+                                modifier = Modifier.padding(vertical = dimens.h(0.017f))
                             )
                         }
                     }
@@ -301,7 +314,12 @@ fun DoctorEarningsScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.029f),
+                            vertical = dimens.h(0.013f)
+                        )
+                    ) {
                         Text(
                             "Earnings by Appointment Type",
                             style = MaterialTheme.typography.titleLarge.copy(
@@ -321,7 +339,7 @@ fun DoctorEarningsScreen(
                                 useTypeColors = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(180.dp)
+                                    .height(dimens.h(0.197f))
                                     .padding(top = 8.dp)
                             )
 
@@ -334,7 +352,7 @@ fun DoctorEarningsScreen(
                         } else {
                             Text(
                                 "No earnings by type data available",
-                                modifier = Modifier.padding(vertical = 16.dp)
+                                modifier = Modifier.padding(vertical = dimens.h(0.017f))
                             )
                         }
                     }
@@ -347,7 +365,7 @@ fun DoctorEarningsScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.017f)))
             }
         }
     }
@@ -400,6 +418,7 @@ fun PieChart(
     data: Map<String, Double>,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val total = data.values.sum()
     if (total <= 0) {
         return Box(
@@ -417,7 +436,7 @@ fun PieChart(
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .height(dimens.h(0.175f))
         ) {
             var startAngle = -90f
             val radius = size.minDimension / 2f - 20.dp.toPx()
@@ -456,12 +475,13 @@ fun BarChart(
     modifier: Modifier = Modifier,
     useTypeColors: Boolean = false // Add this parameter
 ) {
+    val dimens = rememberResponsiveDimens()
     val maxValue = data.maxOfOrNull { it.second }?.toFloat() ?: 1f
 
     Column(modifier = modifier) {
         Row(
             modifier = Modifier
-                .padding(bottom = 16.dp)
+                .padding(bottom = dimens.h(0.017f))
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.Center
         ) {

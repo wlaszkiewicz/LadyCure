@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.admin.components
 
-import DefaultPrimary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -52,26 +51,33 @@ import androidx.compose.ui.unit.sp
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.User
+import com.example.ladycure.ui.theme.DeepPurple
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.MediumGrey
+import com.example.ladycure.ui.theme.Teal
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
 
 @Composable
 fun RoleBadge(role: Role) {
+    val dimens = rememberResponsiveDimens()
     val backgroundColor = when (role) {
         Role.USER -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-        Role.DOCTOR -> Color(0xFF5FB9C9).copy(alpha = 0.1f)
-        else -> Color(0xFF7050AB).copy(alpha = 0.1f)
+        Role.DOCTOR -> Teal.copy(alpha = 0.1f)
+        else -> DeepPurple.copy(alpha = 0.1f)
     }
     val textColor = when (role) {
         Role.USER -> MaterialTheme.colorScheme.primary
-        Role.DOCTOR -> Color(0xFF5FB9C9)
-        else -> Color(0xFF9E9E9E)
+        Role.DOCTOR -> Teal
+        else -> MediumGrey
     }
 
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
             .background(backgroundColor)
-            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .padding(horizontal = dimens.w(0.029f), vertical = 4.dp)
     ) {
         Text(
             text = role.value,
@@ -90,6 +96,7 @@ fun RatingBar(
     modifier: Modifier = Modifier,
     starCount: Int = 5
 ) {
+    val dimens = rememberResponsiveDimens()
     var showManualInput by remember { mutableStateOf(false) }
     var manualRating by remember { mutableStateOf(rating.toString()) }
 
@@ -108,7 +115,7 @@ fun RatingBar(
 
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(dimens.w(0.078f))
                             .clickable {
                                 onRatingChange(starValue - 0.5)
                             }
@@ -127,7 +134,7 @@ fun RatingBar(
                             Icon(
                                 imageVector = Icons.Filled.Star,
                                 contentDescription = "Full star",
-                                tint = Color(0xFFFFC107),
+                                tint = Yellow,
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else if (isHalfStar) {
@@ -141,7 +148,7 @@ fun RatingBar(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.StarHalf,
                                     contentDescription = "Half star",
-                                    tint = Color(0xFFFFC107),
+                                    tint = Yellow,
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .align(Alignment.CenterStart)

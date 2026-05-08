@@ -1,7 +1,5 @@
 package com.example.ladycure.presentation.availability.components
 
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +33,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.ladycure.domain.model.DoctorAvailability
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.FractionDimens
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -92,6 +94,7 @@ fun CalendarHeader(
     onShowMonthPicker: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth()
@@ -101,7 +104,7 @@ fun CalendarHeader(
                 val newMonth = currentMonth.minusMonths(1)
                 if (newMonth >= minMonth) onMonthChange(newMonth)
             },
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(dimens.w(FractionDimens.iconMediumW)),
             enabled = currentMonth > minMonth
         ) {
             Icon(Icons.Default.ChevronLeft, "Previous month", tint = DefaultPrimary)
@@ -120,7 +123,7 @@ fun CalendarHeader(
 
         IconButton(
             onClick = { onMonthChange(currentMonth.plusMonths(1)) },
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(dimens.w(FractionDimens.iconMediumW))
         ) {
             Icon(Icons.Default.ChevronRight, "Next month", tint = DefaultPrimary)
         }
@@ -155,6 +158,7 @@ fun CalendarView(
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDay = currentMonth.atDay(1)
     val offset = (firstDay.dayOfWeek.value - DayOfWeek.MONDAY.value).let {
@@ -163,7 +167,7 @@ fun CalendarView(
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
-        modifier = modifier.height(280.dp)
+        modifier = modifier.height(dimens.h(280 / 914f))
     ) {
         items(offset) { Spacer(Modifier) } // Empty cells for alignment
 

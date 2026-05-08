@@ -223,6 +223,7 @@ class DoctorHomeViewModel(
 }
 
 data class DoctorHomeUiState(
+    // TODO: replace with Doctor model — Doctor.fromMap() already exists
     val doctorData: Map<String, Any>? = null,
     val allAppointments: List<Appointment> = emptyList(),
     val upcomingAppointments: List<Appointment> = emptyList(),

@@ -27,6 +27,7 @@ class AdminAnalyticsViewModel(
         private set
     var applicationStats by mutableStateOf<Map<String, Int>>(emptyMap())
         private set
+    // TODO: convert to AdminStats once data flow is updated to return AdminStats from repository
     var totalStats by mutableStateOf<Map<String, Any>>(emptyMap())
         private set
 

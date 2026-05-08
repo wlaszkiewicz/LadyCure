@@ -1,12 +1,5 @@
 package com.example.ladycure.presentation.doctor
 
-import BabyBlue
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
-import Purple
-import Red
-import Yellow
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -90,6 +83,15 @@ import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Appointment.Status
 import com.example.ladycure.presentation.home.components.AppointmentDetailItem
 import com.example.ladycure.presentation.home.components.InfoChip
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.Mauve
+import com.example.ladycure.ui.theme.Purple
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -108,6 +110,7 @@ fun DoctorHomeScreen(
     snackbarController: SnackbarController,
     viewModel: DoctorHomeViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     val uiState by viewModel.uiState.collectAsState()
     val selectedAppointment by viewModel.selectedAppointment
     val showEditStatusDialog by viewModel.showEditStatusDialog
@@ -144,16 +147,16 @@ fun DoctorHomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                StatsRow(
-                    todaysCount = uiState.allAppointments.count { it.date == LocalDate.now() },
-                    completedCount = uiState.allAppointments.count {
-                        it.date == LocalDate.now() && it.time.isBefore(uiState.currentTime)
-                    }
-                )
+//                StatsRow(
+//                    todaysCount = uiState.allAppointments.count { it.date == LocalDate.now() },
+//                    completedCount = uiState.allAppointments.count {
+//                        it.date == LocalDate.now() && it.time.isBefore(uiState.currentTime)
+//                    }
+//                )
 
                 TodaysSchedule(
                     allAppointments = uiState.allAppointments,
@@ -174,7 +177,7 @@ fun DoctorHomeScreen(
                     }
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
                 NewsCarousel(
                     navController = navController,
@@ -210,9 +213,9 @@ fun DoctorHomeScreen(
     }
 }
 
-val BookedColor = BabyBlue.copy(alpha = 0.6f) // A distinct color for booked slots
-val AvailableColor = Purple.copy(alpha = 0.4f) // A lighter color for available slots
-val PastColor = Color(0xFFD6A6C2)
+val BookedColor = BabyBlue.copy(alpha = 0.6f)
+val AvailableColor = Purple.copy(alpha = 0.4f)
+val PastColor = Mauve
 val CurrentTimeColor = Purple
 
 @Composable
@@ -223,7 +226,7 @@ fun TodaysSchedule(
     endOfWorkday: LocalTime = LocalTime.of(17, 0),
     onSelectAppointment: (Appointment) -> Unit
 ) {
-
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -234,7 +237,7 @@ fun TodaysSchedule(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -295,13 +298,13 @@ fun TodaysSchedule(
             }
 
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(24.dp)
+                        .height(dimens.h(0.026f))
                         .clip(RoundedCornerShape(12.dp))
                 ) {
                     val timelineWidth = this.maxWidth
@@ -428,7 +431,7 @@ fun TodaysSchedule(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.017f)))
                 TimelineLegend()
 
             }
@@ -478,6 +481,7 @@ fun NextAppointmentCard(
     onViewAll: () -> Unit,
     onShowDetailsDialog: (Appointment) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -517,6 +521,7 @@ private fun AppointmentCardContent(
     onShowEditStatusDialog: () -> Unit,
     onShowDetailsDialog: (Appointment) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     val isToday = appointment.date == LocalDate.now()
     val isTomorrow = appointment.date == LocalDate.now().plusDays(1)
 
@@ -529,12 +534,12 @@ private fun AppointmentCardContent(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             DateBox(appointment.date)
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(dimens.w(0.039f)))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -583,7 +588,7 @@ private fun AppointmentCardContent(
                     // Divider
                     Box(
                         modifier = Modifier
-                            .height(16.dp)
+                            .height(dimens.h(0.017f))
                             .width(1.dp)
                             .background(Color.LightGray)
                     )
@@ -621,9 +626,10 @@ private fun AppointmentCardContent(
 
 @Composable
 private fun DateBox(date: LocalDate) {
+    val dimens = rememberResponsiveDimens()
     Box(
         modifier = Modifier
-            .width(60.dp)
+            .width(dimens.w(0.146f))
             .clip(RoundedCornerShape(12.dp))
             .background(DefaultPrimary.copy(alpha = 0.1f))
             .border(
@@ -724,22 +730,23 @@ private fun StatusRow(
 
 @Composable
 private fun EmptyState() {
+    val dimens = rememberResponsiveDimens()
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = dimens.h(0.017f))
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.058f), vertical = dimens.h(0.026f)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = Icons.Default.CalendarToday,
                 contentDescription = null,
                 tint = DefaultPrimary.copy(alpha = 0.3f),
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(dimens.w(0.117f))
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -800,10 +807,16 @@ private fun DoctorHeader(
     onNotificationClick: () -> Unit,
     onProfileClick: () -> Unit,
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(
+                start = dimens.w(0.039f),
+                end = dimens.w(0.039f),
+                top = dimens.h(0.017f),
+                bottom = dimens.h(0.015f)
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -828,7 +841,7 @@ private fun DoctorHeader(
                 onClick = {
                     onNotificationClick()
                 },
-                modifier = Modifier.height(40.dp)
+                modifier = Modifier.height(dimens.h(0.044f))
             ) {
                 if (unreadNotificationsCount > 0) {
                     BadgedBox(
@@ -847,7 +860,7 @@ private fun DoctorHeader(
                             imageVector = Icons.Default.NotificationsNone,
                             contentDescription = "Notifications",
                             tint = DefaultPrimary,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(dimens.w(0.068f))
                         )
                     }
                 } else {
@@ -855,7 +868,7 @@ private fun DoctorHeader(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Notifications",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(dimens.w(0.068f))
                     )
                 }
 
@@ -867,7 +880,7 @@ private fun DoctorHeader(
             // Doctor avatar
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(dimens.w(0.136f))
                     .clip(CircleShape)
                     .background(DefaultPrimary.copy(alpha = 0.2f))
                     .clickable { onProfileClick() },
@@ -935,27 +948,28 @@ fun NewsCarousel(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val pagerState = rememberPagerState()
     val newsItems = listOf(
         NewsItemData(
             title = "New Guidelines for Diabetes Management",
             summary = "The ADA has released updated guidelines emphasizing personalized treatment plans...",
             category = "Endocrinology",
-            imageUrl = "https://firebasestorage.googleapis.com/v0/b/telecure-6bbb6.firebasestorage.app/o/chat_attachments%2F01248eae-6322-4256-b29e-3c221ed37cfd?alt=media&token=8e692775-797f-470a-8d84-c6db801939c9",
+            imageUrl = "https://sa1s3optim.patientpop.com/assets/images/provider/photos/2638535.jpg",
             time = "2 hours ago"
         ),
         NewsItemData(
             title = "New Advances in Cancer Treatment",
             summary = "Recent studies show promising results in immunotherapy for breast cancer...",
             category = "Oncology",
-            imageUrl = "https://example.com/cancer-news.jpg",
+            imageUrl = "https://www.oregoncancer.com/hubfs/Pros%20and%20Cons%20of%20Treating%20Cancer%20with%20Radiation%20Therapy%20%281%29.jpg",
             time = "1 hour ago"
         ),
         NewsItemData(
-            title = "Cardiology Breakthroughs in 2023",
+            title = "Cardiology Breakthroughs in 2026",
             summary = "New techniques in heart surgery are improving patient outcomes significantly...",
             category = "Cardiology",
-            imageUrl = "https://example.com/cardiology-news.jpg",
+            imageUrl = "https://reverehealth.com/_next/image/?url=https%3A%2F%2Fcms.reverehealth.com%2Fwp-content%2Fuploads%2F2022%2F02%2FCardiological_Technology_Advancements-scaled.jpeg&w=2048&q=75",
             time = "3 hours ago"
         )
     )
@@ -982,14 +996,14 @@ fun NewsCarousel(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
         HorizontalPager(
             count = newsItems.size,
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(dimens.h(0.197f))
         ) { page ->
             val item = newsItems[page]
             NewsCard(
@@ -1010,7 +1024,12 @@ fun NewsCarousel(
             pagerState = pagerState,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(16.dp),
+                .padding(
+                    start = dimens.w(0.039f),
+                    end = dimens.w(0.039f),
+                    top = dimens.h(0.017f),
+                    bottom = dimens.h(0f)
+                ),
             activeColor = DefaultPrimary,
             inactiveColor = DefaultPrimary.copy(alpha = 0.2f)
         )
@@ -1036,6 +1055,7 @@ fun NewsCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
@@ -1043,13 +1063,13 @@ fun NewsCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Image on the left
             Box(
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(dimens.w(0.243f))
                     .clip(RoundedCornerShape(12.dp))
             ) {
                 SubcomposeAsyncImage(
@@ -1079,7 +1099,7 @@ fun NewsCard(
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(dimens.w(0.039f)))
 
             // Content on the right
             Column(modifier = Modifier.weight(1f)) {
@@ -1184,6 +1204,7 @@ private fun StatCard(
     colorIcon: Color,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -1194,7 +1215,7 @@ private fun StatCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -1237,6 +1258,7 @@ fun DetailsDialog(
     onMessage: () -> Unit,
     onCommentUpdated: (String) -> Unit,
 ) {
+    val dimens = rememberResponsiveDimens()
     var editedComment by remember { mutableStateOf(appointment.comments) }
     var showEditComment by remember { mutableStateOf(false) }
 
@@ -1274,7 +1296,7 @@ fun DetailsDialog(
                                 endY = 100f
                             )
                         )
-                        .padding(24.dp)
+                        .padding(horizontal = dimens.w(0.058f), vertical = dimens.h(0.026f))
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(
@@ -1283,7 +1305,7 @@ fun DetailsDialog(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(72.dp)
+                                    .size(dimens.w(0.175f))
                                     .clip(CircleShape)
                                     .background(DefaultPrimary.copy(alpha = 0.1f))
                                     .padding(12.dp),
@@ -1293,7 +1315,7 @@ fun DetailsDialog(
                                     imageVector = Icons.Default.Person,
                                     contentDescription = "Patient",
                                     tint = DefaultPrimary,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(dimens.w(0.088f))
                                 )
                             }
 
@@ -1314,7 +1336,7 @@ fun DetailsDialog(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1344,12 +1366,16 @@ fun DetailsDialog(
                 }
 
                 Column(
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    modifier = Modifier.padding(horizontal = dimens.w(0.058f))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
+                            .padding(
+                                bottom = dimens.h(0.017f),
+                                start = dimens.w(0.039f),
+                                end = dimens.w(0.039f)
+                            ),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
@@ -1388,12 +1414,12 @@ fun DetailsDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
+                            .padding(horizontal = dimens.w(0.019f)),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         AppointmentDetailItem(
@@ -1434,7 +1460,7 @@ fun DetailsDialog(
                                         imageVector = if (showEditComment) Icons.Default.Close else Icons.Default.Edit,
                                         contentDescription = if (showEditComment) "Close" else "Edit",
                                         tint = DefaultPrimary,
-                                        modifier = Modifier.size(30.dp)
+                                        modifier = Modifier.size(dimens.w(0.073f))
                                     )
                                 }
                             }
@@ -1449,7 +1475,10 @@ fun DetailsDialog(
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         color = DefaultOnPrimary
                                     ),
-                                    modifier = Modifier.padding(start = 32.dp, top = 8.dp)
+                                    modifier = Modifier.padding(
+                                        start = dimens.w(0.078f),
+                                        top = 8.dp
+                                    )
                                 )
                             }
 
@@ -1459,7 +1488,10 @@ fun DetailsDialog(
                                 exit = fadeOut() + shrinkVertically()
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(start = 32.dp, top = 8.dp)
+                                    modifier = Modifier.padding(
+                                        start = dimens.w(0.078f),
+                                        top = 8.dp
+                                    )
                                 ) {
                                     TextField(
                                         value = editedComment,
@@ -1521,13 +1553,13 @@ fun DetailsDialog(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
                     if (appointment.status != Status.CANCELLED) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 16.dp),
+                                .padding(bottom = dimens.h(0.017f)),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {

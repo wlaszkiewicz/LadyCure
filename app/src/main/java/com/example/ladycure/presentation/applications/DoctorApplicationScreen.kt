@@ -1,12 +1,5 @@
 package com.example.ladycure.presentation.applications
 
-import BabyBlue
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import DefaultSecondaryVariant
-import Green
-import Grey
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_SENDTO
@@ -24,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,7 +26,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.IconButton
@@ -78,15 +69,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -102,6 +90,12 @@ import com.example.ladycure.R
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.FileTooLargeDialog
 import com.example.ladycure.presentation.register.components.DatePickerButton
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.PdfUploader
 import com.example.ladycure.utility.SnackbarController
 import com.example.ladycure.utility.rememberImagePickerLauncher
@@ -112,6 +106,7 @@ fun DoctorApplicationScreen(
     navController: NavController,
     snackbarController: SnackbarController
 ) {
+    val dimens = rememberResponsiveDimens()
     val viewModel: DoctorApplicationViewModel = viewModel()
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -134,18 +129,18 @@ fun DoctorApplicationScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = dimens.w(0.039f))
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Spacer(modifier = Modifier.width(48.dp)) // Placeholder for left side
+                Spacer(modifier = Modifier.width(dimens.w(0.117f))) // Placeholder for left side
 
                 Box(
                     modifier = Modifier.weight(1f),
@@ -176,7 +171,7 @@ fun DoctorApplicationScreen(
 
             Box(
                 modifier = Modifier
-                    .size(160.dp)
+                    .size(dimens.w(0.389f))
                     .clip(CircleShape)
                     .background(DefaultPrimary.copy(alpha = 0.1f))
                     .border(2.dp, DefaultPrimary.copy(alpha = 0.3f), CircleShape)
@@ -191,18 +186,21 @@ fun DoctorApplicationScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.022f)))
 
             // Personal Information Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = dimens.h(0.017f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.039f),
+                        vertical = dimens.h(0.017f)
+                    )
                 ) {
                     Text(
                         text = "Personal Information",
@@ -211,7 +209,7 @@ fun DoctorApplicationScreen(
                             fontSize = 20.sp
                         ),
                         color = DefaultPrimary,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = dimens.h(0.013f))
                     )
 
                     // Email
@@ -220,10 +218,14 @@ fun DoctorApplicationScreen(
                         onValueChange = { viewModel.email = it },
                         label = { Text("Email address") },
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
-                        isError = viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
+                        isError = viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(
+                            viewModel.email
+                        )
                             .matches(),
                         supportingText = {
-                            if (viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(viewModel.email)
+                            if (viewModel.email.isNotBlank() && !Patterns.EMAIL_ADDRESS.matcher(
+                                    viewModel.email
+                                )
                                     .matches()
                             ) {
                                 Text("Please enter a valid email")
@@ -242,7 +244,12 @@ fun DoctorApplicationScreen(
                             value = viewModel.firstName,
                             onValueChange = { viewModel.firstName = it },
                             label = { Text("First name") },
-                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = "Name"
+                                )
+                            },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
@@ -251,13 +258,18 @@ fun DoctorApplicationScreen(
                             value = viewModel.lastName,
                             onValueChange = { viewModel.lastName = it },
                             label = { Text("Last name") },
-                            leadingIcon = { Icon(Icons.Default.PersonOutline, contentDescription = "Surname") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.PersonOutline,
+                                    contentDescription = "Surname"
+                                )
+                            },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
                     // Dob
                     Column(modifier = Modifier.fillMaxWidth()) {
@@ -285,7 +297,7 @@ fun DoctorApplicationScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
                     // Password
                     OutlinedTextField(
@@ -295,9 +307,15 @@ fun DoctorApplicationScreen(
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
                         visualTransformation = PasswordVisualTransformation(),
                         isError = viewModel.password.isNotBlank() && viewModel.password.length < 8
-                                || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[A-Z].*"))
-                                || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[0-9].*"))
-                                || viewModel.password.isNotBlank() && !viewModel.password.matches(Regex(".*[!@#$%^&*].*")),
+                                || viewModel.password.isNotBlank() && !viewModel.password.matches(
+                            Regex(".*[A-Z].*")
+                        )
+                                || viewModel.password.isNotBlank() && !viewModel.password.matches(
+                            Regex(".*[0-9].*")
+                        )
+                                || viewModel.password.isNotBlank() && !viewModel.password.matches(
+                            Regex(".*[!@#$%^&*].*")
+                        ),
                         supportingText = {
                             if (viewModel.password.isNotBlank()) {
                                 Column {
@@ -323,7 +341,12 @@ fun DoctorApplicationScreen(
                         value = viewModel.confirmPassword,
                         onValueChange = { viewModel.confirmPassword = it },
                         label = { Text("Confirm Password") },
-                        leadingIcon = { Icon(Icons.Default.LockReset, contentDescription = "Confirm Password") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.LockReset,
+                                contentDescription = "Confirm Password"
+                            )
+                        },
                         visualTransformation = PasswordVisualTransformation(),
                         isError = viewModel.confirmPassword.isNotBlank() && viewModel.password != viewModel.confirmPassword,
                         supportingText = {
@@ -340,12 +363,15 @@ fun DoctorApplicationScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = dimens.h(0.017f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.039f),
+                        vertical = dimens.h(0.017f)
+                    )
                 ) {
                     Text(
                         text = "Specialization",
@@ -354,7 +380,7 @@ fun DoctorApplicationScreen(
                             fontSize = 20.sp
                         ),
                         color = DefaultPrimary,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = dimens.h(0.013f))
                     )
 
                     Column(modifier = Modifier.fillMaxWidth()) {
@@ -370,12 +396,15 @@ fun DoctorApplicationScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = dimens.h(0.017f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.039f),
+                        vertical = dimens.h(0.017f)
+                    )
                 ) {
                     Text(
                         text = "Professional Information",
@@ -384,7 +413,7 @@ fun DoctorApplicationScreen(
                             fontSize = 20.sp
                         ),
                         color = DefaultPrimary,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = dimens.h(0.013f))
                     )
 
                     OutlinedTextField(
@@ -434,7 +463,7 @@ fun DoctorApplicationScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
                     // Years of experience
                     OutlinedTextField(
@@ -457,7 +486,7 @@ fun DoctorApplicationScreen(
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
                     // Workplace
                     OutlinedTextField(
@@ -473,7 +502,7 @@ fun DoctorApplicationScreen(
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.031f)))
 
                     // Phone
                     OutlinedTextField(
@@ -504,12 +533,15 @@ fun DoctorApplicationScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = dimens.h(0.017f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.039f),
+                        vertical = dimens.h(0.017f)
+                    )
                 ) {
                     Text(
                         text = "Address Information",
@@ -518,7 +550,7 @@ fun DoctorApplicationScreen(
                             fontSize = 20.sp
                         ),
                         color = DefaultPrimary,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = dimens.h(0.013f))
                     )
 
                     OutlinedTextField(
@@ -568,6 +600,7 @@ fun DoctorApplicationScreen(
                     viewModel.hasSubmitted = true
                     if (viewModel.validateApplication()) {
                         viewModel.submitApplication(
+                            context = context,
                             onSuccess = {
                                 snackbarController.showMessage("Application submitted successfully!")
                                 showSuccessDialog = true
@@ -634,7 +667,7 @@ fun DoctorApplicationScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
         }
 
         if (viewModel.isLoading) {
@@ -648,9 +681,9 @@ fun DoctorApplicationScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
-                        .padding(16.dp)
+                        .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
                         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-                        .padding(24.dp),
+                        .padding(horizontal = dimens.w(0.058f), vertical = dimens.h(0.026f)),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -666,7 +699,7 @@ fun DoctorApplicationScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
                     // Linear progress with percentage
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -684,7 +717,7 @@ fun DoctorApplicationScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
                     Text(
                         text = when (viewModel.currentStep) {
@@ -712,26 +745,29 @@ fun DoctorApplicationScreen(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(24.dp)
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.058f),
+                        vertical = dimens.h(0.026f)
+                    )
                 ) {
                     // Success icon
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(dimens.w(0.195f))
                             .clip(CircleShape)
                             .background(Green.copy(alpha = 0.1f))
-                            .padding(16.dp),
+                            .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = "Success",
                             tint = Green,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(dimens.w(0.097f))
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
                     Text(
                         text = "Application Submitted",
@@ -742,7 +778,7 @@ fun DoctorApplicationScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
                     Text(
                         text = "Your application has been submitted successfully. We will review it and get back to you soon. You can log in to view the status of your application.",
@@ -753,7 +789,7 @@ fun DoctorApplicationScreen(
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.035f)))
 
                     Button(
                         onClick = {
@@ -769,8 +805,8 @@ fun DoctorApplicationScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .height(48.dp)
+                            .padding(horizontal = dimens.w(0.058f))
+                            .height(dimens.h(0.053f))
                     ) {
                         Text(
                             "Great!",
@@ -847,6 +883,7 @@ fun FileUploadSection(
     context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val launcher = rememberImagePickerLauncher(
         onImageSelected = { uri ->
             if (PdfUploader.isFileTooLarge(context, uri)) {
@@ -870,7 +907,7 @@ fun FileUploadSection(
                 model = fileUri,
                 contentDescription = "Uploaded file",
                 modifier = Modifier
-                    .height(60.dp)
+                    .height(dimens.h(0.066f))
                     .padding(vertical = 8.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop

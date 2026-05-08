@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.welcome
 
-import DefaultPrimary
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +42,8 @@ import androidx.navigation.NavController
 import com.example.ladycure.R
 import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.data.repository.UserRepository
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
@@ -172,10 +173,11 @@ fun LoggedInWelcomeScreen(
     onContinue: () -> Unit,
     onUseDifferentAccount: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(horizontal = dimens.w(0.078f), vertical = dimens.h(0.035f)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -183,8 +185,8 @@ fun LoggedInWelcomeScreen(
             painter = painterResource(id = R.drawable.icon),
             contentDescription = "App Logo",
             modifier = Modifier
-                .size(180.dp)
-                .padding(bottom = 24.dp),
+                .size(dimens.w(0.438f))
+                .padding(bottom = dimens.h(0.026f)),
             contentScale = ContentScale.Fit
         )
 
@@ -206,13 +208,13 @@ fun LoggedInWelcomeScreen(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.035f)))
 
         Button(
             onClick = onContinue,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp),
+                .height(dimens.h(0.066f)),
             colors = ButtonDefaults.buttonColors(
                 containerColor = DefaultPrimary
             ),
@@ -232,13 +234,13 @@ fun LoggedInWelcomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
         OutlinedButton(
             onClick = onUseDifferentAccount,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp),
+                .height(dimens.h(0.066f)),
             shape = RoundedCornerShape(12.dp)
         ) {
             Row(
