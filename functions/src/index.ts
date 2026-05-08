@@ -272,7 +272,6 @@ exports.sendAppointmentCancelledNotification = functions
 
     if (!before || !after) return null;
 
-    // Only send if it was Confirmed and now Cancelled
     if (before.status !== "Confirmed" || after.status !== "Cancelled") return null;
 
     const doctorId = after.doctorId;
@@ -331,7 +330,6 @@ exports.cleanOldAvailabilities = functions
     for (const userDoc of usersSnapshot.docs) {
       const userId = userDoc.id;
 
-      // 🧹 1. Clean old availability
       const availabilitySnap = await db
         .collection("users")
         .doc(userId)
@@ -344,7 +342,6 @@ exports.cleanOldAvailabilities = functions
         }
       }
 
-      // 📦 2. Move past appointments out of "upcoming"
       const upcomingRef = db
         .collection("users")
         .doc(userId)
@@ -391,13 +388,11 @@ exports.createAppointmentSummary = functions
     const data = snap.data();
     const appointmentId = context.params.appointmentId;
 
-    // Validate required fields
     if (!data.patientId || !data.doctorId) {
       console.error('Missing patientId or doctorId');
       return null;
     }
 
-    // Robust date handling
     let dateTime;
     try {
       dateTime = data.dateTime?.toDate
@@ -411,7 +406,7 @@ exports.createAppointmentSummary = functions
     const summary = {
       doctorName: data.doctorName || "",
       patientName: data.patientName || "",
-      dateTime: data.dateTime, // Keep original timestamp
+      dateTime: data.dateTime,
       status: data.status,
       type: data.type,
       price: data.price || 0,
@@ -424,7 +419,6 @@ exports.createAppointmentSummary = functions
     try {
       const batch = admin.firestore().batch();
 
-      // Patient summary
       const patientRef = admin.firestore()
         .collection("users")
         .doc(data.patientId)
@@ -445,7 +439,6 @@ exports.createAppointmentSummary = functions
         batch.set(patientUpcomingRef, summary);
       }
 
-      // Doctor summary
       const doctorRef = admin.firestore()
         .collection("users")
         .doc(data.doctorId)

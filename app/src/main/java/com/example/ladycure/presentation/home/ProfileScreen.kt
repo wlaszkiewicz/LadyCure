@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.home
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
@@ -88,6 +85,10 @@ import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.register.components.DatePickerButton
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.ImageUploader
 import com.example.ladycure.utility.rememberImagePickerLauncher
 import kotlinx.coroutines.CoroutineScope
@@ -100,6 +101,7 @@ import java.util.Locale
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
+    val dimens = rememberResponsiveDimens()
     val context = LocalContext.current
     val userRepo = UserRepository()
     val authRepo = AuthRepository()
@@ -178,7 +180,7 @@ fun ProfileScreen(navController: NavHostController) {
             color = DefaultBackground,
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(dimens.w(16 / 411f)),
             ) {
                 Text(
                     text = "My Profile",
@@ -191,7 +193,7 @@ fun ProfileScreen(navController: NavHostController) {
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
         if (userData.value == null) {
             Box(
@@ -205,7 +207,7 @@ fun ProfileScreen(navController: NavHostController) {
                     verticalArrangement = Arrangement.Center
                 ) {
                     CircularProgressIndicator(color = DefaultPrimary)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
                     Text(
                         text = "Loading user data...",
                         style = MaterialTheme.typography.bodyLarge,
@@ -218,8 +220,8 @@ fun ProfileScreen(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .padding(horizontal = dimens.w(16 / 411f), vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(dimens.h(24 / 914f))
             ) {
                 // Profile header
                 Column(
@@ -229,7 +231,7 @@ fun ProfileScreen(navController: NavHostController) {
                     currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
                     Box(
                         modifier = Modifier
-                            .size(150.dp)
+                            .size(dimens.w(150 / 411f))
                             .clip(CircleShape)
                             .border(4.dp, DefaultPrimary, CircleShape)
                             .background(
@@ -250,7 +252,7 @@ fun ProfileScreen(navController: NavHostController) {
                                     contentScale = ContentScale.Crop,
                                     loading = {
                                         CircularProgressIndicator(
-                                            modifier = Modifier.size(70.dp),
+                                            modifier = Modifier.size(dimens.w(70 / 411f)),
                                             color = DefaultPrimary
                                         )
                                     },
@@ -277,7 +279,7 @@ fun ProfileScreen(navController: NavHostController) {
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                     userData.value?.let { user ->
                         Text(
@@ -374,6 +376,7 @@ fun ProfileScreen(navController: NavHostController) {
     }
 
     if (showSupportDialog) {
+        val dimens2 = rememberResponsiveDimens()
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -387,7 +390,7 @@ fun ProfileScreen(navController: NavHostController) {
 
             Card(
                 modifier = Modifier
-                    .width(300.dp)
+                    .width(dimens2.w(300 / 411f))
                     .zIndex(1f),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -396,30 +399,33 @@ fun ProfileScreen(navController: NavHostController) {
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(
+                        horizontal = dimens2.w(24 / 411f),
+                        vertical = dimens2.h(24 / 914f)
+                    ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
                         imageVector = Icons.Default.Help,
                         contentDescription = "Help Icon",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(80.dp)
+                        modifier = Modifier.size(dimens2.w(80 / 411f))
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens2.h(16 / 914f)))
 
                     Text(
                         text = "Need Help?",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = DefaultPrimary,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = dimens2.h(16 / 914f))
                     )
 
                     Text(
                         text = "If you need assistance, please contact us via email.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = DefaultOnPrimary,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = dimens2.h(16 / 914f))
                     )
 
                     Row(
@@ -469,10 +475,11 @@ fun ProfileOption(
     isVector: Boolean = false,
     onClick: () -> Unit = {}
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(70.dp), // Increased height
+            .height(dimens.h(70 / 914f)),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White,
@@ -484,24 +491,24 @@ fun ProfileOption(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = dimens.w(16 / 411f))
                 .fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(dimens.w(16 / 411f))
         ) {
             if (isVector) {
                 Icon(
                     painter = icon as Painter,
                     contentDescription = text,
                     tint = DefaultPrimary,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(dimens.w(28 / 411f))
                 )
             } else {
                 Icon(
                     imageVector = icon as ImageVector,
                     contentDescription = text,
                     tint = DefaultPrimary,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(dimens.w(28 / 411f))
                 )
             }
             Text(
@@ -514,7 +521,7 @@ fun ProfileOption(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "Navigate",
                 tint = DefaultPrimary.copy(alpha = 0.5f),
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(dimens.w(28 / 411f))
             )
         }
     }
@@ -555,6 +562,7 @@ fun DoctorAccountSettingsDialog(
     onSave: (Map<String, Any>) -> Unit,
     role: String? = null
 ) {
+    val dimens = rememberResponsiveDimens()
     var name by remember {
         mutableStateOf(
             TextFieldValue(
@@ -666,8 +674,7 @@ fun DoctorAccountSettingsDialog(
         } else if (name.text.length > 50) {
             nameError = "Name is too long (max 50 characters)"
             isValid = false
-        }
-        else {
+        } else {
             nameError = ""
         }
 
@@ -677,8 +684,7 @@ fun DoctorAccountSettingsDialog(
         } else if (surname.text.length > 50) {
             surnameError = "Surname is too long (max 50 characters)"
             isValid = false
-        }
-        else {
+        } else {
             surnameError = ""
         }
 
@@ -691,8 +697,7 @@ fun DoctorAccountSettingsDialog(
         } else if (!isAdult) {
             dobError = "You must be at least 18 years old"
             isValid = false
-        }
-        else {
+        } else {
             dobError = ""
         }
 
@@ -780,14 +785,14 @@ fun DoctorAccountSettingsDialog(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(dimens.w(16 / 411f)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(dimens.w(32 / 411f))
                         .clickable { onDismiss() },
                     tint = DefaultPrimary
                 )
@@ -804,12 +809,12 @@ fun DoctorAccountSettingsDialog(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.size(32.dp))
+                Spacer(modifier = Modifier.size(dimens.w(32 / 411f)))
             }
 
             Box(
                 modifier = Modifier
-                    .size(160.dp)
+                    .size(dimens.w(160 / 411f))
                     .clip(CircleShape)
                     .background(DefaultPrimary.copy(alpha = 0.1f))
                     .border(2.dp, DefaultPrimary.copy(alpha = 0.3f), CircleShape)
@@ -824,21 +829,21 @@ fun DoctorAccountSettingsDialog(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
             Column(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = dimens.w(16 / 411f), vertical = 8.dp)
             ) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = dimens.h(16 / 914f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(dimens.w(16 / 411f))
                     ) {
                         Text(
                             text = "Basic Information",
@@ -847,7 +852,7 @@ fun DoctorAccountSettingsDialog(
                                 fontSize = 20.sp
                             ),
                             color = DefaultPrimary,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
                         )
 
                         OutlinedTextField(
@@ -869,7 +874,7 @@ fun DoctorAccountSettingsDialog(
                             supportingText = { if (nameError.isNotEmpty()) Text(nameError) }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         OutlinedTextField(
                             value = surname,
@@ -893,7 +898,7 @@ fun DoctorAccountSettingsDialog(
                             supportingText = { if (surnameError.isNotEmpty()) Text(surnameError) }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         OutlinedTextField(
                             value = phone,
@@ -915,7 +920,7 @@ fun DoctorAccountSettingsDialog(
                             supportingText = { if (phoneError.isNotEmpty()) Text(phoneError) }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
@@ -948,12 +953,12 @@ fun DoctorAccountSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = dimens.h(16 / 914f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(dimens.w(16 / 411f))
                     ) {
                         Text(
                             text = "Professional Information",
@@ -962,7 +967,7 @@ fun DoctorAccountSettingsDialog(
                                 fontSize = 20.sp
                             ),
                             color = DefaultPrimary,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
                         )
 
                         OutlinedTextField(
@@ -982,10 +987,14 @@ fun DoctorAccountSettingsDialog(
                                 focusedLabelColor = DefaultPrimary
                             ),
                             isError = experienceError.isNotEmpty(),
-                            supportingText = { if (experienceError.isNotEmpty()) Text(experienceError) }
+                            supportingText = {
+                                if (experienceError.isNotEmpty()) Text(
+                                    experienceError
+                                )
+                            }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         OutlinedTextField(
                             value = consultationPrice,
@@ -1005,10 +1014,14 @@ fun DoctorAccountSettingsDialog(
                                 focusedLabelColor = DefaultPrimary
                             ),
                             isError = consultationPriceError.isNotEmpty(),
-                            supportingText = { if (consultationPriceError.isNotEmpty()) Text(consultationPriceError) }
+                            supportingText = {
+                                if (consultationPriceError.isNotEmpty()) Text(
+                                    consultationPriceError
+                                )
+                            }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         OutlinedTextField(
                             value = languages,
@@ -1029,7 +1042,7 @@ fun DoctorAccountSettingsDialog(
                             supportingText = { if (languagesError.isNotEmpty()) Text(languagesError) }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         OutlinedTextField(
                             value = bio,
@@ -1054,12 +1067,12 @@ fun DoctorAccountSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = dimens.h(16 / 914f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(dimens.w(16 / 411f))
                     ) {
                         Text(
                             text = "Speciality",
@@ -1068,7 +1081,7 @@ fun DoctorAccountSettingsDialog(
                                 fontSize = 20.sp
                             ),
                             color = DefaultPrimary,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
                         )
 
                         Column(modifier = Modifier.fillMaxWidth()) {
@@ -1078,10 +1091,12 @@ fun DoctorAccountSettingsDialog(
                                     .clickable { expanded = true }
                                     .border(
                                         1.dp,
-                                        if (specialityError.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                        if (specialityError.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = 0.2f
+                                        ),
                                         RoundedCornerShape(8.dp)
                                     )
-                                    .padding(16.dp)
+                                    .padding(dimens.w(16 / 411f))
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -1104,7 +1119,10 @@ fun DoctorAccountSettingsDialog(
                                     text = specialityError,
                                     color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                                    modifier = Modifier.padding(
+                                        start = dimens.w(16 / 411f),
+                                        top = 4.dp
+                                    )
                                 )
                             }
 
@@ -1136,12 +1154,12 @@ fun DoctorAccountSettingsDialog(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = dimens.h(16 / 914f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(dimens.w(16 / 411f))
                     ) {
                         Text(
                             text = "Address Information",
@@ -1150,7 +1168,7 @@ fun DoctorAccountSettingsDialog(
                                 fontSize = 20.sp
                             ),
                             color = DefaultPrimary,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
                         )
 
                         OutlinedTextField(
@@ -1172,7 +1190,7 @@ fun DoctorAccountSettingsDialog(
                             supportingText = { if (addressError.isNotEmpty()) Text(addressError) }
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         OutlinedTextField(
                             value = city,
@@ -1193,14 +1211,14 @@ fun DoctorAccountSettingsDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
+                        .padding(vertical = dimens.h(16 / 914f)),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier
-                            .padding(end = 16.dp)
-                            .width(120.dp),
+                            .padding(end = dimens.w(16 / 411f))
+                            .width(dimens.w(120 / 411f)),
                         border = BorderStroke(1.dp, DefaultPrimary),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = DefaultPrimary)
                     ) {
@@ -1217,8 +1235,10 @@ fun DoctorAccountSettingsDialog(
                                     "phone" to phone.text,
                                     "address" to address.text,
                                     "city" to city.text,
-                                    "consultationPrice" to (consultationPrice.text.toDoubleOrNull() ?: 0.0), // Convert to Double
-                                    "experience" to (experience.text.toIntOrNull() ?: 0), // Convert to Int
+                                    "consultationPrice" to (consultationPrice.text.toDoubleOrNull()
+                                        ?: 0.0), // Convert to Double
+                                    "experience" to (experience.text.toIntOrNull()
+                                        ?: 0), // Convert to Int
                                     "languages" to languages.text.split(",").map { it.trim() },
                                     "speciality" to selectedSpeciality.displayName,
                                     "bio" to bio.text // Added bio
@@ -1231,7 +1251,7 @@ fun DoctorAccountSettingsDialog(
                             contentColor = Color.White
                         ),
                         enabled = validateInputs(), // Button enabled based on validation
-                        modifier = Modifier.width(140.dp),
+                        modifier = Modifier.width(dimens.w(140 / 411f)),
                         elevation = ButtonDefaults.buttonElevation(
                             defaultElevation = 4.dp,
                             pressedElevation = 8.dp
@@ -1251,6 +1271,7 @@ fun RegularAccountSettingsDialog(
     onDismiss: () -> Unit,
     onSave: (Map<String, String>) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     var name by remember {
         mutableStateOf(
             TextFieldValue(
@@ -1280,7 +1301,7 @@ fun RegularAccountSettingsDialog(
     var dob by remember { mutableStateOf(initialDob) }
     var dobText by remember { mutableStateOf(initialDob.format(DateTimeFormatter.ISO_LOCAL_DATE)) }
     var isAdult by remember { mutableStateOf(!dob.isAfter(LocalDate.now().minusYears(18))) }
-    var dobError by remember { mutableStateOf("") } // Added for DOB format error
+    var dobError by remember { mutableStateOf("") }
 
     var phone by remember {
         mutableStateOf(
@@ -1300,8 +1321,7 @@ fun RegularAccountSettingsDialog(
         } else if (name.text.length > 50) {
             nameError = "Name is too long (max 50 characters)"
             isValid = false
-        }
-        else {
+        } else {
             nameError = ""
         }
 
@@ -1311,8 +1331,7 @@ fun RegularAccountSettingsDialog(
         } else if (surname.text.length > 50) {
             surnameError = "Surname is too long (max 50 characters)"
             isValid = false
-        }
-        else {
+        } else {
             surnameError = ""
         }
 
@@ -1325,14 +1344,13 @@ fun RegularAccountSettingsDialog(
         } else if (!isAdult) {
             dobError = "We are sorry, you must be at least 18 years old"
             isValid = false
-        }
-        else {
+        } else {
             dobError = ""
         }
 
         if (phone.text.isBlank()) {
-            phoneError = "Phone number cannot be empty"
-            isValid = false
+//            phoneError = "Phone number cannot be empty"
+//            isValid = false
         } else if (!isValidPhone(phone.text)) {
             phoneError = "Please enter a valid phone number"
             isValid = false
@@ -1345,33 +1363,27 @@ fun RegularAccountSettingsDialog(
 
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter
+        contentAlignment = Alignment.Center
     ) {
+
         Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.55f))
+                .clickable(onClick = onDismiss)
+        )
+        Box(
+            modifier = Modifier
+                .padding(16.dp)
+                .background(
+                    color = DefaultBackground,
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .clickable(onClick = onDismiss)
-            )
-            Box(
-                modifier = Modifier
-                    .width(360.dp)
-                    .height(700.dp)
-                    .padding(top = 70.dp)
-                    .background(
-                        color = DefaultBackground,
-                        shape = RoundedCornerShape(20.dp)
-                    )
-            )
             Card(
-                modifier = Modifier
-                    .width(340.dp)
-                    .padding(top = 80.dp)
-                    .zIndex(2f),
+                modifier = Modifier.width(dimens.w(320 / 411f)),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White,
@@ -1380,13 +1392,13 @@ fun RegularAccountSettingsDialog(
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 20.dp, vertical = 24.dp)
+                        .padding(horizontal = dimens.w(20 / 411f), vertical = dimens.h(24 / 914f))
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(150.dp)
+                            .size(dimens.w(150 / 411f))
                             .clip(CircleShape)
                             .background(DefaultPrimary.copy(alpha = 0.1f))
                             .border(2.dp, DefaultPrimary.copy(alpha = 0.3f), CircleShape)
@@ -1401,7 +1413,7 @@ fun RegularAccountSettingsDialog(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                     Text(
                         text = "Account Settings",
@@ -1410,7 +1422,7 @@ fun RegularAccountSettingsDialog(
                             fontSize = 22.sp
                         ),
                         color = DefaultPrimary,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                     )
                     OutlinedTextField(
                         value = name,
@@ -1475,12 +1487,12 @@ fun RegularAccountSettingsDialog(
                                 text = dobError,
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                                modifier = Modifier.padding(start = dimens.w(16 / 411f), top = 4.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1513,7 +1525,7 @@ fun RegularAccountSettingsDialog(
                                 containerColor = DefaultPrimary,
                                 contentColor = DefaultOnPrimary
                             ),
-                            enabled = validateInputs() // Button enabled based on validation
+                            enabled = validateInputs()
                         ) {
                             Text("Save")
                         }

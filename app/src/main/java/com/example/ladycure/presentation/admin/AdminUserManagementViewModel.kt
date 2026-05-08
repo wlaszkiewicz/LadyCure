@@ -45,6 +45,7 @@ class AdminUserManagementViewModel(
         private set
 
     // Data state
+    // TODO: replace with List<User> — User.fromMap() already exists; update repository call site
     var users by mutableStateOf<List<Map<String, Any>>>(emptyList())
         private set
 

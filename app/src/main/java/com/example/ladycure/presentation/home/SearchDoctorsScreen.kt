@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.home
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,10 +50,20 @@ import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.DoctorCard
+import com.example.ladycure.ui.theme.AliceBlue
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Honeydew
+import com.example.ladycure.ui.theme.Lavender
+import com.example.ladycure.ui.theme.LavenderBlush
+import com.example.ladycure.ui.theme.LightGoldenrod
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
 fun SearchDoctorsScreen(navController: NavHostController, snackbarController: SnackbarController) {
+    val dimens = rememberResponsiveDimens()
     val searchQuery = remember { mutableStateOf("") }
     val doctorRepo = DoctorRepository()
     var allDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
@@ -94,13 +101,16 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
+    ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = DefaultBackground,
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(dimens.w(16 / 411f)),
             ) {
                 Text(
                     text = "Doctors",
@@ -121,12 +131,12 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
         ) {
             SearchBar(
                 value = searchQuery.value,
                 onValueChange = { searchQuery.value = it },
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = dimens.w(16 / 411f))
             )
             if (searchQuery.value.isNotEmpty()) {
                 if (filteredDoctors.isNotEmpty()) {
@@ -134,7 +144,7 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 16.dp)
+                            .padding(horizontal = dimens.w(16 / 411f))
                     ) {
                         items(filteredDoctors) { doctor ->
                             DoctorCard(
@@ -142,7 +152,7 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
                                 onSelect = {
                                     navController.navigate("services/${doctor.id}")
                                 },
-                                modifier = Modifier.padding(bottom = 16.dp)
+                                modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                             )
                         }
                     }
@@ -151,7 +161,7 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
                         text = "No doctors found in this category",
                         style = MaterialTheme.typography.bodyLarge,
                         color = DefaultOnPrimary.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(horizontal = dimens.w(16 / 411f))
                     )
                 }
             } else {
@@ -163,7 +173,7 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
                     style = MaterialTheme.typography.titleLarge,
                     color = DefaultPrimary,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = dimens.w(16 / 411f))
                 )
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
@@ -172,7 +182,7 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
+                                .padding(horizontal = dimens.w(16 / 411f))
                         ) {
                             rowItems.forEach { spec ->
                                 DoctorSpecialityCard(
@@ -197,12 +207,13 @@ private fun SearchBar(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(dimens.h(56 / 914f)),
         shape = RoundedCornerShape(16.dp),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = DefaultBackground,
@@ -246,6 +257,7 @@ private fun SearchBar(
 
 @Composable
 private fun PopularCategories(navController: NavHostController) {
+    val dimens = rememberResponsiveDimens()
 
     Column(
         modifier = Modifier
@@ -255,16 +267,16 @@ private fun PopularCategories(navController: NavHostController) {
             style = MaterialTheme.typography.titleLarge,
             color = DefaultPrimary,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 12.dp, start = 16.dp)
+            modifier = Modifier.padding(bottom = dimens.h(12 / 914f), start = dimens.w(16 / 411f))
         )
 
 
         val specializationColors = listOf(
-            Color(0xFFFFF0F5),
-            Color(0xFFF0F8FF),
-            Color(0xFFFAFAD2),
-            Color(0xFFE9FFEB),
-            Color(0xFFE2DCFA)
+            LavenderBlush,
+            AliceBlue,
+            LightGoldenrod,
+            Honeydew,
+            Lavender
         )
 
         val categories = Speciality.popularCategories
@@ -273,7 +285,7 @@ private fun PopularCategories(navController: NavHostController) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = dimens.w(16 / 411f))
         ) {
             items(categories) { category ->
                 val cardColor =
@@ -297,6 +309,7 @@ private fun PopularCategoryCard(
     category: Speciality,
     onClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = Modifier.shadow(
             elevation = 2.dp,
@@ -306,8 +319,8 @@ private fun PopularCategoryCard(
         Card(
             onClick = onClick,
             modifier = Modifier
-                .width(150.dp)
-                .height(100.dp),
+                .width(dimens.w(150 / 411f))
+                .height(dimens.h(100 / 914f)),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = cardColor.copy(alpha = 0.9f)
@@ -326,7 +339,7 @@ private fun PopularCategoryCard(
                         painter = painterResource(id = category.icon),
                         contentDescription = category.displayName,
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(dimens.w(28 / 411f))
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -351,6 +364,7 @@ private fun DoctorSpecialityCard(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
     ) {
@@ -368,14 +382,14 @@ private fun DoctorSpecialityCard(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(12.dp)
+                    .padding(horizontal = dimens.w(12 / 411f), vertical = dimens.h(12 / 914f))
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(dimens.w(48 / 411f))
                         .clip(RoundedCornerShape(12.dp))
                         .background(DefaultPrimary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center

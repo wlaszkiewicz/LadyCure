@@ -403,7 +403,9 @@ class AppointmentRepository {
 
             for (chatDoc in snapshot.documents) {
                 val participantsList = chatDoc.get("participants") as? List<String> ?: continue
-                val otherUserId = participantsList.first { it != currentUserId }
+                val otherUserId = participantsList.firstOrNull {
+                    it.isNotBlank() && it != currentUserId
+                } ?: continue
 
                 val userDoc = firestore.collection("users").document(otherUserId).get().await()
                 val userData = userDoc.data ?: continue

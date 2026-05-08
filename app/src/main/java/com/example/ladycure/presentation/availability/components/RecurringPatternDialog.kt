@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.availability.components
 
-import DefaultPrimary
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,6 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.FractionDimens
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
@@ -45,6 +47,7 @@ internal fun RecurringPatternDialog(
     onApply: (Set<DayOfWeek>, Int) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     var durationWeeks by remember { mutableStateOf(4) }
     val tempSelectedDays = remember { mutableStateOf(selectedDaysOfWeek.toSet()) }
 
@@ -105,7 +108,7 @@ internal fun RecurringPatternDialog(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(dimens.h(FractionDimens.paddingSmallH)))
 
                 // Duration options
                 Text("Repeat for how many weeks?", style = MaterialTheme.typography.bodyMedium)

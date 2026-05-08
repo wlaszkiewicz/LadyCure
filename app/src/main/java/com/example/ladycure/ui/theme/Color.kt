@@ -1,3 +1,5 @@
+package com.example.ladycure.ui.theme
+
 import androidx.compose.ui.graphics.Color
 
 val Black = Color(0xFF000000)
@@ -35,6 +37,26 @@ val Red = Color(0xFFF44336)
 val Green = Color(0xFF4CAF50)
 val Yellow = Color(0xFFFFC107)
 val YellowOrange = Color(0xFFFFA000)
+val MediumGrey = Color(0xFF9E9E9E)
+
+// Role badge colors
+val Teal = Color(0xFF5FB9C9)
+val DeepPurple = Color(0xFF7050AB)
+
+// Neutral tones
+val Mauve = Color(0xFFD6A6C2)
+val OffWhite = Color(0xFFFAFAFA)
+
+// Speciality card palette
+val LavenderBlush = Color(0xFFFFF0F5)
+val AliceBlue = Color(0xFFF0F8FF)
+val LightGoldenrod = Color(0xFFFAFAD2)
+val Honeydew = Color(0xFFE9FFEB)
+val Lavender = Color(0xFFE2DCFA)
+
+// Period tracker
+val Lilac = Color(0xFFC8A2C8)
+val DarkMagenta = Color(0xFF8B008B)
 
 
 //// Default PINK Theme Colors

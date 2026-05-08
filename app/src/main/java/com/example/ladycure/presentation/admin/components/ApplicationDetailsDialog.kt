@@ -1,11 +1,5 @@
 package com.example.ladycure.presentation.admin.components
 
-import BabyBlue
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
-import Red
-import Yellow
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.expandVertically
@@ -59,6 +53,13 @@ import androidx.compose.ui.window.Dialog
 import com.example.ladycure.R
 import com.example.ladycure.domain.model.ApplicationStatus
 import com.example.ladycure.domain.model.DoctorApplication
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -84,6 +85,7 @@ fun ApplicationDetailsDialog(
         ApplicationStatus.NEEDS_MORE_INFO -> BabyBlue
     }
 
+    val dimens = rememberResponsiveDimens()
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -94,7 +96,7 @@ fun ApplicationDetailsDialog(
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
+                    .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.018f))
             ) {
                 // Header
                 Row(
@@ -121,7 +123,7 @@ fun ApplicationDetailsDialog(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(statusColor.copy(alpha = 0.1f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .padding(horizontal = dimens.w(0.029f), vertical = 6.dp)
                     ) {
                         Text(
                             text = application.status.displayName.replace("_", " ")
@@ -133,12 +135,12 @@ fun ApplicationDetailsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.018f)))
 
                 // Key details in a clean layout
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
                 ) {
                     DetailRow("Email", application.email)
                     DetailRow("Phone", application.phoneNumber)
@@ -147,7 +149,7 @@ fun ApplicationDetailsDialog(
                     DetailRow("License", application.licenseNumber.ifEmpty { "Not provided" })
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.018f)))
 
                 // Documents section
                 if (application.licensePhotoUrl.isNotEmpty() || application.diplomaPhotoUrl.isNotEmpty()) {
@@ -191,7 +193,7 @@ fun ApplicationDetailsDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.018f)))
                 }
 
                 // Notes section
@@ -284,7 +286,7 @@ fun ApplicationDetailsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.018f)))
 
                 // Action buttons
                 when (application.status) {

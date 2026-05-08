@@ -56,7 +56,9 @@ class DoctorApplicationViewModel(
     var hasSubmitted by mutableStateOf(false)
     var tooLarge by mutableStateOf(false)
 
+
     fun submitApplication(
+        context: android.content.Context,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -89,6 +91,7 @@ class DoctorApplicationViewModel(
                     currentStep = 2
                     val licensePhotoUrl = licensePhotoUri?.let { uri ->
                         storageRepo.uploadFile(
+                            context = context,
                             uri = uri,
                             path = "doctor_verification/$userId/license.jpg",
                             onProgress = { uploaded, total ->
@@ -108,6 +111,7 @@ class DoctorApplicationViewModel(
                     currentStep = 3
                     val diplomaPhotoUrl = diplomaPhotoUri?.let { uri ->
                         storageRepo.uploadFile(
+                            context = context,
                             uri = uri,
                             path = "doctor_verification/$userId/diploma.jpg",
                             onProgress = { uploaded, total ->

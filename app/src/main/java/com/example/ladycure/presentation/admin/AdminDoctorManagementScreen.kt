@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.admin
 
-import DefaultPrimary
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,13 +24,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.ladycure.presentation.admin.components.AddUserDialog
 import com.example.ladycure.presentation.admin.components.AdminSearchBar
-import com.example.ladycure.presentation.admin.components.DeleteConfirmationDialog
 import com.example.ladycure.presentation.admin.components.DoctorList
 import com.example.ladycure.presentation.admin.components.EditDoctorDialog
 import com.example.ladycure.presentation.admin.components.EmptyView
 import com.example.ladycure.presentation.admin.components.LoadingView
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +40,7 @@ fun AdminDoctorManagementScreen(
     navController: NavController,
     viewModel: AdminDoctorManagementViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     val errorMessage = viewModel.errorMessage
 
     LaunchedEffect(errorMessage) {
@@ -52,12 +52,12 @@ fun AdminDoctorManagementScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 8.dp),
+                .padding(vertical = dimens.h(0.017f), horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -70,7 +70,7 @@ fun AdminDoctorManagementScreen(
             )
             IconButton(
                 onClick = { viewModel.loadDoctors() },
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.size(dimens.w(0.073f))
             ) {
                 Icon(
                     Icons.Filled.Refresh,
@@ -86,7 +86,7 @@ fun AdminDoctorManagementScreen(
             onSearchQueryChange = { viewModel.updateSearchQuery(it) }
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.011f)))
 
         if (viewModel.isLoadingDoctors) {
             LoadingView()
@@ -120,4 +120,3 @@ fun AdminDoctorManagementScreen(
         )
     }
 }
-

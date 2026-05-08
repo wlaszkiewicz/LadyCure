@@ -34,6 +34,7 @@ class ConfirmationViewModel(
 ) : ViewModel() {
 
     // State variables
+    // TODO: replace with Doctor model — Doctor.fromMap() already exists
     var doctorInfo by mutableStateOf<Map<String, Any>?>(null)
         private set
     var isLoading by mutableStateOf(true)
@@ -123,6 +124,7 @@ class ConfirmationViewModel(
 
                 val result = withContext(Dispatchers.IO) {
                     referralRepo.replaceReferralInFirestore(
+                        context = context,
                         uri = uri,
                         oldUri = referral?.url.toString(),
                         referralId = referralId,

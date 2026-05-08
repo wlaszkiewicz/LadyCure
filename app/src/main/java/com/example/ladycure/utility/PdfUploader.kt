@@ -7,9 +7,10 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.File
 import java.util.UUID
 import kotlin.coroutines.Continuation
-import kotlin.coroutines.suspendCoroutine
 
 object PdfUploader {
     private val storage = FirebaseStorage.getInstance()
@@ -23,15 +24,28 @@ object PdfUploader {
                 if (totalBytes > 0) bytesTransferred.toFloat() / totalBytes.toFloat() else 0f
     }
 
+    // Copies URI content to a temp file to work around Waydroid/emulator content provider issues
+    private fun uriToTempFile(context: Context, uri: Uri): File {
+        val tempFile = File.createTempFile("upload_pdf", ".pdf", context.cacheDir)
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            tempFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        return tempFile
+    }
+
     suspend fun uploadReferral(
+        context: Context,
         uri: Uri,
         userId: String,
         onProgress: (suspend (UploadProgress) -> Unit)? = null
     ): String {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             val pdfRef = storageRef.child("referrals/$userId/${UUID.randomUUID()}.pdf")
 
-            val uploadTask = pdfRef.putFile(uri)
+            val tempFile = uriToTempFile(context, uri)
+            val uploadTask = pdfRef.putFile(android.net.Uri.fromFile(tempFile))
 
             uploadTask.addOnProgressListener { snapshot ->
                 CoroutineScope(Dispatchers.IO).launch {
@@ -45,31 +59,32 @@ object PdfUploader {
             }
 
             uploadTask.addOnSuccessListener {
+                tempFile.delete()
                 pdfRef.downloadUrl.addOnSuccessListener { uri ->
                     continuation.resumeWith(Result.success(uri.toString()))
                 }.addOnFailureListener { e ->
                     continuation.resumeWith(Result.failure(e))
                 }
             }.addOnFailureListener { e ->
+                tempFile.delete()
                 continuation.resumeWith(Result.failure(e))
             }
         }
     }
 
     suspend fun replaceReferral(
+        context: Context,
         uri: Uri,
         oldUri: String,
         userId: String,
         onProgress: (suspend (UploadProgress) -> Unit)? = null
     ): String {
-        return suspendCoroutine { continuation ->
-            // First delete the old file if the oldUri is not empty
+        return suspendCancellableCoroutine { continuation ->
             if (oldUri.isNotEmpty()) {
                 try {
                     val oldRef = storage.getReferenceFromUrl(oldUri)
                     oldRef.delete().addOnSuccessListener {
-                        // After successful deletion, upload the new file
-                        uploadNewFile(uri, userId, onProgress, continuation)
+                        uploadNewFile(context, uri, userId, onProgress, continuation)
                     }.addOnFailureListener { e ->
                         continuation.resumeWith(Result.failure(e))
                     }
@@ -77,20 +92,21 @@ object PdfUploader {
                     continuation.resumeWith(Result.failure(e))
                 }
             } else {
-                // If there's no old file, just upload the new one
-                uploadNewFile(uri, userId, onProgress, continuation)
+                uploadNewFile(context, uri, userId, onProgress, continuation)
             }
         }
     }
 
     private fun uploadNewFile(
+        context: Context,
         uri: Uri,
         userId: String,
         onProgress: (suspend (UploadProgress) -> Unit)?,
         continuation: Continuation<String>
     ) {
         val pdfRef = storageRef.child("referrals/$userId/${UUID.randomUUID()}.pdf")
-        val uploadTask = pdfRef.putFile(uri)
+        val tempFile = uriToTempFile(context, uri)
+        val uploadTask = pdfRef.putFile(android.net.Uri.fromFile(tempFile))
 
         uploadTask.addOnProgressListener { snapshot ->
             CoroutineScope(Dispatchers.IO).launch {
@@ -104,16 +120,17 @@ object PdfUploader {
         }
 
         uploadTask.addOnSuccessListener {
+            tempFile.delete()
             pdfRef.downloadUrl.addOnSuccessListener { uri ->
                 continuation.resumeWith(Result.success(uri.toString()))
             }.addOnFailureListener { e ->
                 continuation.resumeWith(Result.failure(e))
             }
         }.addOnFailureListener { e ->
+            tempFile.delete()
             continuation.resumeWith(Result.failure(e))
         }
     }
-
 
     private fun getFileSize(context: Context, uri: Uri): Long {
         val cursor = context.contentResolver.query(uri, null, null, null, null)
@@ -130,5 +147,4 @@ object PdfUploader {
     ): Boolean {
         return getFileSize(context, uri) > maxSizeBytes
     }
-
 }

@@ -1,14 +1,8 @@
+package com.example.ladycure.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import com.example.ladycure.ui.theme.ThemeManager
-import com.example.ladycure.ui.theme.Typography
 
 
 @Composable
@@ -68,7 +62,7 @@ fun purpleColorPalette() = lightColorScheme(
 
 @Composable
 fun LadyCureTheme(
-content: @Composable () -> Unit
+    content: @Composable () -> Unit
 ) {
     // Always use the default color scheme
     val colorScheme = DefaultColorPalette()

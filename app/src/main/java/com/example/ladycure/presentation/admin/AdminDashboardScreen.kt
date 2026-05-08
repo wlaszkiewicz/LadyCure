@@ -1,11 +1,5 @@
 package com.example.ladycure.presentation.admin
 
-import BabyBlue
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
-import Red
-import Yellow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +56,18 @@ import com.example.ladycure.domain.model.ApplicationStatus
 import com.example.ladycure.domain.model.DoctorApplication
 import com.example.ladycure.presentation.admin.components.ApplicationDetailsDialog
 import com.example.ladycure.presentation.home.components.Screen.AdminAnalytics
+import com.example.ladycure.ui.theme.AliceBlue
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.Honeydew
+import com.example.ladycure.ui.theme.Lavender
+import com.example.ladycure.ui.theme.LavenderBlush
+import com.example.ladycure.ui.theme.LightGoldenrod
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.time.format.DateTimeFormatter
 
@@ -72,6 +78,7 @@ fun AdminDashboardScreen(
     snackbarController: SnackbarController,
     viewModel: AdminDashboardViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     var errorMessage = viewModel.errorMessage
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -84,21 +91,21 @@ fun AdminDashboardScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = dimens.w(0.039f))
             .verticalScroll(rememberScrollState())
     ) {
         AdminDashboardHeader(
             onLogoutClick = { viewModel.showLogoutDialog() }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
         AnalyticsSummaryCard(
             stats = viewModel.stats,
             onClick = { navController.navigate(AdminAnalytics.route) }
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
         Column {
             Row(
@@ -127,7 +134,7 @@ fun AdminDashboardScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp), contentAlignment = Alignment.Center
+                        .height(dimens.h(0.164f)), contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(color = DefaultPrimary)
                 }
@@ -135,8 +142,8 @@ fun AdminDashboardScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp)
-                        .padding(vertical = 16.dp), contentAlignment = Alignment.Center
+                        .height(dimens.h(0.109f))
+                        .padding(vertical = dimens.h(0.017f)), contentAlignment = Alignment.Center
                 ) {
                     Text(
                         "No pending applications.",
@@ -160,7 +167,7 @@ fun AdminDashboardScreen(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.017f)))
     }
 
     if (viewModel.showLogoutDialog) {
@@ -199,6 +206,7 @@ fun AnalyticsSummaryCard(
     stats: Map<String, Int>,
     onClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -207,13 +215,18 @@ fun AnalyticsSummaryCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = dimens.w(0.039f),
+                vertical = dimens.h(0.017f)
+            )
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Filled.Analytics,
                     contentDescription = "Analytics",
                     tint = DefaultPrimary,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(dimens.w(0.068f))
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -222,14 +235,14 @@ fun AnalyticsSummaryCard(
                 )
             }
             listOf(
-                Color(0xFFFFF0F5), // light pink
-                Color(0xFFF0F8FF), // light blue
-                Color(0xFFFAFAD2), // light yellow
-                Color(0xFFE9FFEB), // light green
-                Color(0xFFE2DCFA) // light purple
+                LavenderBlush,
+                AliceBlue,
+                LightGoldenrod,
+                Honeydew,
+                Lavender
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.017f)))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -294,10 +307,11 @@ fun StatisticItem(label: String, color: Color, value: String) {
 fun AdminDashboardHeader(
     onLogoutClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp), // Consistent with HomeScreen Header padding
+            .padding(vertical = dimens.h(0.017f)), // Consistent with HomeScreen Header padding
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -311,7 +325,7 @@ fun AdminDashboardHeader(
 
         IconButton(
             onClick = onLogoutClick,
-            modifier = Modifier.size(30.dp)
+            modifier = Modifier.size(dimens.w(0.073f))
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.Logout,
@@ -329,6 +343,7 @@ fun ApplicationItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val statusColor = when (application.status) {
         ApplicationStatus.PENDING -> Yellow
         ApplicationStatus.APPROVED -> Green
@@ -344,7 +359,7 @@ fun ApplicationItemCard(
 
     Card(
         modifier = modifier
-            .width(300.dp)
+            .width(dimens.w(0.730f))
             .padding(8.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
@@ -365,7 +380,7 @@ fun ApplicationItemCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(horizontal = dimens.w(0.049f), vertical = dimens.h(0.022f))
             ) {
                 // Header row with name and status
                 Row(
@@ -387,7 +402,7 @@ fun ApplicationItemCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
                             .background(statusColor.copy(alpha = 0.15f))
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .padding(horizontal = dimens.w(0.024f), vertical = 6.dp)
                     ) {
                         Text(
                             text = application.status.displayName.replace("_", " ")
@@ -400,13 +415,13 @@ fun ApplicationItemCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(bottom = dimens.h(0.013f))
                 ) {
                     Icon(
                         painter = painterResource(application.speciality.icon),

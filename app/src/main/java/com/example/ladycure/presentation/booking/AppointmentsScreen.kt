@@ -1,12 +1,5 @@
 package com.example.ladycure.presentation.booking
 
-import BabyBlue
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
-import Red
-import Yellow
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.expandVertically
@@ -93,6 +86,15 @@ import com.example.ladycure.presentation.home.components.CancelConfirmationDialo
 import com.example.ladycure.presentation.home.components.CancelSuccessDialog
 import com.example.ladycure.presentation.home.components.InfoChip
 import com.example.ladycure.presentation.home.components.ShowDetailsDialog
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.FractionDimens
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -109,6 +111,7 @@ fun AppointmentsScreen(
     snackbarController: SnackbarController?,
     viewModel: AppointmentViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     val isLoading = viewModel.isLoading
     val error = viewModel.error
     val selectedAppointment = viewModel.selectedAppointment
@@ -146,7 +149,10 @@ fun AppointmentsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(
+                        horizontal = dimens.w(FractionDimens.paddingSmallW),
+                        vertical = dimens.h(FractionDimens.paddingSmallH)
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -156,7 +162,7 @@ fun AppointmentsScreen(
                             "home"
                         )
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(dimens.w(FractionDimens.iconMediumW))
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -176,7 +182,7 @@ fun AppointmentsScreen(
 
                 IconButton(
                     onClick = { viewModel.toggleFilters(!showFilters) },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(dimens.w(FractionDimens.iconMediumW))
                 ) {
                     Icon(
                         imageVector = Icons.Default.FilterAlt,
@@ -194,7 +200,7 @@ fun AppointmentsScreen(
                 exit = fadeOut() + shrinkVertically(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = dimens.w(FractionDimens.paddingSmallW))
             ) {
                 EnhancedFiltersSection(
                     role = role,
@@ -236,7 +242,7 @@ fun AppointmentsScreen(
                 divider = {
                     Divider(color = DefaultPrimary.copy(alpha = 0.2f))
                 },
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = dimens.w(FractionDimens.paddingSmallW))
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -343,6 +349,7 @@ fun AppointmentsList(
     viewModel: AppointmentViewModel = viewModel(),
     onLoadMore: (() -> Unit)? = null
 ) {
+    val dimens = rememberResponsiveDimens()
     val currentAppointments by remember(
         viewModel.filteredFutureAppointments,
         viewModel.filteredPastAppointments
@@ -357,17 +364,22 @@ fun AppointmentsList(
         EmptyAppointmentsView(message = emptyMessage)
 
         if (tab == 1) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(
-                    onClick = { onLoadMore?.invoke() },
-                    colors = ButtonDefaults.buttonColors(containerColor = DefaultPrimary)
+            if (!appointments.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = dimens.w(FractionDimens.paddingSmallW),
+                            vertical = dimens.h(FractionDimens.paddingSmallH)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text("Load More Appointments")
+                    Button(
+                        onClick = { onLoadMore?.invoke() },
+                        colors = ButtonDefaults.buttonColors(containerColor = DefaultPrimary)
+                    ) {
+                        Text("Load More Appointments")
+                    }
                 }
             }
         }
@@ -392,7 +404,10 @@ fun AppointmentsList(
                             color = DefaultOnPrimary.copy(alpha = 0.8f)
                         ),
                         modifier = Modifier
-                            .padding(horizontal = 20.dp, vertical = 8.dp)
+                            .padding(
+                                horizontal = dimens.w(FractionDimens.spacingTinyW),
+                                vertical = 8.dp
+                            )
                             .fillMaxWidth()
                     )
                 }
@@ -425,7 +440,10 @@ fun AppointmentsList(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(
+                                horizontal = dimens.w(FractionDimens.paddingSmallW),
+                                vertical = dimens.h(FractionDimens.paddingSmallH)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Button(
@@ -457,6 +475,7 @@ fun AppointmentCard(
     onClickStatus: () -> Unit,
     viewModel: AppointmentViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     val speciality = Speciality.fromDisplayName(appointment.enumType.speciality)
     var showDetailsDialog by remember { mutableStateOf(false) }
     var showCancelConfirmationDialog by remember { mutableStateOf(false) }
@@ -472,7 +491,7 @@ fun AppointmentCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = dimens.w(FractionDimens.paddingSmallW), vertical = 8.dp)
             .clickable {
                 showDetailsDialog = true
                 viewModel.loadDetailsForAppointment(
@@ -485,7 +504,10 @@ fun AppointmentCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(FractionDimens.paddingSmallW),
+                vertical = dimens.h(FractionDimens.paddingSmallH)
+            )
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -498,7 +520,7 @@ fun AppointmentCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(dimens.w(FractionDimens.iconMediumW))
                             .clip(CircleShape)
                             .background(DefaultPrimary.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
@@ -511,7 +533,7 @@ fun AppointmentCard(
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(FractionDimens.spacingTinyW)))
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -545,7 +567,7 @@ fun AppointmentCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(FractionDimens.spacingTinyH)))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -664,10 +686,14 @@ fun AppointmentCard(
 
 @Composable
 fun EmptyAppointmentsView(message: String) {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(
+                horizontal = dimens.w(FractionDimens.paddingMediumW),
+                vertical = dimens.h(FractionDimens.paddingMediumH)
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -675,22 +701,23 @@ fun EmptyAppointmentsView(message: String) {
             imageVector = Icons.Default.CalendarToday,
             contentDescription = "Empty appointments",
             tint = DefaultPrimary.copy(alpha = 0.3f),
-            modifier = Modifier.size(80.dp)
+            modifier = Modifier.size(dimens.w(80 / 411f))
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
         Text(
             text = message,
             style = MaterialTheme.typography.titleMedium.copy(
                 color = DefaultOnPrimary.copy(alpha = 0.6f)
             ),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(FractionDimens.paddingMediumW))
         )
     }
 }
 
 @Composable
 private fun LoadingView() {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -699,9 +726,9 @@ private fun LoadingView() {
         CircularProgressIndicator(
             color = DefaultPrimary,
             strokeWidth = 3.dp,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(dimens.w(FractionDimens.iconMediumW))
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(FractionDimens.paddingSmallH)))
         Text(
             "Loading your appointments...",
             color = DefaultOnPrimary,
@@ -717,6 +744,7 @@ fun EnhancedFiltersSection(
     viewModel: AppointmentViewModel,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier
             .fillMaxWidth(),
@@ -739,7 +767,10 @@ fun EnhancedFiltersSection(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(
+                            horizontal = dimens.w(FractionDimens.paddingSmallW),
+                            vertical = dimens.h(FractionDimens.paddingSmallH)
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -753,7 +784,7 @@ fun EnhancedFiltersSection(
 
                     IconButton(
                         onClick = { viewModel.clearAllFilters() },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(dimens.w(FractionDimens.paddingMediumW))
                     ) {
                         Icon(
                             imageVector = Icons.Default.ClearAll,
@@ -768,7 +799,10 @@ fun EnhancedFiltersSection(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(
+                            horizontal = dimens.w(FractionDimens.paddingSmallW),
+                            vertical = dimens.h(FractionDimens.paddingSmallH)
+                        ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     if (role == "user") {
@@ -911,6 +945,7 @@ fun DateFilterSection(
 
             if (showDatePicker) {
                 val datePickerState = rememberDatePickerState(
+                    // TODO: DatePicker API requires UTC millis; verify this aligns with local-timezone date display
                     initialSelectedDateMillis = selectedDate?.atStartOfDay()
                         ?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
                 )
@@ -954,6 +989,7 @@ fun EnhancedFilterChip(
     onSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -966,7 +1002,10 @@ fun EnhancedFilterChip(
         onClick = onSelected
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(
+                horizontal = dimens.w(FractionDimens.spacingTinyW),
+                vertical = 8.dp
+            ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (selected) {
@@ -1003,6 +1042,7 @@ fun ActiveFiltersRow(
     onRemoveDate: () -> Unit,
     role: String,
 ) {
+    val dimens = rememberResponsiveDimens()
     val hasFilters = selectedSpecializations.isNotEmpty() ||
             selectedDoctors.isNotEmpty() ||
             selectedTypes.isNotEmpty() ||
@@ -1019,7 +1059,7 @@ fun ActiveFiltersRow(
             verticalArrangement = Arrangement.spacedBy(2.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = dimens.w(FractionDimens.paddingSmallW), vertical = 8.dp)
         ) {
             Text(
                 text = "Filters:",
@@ -1080,6 +1120,7 @@ fun ActiveFilterChip(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -1095,7 +1136,12 @@ fun ActiveFilterChip(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 color = DefaultPrimary,
-                modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+                modifier = Modifier.padding(
+                    start = dimens.w(FractionDimens.spacingTinyW),
+                    top = 4.dp,
+                    bottom = 4.dp,
+                    end = 4.dp
+                ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

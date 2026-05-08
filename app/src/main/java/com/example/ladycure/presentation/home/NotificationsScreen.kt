@@ -1,9 +1,5 @@
 package com.example.ladycure.presentation.home
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -66,6 +62,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ladycure.domain.model.Notification
 import com.example.ladycure.domain.model.NotificationType
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.time.format.DateTimeFormatter
 
@@ -126,6 +127,7 @@ private fun NotificationsContent(
     selectedType: NotificationType?,
     errors: String? = null
 ) {
+    val dimens = rememberResponsiveDimens()
     LaunchedEffect(errors) {
         errors?.let { snackbarController.showMessage(it) }
     }
@@ -141,7 +143,7 @@ private fun NotificationsContent(
         )
 
         NotificationsFilterControls(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(16 / 411f)),
             selectedFilter = selectedFilter,
             onFilterChange = onFilterChange,
             unreadCount = unreadCount,
@@ -157,7 +159,7 @@ private fun NotificationsContent(
             NotificationsList(
                 notifications = notifications,
                 onNotificationClick = onNotificationClick,
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = dimens.w(16 / 411f)),
                 onReadNotification = { notificationId ->
                     onReadNotification(notificationId)
                 },
@@ -207,8 +209,8 @@ private fun NotificationsFilterControls(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = DefaultPrimary,
                             selectedLabelColor = Color.White,
-                            containerColor = DefaultPrimary.copy(alpha = 0.1f),
-                            labelColor = DefaultPrimary
+                            labelColor = DefaultPrimary,
+                            containerColor = DefaultBackground
                         ),
                         border = null,
                     )
@@ -253,10 +255,12 @@ private fun NotificationsFilterControls(
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = type.color.copy(alpha = 0.15f),
+                        selectedContainerColor = type.color.blendWith(DefaultBackground, 0.15f),
                         selectedLabelColor = type.color,
                         selectedLeadingIconColor = type.color,
-                        labelColor = DefaultOnPrimary.copy(alpha = 0.8f)
+                        labelColor = DefaultOnPrimary.copy(alpha = 0.8f),
+                        containerColor = DefaultBackground
+
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         borderColor = type.color.copy(alpha = 0.3f),
@@ -270,6 +274,15 @@ private fun NotificationsFilterControls(
     }
 }
 
+fun Color.blendWith(background: Color, alpha: Float): Color {
+    return Color(
+        red = alpha * this.red + (1 - alpha) * background.red,
+        green = alpha * this.green + (1 - alpha) * background.green,
+        blue = alpha * this.blue + (1 - alpha) * background.blue,
+        alpha = 1f
+    )
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -277,10 +290,16 @@ private fun NotificationsTopBar(
     navController: NavHostController,
     unreadCount: Int
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 8.dp, start = 4.dp, end = 16.dp),
+            .padding(
+                top = dimens.h(16 / 914f),
+                bottom = 8.dp,
+                start = 4.dp,
+                end = dimens.w(16 / 411f)
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
@@ -288,7 +307,7 @@ private fun NotificationsTopBar(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
                 tint = DefaultPrimary,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(dimens.w(28 / 411f))
             )
         }
 
@@ -322,7 +341,7 @@ private fun NotificationsTopBar(
                 imageVector = Icons.Default.NotificationsNone,
                 contentDescription = "Notifications",
                 tint = DefaultPrimary,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(dimens.w(28 / 411f))
             )
         }
     }
@@ -339,6 +358,7 @@ private fun NotificationsList(
     modifier: Modifier = Modifier,
     onDeleteNotification: (String) -> Unit,
 ) {
+    val dimens = rememberResponsiveDimens()
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp),
@@ -395,7 +415,7 @@ private fun NotificationsList(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(color, shape = RoundedCornerShape(16.dp))
-                            .padding(horizontal = 20.dp),
+                            .padding(horizontal = dimens.w(20 / 411f)),
                         contentAlignment = if (direction == DismissDirection.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
                     ) {
                         icon?.let {
@@ -427,6 +447,7 @@ private fun NotificationItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val isUnread = !notification.isRead
     Surface(
         modifier = modifier
@@ -455,12 +476,12 @@ private fun NotificationItem(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(dimens.w(16 / 411f)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(dimens.w(40 / 411f))
                         .clip(CircleShape)
                         .background(notification.typeEnum.color.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
@@ -473,7 +494,7 @@ private fun NotificationItem(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
@@ -530,10 +551,11 @@ private fun NotificationItem(
 
 @Composable
 private fun EmptyNotifications() {
+    val dimens = rememberResponsiveDimens()
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(horizontal = dimens.w(32 / 411f), vertical = dimens.h(32 / 914f)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -544,7 +566,7 @@ private fun EmptyNotifications() {
                 imageVector = Icons.Default.NotificationsNone,
                 contentDescription = "No notifications",
                 tint = DefaultPrimary.copy(alpha = 0.3f),
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(dimens.w(64 / 411f))
             )
             Text(
                 text = "No notifications yet",

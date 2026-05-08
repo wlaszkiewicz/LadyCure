@@ -40,6 +40,7 @@ import coil.compose.AsyncImage
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.User
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
 @Composable
 private fun UserCard(
@@ -47,13 +48,14 @@ private fun UserCard(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.018f))
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +69,7 @@ private fun UserCard(
                             contentDescription = "Profile picture",
                             tint = Color.Gray,
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(dimens.w(0.117f))
                                 .clip(RoundedCornerShape(8.dp))
                         )
                     } else {
@@ -75,11 +77,11 @@ private fun UserCard(
                             model = user.profilePictureUrl,
                             contentDescription = "Profile picture",
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(dimens.w(0.117f))
                                 .clip(RoundedCornerShape(8.dp)),
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(0.029f)))
                     Column {
                         Text(
                             text = "${user.name} ${user.surname}",
@@ -194,6 +196,7 @@ private fun UserForm(
     user: User,
     onUserChange: (User) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     // Track whether we're showing doctor fields
     val showDoctorFields = user.role == Role.DOCTOR
 
@@ -201,7 +204,7 @@ private fun UserForm(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
     ) {
         OutlinedTextField(
             value = user.name,
@@ -266,9 +269,10 @@ fun UserList(
     onDeleteClick: (User) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     LazyColumn(
-        modifier = modifier.padding(horizontal = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = modifier.padding(horizontal = dimens.w(0.029f)),
+        verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
     ) {
         items(users) { user ->
             UserCard(

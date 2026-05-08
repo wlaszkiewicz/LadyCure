@@ -1,10 +1,8 @@
 package com.example.ladycure.presentation.login
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -64,6 +63,10 @@ import androidx.navigation.NavController
 import com.example.ladycure.R
 import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.presentation.login.components.NonWomanWelcomeDialog
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
@@ -73,6 +76,10 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
     var infoClicked by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val dimens = rememberResponsiveDimens()
+
+    val config = LocalConfiguration.current
+    Log.d("SCREEN", "width: ${config.screenWidthDp}, height: ${config.screenHeightDp}")
 
     LaunchedEffect(viewModel.error) {
         if (viewModel.error.isNotEmpty()) {
@@ -102,8 +109,8 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                 contentDescription = "Capybara background",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(310.dp)
-                    .padding(bottom = 30.dp)
+                    .height(dimens.h(0.34f))
+                    .padding(bottom = dimens.h(0.033f))
                     .align(Alignment.TopCenter)
                     .zIndex(1f),
                 contentScale = ContentScale.Crop
@@ -115,8 +122,8 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 220.dp)
-                    .padding(vertical = 16.dp)
+                    .padding(top = dimens.h(0.24f))
+                    .padding(vertical = dimens.h(0.0175f))
                     .zIndex(0f),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
@@ -127,8 +134,8 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 30.dp)
-                        .padding(top = 30.dp),
+                        .padding(horizontal = 16.dp, vertical = dimens.h(0.033f))
+                        .padding(top = dimens.h(0.033f)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
                 ) {
@@ -210,9 +217,9 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 20.dp)
+                            .padding(top = dimens.h(0.022f))
                             .padding(horizontal = 20.dp)
-                            .height(50.dp),
+                            .height(dimens.h(0.055f)),
                         shape = RoundedCornerShape(12.dp),
                         enabled = viewModel.isValidInput() && !viewModel.isLoading,
                         colors = ButtonDefaults.buttonColors(

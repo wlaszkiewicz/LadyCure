@@ -1,10 +1,5 @@
 package com.example.ladycure.presentation.booking
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
-import Yellow
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -27,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -72,6 +66,12 @@ import com.example.ladycure.data.repository.StorageRepository
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.PdfUploader
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.CoroutineScope
@@ -87,6 +87,7 @@ fun SelectServiceScreen(
     city: String?,
     speciality: Speciality?
 ) {
+    val dimens = rememberResponsiveDimens()
     var doctor by remember { mutableStateOf<Doctor?>(null) }
     var speciality by remember { mutableStateOf<Speciality?>(speciality) }
     val referralRepo = StorageRepository()
@@ -118,6 +119,7 @@ fun SelectServiceScreen(
                         }
 
                         val result = referralRepo.uploadReferralToFirestore(
+                            context = context,
                             uri,
                             selectedService
                         ) { progress ->
@@ -168,7 +170,7 @@ fun SelectServiceScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(color = DefaultPrimary)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
             Text("Loading services...", color = DefaultOnPrimary)
         }
     } else {
@@ -193,12 +195,17 @@ fun SelectServiceScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+                    .padding(
+                        top = dimens.h(20 / 914f),
+                        bottom = dimens.h(16 / 914f),
+                        start = dimens.w(16 / 411f),
+                        end = dimens.w(16 / 411f)
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = { navController.popBackStack() },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(dimens.w(48 / 411f))
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -206,7 +213,7 @@ fun SelectServiceScreen(
                         tint = DefaultOnPrimary,
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
                 Text(
                     text = speciality!!.displayName,
                     style = MaterialTheme.typography.titleLarge,
@@ -221,21 +228,21 @@ fun SelectServiceScreen(
                 style = MaterialTheme.typography.titleMedium,
                 color = DefaultOnPrimary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = dimens.w(16 / 411f), vertical = 8.dp)
             )
 
             Text(
                 text = "Select a service to book an appointment",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.7f),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = dimens.w(16 / 411f), vertical = 4.dp)
             )
 
             // Services list
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = dimens.w(16 / 411f), vertical = 8.dp)
             ) {
                 items(services) { service ->
                     ServiceCard(
@@ -286,16 +293,19 @@ fun SelectServiceScreen(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(24 / 411f),
+                            vertical = dimens.h(24 / 914f)
+                        ),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             "Uploading your file...",
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                         )
 
                         LinearProgressIndicator(
@@ -315,7 +325,7 @@ fun SelectServiceScreen(
                             color = DefaultOnPrimary
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                         OutlinedButton(
                             onClick = {
@@ -338,19 +348,22 @@ fun SelectServiceScreen(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(24 / 411f),
+                            vertical = dimens.h(24 / 914f)
+                        ),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = "Success",
                             tint = Green.copy(alpha = 0.7f),
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(dimens.w(48 / 411f))
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
                         Text(
                             "Upload Successful!",
                             style = MaterialTheme.typography.titleLarge,
@@ -362,7 +375,7 @@ fun SelectServiceScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
                         Button(
                             onClick = {
                                 showUploadSuccessDialog = false
@@ -391,30 +404,34 @@ fun SelectServiceScreen(
 fun FileTooLargeDialog(
     onDismiss: () -> Unit,
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f)),
             colors = CardDefaults.cardColors(
                 containerColor = DefaultBackground
             )
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(24 / 411f),
+                    vertical = dimens.h(24 / 914f)
+                ),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp),
+                        .height(dimens.h(140 / 914f)),
                     contentAlignment = Alignment.BottomCenter
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.file_kapi),
                         contentDescription = "File Too Large",
-                        modifier = Modifier.size(150.dp),
+                        modifier = Modifier.size(dimens.w(150 / 411f)),
                         contentScale = ContentScale.Fit
                     )
                 }
@@ -426,7 +443,7 @@ fun FileTooLargeDialog(
                             color = Color.White,
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .padding(16.dp),
+                        .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -450,7 +467,7 @@ fun FileTooLargeDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
 
                 OutlinedButton(
                     onClick = onDismiss,
@@ -476,6 +493,7 @@ fun ServiceCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -487,7 +505,10 @@ fun ServiceCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            )
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -510,7 +531,7 @@ fun ServiceCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(DefaultPrimary.copy(alpha = 0.1f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .padding(horizontal = dimens.w(12 / 411f), vertical = 4.dp)
                 )
             }
 
@@ -535,7 +556,7 @@ fun ServiceCard(
                 )
 
                 if (service.needsReferral) {
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(12 / 411f)))
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "Referral needed",
@@ -593,7 +614,7 @@ fun ServiceCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
             // Book button
             Button(
@@ -619,6 +640,7 @@ fun ReferralRequiredDialog(
     onBringLater: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(
         onDismissRequest = onDismiss
     ) {
@@ -628,20 +650,23 @@ fun ReferralRequiredDialog(
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(24 / 411f),
+                    vertical = dimens.h(24 / 914f)
+                )
             ) {
                 // Header with icon
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                 ) {
                     Icon(
                         imageVector = Icons.Default.MedicalInformation,
                         contentDescription = null,
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(dimens.w(28 / 411f))
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(12 / 411f)))
                     Text(
                         text = "Referral Required",
                         style = MaterialTheme.typography.headlineSmall,
@@ -652,7 +677,7 @@ fun ReferralRequiredDialog(
 
                 // Content
                 Column(
-                    modifier = Modifier.padding(bottom = 24.dp)
+                    modifier = Modifier.padding(bottom = dimens.h(24 / 914f))
                 ) {
                     Text(
                         text = "The ${service?.displayName ?: "selected service"} requires a referral from your primary care physician.",
@@ -677,12 +702,12 @@ fun ReferralRequiredDialog(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
+                            .height(dimens.h(48 / 914f))
                     ) {
                         Text("Upload Referral Now")
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                     OutlinedButton(
                         onClick = onBringLater,
@@ -693,7 +718,7 @@ fun ReferralRequiredDialog(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
+                            .height(dimens.h(48 / 914f))
                     ) {
                         Text("I'll Bring It In Person")
                     }

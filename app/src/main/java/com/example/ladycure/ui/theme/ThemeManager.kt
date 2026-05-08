@@ -1,14 +1,7 @@
 package com.example.ladycure.ui.theme
 
-import DefaultColorPalette
 import androidx.compose.runtime.Composable
-import aquaColorPalette
-import blueColorPalette
-import greenColorPalette
-import purpleColorPalette
-import redColorPalette
 
-// ThemeManager.kt
 object ThemeManager {
     enum class AppTheme {
         DEFAULT, RED, BLUE, GREEN, AQUA, PURPLE

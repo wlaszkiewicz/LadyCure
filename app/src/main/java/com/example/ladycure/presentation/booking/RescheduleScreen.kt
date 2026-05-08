@@ -1,9 +1,5 @@
 package com.example.ladycure.presentation.booking
 
-import BabyBlue
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -60,6 +56,11 @@ import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.components.DateCard
 import com.example.ladycure.presentation.booking.components.TimeSlotGrid
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
@@ -73,6 +74,7 @@ fun RescheduleScreen(
     snackbarController: SnackbarController,
     viewModel: RescheduleViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val error = viewModel.error
@@ -101,7 +103,7 @@ fun RescheduleScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(color = DefaultPrimary)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
             Text("Loading appointment data...", color = DefaultOnPrimary)
         }
     } else if (appointment == null || doctor == null) {
@@ -117,7 +119,7 @@ fun RescheduleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .padding(16.dp)
+                .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
         ) {
             // Header
             Row(
@@ -142,7 +144,7 @@ fun RescheduleScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
             // Doctor info
             AppointmentInfoHeader(
@@ -151,7 +153,7 @@ fun RescheduleScreen(
                 modifier = Modifier.padding(horizontal = 0.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
             // Date selection
             if (viewModel.availableDates.isNotEmpty()) {
@@ -160,14 +162,14 @@ fun RescheduleScreen(
                     style = MaterialTheme.typography.titleMedium,
                     color = DefaultOnPrimary,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 12.dp, top = 8.dp)
+                    modifier = Modifier.padding(bottom = dimens.h(12 / 914f), top = 8.dp)
                 )
 
                 DateSelectorRes(
                     availableDates = viewModel.availableDates,
                     selectedDate = viewModel.selectedDate,
                     onDateSelected = { date -> viewModel.selectDate(date) },
-                    modifier = Modifier.padding(bottom = 24.dp)
+                    modifier = Modifier.padding(bottom = dimens.h(24 / 914f))
                 )
 
                 // Time slots - only show if we have a selected date
@@ -177,7 +179,7 @@ fun RescheduleScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = DefaultOnPrimary,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
                     )
 
                     val timeSlots = viewModel.getTimeSlotsForSelectedDate()
@@ -211,7 +213,7 @@ fun RescheduleScreen(
                     text = "There are no available dates for rescheduling this appointment",
                     style = MaterialTheme.typography.bodyMedium,
                     color = DefaultOnPrimary.copy(alpha = 0.9f),
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = dimens.h(16 / 914f))
                 )
             }
         }
@@ -265,6 +267,7 @@ private fun DateSelectorRes(
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier) {
@@ -273,7 +276,7 @@ private fun DateSelectorRes(
                 text = "We are sorry, there's no other available dates for this appointment",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DefaultOnPrimary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(vertical = dimens.h(16 / 914f))
             )
         } else {
             Row(
@@ -287,7 +290,7 @@ private fun DateSelectorRes(
                         date = date,
                         isSelected = date == selectedDate,
                         onSelect = { onDateSelected(date) },
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(dimens.w(80 / 411f))
                     )
                 }
             }
@@ -302,6 +305,7 @@ private fun AppointmentInfoHeader(
     appointment: Appointment,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val speciality = Speciality.fromDisplayName(appointment.type.speciality)
 
     Card(
@@ -314,7 +318,7 @@ private fun AppointmentInfoHeader(
         border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.padding(dimens.w(12 / 411f))
         ) {
             // First row - Doctor and service
             Row(
@@ -324,7 +328,7 @@ private fun AppointmentInfoHeader(
                 // Doctor avatar
                 Box(
                     modifier = Modifier
-                        .size(50.dp)
+                        .size(dimens.w(50 / 411f))
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f))
                         .padding(6.dp),
@@ -437,7 +441,7 @@ private fun AppointmentInfoHeader(
                     color = DefaultOnPrimary
                 )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(dimens.w(12 / 411f)))
 
                 Icon(
                     imageVector = Icons.Default.Schedule,
@@ -470,6 +474,7 @@ fun RescheduleSuccessDialog(
     newDate: String,
     newTime: String
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
@@ -480,12 +485,15 @@ fun RescheduleSuccessDialog(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(24 / 411f),
+                    vertical = dimens.h(24 / 914f)
+                )
             ) {
                 // Celebration icon
                 Box(
                     modifier = Modifier
-                        .size(100.dp)
+                        .size(dimens.w(100 / 411f))
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f))
                         .padding(16.dp),
@@ -495,11 +503,11 @@ fun RescheduleSuccessDialog(
                         imageVector = Icons.Default.EditCalendar,
                         contentDescription = "Rescheduled",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(60.dp)
+                        modifier = Modifier.size(dimens.w(60 / 411f))
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
 
                 // Title with emoji
                 Text(
@@ -511,7 +519,7 @@ fun RescheduleSuccessDialog(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                 // New appointment details card
                 Surface(
@@ -521,7 +529,10 @@ fun RescheduleSuccessDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(16 / 411f),
+                            vertical = dimens.h(16 / 914f)
+                        ),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
@@ -549,7 +560,7 @@ fun RescheduleSuccessDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                 // Additional message
                 Text(
@@ -561,7 +572,7 @@ fun RescheduleSuccessDialog(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
 
                 // Action button
                 OutlinedButton(
@@ -573,7 +584,7 @@ fun RescheduleSuccessDialog(
                     border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.9f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(dimens.h(50 / 914f))
                 ) {
                     Text(
                         "View Appointments",
@@ -596,6 +607,7 @@ private fun RescheduleConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
@@ -604,7 +616,10 @@ private fun RescheduleConfirmationDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(24 / 411f),
+                    vertical = dimens.h(24 / 914f)
+                )
             ) {
                 Text(
                     text = "Confirm Reschedule",
@@ -612,7 +627,7 @@ private fun RescheduleConfirmationDialog(
                         fontWeight = FontWeight.Bold,
                         color = DefaultPrimary
                     ),
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                 )
 
                 // Current appointment
@@ -631,10 +646,13 @@ private fun RescheduleConfirmationDialog(
                     border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = dimens.h(16 / 914f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(16 / 411f),
+                            vertical = dimens.h(16 / 914f)
+                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -687,7 +705,7 @@ private fun RescheduleConfirmationDialog(
                     contentDescription = "Reschedule to",
                     tint = DefaultPrimary,
                     modifier = Modifier
-                        .size(50.dp)
+                        .size(dimens.w(50 / 411f))
                         .align(Alignment.CenterHorizontally)
                         .padding(vertical = 8.dp)
                 )
@@ -708,10 +726,13 @@ private fun RescheduleConfirmationDialog(
                     border = BorderStroke(1.dp, BabyBlue.copy(alpha = 0.3f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 24.dp)
+                        .padding(bottom = dimens.h(24 / 914f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(16 / 411f),
+                            vertical = dimens.h(16 / 914f)
+                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -761,7 +782,7 @@ private fun RescheduleConfirmationDialog(
                 // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(dimens.w(12 / 411f))
                 ) {
                     Button(
                         onClick = onDismiss,

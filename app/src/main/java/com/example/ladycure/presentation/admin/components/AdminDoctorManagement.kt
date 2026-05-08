@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.admin.components
 
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,12 +60,17 @@ import coil.compose.AsyncImage
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Role
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Teal
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
 @Composable
 fun DoctorDetailsDialogSection(
     doctor: Doctor,
     onDoctorChange: (Doctor) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Divider()
 
     // Professional Information Section
@@ -75,7 +79,7 @@ fun DoctorDetailsDialogSection(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
     ) {
         // Specialization Dropdown
         var expanded by remember { mutableStateOf(false) }
@@ -149,7 +153,7 @@ fun DoctorDetailsDialogSection(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -314,6 +318,7 @@ fun EditDoctorDialog(
     isSaving: Boolean = false,
     onEditAvailabilityClick: () -> Unit = {}
 ) {
+    val dimens = rememberResponsiveDimens()
     AlertDialog(
         onDismissRequest = { if (!isSaving) onDismiss() },
         title = {
@@ -360,7 +365,7 @@ fun EditDoctorDialog(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = dimens.h(0.018f))
             .clip(RoundedCornerShape(16.dp))
     )
 }
@@ -371,12 +376,13 @@ private fun DoctorForm(
     onDoctorChange: (Doctor) -> Unit,
     onEditAvailabilityClick: () -> Unit  // Add this parameter
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(dimens.h(0.018f))
     ) {
         // Personal Information Section
         Text("Personal Information", style = MaterialTheme.typography.titleSmall)
@@ -384,7 +390,7 @@ private fun DoctorForm(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
         ) {
             OutlinedTextField(
                 value = doctor.name,
@@ -452,7 +458,6 @@ private fun DoctorForm(
 }
 
 
-
 @Composable
 private fun DoctorDetailsSection(doctor: Doctor) {
     Column(
@@ -504,7 +509,7 @@ private fun DoctorDetailsSection(doctor: Doctor) {
                     Icon(
                         Icons.Default.Star,
                         contentDescription = "Rating",
-                        tint = Color(0xFFFFC107),
+                        tint = Yellow,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -547,13 +552,14 @@ private fun DoctorCard(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.018f))
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -565,9 +571,9 @@ private fun DoctorCard(
                         Icon(
                             imageVector = Icons.Filled.AccountBox,
                             contentDescription = "Profile picture",
-                            tint = Color(0xFF5FB9C9),
+                            tint = Teal,
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(dimens.w(0.117f))
                                 .clip(RoundedCornerShape(8.dp))
                         )
                     } else {
@@ -575,12 +581,12 @@ private fun DoctorCard(
                             model = doctor.profilePictureUrl,
                             contentDescription = "Profile picture",
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(dimens.w(0.117f))
                                 .clip(RoundedCornerShape(8.dp)),
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(dimens.w(0.029f)))
                     Column {
                         Text(
                             text = "${doctor.name} ${doctor.surname}",
@@ -639,9 +645,10 @@ fun DoctorList(
     onDeleteClick: (Doctor) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     LazyColumn(
-        modifier = modifier.padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = modifier.padding(horizontal = dimens.w(0.039f)),
+        verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
     ) {
         items(doctors) { doctor ->
             DoctorCard(

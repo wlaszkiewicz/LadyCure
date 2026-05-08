@@ -24,6 +24,7 @@ import kotlinx.coroutines.tasks.await
 
 // A data class to hold all the UI state in one place
 data class HomeUiState(
+    // TODO: replace with User model — User.fromMap() already exists
     val userData: Map<String, Any>? = null,
     val unreadNotificationCount: Int = 0,
     var appointments: List<AppointmentSummary>? = null,

@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.booking
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -82,6 +79,11 @@ import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.components.DateAndTimeSelectionView
 import com.example.ladycure.presentation.booking.components.formatDateForDisplay
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.YellowOrange
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import java.time.LocalDate
 import java.time.LocalTime
@@ -182,16 +184,22 @@ private fun AppointmentHeader(
     showDoctorsForSlot: Boolean,
     onBackClick: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 20.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+            .padding(
+                top = dimens.h(20 / 914f),
+                bottom = dimens.h(16 / 914f),
+                start = dimens.w(16 / 411f),
+                end = dimens.w(16 / 411f)
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
         IconButton(
             onClick = onBackClick,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(dimens.w(48 / 411f))
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -200,7 +208,7 @@ private fun AppointmentHeader(
             )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
         Text(
             text = if (showDoctorsForSlot) "Available Doctors" else "Select Time",
@@ -210,7 +218,7 @@ private fun AppointmentHeader(
             modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.width(48.dp))
+        Spacer(modifier = Modifier.width(dimens.w(48 / 411f)))
     }
 }
 
@@ -220,6 +228,7 @@ fun ServiceInfoChip(
     service: AppointmentType,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -227,7 +236,7 @@ fun ServiceInfoChip(
         border = BorderStroke(1.dp, DefaultPrimary.copy(alpha = 0.3f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = dimens.w(16 / 411f), vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
@@ -259,9 +268,10 @@ internal fun LocationSpecialtyRow(
     city: String,
     speciality: Speciality
 ) {
+    val dimens = rememberResponsiveDimens()
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(bottom = 16.dp)
+        modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
     ) {
         Icon(
             imageVector = Icons.Default.LocationOn,
@@ -274,7 +284,7 @@ internal fun LocationSpecialtyRow(
             text = city,
             style = MaterialTheme.typography.bodyMedium,
             color = DefaultOnPrimary.copy(alpha = 0.8f),
-            modifier = Modifier.padding(end = 12.dp)
+            modifier = Modifier.padding(end = dimens.w(12 / 411f))
         )
 
         Surface(
@@ -285,7 +295,7 @@ internal fun LocationSpecialtyRow(
                 text = speciality.displayName,
                 style = MaterialTheme.typography.labelMedium,
                 color = DefaultPrimary,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = dimens.w(12 / 411f), vertical = 4.dp)
             )
         }
     }
@@ -300,10 +310,11 @@ private fun DoctorSelectionView(
     onBackClick: () -> Unit,
     onDoctorSelected: (String) -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = dimens.w(16 / 411f))
     ) {
         SelectedTimeInfo(
             date = selectedDate,
@@ -330,7 +341,7 @@ private fun DoctorSelectionView(
                     DoctorCard(
                         doctor = doctor,
                         onSelect = { onDoctorSelected(doctor.id.toString()) },
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
                     )
                 }
             }
@@ -345,6 +356,7 @@ private fun SelectedTimeInfo(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     val interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
     val borderColor: Color by animateColorAsState(
         targetValue = if (interactionSource.collectIsPressedAsState().value) {
@@ -359,7 +371,7 @@ private fun SelectedTimeInfo(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp)
+            .padding(bottom = dimens.h(16 / 914f))
             .clip(RoundedCornerShape(16.dp))
             .border(
                 width = 1.dp,
@@ -378,7 +390,7 @@ private fun SelectedTimeInfo(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -460,6 +472,7 @@ private fun rememberRippleIndication(): Indication {
 
 @Composable
 private fun EmptyDoctorsView() {
+    val dimens = rememberResponsiveDimens()
     // Technically, this should never happen if the filtering logic is correct but you never know so its here just in case
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -471,14 +484,17 @@ private fun EmptyDoctorsView() {
             style = MaterialTheme.typography.titleMedium,
             color = DefaultOnPrimary.copy(alpha = 0.6f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            )
         )
         Text(
             text = "No doctors available for the selected time slot",
             style = MaterialTheme.typography.bodyMedium,
             color = DefaultOnPrimary.copy(alpha = 0.4f),
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp)
+            modifier = Modifier.padding(horizontal = dimens.w(32 / 411f))
         )
     }
 }
@@ -490,6 +506,7 @@ fun DoctorCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
@@ -501,7 +518,10 @@ fun DoctorCard(
         onClick = onSelect,
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = dimens.w(16 / 411f),
+                vertical = dimens.h(16 / 914f)
+            )
         ) {
             // Header row with image and basic info
             Row(
@@ -514,7 +534,7 @@ fun DoctorCard(
                         imageVector = Icons.Default.AccountCircle,
                         contentDescription = "Doctor ${doctor.name}",
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(dimens.w(80 / 411f))
                             .clip(CircleShape),
                         tint = Color.Gray
                     )
@@ -535,13 +555,13 @@ fun DoctorCard(
                             }
                         },
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(dimens.w(80 / 411f))
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
                 // Doctor basic info
                 Column(
@@ -564,13 +584,13 @@ fun DoctorCard(
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = "Rating",
-                            tint = Color(0xFFFFA000),
+                            tint = YellowOrange,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = " ${"%.1f".format(doctor.rating)}",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color(0xFFFFA000),
+                            color = YellowOrange,
                             modifier = Modifier.padding(end = 8.dp)
                         )
 
@@ -717,7 +737,7 @@ fun RatingBar(
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = "Filled star",
-                tint = Color(0xFFFFA000),
+                tint = YellowOrange,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -725,7 +745,7 @@ fun RatingBar(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.StarHalf,
                 contentDescription = "Half star",
-                tint = Color(0xFFFFA000),
+                tint = YellowOrange,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -733,7 +753,7 @@ fun RatingBar(
             Icon(
                 imageVector = Icons.Default.StarOutline,
                 contentDescription = "Empty star",
-                tint = Color(0xFFFFA000),
+                tint = YellowOrange,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -743,14 +763,14 @@ fun RatingBar(
 
 @Composable
 private fun LoadingView() {
+    val dimens = rememberResponsiveDimens()
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CircularProgressIndicator(color = DefaultPrimary)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
         Text("Loading appointment data...", color = DefaultOnPrimary)
     }
 }
-

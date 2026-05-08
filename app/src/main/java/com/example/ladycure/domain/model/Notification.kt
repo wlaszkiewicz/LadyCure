@@ -1,9 +1,5 @@
 package com.example.ladycure.domain.model
 
-import BabyBlue
-import Green
-import Red
-import Yellow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.CheckCircle
@@ -12,6 +8,11 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.MediumGrey
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.Yellow
 import com.google.firebase.Timestamp
 
 data class Notification(
@@ -84,7 +85,7 @@ enum class NotificationType(
     SYSTEM(
         firestoreName = "system",
         displayName = "System",
-        color = Color(0xFF9E9E9E),
+        color = MediumGrey,
         icon = Icons.Default.Info,
         showForPatient = true,
         showForDoctor = true

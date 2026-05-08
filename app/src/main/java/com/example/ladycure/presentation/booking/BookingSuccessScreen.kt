@@ -1,11 +1,5 @@
 package com.example.ladycure.presentation.booking
 
-import BabyBlue
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
-import Purple
-import YellowOrange
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +47,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.ladycure.R
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Purple
+import com.example.ladycure.ui.theme.YellowOrange
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
@@ -63,6 +64,7 @@ fun BookingSuccessScreen(
     snackbarController: SnackbarController,
     viewModel: BookingSuccessViewModel = viewModel()
 ) {
+    val dimens = rememberResponsiveDimens()
     // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
@@ -99,7 +101,7 @@ fun BookingSuccessScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     color = DefaultOnPrimary.copy(alpha = 0.8f)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
                 CircularProgressIndicator()
             }
         }
@@ -108,18 +110,18 @@ fun BookingSuccessScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = dimens.w(16 / 411f), vertical = 8.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(dimens.h(180 / 914f))
             ) {
                 Box(
                     modifier = Modifier
-                        .size(170.dp)
+                        .size(dimens.w(170 / 411f))
                         .align(Alignment.Center)
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f)),
@@ -128,7 +130,7 @@ fun BookingSuccessScreen(
                     Icon(
                         painter = painterResource(id = R.drawable.kapi_happi),
                         contentDescription = "Success Icon",
-                        modifier = Modifier.size(150.dp),
+                        modifier = Modifier.size(dimens.w(150 / 411f)),
                         tint = Color.Unspecified
                     )
                 }
@@ -147,7 +149,7 @@ fun BookingSuccessScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
             Text(
                 text = "Appointment Booked!",
@@ -155,17 +157,17 @@ fun BookingSuccessScreen(
                 fontWeight = FontWeight.Bold,
                 color = DefaultPrimary,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 15.dp)
+                modifier = Modifier.padding(horizontal = dimens.w(15 / 411f))
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
             Text(
                 text = "Your appointment has been successfully booked",
                 style = MaterialTheme.typography.bodyLarge,
                 color = DefaultOnPrimary.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 15.dp)
+                modifier = Modifier.padding(horizontal = dimens.w(15 / 411f))
             )
 
 
@@ -174,11 +176,11 @@ fun BookingSuccessScreen(
                     .fillMaxWidth()
                     .background(DefaultBackground)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 15.dp),
+                    .padding(horizontal = dimens.w(15 / 411f)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
                 // Appointment summary card
                 Card(
@@ -191,7 +193,10 @@ fun BookingSuccessScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(20 / 411f),
+                            vertical = dimens.h(20 / 914f)
+                        )
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -210,7 +215,7 @@ fun BookingSuccessScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -228,7 +233,7 @@ fun BookingSuccessScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -246,7 +251,7 @@ fun BookingSuccessScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -264,11 +269,11 @@ fun BookingSuccessScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                         Divider(color = Color.LightGray, thickness = 1.dp)
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -288,7 +293,7 @@ fun BookingSuccessScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
                         if (appointment.type.needsReferral && referralId == null) {
                             Row(
@@ -330,7 +335,7 @@ fun BookingSuccessScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
                 // Reminder card
                 Card(
@@ -342,7 +347,10 @@ fun BookingSuccessScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(16 / 411f),
+                            vertical = dimens.h(16 / 914f)
+                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -372,15 +380,15 @@ fun BookingSuccessScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
             }
             OutlinedButton(
                 onClick = { viewModel.addToCalendar(context) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .padding(horizontal = 15.dp),
+                    .height(dimens.h(50 / 914f))
+                    .padding(horizontal = dimens.w(15 / 411f)),
                 shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.dp, DefaultPrimary),
                 colors = ButtonDefaults.outlinedButtonColors(

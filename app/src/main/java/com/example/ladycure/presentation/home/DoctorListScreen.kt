@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.home
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import SwipeCard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -72,6 +69,11 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.presentation.booking.RatingBar
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.YellowOrange
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 
 @Composable
@@ -80,6 +82,7 @@ fun DoctorsListScreen(
     speciality: String,
     snackbarController: SnackbarController
 ) {
+    val dimens = rememberResponsiveDimens()
     val doctorRepo = DoctorRepository()
     val doctors = remember { mutableStateOf<List<Doctor>>(emptyList()) }
     var selectedDoctor = remember { mutableStateOf<Doctor?>(null) }
@@ -109,7 +112,7 @@ fun DoctorsListScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CircularProgressIndicator(color = DefaultPrimary)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
             Text("Loading doctors...", color = DefaultOnPrimary)
         }
     } else {
@@ -117,8 +120,8 @@ fun DoctorsListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DefaultBackground)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f)),
+            verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
         ) {
             Row(
                 modifier = Modifier
@@ -127,7 +130,7 @@ fun DoctorsListScreen(
             ) {
                 IconButton(
                     onClick = { navController.popBackStack() },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(dimens.w(48 / 411f))
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -135,7 +138,7 @@ fun DoctorsListScreen(
                         tint = DefaultOnPrimary,
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
                 Text(
                     text = "Doctors in ${speciality}",
                     style = MaterialTheme.typography.titleLarge,
@@ -164,7 +167,7 @@ fun DoctorsListScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = dimens.w(20 / 411f)),
                     border = BorderStroke(
                         width = 1.dp,
                         color = DefaultPrimary.copy(alpha = 0.8f)
@@ -192,7 +195,7 @@ fun DoctorsListScreen(
                         },
                         contentDescription = "Toggle Swiping",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(dimens.w(20 / 411f))
                     )
                 }
 
@@ -204,7 +207,10 @@ fun DoctorsListScreen(
                     style = MaterialTheme.typography.titleLarge,
                     color = DefaultOnPrimary.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
+                    modifier = Modifier.padding(
+                        start = dimens.w(16 / 411f),
+                        bottom = dimens.h(16 / 914f)
+                    )
                 )
 
                 Box {
@@ -239,9 +245,9 @@ fun DoctorsListScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(
-                                start = 20.dp,
-                                end = 20.dp,
-                                bottom = 16.dp,
+                                start = dimens.w(20 / 411f),
+                                end = dimens.w(20 / 411f),
+                                bottom = dimens.h(16 / 914f),
                                 top = 0.dp
                             ),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -250,14 +256,14 @@ fun DoctorsListScreen(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Don't like",
                             tint = DefaultOnPrimary,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(dimens.w(36 / 411f))
                         )
 
                         Icon(
                             imageVector = Icons.Default.Favorite,
                             contentDescription = "Like",
                             tint = DefaultPrimary,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(dimens.w(36 / 411f))
                         )
 
                     }
@@ -265,18 +271,21 @@ fun DoctorsListScreen(
 
                 if (swipeableDoctors.isEmpty() && selectedDoctor.value == null) {
                     Text(
-                        text = "Looks like you’ve seen all the doctors. Didn’t find the one yet? Would you like to start again?",
+                        text = "Looks like you've seen all the doctors. Didn't find the one yet? Would you like to start again?",
                         style = MaterialTheme.typography.bodyLarge,
                         color = DefaultOnPrimary,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
+                            .padding(horizontal = dimens.w(20 / 411f))
                             .align(Alignment.CenterHorizontally)
                     )
                     Button(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
+                            .padding(
+                                horizontal = dimens.w(20 / 411f),
+                                vertical = dimens.h(20 / 914f)
+                            ),
                         onClick = {
                             swipeableDoctors = doctors.value.shuffled()
                         },
@@ -292,20 +301,20 @@ fun DoctorsListScreen(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Start again",
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(dimens.w(20 / 411f))
                         )
                     }
                 }
 
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
                 ) {
                     items(doctors.value) { doctor ->
                         DoctorInfoCard(doctor, onSelect = {
                             selectedDoctor.value = doctor
                             navController.navigate("services/${selectedDoctor.value?.id}")
-                        }, modifier = Modifier.padding(bottom = 16.dp))
+                        }, modifier = Modifier.padding(bottom = dimens.h(16 / 914f)))
                     }
                 }
             }
@@ -321,6 +330,7 @@ fun DoctorInfoCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
 
     Card(
         modifier = modifier,
@@ -332,7 +342,7 @@ fun DoctorInfoCard(
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(dimens.w(16 / 411f))
         ) {
             // Header row with image and basic info
             Row(
@@ -345,7 +355,7 @@ fun DoctorInfoCard(
                         imageVector = Icons.Default.AccountCircle,
                         contentDescription = "Doctor ${doctor.name}",
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(dimens.w(80 / 411f))
                             .clip(CircleShape),
                         tint = Color.Gray
                     )
@@ -366,14 +376,14 @@ fun DoctorInfoCard(
                             }
                         },
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(dimens.w(80 / 411f))
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 }
 
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
                 // Doctor basic info
                 Column(
@@ -402,7 +412,7 @@ fun DoctorInfoCard(
                     ) {
                         RatingBar(
                             rating = doctor.rating,
-                            modifier = Modifier.width(80.dp)
+                            modifier = Modifier.width(dimens.w(80 / 411f))
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -410,14 +420,14 @@ fun DoctorInfoCard(
                         Text(
                             text = "(${"%.1f".format(doctor.rating)})",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color(0xFFFFA000)
+                            color = YellowOrange
                         )
                     }
 
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
             // Doctor details section
             Column {
@@ -546,7 +556,7 @@ fun DoctorInfoCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -574,7 +584,7 @@ fun DoctorInfoCard(
                         contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.width(120.dp)
+                    modifier = Modifier.width(dimens.w(120 / 411f))
                 ) {
                     Text("Select")
                 }
@@ -588,6 +598,7 @@ private fun ExpandedDoctorInfoCard(
     doctor: Doctor,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
 
     Card(
         modifier = modifier,
@@ -600,7 +611,7 @@ private fun ExpandedDoctorInfoCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(20.dp)
+                .padding(horizontal = dimens.w(20 / 411f), vertical = dimens.h(20 / 914f))
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -610,7 +621,7 @@ private fun ExpandedDoctorInfoCard(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Doctor ${doctor.name}",
                     modifier = Modifier
-                        .size(200.dp)
+                        .size(dimens.w(200 / 411f))
                         .clip(CircleShape),
                     tint = Color.Gray
                 )
@@ -620,7 +631,8 @@ private fun ExpandedDoctorInfoCard(
                     contentDescription = "Doctor ${doctor.name}",
                     loading = {
                         Box(
-                            modifier = Modifier.size(200.dp), contentAlignment = Alignment.Center
+                            modifier = Modifier.size(dimens.w(200 / 411f)),
+                            contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
@@ -630,13 +642,13 @@ private fun ExpandedDoctorInfoCard(
                         }
                     },
                     modifier = Modifier
-                        .size(200.dp)
+                        .size(dimens.w(200 / 411f))
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
             // Header row with image and basic info
             Row(
@@ -672,7 +684,7 @@ private fun ExpandedDoctorInfoCard(
                     ) {
                         RatingBar(
                             rating = doctor.rating,
-                            modifier = Modifier.width(80.dp)
+                            modifier = Modifier.width(dimens.w(80 / 411f))
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -680,14 +692,14 @@ private fun ExpandedDoctorInfoCard(
                         Text(
                             text = "(${"%.1f".format(doctor.rating)})",
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color(0xFFFFA000)
+                            color = YellowOrange
                         )
                     }
 
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
             // Doctor details section
             Column {
@@ -842,4 +854,3 @@ private fun ExpandedDoctorInfoCard(
     }
 
 }
-

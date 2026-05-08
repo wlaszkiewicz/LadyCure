@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.availability.components
 
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.ladycure.presentation.availability.selectThisWeek
 import com.example.ladycure.presentation.availability.selectWeekdays
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
@@ -73,11 +74,12 @@ internal fun SaveButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Button(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp),
+            .height(dimens.h(50 / 914f)),
         enabled = enabled && !isLoading,
         colors = ButtonDefaults.buttonColors(
             containerColor = DefaultPrimary,
@@ -104,12 +106,19 @@ fun TimeRangePicker(
     onEndTimeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dimens = rememberResponsiveDimens()
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Available Hours", style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center)
+        Text(
+            "Available Hours", style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(8.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
             TimePickerChip(
                 time = startTime,
                 label = "From",
@@ -127,7 +136,7 @@ fun TimeRangePicker(
 
         // Visual time bar
         if (startTime.isBefore(endTime)) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(dimens.h(16 / 914f)))
             LinearProgressIndicator(
                 progress = { calculateProgress(startTime, endTime) },
                 modifier = Modifier
@@ -137,7 +146,7 @@ fun TimeRangePicker(
                 color = DefaultPrimary
             )
         } else if (startTime != endTime) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(dimens.h(16 / 914f)))
             Text(
                 "End time must be after start time",
                 color = MaterialTheme.colorScheme.error,
@@ -154,7 +163,12 @@ fun TimePickerChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+    val dimens = rememberResponsiveDimens()
+    Row(
+        modifier,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(label, style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.width(10.dp))
         Surface(
@@ -165,7 +179,10 @@ fun TimePickerChip(
         ) {
             Text(
                 time.format(DateTimeFormatter.ofPattern("h:mm a")),
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(12 / 411f),
+                    vertical = dimens.h(12 / 914f)
+                ),
                 style = MaterialTheme.typography.bodyMedium
             )
         }

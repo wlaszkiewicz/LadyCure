@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.admin.components
 
-import DefaultPrimary
 import android.app.DownloadManager
 import android.content.Context
 import android.os.Environment
@@ -30,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import coil.compose.AsyncImage
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
 // Add this new composable function anywhere in your file
 @Composable
@@ -38,6 +39,7 @@ fun ImageViewDialog(
     title: String,
     onDismiss: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     val context = LocalContext.current
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -46,7 +48,10 @@ fun ImageViewDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(0.039f),
+                    vertical = dimens.h(0.018f)
+                ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(

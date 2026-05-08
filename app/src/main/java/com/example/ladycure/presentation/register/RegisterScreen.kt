@@ -1,8 +1,5 @@
 package com.example.ladycure.presentation.register
 
-import DefaultBackground
-import DefaultOnPrimary
-import DefaultPrimary
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,6 +57,10 @@ import com.example.ladycure.R
 import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.domain.RegisterUseCase
 import com.example.ladycure.presentation.register.components.RegisterForm
+import com.example.ladycure.ui.theme.DefaultBackground
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 
@@ -69,6 +70,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
     val uiState = viewModel.uiState
     val coroutineScope = rememberCoroutineScope()
     var showContactUsDialog by remember { mutableStateOf(false) }
+    val dimens = rememberResponsiveDimens()
 
     // Show snackbar when error occurs
     LaunchedEffect(uiState.errorMessage) {
@@ -86,7 +88,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 10.dp)
+            .padding(horizontal = dimens.w(0.058f), vertical = 10.dp)
             .verticalScroll(rememberScrollState())
             .background(color = DefaultBackground),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -141,20 +143,20 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                 contentDescription = "Capybara background",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(dimens.h(0.197f))
                     .align(Alignment.TopCenter)
                     .zIndex(1f)
                     .graphicsLayer(alpha = 0.98f),
                 contentScale = ContentScale.Fit
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
             // Registration Form
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 140.dp) // Adjust padding to position the form below the image
+                    .padding(top = dimens.h(0.153f)) // Adjust padding to position the form below the image
                     .zIndex(0f), // Ensure the form is below the image
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
@@ -164,7 +166,10 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.039f),
+                        vertical = dimens.h(0.0175f)
+                    ),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     RegisterForm(
@@ -212,7 +217,10 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(
+                        horizontal = dimens.w(0.058f),
+                        vertical = dimens.h(0.026f)
+                    ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
@@ -226,7 +234,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                     // Message
                     Text(
@@ -249,7 +257,7 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                         ),
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.035f)))
 
                     // Buttons
                     Row(

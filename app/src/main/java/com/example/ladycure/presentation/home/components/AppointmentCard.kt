@@ -1,12 +1,6 @@
 package com.example.ladycure.presentation.home.components
 
 
-import BabyBlue
-import DefaultOnPrimary
-import DefaultPrimary
-import Green
-import Red
-import Yellow
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.expandVertically
@@ -80,6 +74,14 @@ import com.example.ladycure.domain.model.Appointment.Status
 import com.example.ladycure.domain.model.AppointmentSummary
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Speciality
+import com.example.ladycure.ui.theme.BabyBlue
+import com.example.ladycure.ui.theme.DefaultOnPrimary
+import com.example.ladycure.ui.theme.DefaultPrimary
+import com.example.ladycure.ui.theme.Green
+import com.example.ladycure.ui.theme.OffWhite
+import com.example.ladycure.ui.theme.Red
+import com.example.ladycure.ui.theme.Yellow
+import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -94,6 +96,7 @@ fun AppointmentsSection(
     onAppointmentChanged: (AppointmentSummary) -> Unit,
     snackbarController: SnackbarController, navController: NavController
 ) {
+    val dimens = rememberResponsiveDimens()
     val futureAppointments = appointments?.filter {
         (it.date.isAfter(LocalDate.now()) ||
                 (it.date == LocalDate.now() && it.time >= LocalTime.now())) &&
@@ -137,13 +140,13 @@ fun AppointmentsSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
         if (appointments == null) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 24.dp),
+                    .padding(vertical = dimens.h(0.026f)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -152,7 +155,7 @@ fun AppointmentsSection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 24.dp),
+                    .padding(vertical = dimens.h(0.026f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -203,6 +206,7 @@ fun PatientAppointmentCard(
     snackbarController: SnackbarController,
     navController: NavController
 ) {
+    val dimens = rememberResponsiveDimens()
     val statusColor by remember(appointment.status) {
         derivedStateOf {
             when (appointment.status) {
@@ -224,7 +228,7 @@ fun PatientAppointmentCard(
         modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
     ) {
         Card(
-            modifier = Modifier.width(280.dp),
+            modifier = Modifier.width(dimens.w(0.681f)),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White.copy(alpha = 0.9f)
@@ -243,7 +247,10 @@ fun PatientAppointmentCard(
 
         ) {
             Column(
-                modifier = Modifier.padding(20.dp)
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(0.049f),
+                    vertical = dimens.h(0.022f)
+                )
             ) {
                 // Header
                 Row(
@@ -252,7 +259,7 @@ fun PatientAppointmentCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(dimens.w(0.117f))
                             .clip(CircleShape)
                             .background(DefaultPrimary.copy(alpha = 0.1f))
                             .padding(8.dp),
@@ -268,7 +275,7 @@ fun PatientAppointmentCard(
                             ),
                             contentDescription = appointment.type,
                             tint = DefaultPrimary,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(dimens.w(0.068f))
                         )
                     }
 
@@ -287,7 +294,7 @@ fun PatientAppointmentCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                 Row(
                     modifier = Modifier
@@ -328,7 +335,7 @@ fun PatientAppointmentCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                 // Footer
                 Row(
@@ -340,7 +347,7 @@ fun PatientAppointmentCard(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(statusColor.copy(alpha = 0.1f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .padding(horizontal = dimens.w(0.029f), vertical = 6.dp)
                     ) {
                         Text(
                             text = appointment.status.displayName,
@@ -414,6 +421,7 @@ fun ShowDetailsDialog(
     onReschedule: () -> Unit,
     onCancel: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     val isPreparationExpanded = remember { mutableStateOf(false) }
     val showCancelConfirmation = remember { mutableStateOf(false) }
     val statusColor = when (appointment.status) {
@@ -451,7 +459,7 @@ fun ShowDetailsDialog(
                                 endY = 100f
                             )
                         )
-                        .padding(24.dp)
+                        .padding(horizontal = dimens.w(0.058f), vertical = dimens.h(0.026f))
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(
@@ -461,17 +469,20 @@ fun ShowDetailsDialog(
                             // Doctor avatar
                             Box(
                                 modifier = Modifier
-                                    .size(72.dp)
+                                    .size(dimens.w(0.175f))
                                     .clip(CircleShape)
                                     .background(DefaultPrimary.copy(alpha = 0.1f))
-                                    .padding(12.dp),
+                                    .padding(
+                                        horizontal = dimens.w(0.029f),
+                                        vertical = dimens.h(0.013f)
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     painter = painterResource(Speciality.fromDisplayName(appointment.type.speciality).icon),
                                     contentDescription = "Appointment Type",
                                     tint = DefaultPrimary,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(dimens.w(0.088f))
                                 )
                             }
 
@@ -492,7 +503,7 @@ fun ShowDetailsDialog(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                         // Info chips
                         Row(
@@ -522,12 +533,16 @@ fun ShowDetailsDialog(
 
                 // Appointment details
                 Column(
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    modifier = Modifier.padding(horizontal = dimens.w(0.058f))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
+                            .padding(
+                                bottom = dimens.h(0.0175f),
+                                start = dimens.w(0.039f),
+                                end = dimens.w(0.039f)
+                            ),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
@@ -566,7 +581,7 @@ fun ShowDetailsDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                     // Details section
                     Column(
@@ -663,7 +678,7 @@ fun ShowDetailsDialog(
 
                     // Action buttons
                     if (appointment.status != Status.CANCELLED && appointment.status != Status.COMPLETED) {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(0.026f)))
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth(),
@@ -712,12 +727,15 @@ fun ShowDetailsDialog(
                             }
                         }
                     } else if (appointment.status == Status.CANCELLED) {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(dimens.h(0.026f)))
                         // Show cancelled message
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(
+                                    horizontal = dimens.w(0.039f),
+                                    vertical = dimens.h(0.0175f)
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -740,7 +758,10 @@ fun ShowDetailsDialog(
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(
+                                    horizontal = dimens.w(0.039f),
+                                    vertical = dimens.h(0.0175f)
+                                )
                         ) {
                             Text(
                                 "Download Medical Report",
@@ -756,7 +777,7 @@ fun ShowDetailsDialog(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(dimens.h(0.026f)))
                 }
             }
         }
@@ -779,6 +800,7 @@ fun CancelConfirmationDialog(
     onConfirm: () -> Unit,
     appointment: AppointmentSummary
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
@@ -788,27 +810,30 @@ fun CancelConfirmationDialog(
                 .fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(0.058f),
+                    vertical = dimens.h(0.026f)
+                )
             ) {
                 // Warning icon
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(dimens.w(0.175f))
                         .clip(CircleShape)
                         .background(Red.copy(alpha = 0.1f))
                         .align(Alignment.CenterHorizontally)
-                        .padding(16.dp),
+                        .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.0175f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = "Warning",
                         tint = Red,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(dimens.w(0.088f))
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                 // Title
                 Text(
@@ -821,16 +846,19 @@ fun CancelConfirmationDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                 // Appointment details
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFFFAFAFA),
+                    color = OffWhite,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.039f),
+                            vertical = dimens.h(0.0175f)
+                        )
                     ) {
                         Text(
                             text = "Dr. ${appointment.doctorName}",
@@ -854,7 +882,7 @@ fun CancelConfirmationDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
                 // Confirmation text
                 Text(
@@ -866,7 +894,7 @@ fun CancelConfirmationDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
                 // Action buttons
                 Row(
@@ -875,7 +903,10 @@ fun CancelConfirmationDialog(
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.039f),
+                            vertical = dimens.h(0.0175f)
+                        ),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = DefaultOnPrimary.copy(alpha = 0.8f)
@@ -894,7 +925,10 @@ fun CancelConfirmationDialog(
                         onClick = {
                             onConfirm()
                         },
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(
+                            horizontal = dimens.w(0.039f),
+                            vertical = dimens.h(0.0175f)
+                        ),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Red.copy(alpha = 0.8f),
@@ -981,6 +1015,7 @@ fun AppointmentDetailItem(
 fun CancelSuccessDialog(
     onDismiss: () -> Unit
 ) {
+    val dimens = rememberResponsiveDimens()
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
@@ -991,26 +1026,29 @@ fun CancelSuccessDialog(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(
+                    horizontal = dimens.w(0.058f),
+                    vertical = dimens.h(0.026f)
+                )
             ) {
                 // Animated checkmark icon with circle background
                 Box(
                     modifier = Modifier
-                        .size(100.dp)
+                        .size(dimens.w(0.243f))
                         .clip(CircleShape)
                         .background(DefaultPrimary.copy(alpha = 0.1f))
-                        .padding(16.dp),
+                        .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.0175f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.EventBusy,
                         contentDescription = "Success",
                         tint = DefaultPrimary,
-                        modifier = Modifier.size(60.dp)
+                        modifier = Modifier.size(dimens.w(0.146f))
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
                 Text(
                     text = "Appointment Cancelled!",
@@ -1021,7 +1059,7 @@ fun CancelSuccessDialog(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
                 // Message
                 Text(
@@ -1032,7 +1070,7 @@ fun CancelSuccessDialog(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(dimens.h(0.035f)))
 
                 // Action button
                 Button(
@@ -1044,8 +1082,8 @@ fun CancelSuccessDialog(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .height(40.dp)
+                        .padding(horizontal = dimens.w(0.058f))
+                        .height(dimens.h(0.044f))
                 ) {
                     Text(
                         "Got it!",
