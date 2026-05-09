@@ -63,7 +63,6 @@ fun RegisterForm(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
-        // Email Field
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmailChange,
@@ -86,7 +85,6 @@ fun RegisterForm(
                 .focusRequester(emailFocus)
         )
 
-        // Name Fields Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -118,7 +116,6 @@ fun RegisterForm(
             )
         }
 
-        // Date of Birth Section
         Text(
             text = "Date of Birth",
             style = MaterialTheme.typography.labelLarge,
@@ -134,7 +131,6 @@ fun RegisterForm(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Error message for date of birth
         if (state.selectedDate.isAfter(LocalDate.now().minusYears(18))) {
             Text(
                 text =
@@ -146,7 +142,6 @@ fun RegisterForm(
         }
 
 
-        // Password Fields
         OutlinedTextField(
             value = state.password,
             onValueChange = onPasswordChange,
@@ -204,7 +199,6 @@ fun RegisterForm(
                         "lastName" -> lastNameFocus.requestFocus()
                         "password" -> passwordFocus.requestFocus()
                         "confirmPassword" -> confirmPasswordFocus.requestFocus()
-                        // For date of birth, you might need special handling
                         "dob" -> {}
                     }
                 }
@@ -214,7 +208,6 @@ fun RegisterForm(
                 .focusRequester(confirmPasswordFocus)
         )
 
-        // Register Button
         Button(
             onClick = onRegisterClick,
             enabled = state.isValid() && !state.isLoading,

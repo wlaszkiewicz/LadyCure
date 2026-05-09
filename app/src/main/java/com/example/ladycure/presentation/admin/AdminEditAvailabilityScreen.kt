@@ -28,7 +28,6 @@ fun AdminEditAvailabilityScreen(
             .fillMaxSize()
             .background(DefaultBackground)
     ) {
-        // Header with back navigation
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -38,7 +37,6 @@ fun AdminEditAvailabilityScreen(
 
         }
 
-        // Pass the doctorId to SetAvailabilityScreenAdmin
         SetAvailabilityScreenAdmin(
             navController = navController as NavHostController,
             snackbarController = snackbarController,

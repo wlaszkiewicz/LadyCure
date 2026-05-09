@@ -70,7 +70,6 @@ fun ApplicationDetailsDialog(
     onApprove: () -> Unit,
 ) {
 
-    // Add these state variables at the top of the ApplicationDetailsDialog composable
     var showLicense by remember { mutableStateOf(false) }
     var showDiploma by remember { mutableStateOf(false) }
 
@@ -98,7 +97,6 @@ fun ApplicationDetailsDialog(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.018f))
             ) {
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -137,7 +135,6 @@ fun ApplicationDetailsDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(0.018f)))
 
-                // Key details in a clean layout
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
@@ -151,7 +148,6 @@ fun ApplicationDetailsDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(0.018f)))
 
-                // Documents section
                 if (application.licensePhotoUrl.isNotEmpty() || application.diplomaPhotoUrl.isNotEmpty()) {
                     Text(
                         "Documents",
@@ -196,7 +192,6 @@ fun ApplicationDetailsDialog(
                     Spacer(modifier = Modifier.height(dimens.h(0.018f)))
                 }
 
-                // Notes section
                 Column {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -288,7 +283,6 @@ fun ApplicationDetailsDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(0.018f)))
 
-                // Action buttons
                 when (application.status) {
                     ApplicationStatus.PENDING -> {
                         OutlinedButton(
@@ -309,7 +303,6 @@ fun ApplicationDetailsDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Request More Info Button
                             OutlinedButton(
                                 onClick = {
                                     showStatusChangeDialog = ApplicationStatus.NEEDS_MORE_INFO
@@ -324,7 +317,6 @@ fun ApplicationDetailsDialog(
                                 Text("More Info")
                             }
 
-                            // Reject Button
                             OutlinedButton(
                                 onClick = { showStatusChangeDialog = ApplicationStatus.REJECTED },
                                 modifier = Modifier.weight(1f),
@@ -344,7 +336,6 @@ fun ApplicationDetailsDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Approve Button
                             OutlinedButton(
                                 onClick = {
                                     onStatusChange(
@@ -362,7 +353,6 @@ fun ApplicationDetailsDialog(
                                 Text("Approve")
                             }
 
-                            // Reject Button
                             OutlinedButton(
                                 onClick = { showStatusChangeDialog = ApplicationStatus.REJECTED },
                                 modifier = Modifier.weight(1f),
@@ -403,7 +393,6 @@ fun ApplicationDetailsDialog(
         }
     }
 
-    // Status change confirmation dialog
     showStatusChangeDialog?.let { newStatus ->
         var tempComment by remember { mutableStateOf(editedComment) }
 
@@ -502,7 +491,6 @@ fun ApplicationDetailsDialog(
         )
     }
 
-// Add these dialogs at the bottom of the ApplicationDetailsDialog composable
     if (showLicense && application.licensePhotoUrl.isNotEmpty()) {
         ImageViewDialog(
             imageUrl = application.licensePhotoUrl,

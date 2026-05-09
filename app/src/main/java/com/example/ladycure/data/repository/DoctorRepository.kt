@@ -9,6 +9,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -17,11 +19,11 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
-class DoctorRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-
-
+@Singleton
+class DoctorRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
+) {
     suspend fun getDoctors(): Result<List<Doctor>> {
         return try {
             val querySnapshot = firestore.collection("users")

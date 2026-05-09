@@ -12,7 +12,6 @@ val Inter = FontFamily(
     Font(R.font.inter_medium)
 )
 
-// Set of Material typography styles to start with
 val Typography = Typography(
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Default,

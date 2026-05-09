@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.devtools.ksp") version "2.3.2"
-    id("com.google.dagger.hilt.android") version "2.59.2"
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 
 }
 
@@ -128,10 +128,11 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation(libs.google.firebase.analytics)
 
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
+    implementation("com.google.dagger:hilt-android:2.56.2")
+    ksp("com.google.dagger:hilt-compiler:2.56.2")
 
+    implementation("androidx.hilt:hilt-navigation-fragment:1.0.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 }
 
 apply(plugin = "com.google.gms.google-services")
-apply(plugin = "com.google.devtools.ksp")

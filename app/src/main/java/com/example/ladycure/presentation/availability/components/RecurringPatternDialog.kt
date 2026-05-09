@@ -67,7 +67,6 @@ internal fun RecurringPatternDialog(
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // Day of week selection
                 val days = DayOfWeek.values()
                 LazyColumn {
                     items(days) { day ->
@@ -110,7 +109,6 @@ internal fun RecurringPatternDialog(
 
                 Spacer(Modifier.height(dimens.h(FractionDimens.paddingSmallH)))
 
-                // Duration options
                 Text("Repeat for how many weeks?", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {

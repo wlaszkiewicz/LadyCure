@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.booking
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
@@ -25,16 +27,15 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-class ConfirmationViewModel(
-    private val userRepo: UserRepository = UserRepository(),
-    private val authRepo: AuthRepository = AuthRepository(),
-    private val doctorRepo: DoctorRepository = DoctorRepository(),
-    private val appointmentRepo: AppointmentRepository = AppointmentRepository(),
-    private val referralRepo: StorageRepository = StorageRepository()
+@HiltViewModel
+class ConfirmationViewModel @Inject constructor(
+    private val userRepo: UserRepository,
+    private val authRepo: AuthRepository,
+    private val doctorRepo: DoctorRepository,
+    private val appointmentRepo: AppointmentRepository,
+    private val referralRepo: StorageRepository
 ) : ViewModel() {
 
-    // State variables
-    // TODO: replace with Doctor model — Doctor.fromMap() already exists
     var doctorInfo by mutableStateOf<Map<String, Any>?>(null)
         private set
     var isLoading by mutableStateOf(true)
@@ -65,14 +66,12 @@ class ConfirmationViewModel(
             try {
 
                 dateTime = timestamp
-                // Load user name
                 userName = withContext(Dispatchers.IO) {
                     "${userRepo.getUserField("name").getOrNull()} ${
                         userRepo.getUserField("surname").getOrNull()
                     }"
                 }
 
-                // Load doctor info
                 val result = withContext(Dispatchers.IO) {
                     doctorRepo.getDoctorById(doctorId)
                 }
@@ -83,7 +82,6 @@ class ConfirmationViewModel(
                     errorMessage = "Failed to load doctor details"
                 }
 
-                // Load referral if exists
                 if (referralId != null) {
                     val referralResult = withContext(Dispatchers.IO) {
                         referralRepo.getReferralById(referralId)
@@ -198,7 +196,6 @@ class ConfirmationViewModel(
         )
     }
 
-    // Helper properties for date/time display
     val formattedDate: String
         get() = doctorInfo?.let {
             val date = dateTime.toDate().toInstant()

@@ -63,9 +63,11 @@ import com.example.ladycure.ui.theme.Yellow
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
 import kotlinx.coroutines.async
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 
-// Define this at the top of your file with other color definitions
+
 val appointmentTypeColors = listOf(
     Purple,
     BabyBlue,
@@ -87,7 +89,7 @@ fun DoctorEarningsScreen(
     snackbarController: SnackbarController
 ) {
     val dimens = rememberResponsiveDimens()
-    val doctorRepo = remember { DoctorRepository() }
+    val doctorRepo = remember { DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
     val coroutineScope = rememberCoroutineScope()
 
     var isLoading by remember { mutableStateOf(true) }
@@ -231,7 +233,6 @@ fun DoctorEarningsScreen(
                     )
                 }
 
-                // Earnings Chart
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),

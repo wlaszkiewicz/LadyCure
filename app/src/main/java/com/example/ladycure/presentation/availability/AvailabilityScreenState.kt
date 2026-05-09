@@ -70,6 +70,9 @@ import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 data class AvailabilityScreenState(
     val selectedDates: Set<LocalDate> = emptySet(),
@@ -117,7 +120,6 @@ fun BaseAvailabilityScreen(
             .fillMaxSize()
             .background(DefaultBackground),
     ) {
-        // Header with navigation
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = DefaultBackground,
@@ -142,7 +144,6 @@ fun BaseAvailabilityScreen(
                     )
                 }
 
-                // New button style
                 OutlinedButton(
                     onClick = onViewAvailabilityClick,
                     border = BorderStroke(1.dp, DefaultPrimary),
@@ -167,7 +168,6 @@ fun BaseAvailabilityScreen(
             modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
         )
 
-        // Main content with scroll
         LazyColumn(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
@@ -175,7 +175,6 @@ fun BaseAvailabilityScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // Consolidated Calendar card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -214,7 +213,6 @@ fun BaseAvailabilityScreen(
                 }
             }
 
-            // Time range selection
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -312,7 +310,6 @@ fun BaseAvailabilityScreen(
                     try {
                         onSave(state.selectedDates, state.startTime, state.endTime)
                         snackbarController.showMessage("Availability saved successfully!")
-                        // Refresh the screen after saving will be handled by the specific screen (admin or doctor)
                     } catch (e: Exception) {
                         snackbarController.showMessage("Error saving availability: ${e.message}")
                     } finally {
@@ -324,7 +321,6 @@ fun BaseAvailabilityScreen(
         )
     }
 
-    // Month picker dialog
     if (state.showMonthPicker) {
         MonthYearPickerDialog(
             currentMonth = state.currentMonth,
@@ -335,7 +331,6 @@ fun BaseAvailabilityScreen(
         )
     }
 
-    // Time Picker Dialog
     if (state.showTimePicker) {
         val timePickerState = rememberTimePickerState(
             initialHour = if (state.isStartTimePicker) state.startTime.hour else state.endTime.hour,
@@ -368,7 +363,6 @@ fun BaseAvailabilityScreen(
         }
     }
 
-    // Recurring Options Dialog
     if (state.showRecurringOptions) {
         RecurringPatternDialog(
             selectedDaysOfWeek = state.selectedDaysOfWeek,
@@ -391,17 +385,15 @@ fun BaseAvailabilityScreen(
 fun SetAvailabilityScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
-    authRepo: AuthRepository = AuthRepository(),
-    doctorRepo: DoctorRepository = DoctorRepository(),
+    authRepo: AuthRepository = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()),
+    doctorRepo: DoctorRepository = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()),
     adminEditingDoctorId: String? = null // Add this new optional parameter
 ) {
     val state = remember { mutableStateOf(AvailabilityScreenState()) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Determine the effective doctor ID for loading/saving
     val effectiveDoctorId = adminEditingDoctorId ?: authRepo.getCurrentUserId().toString()
 
-    // Load existing availabilities when screen appears
     LaunchedEffect(effectiveDoctorId) { // Relaunch if effectiveDoctorId changes
         if (effectiveDoctorId == "null" || effectiveDoctorId.isBlank()) { // Handle null and blank string case
             snackbarController.showMessage("Doctor ID is missing for availability management.")
@@ -441,7 +433,6 @@ fun SetAvailabilityScreen(
                         doctorId = effectiveDoctorId
                     )
                     snackbarController.showMessage("Availability saved successfully!")
-                    // Refresh the screen after saving for the current user or admin-edited doctor
                     val newAvailabilities =
                         doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
                     state.value = state.value.copy(existingAvailabilities = newAvailabilities)
@@ -470,15 +461,13 @@ fun SetAvailabilityScreenAdmin(
     navController: NavHostController,
     snackbarController: SnackbarController,
     doctorId: String,
-    doctorRepo: DoctorRepository = DoctorRepository()
+    doctorRepo: DoctorRepository = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 ) {
     val state = remember { mutableStateOf(AvailabilityScreenState()) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Use the passed doctorId directly
     val effectiveDoctorId = doctorId
 
-    // Load existing availabilities when screen appears
     LaunchedEffect(effectiveDoctorId) {
         if (effectiveDoctorId.isBlank()) {
             snackbarController.showMessage("Doctor ID is missing for availability management.")
@@ -518,7 +507,6 @@ fun SetAvailabilityScreenAdmin(
                         doctorId = effectiveDoctorId // Use the passed doctorId
                     )
                     snackbarController.showMessage("Availability saved successfully!")
-                    // Refresh the screen after saving
                     val newAvailabilities =
                         doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
                     state.value = state.value.copy(existingAvailabilities = newAvailabilities)

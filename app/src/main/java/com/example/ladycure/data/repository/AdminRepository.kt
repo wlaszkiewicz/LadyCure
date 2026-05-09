@@ -6,6 +6,8 @@ import com.example.ladycure.presentation.admin.TimePeriod
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -13,11 +15,11 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
-class AdminRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-
-
+@Singleton
+class AdminRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
+) {
     suspend fun getUserGrowthData(timePeriod: TimePeriod): Result<List<Pair<String, Int>>> {
         return try {
             val snapshot = firestore

@@ -12,11 +12,14 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AuthRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-
+@Singleton
+class AuthRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
+) {
     fun authenticate(
         email: String,
         password: String,

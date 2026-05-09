@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.applications
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import android.app.DownloadManager
 import android.content.Context
 import android.os.Environment
@@ -14,9 +16,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class DoctorPendingViewModel(
-    private val applicationRepo: ApplicationRepository = ApplicationRepository(),
-    private val authRepo: AuthRepository = AuthRepository()
+@HiltViewModel
+class DoctorPendingViewModel @Inject constructor(
+    private val applicationRepo: ApplicationRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
     private val _applicationData = MutableStateFlow<DoctorApplication?>(null)
     val applicationData: StateFlow<DoctorApplication?> = _applicationData.asStateFlow()

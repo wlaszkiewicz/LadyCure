@@ -60,12 +60,15 @@ import com.example.ladycure.ui.theme.LavenderBlush
 import com.example.ladycure.ui.theme.LightGoldenrod
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @Composable
 fun SearchDoctorsScreen(navController: NavHostController, snackbarController: SnackbarController) {
     val dimens = rememberResponsiveDimens()
     val searchQuery = remember { mutableStateOf("") }
-    val doctorRepo = DoctorRepository()
+    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     var allDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
     var error by remember { mutableStateOf("") }
     var filteredDoctors by remember { mutableStateOf(emptyList<Doctor>()) }

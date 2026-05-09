@@ -35,7 +35,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
 import coil.compose.AsyncImage
@@ -60,22 +60,19 @@ fun BookAppointmentDirectlyScreen(
     doctorId: String,
     selectedService: AppointmentType,
     referralId: String? = null,
-    viewModel: BookingViewModel = viewModel()
+    viewModel: BookingViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
 
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val doctors = viewModel.doctors
 
-    // Initialize data loading
     LaunchedEffect(doctorId) {
         viewModel.loadDoctorById(doctorId)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let { err ->
             snackbarController?.showMessage(err)
@@ -214,7 +211,6 @@ private fun DoctorInfoHeader(
                 .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f)),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Doctor Image
             if (doctor.profilePictureUrl.isEmpty()) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
@@ -237,7 +233,6 @@ private fun DoctorInfoHeader(
 
             Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
-            // Doctor Details
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -257,7 +252,6 @@ private fun DoctorInfoHeader(
                     modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
                 )
 
-                // Rating and Experience
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {

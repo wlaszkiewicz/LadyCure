@@ -62,15 +62,12 @@ internal fun DateAndTimeSelectionView(
             .fillMaxWidth()
             .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
     ) {
-        // Service info chip
         ServiceInfoChip(selectedService, modifier = Modifier.padding(bottom = dimens.h(16 / 914f)))
 
-        // Location and specialty if available
         if (city != null && selectedSpeciality != null) {
             LocationSpecialtyRow(city, selectedSpeciality)
         }
 
-        // Date selection
         Text(
             text = "Select Date",
             style = MaterialTheme.typography.titleMedium,
@@ -79,7 +76,6 @@ internal fun DateAndTimeSelectionView(
             modifier = Modifier.padding(bottom = dimens.h(12 / 914f), top = 8.dp)
         )
 
-        // Enhanced date selector
         DateSelector(
             availableDates = availableDates,
             selectedDate = selectedDate,
@@ -87,7 +83,6 @@ internal fun DateAndTimeSelectionView(
             modifier = Modifier.padding(bottom = dimens.h(24 / 914f))
         )
 
-        // Time slots
         if (selectedDate != null) {
             Text(
                 text = "Available Time Slots",
@@ -327,7 +322,6 @@ fun PromptToSelectDate() {
     }
 }
 
-// Helper function for date formatting
 fun formatDateForDisplay(date: LocalDate): String {
     return try {
         when (date) {

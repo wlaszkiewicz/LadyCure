@@ -76,7 +76,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.domain.model.Appointment
@@ -108,7 +108,7 @@ import java.util.Locale
 fun DoctorHomeScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
-    viewModel: DoctorHomeViewModel = viewModel()
+    viewModel: DoctorHomeViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     val uiState by viewModel.uiState.collectAsState()
@@ -118,7 +118,6 @@ fun DoctorHomeScreen(
     val nearestAppointment by viewModel.nearestAppointment.collectAsState()
 
 
-    // Show error message if any
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
             snackbarController.showMessage(error)
@@ -151,10 +150,6 @@ fun DoctorHomeScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-//                StatsRow(
-//                    todaysCount = uiState.allAppointments.count { it.date == LocalDate.now() },
-//                    completedCount = uiState.allAppointments.count {
-//                        it.date == LocalDate.now() && it.time.isBefore(uiState.currentTime)
 //                    }
 //                )
 
@@ -313,7 +308,6 @@ fun TodaysSchedule(
                     val totalWorkdayMinutes =
                         ChronoUnit.MINUTES.between(workDayStart, LocalTime.of(17, 0))
 
-                    // Layer 1: Base schedule
                     val todaysAppointments = allAppointments
                         .filter { it.date == LocalDate.now() }
                         .sortedBy { it.time }
@@ -323,7 +317,6 @@ fun TodaysSchedule(
                         val appointmentEnd =
                             appointment.time.plusMinutes(appointment.type.durationInMinutes.toLong())
 
-                        // Draw AVAILABLE slot
                         val freeTimeMinutes = ChronoUnit.MINUTES.between(lastTime, appointmentStart)
                         if (freeTimeMinutes > 0) {
                             val freeSlotWidth =
@@ -341,7 +334,6 @@ fun TodaysSchedule(
                             )
                         }
 
-                        // Draw BOOKED slot
                         val bookedSlotWidth =
                             timelineWidth * (appointment.type.durationInMinutes.toFloat() / totalWorkdayMinutes)
                         val bookedSlotOffset = timelineWidth * (ChronoUnit.MINUTES.between(
@@ -362,7 +354,6 @@ fun TodaysSchedule(
                         lastTime = appointmentEnd
                     }
 
-                    // Draw final AVAILABLE slot
                     val remainingMinutes = ChronoUnit.MINUTES.between(lastTime, LocalTime.of(17, 0))
                     if (remainingMinutes > 0) {
                         val freeSlotWidth =
@@ -585,7 +576,6 @@ private fun AppointmentCardContent(
                         )
                     }
 
-                    // Divider
                     Box(
                         modifier = Modifier
                             .height(dimens.h(0.017f))
@@ -593,7 +583,6 @@ private fun AppointmentCardContent(
                             .background(Color.LightGray)
                     )
 
-                    // Appointment type
                     Text(
                         text = appointment.type.displayName,
                         style = MaterialTheme.typography.labelMedium.copy(
@@ -607,7 +596,6 @@ private fun AppointmentCardContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Status and relative time
                 StatusRow(
                     status = appointment.status,
                     isToday = isToday,
@@ -693,7 +681,6 @@ private fun StatusRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Status indicator
 
 
         Box(
@@ -711,7 +698,6 @@ private fun StatusRow(
         }
 
 
-        // Relative time
         Text(
             text = when {
                 isToday -> "Today"
@@ -769,7 +755,6 @@ private fun StatsRow(
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
     ) {
-        // Appointments Today
         StatCard(
             value = todaysCount.toString(),
             label = "Today",
@@ -779,7 +764,6 @@ private fun StatsRow(
             modifier = Modifier.weight(1f)
         )
 
-        // Upcoming Appointments
         StatCard(
             value = (todaysCount - completedCount).toString(),
             label = "Upcoming",
@@ -788,7 +772,6 @@ private fun StatsRow(
             modifier = Modifier.weight(1f)
         )
 
-        // Completed Today
         StatCard(
             value = completedCount.toString(),
             label = "Completed",
@@ -877,7 +860,6 @@ private fun DoctorHeader(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Doctor avatar
             Box(
                 modifier = Modifier
                     .size(dimens.w(0.136f))
@@ -923,7 +905,6 @@ private fun DoctorHeader(
 }
 
 
-// Helper function for countdown
 fun calculateTimeRemaining(
     now: LocalTime,
     startOfWorkday: LocalTime,
@@ -1019,7 +1000,6 @@ fun NewsCarousel(
             )
         }
 
-        // Add page indicators
         HorizontalPagerIndicator(
             pagerState = pagerState,
             modifier = Modifier
@@ -1101,9 +1081,7 @@ fun NewsCard(
 
             Spacer(modifier = Modifier.width(dimens.w(0.039f)))
 
-            // Content on the right
             Column(modifier = Modifier.weight(1f)) {
-                // Category chip
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -1119,7 +1097,6 @@ fun NewsCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Title
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium.copy(
@@ -1131,7 +1108,6 @@ fun NewsCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Summary
                 Text(
                     text = summary,
                     style = MaterialTheme.typography.bodySmall,
@@ -1141,7 +1117,6 @@ fun NewsCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Time and read more
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1579,7 +1554,6 @@ fun DetailsDialog(
                                     color = DefaultPrimary
                                 )
                             }
-                            // Reschedule button
                             Button(
                                 onClick = onMessage,
                                 shape = RoundedCornerShape(14.dp),

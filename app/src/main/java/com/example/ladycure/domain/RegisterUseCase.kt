@@ -1,8 +1,11 @@
 package com.example.ladycure.domain
 
 import com.example.ladycure.data.repository.AuthRepository
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class RegisterUseCase(private val authRepository: AuthRepository) {
+@Singleton
+class RegisterUseCase @Inject constructor(private val authRepository: AuthRepository) {
     suspend operator fun invoke(
         email: String,
         name: String,

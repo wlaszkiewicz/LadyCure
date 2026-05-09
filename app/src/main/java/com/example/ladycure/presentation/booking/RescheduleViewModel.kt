@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.booking
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -18,12 +20,12 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
-class RescheduleViewModel(
-    private val appointmentRepo: AppointmentRepository = AppointmentRepository(),
-    private val doctorRepo: DoctorRepository = DoctorRepository()
+@HiltViewModel
+class RescheduleViewModel @Inject constructor(
+    private val appointmentRepo: AppointmentRepository,
+    private val doctorRepo: DoctorRepository
 ) : ViewModel() {
 
-    // State variables
     var isLoading by mutableStateOf(true)
         private set
     var error by mutableStateOf("")
@@ -35,7 +37,6 @@ class RescheduleViewModel(
     var doctorAvailability by mutableStateOf<List<DoctorAvailability>>(emptyList())
         private set
 
-    // UI state
     var selectedDate by mutableStateOf<LocalDate?>(null)
         private set
     var selectedTimeSlot by mutableStateOf<LocalTime?>(null)
@@ -49,12 +50,10 @@ class RescheduleViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             isLoading = true
             try {
-                // Load appointment
                 val appointmentResult = appointmentRepo.getAppointmentById(appointmentId)
                 if (appointmentResult.isSuccess) {
                     appointment = appointmentResult.getOrNull()
 
-                    // Load doctor and availability in parallel
                     val doctorDeferred = async {
                         appointment?.doctorId?.let {
                             doctorRepo.getDoctorById(it).getOrNull()
@@ -121,7 +120,6 @@ class RescheduleViewModel(
         showRescheduleSuccessDialog = false
     }
 
-    // Helper properties
     val availableDates: List<LocalDate>
         get() = doctorAvailability
             .mapNotNull { it.date }

@@ -30,7 +30,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.admin.AdminAnalyticsScreen
@@ -75,7 +74,9 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,12 +93,10 @@ class MainActivity : AppCompatActivity() {
 
 @Composable
 fun MainScreen(navController: NavHostController) {
-    AuthRepository()
 
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // List of screens where BottomNavBar should be shown
     val showBottomNavRoutes = listOf(
         "home",
         "doctor",
@@ -374,7 +373,6 @@ fun MainScreen(navController: NavHostController) {
 
                 composable("adminAvailabilityList/{doctorId}") { backStackEntry ->
                     val doctorId = backStackEntry.arguments?.getString("doctorId") ?: ""
-                    // You'll need to create this screen similar to AvailabilityListScreen but for admin
                     AdminAvailabilityListScreen(
                         navController = navController,
                         snackbarController = snackbarController,

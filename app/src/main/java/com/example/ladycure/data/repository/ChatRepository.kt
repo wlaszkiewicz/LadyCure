@@ -8,13 +8,16 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 import java.util.UUID
 
-class ChatRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val storage = FirebaseStorage.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-
+@Singleton
+class ChatRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val storage: FirebaseStorage,
+    private val firestore: FirebaseFirestore
+) {
     fun getCurrentUserId(): String {
         return auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
     }
@@ -108,7 +111,6 @@ class ChatRepository {
 
     suspend fun getUserProfilePicture(userId: String): String? {
         return try {
-            // Ensure userId is not empty
             if (userId.isBlank()) {
                 Log.w("ChatRepository", "Blank user ID provided for profile picture")
                 return null

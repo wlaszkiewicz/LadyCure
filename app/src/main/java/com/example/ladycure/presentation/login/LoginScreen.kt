@@ -58,10 +58,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.ladycure.R
-import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.presentation.login.components.NonWomanWelcomeDialog
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
@@ -71,8 +70,7 @@ import com.example.ladycure.utility.SnackbarController
 
 @Composable
 fun LoginScreen(navController: NavController, snackbarHostState: SnackbarController) {
-    val authRepo = AuthRepository()
-    val viewModel = viewModel { LoginViewModel(authRepo) }
+    val viewModel: LoginViewModel = hiltViewModel()
     var infoClicked by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -118,7 +116,6 @@ fun LoginScreen(navController: NavController, snackbarHostState: SnackbarControl
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Login Form
             Card(
                 modifier = Modifier
                     .fillMaxWidth()

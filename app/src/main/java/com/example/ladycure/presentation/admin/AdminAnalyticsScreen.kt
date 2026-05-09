@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.ladycure.ui.theme.BabyBlue
 import com.example.ladycure.ui.theme.DefaultOnPrimary
@@ -59,7 +59,7 @@ import com.example.ladycure.utility.SnackbarController
 fun AdminAnalyticsScreen(
     navController: NavController,
     snackbarController: SnackbarController,
-    viewModel: AdminAnalyticsViewModel = viewModel()
+    viewModel: AdminAnalyticsViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     var errorMessage = viewModel.errorMessage
@@ -84,7 +84,6 @@ fun AdminAnalyticsScreen(
             modifier = Modifier.padding(bottom = dimens.h(0.017f))
         )
 
-        // Time period selector
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -152,7 +151,6 @@ fun AdminAnalyticsScreen(
                     )
                 }
 
-                // Growth Charts
                 AnalyticsChartCard(
                     title = "All User Growth",
                     color = DefaultPrimary,
@@ -171,7 +169,6 @@ fun AdminAnalyticsScreen(
                     data = viewModel.doctorGrowthData
                 )
 
-                // Application Stats
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -211,7 +208,6 @@ fun AdminAnalyticsScreen(
                     }
                 }
 
-                // Age Distribution Chart
                 AnalyticsChartCard(
                     title = "User Age Distribution",
                     color = Purple,
@@ -353,7 +349,6 @@ fun BarChart(
                 val left = index * (barWidthPx + barSpacing) + 4.dp.toPx()
                 val top = size.height - barHeight
 
-                // Draw bar
                 drawRoundRect(
                     color = color.copy(alpha = 0.7f),
                     topLeft = Offset(left, top),

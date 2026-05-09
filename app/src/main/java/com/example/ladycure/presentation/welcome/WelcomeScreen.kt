@@ -37,11 +37,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.ladycure.presentation.welcome.WelcomeViewModel
 import com.example.ladycure.R
-import com.example.ladycure.data.repository.AuthRepository
-import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.google.firebase.Firebase
@@ -51,9 +50,7 @@ import com.google.firebase.auth.auth
 @Composable
 fun WelcomeScreen(navController: NavController) {
     val context = LocalContext.current
-    val authRepo = AuthRepository()
-    val userRepo = UserRepository()
-    val viewModel = viewModel { WelcomeViewModel(authRepo, userRepo) }
+    val viewModel: WelcomeViewModel = hiltViewModel()
 
     LaunchedEffect(Unit) {
         viewModel.initializeBiometric(context)

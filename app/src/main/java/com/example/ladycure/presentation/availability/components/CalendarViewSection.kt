@@ -129,7 +129,6 @@ fun CalendarHeader(
         }
     }
 
-    // Weekday headers
     val weekDays = DayOfWeek.entries
     Row(
         Modifier
@@ -221,7 +220,6 @@ fun CalendarView(
                         }
                     )
 
-                    // Show small indicator if there's existing availability
                     if (hasExistingAvailability && !isSelected) {
                         Spacer(Modifier.height(2.dp))
                         Box(

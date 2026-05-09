@@ -102,6 +102,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,9 +113,9 @@ fun DoctorChatScreen(
     navController: NavController,
     otherUserId: String,
     otherUserName: String,
-    chatRepository: ChatRepository = ChatRepository(),
+    chatRepository: ChatRepository = ChatRepository(FirebaseAuth.getInstance(), FirebaseStorage.getInstance(), FirebaseFirestore.getInstance()),
     chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
-    doctorRepository: DoctorRepository = DoctorRepository(),
+    doctorRepository: DoctorRepository = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()),
 ) {
     val dimens = rememberResponsiveDimens()
     val currentUserId = chatRepository.getCurrentUserId()
@@ -152,11 +156,9 @@ fun DoctorChatScreen(
         chatRepository.getMessages(chatId) { messageList ->
             messages = messageList
         }
-        // Fetching profile pictures
         otherUserProfilePictureUrl = chatRepository.getUserProfilePicture(otherUserId)
         currentUserProfilePictureUrl = chatRepository.getUserProfilePicture(currentUserId)
 
-        // Fetch phone number
         chatRepository.getSpecificUserData(otherUserId).onSuccess { userData ->
             otherUserPhoneNumber = userData?.get("phone") as? String
             otherUserRole = userData?.get("role") as? String
@@ -285,20 +287,15 @@ fun DoctorChatScreen(
                         }
 
 //                        Box(
-//                            modifier = Modifier
 //                                .size(16.dp)
 //                                .align(Alignment.BottomEnd)
 //                                .background(Color.Green, shape = CircleShape)
 //                                .padding(2.dp)
 //                        ) {
 //                            Box(
-//                                modifier = Modifier
 //                                    .fillMaxSize()
 //                                    .background(Color.Green, shape = CircleShape)
 //                                    .border(
-//                                        width = 1.dp,
-//                                        color = DefaultPrimary,
-//                                        shape = CircleShape
 //                                    )
 //                            )
 //                        }

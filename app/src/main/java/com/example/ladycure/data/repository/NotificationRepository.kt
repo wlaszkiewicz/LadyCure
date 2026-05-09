@@ -5,11 +5,14 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
-class NotificationRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
+import javax.inject.Inject
+import javax.inject.Singleton
 
-
+@Singleton
+class NotificationRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
+) {
     fun fetchNotifications(
         onResult: (List<Notification>) -> Unit,
         onError: (String) -> Unit

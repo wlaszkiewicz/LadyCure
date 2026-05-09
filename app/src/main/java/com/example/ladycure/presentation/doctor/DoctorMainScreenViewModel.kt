@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.doctor
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -23,18 +25,17 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
-class DoctorHomeViewModel(
-    private val authRepo: AuthRepository = AuthRepository(),
-    private val userRepo: UserRepository = UserRepository(),
-    private val appointmentsRepo: AppointmentRepository = AppointmentRepository(),
-    private val notificationRepo: NotificationRepository = NotificationRepository()
+@HiltViewModel
+class DoctorHomeViewModel @Inject constructor(
+    private val authRepo: AuthRepository,
+    private val userRepo: UserRepository,
+    private val appointmentsRepo: AppointmentRepository,
+    private val notificationRepo: NotificationRepository
 ) : ViewModel() {
 
-    // UI State
     private val _uiState = MutableStateFlow(DoctorHomeUiState())
     val uiState: StateFlow<DoctorHomeUiState> = _uiState.asStateFlow()
 
-    // Dialog states
     private val _selectedAppointment = mutableStateOf<Appointment?>(null)
     val selectedAppointment: State<Appointment?> = _selectedAppointment
 
@@ -110,13 +111,11 @@ class DoctorHomeViewModel(
         val now = LocalDate.now()
         val currentTime = LocalTime.now()
 
-        //  find today's next appointment
         val todaysNext = appointments.firstOrNull {
             it.date == now && it.time.isAfter(currentTime) && it.status != Status.CANCELLED
         }
         if (todaysNext != null) return todaysNext
 
-        // If none today, find the earliest future appointment
         return appointments.firstOrNull { it.date.isAfter(now) && it.status != Status.CANCELLED }
             ?: appointments.firstOrNull()
     }
@@ -143,7 +142,6 @@ class DoctorHomeViewModel(
                         status = Status.CONFIRMED.displayName
                     )
 
-                    // Update local state
                     _uiState.update { current ->
                         current.copy(
                             allAppointments = current.allAppointments.map {
@@ -159,7 +157,6 @@ class DoctorHomeViewModel(
                         )
                     }
 
-                    // Update selected appointment
                     _selectedAppointment.value =
                         _selectedAppointment.value?.copy(status = Status.CONFIRMED)
                 } catch (e: Exception) {
@@ -179,7 +176,6 @@ class DoctorHomeViewModel(
                         newComment
                     )
 
-                    // Update local state
                     _uiState.update { current ->
                         current.copy(
                             allAppointments = current.allAppointments.map {
@@ -195,7 +191,6 @@ class DoctorHomeViewModel(
                         )
                     }
 
-                    // Update selected appointment
                     _selectedAppointment.value =
                         _selectedAppointment.value?.copy(comments = newComment)
                 } catch (e: Exception) {
@@ -223,7 +218,6 @@ class DoctorHomeViewModel(
 }
 
 data class DoctorHomeUiState(
-    // TODO: replace with Doctor model — Doctor.fromMap() already exists
     val doctorData: Map<String, Any>? = null,
     val allAppointments: List<Appointment> = emptyList(),
     val upcomingAppointments: List<Appointment> = emptyList(),

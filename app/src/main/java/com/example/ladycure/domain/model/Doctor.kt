@@ -40,7 +40,6 @@ data class Doctor(
 ) {
 
 
-    // In Doctor class
     fun toUser(): User {
         return User(
             id = this.id,

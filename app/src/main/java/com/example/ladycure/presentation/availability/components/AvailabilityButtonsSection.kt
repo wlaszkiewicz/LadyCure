@@ -134,7 +134,6 @@ fun TimeRangePicker(
             )
         }
 
-        // Visual time bar
         if (startTime.isBefore(endTime)) {
             Spacer(Modifier.height(dimens.h(16 / 914f)))
             LinearProgressIndicator(
@@ -189,7 +188,6 @@ fun TimePickerChip(
     }
 }
 
-// Progress calculation for visual time bar
 private fun calculateProgress(start: LocalTime, end: LocalTime): Float {
     val totalMinutes = ChronoUnit.MINUTES.between(start, end)
     val currentMinutes = ChronoUnit.MINUTES.between(start, LocalTime.now())

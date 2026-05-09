@@ -69,7 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.domain.model.AppointmentType
@@ -105,10 +105,9 @@ fun ConfirmationScreen(
     timestamp: Timestamp,
     appointmentType: AppointmentType,
     referralId: String? = null,
-    viewModel: ConfirmationViewModel = viewModel()
+    viewModel: ConfirmationViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val doctorInfo = viewModel.doctorInfo
@@ -119,12 +118,10 @@ fun ConfirmationScreen(
     val tooLarge = viewModel.tooLarge
     val context = LocalContext.current
 
-    // Initialize data loading
     LaunchedEffect(Unit) {
         viewModel.loadInitialData(doctorId, timestamp, referralId)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let { err ->
             snackbarController?.showMessage(err)
@@ -132,7 +129,6 @@ fun ConfirmationScreen(
         }
     }
 
-    // PDF upload launcher
     val pdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
@@ -172,7 +168,6 @@ fun ConfirmationScreen(
                     end = dimens.w(16 / 411f)
                 ),
         ) {
-            // Header with back button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -205,7 +200,6 @@ fun ConfirmationScreen(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        // Appointment confirmation card
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -278,7 +272,6 @@ fun ConfirmationScreen(
                             )
                         }
 
-                        // Doctor information card
                         DoctorConfirmationCard(
                             doctor = doctorInfo,
                             modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
@@ -289,13 +282,11 @@ fun ConfirmationScreen(
                             modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                         )
 
-                        // Payment information card
                         PaymentCard(
                             modifier = Modifier.padding(bottom = dimens.h(24 / 914f)),
                             appointmentType = appointmentType
                         )
 
-                        // Action buttons
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -396,7 +387,6 @@ private fun AppointmentTypeCard(
                 vertical = dimens.h(16 / 914f)
             )
         ) {
-            // Header with service name and duration
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -420,7 +410,6 @@ private fun AppointmentTypeCard(
 
             Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
-            // Service description
             Text(
                 text = "Service Description",
                 style = MaterialTheme.typography.labelLarge,
@@ -433,7 +422,6 @@ private fun AppointmentTypeCard(
                 modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
             )
 
-            // Preparation instructions
             Text(
                 text = "Preparation Instructions",
                 style = MaterialTheme.typography.labelLarge,
@@ -446,7 +434,6 @@ private fun AppointmentTypeCard(
                 modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
             )
 
-            // Requirements chip
             if (appointmentType.needsReferral && referralId == null) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -470,7 +457,6 @@ private fun AppointmentTypeCard(
     }
 }
 
-// Update PaymentCard to use appointmentType.price
 @Composable
 private fun PaymentCard(
     appointmentType: AppointmentType,
@@ -600,7 +586,6 @@ private fun LocationCard(
                 modifier = Modifier.padding(bottom = dimens.h(12 / 914f))
             )
 
-            // Google Map
             if (latLng != null) {
                 GoogleMap(
                     modifier = Modifier
@@ -633,7 +618,6 @@ private fun LocationCard(
 
             Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
 
-            // Contact details
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -690,7 +674,6 @@ private fun LocationCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Directions button
             Button(
                 onClick = {
                     val gmmIntentUri = if (latLng != null) {
@@ -882,7 +865,6 @@ fun ReferralInfoCard(
     val pdfIconPainter = rememberVectorPainter(Icons.Default.PictureAsPdf)
     val fileSize = remember(referralUrl) { calculateFileSize(context, referralUrl) }
 
-    // Animation for success message
     var showSuccessMessage by remember { mutableStateOf(false) }
     LaunchedEffect(showUploadSuccess) {
         if (showUploadSuccess) {
@@ -906,7 +888,6 @@ fun ReferralInfoCard(
                 vertical = dimens.h(16 / 914f)
             )
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -921,7 +902,6 @@ fun ReferralInfoCard(
 
             Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
-            // Upload progress section
             if (isUploading) {
                 Column(
                     modifier = Modifier
@@ -1036,7 +1016,6 @@ fun ReferralInfoCard(
 
                 Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
-                // Metadata
                 Column(
                     modifier = Modifier.padding(horizontal = 4.dp)
                 ) {
@@ -1073,7 +1052,6 @@ fun ReferralInfoCard(
 
             Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-            // Upload/Change Button (disabled during upload)
             Button(
                 onClick = onUploadNew,
                 modifier = Modifier

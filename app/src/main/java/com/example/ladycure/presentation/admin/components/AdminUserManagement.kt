@@ -197,7 +197,6 @@ private fun UserForm(
     onUserChange: (User) -> Unit
 ) {
     val dimens = rememberResponsiveDimens()
-    // Track whether we're showing doctor fields
     val showDoctorFields = user.role == Role.DOCTOR
 
     Column(

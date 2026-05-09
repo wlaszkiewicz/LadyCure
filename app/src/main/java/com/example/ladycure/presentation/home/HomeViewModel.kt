@@ -16,15 +16,15 @@ import com.example.ladycure.utility.SharedPreferencesHelper
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-// A data class to hold all the UI state in one place
 data class HomeUiState(
-    // TODO: replace with User model — User.fromMap() already exists
     val userData: Map<String, Any>? = null,
     val unreadNotificationCount: Int = 0,
     var appointments: List<AppointmentSummary>? = null,
@@ -36,13 +36,15 @@ data class HomeUiState(
 )
 
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    application: Application,
+    private val userRepo: UserRepository,
+    private val appointmentRepo: AppointmentRepository,
+    private val notificationRepo: NotificationRepository,
+    private val doctorRepo: DoctorRepository
+) : AndroidViewModel(application) {
 
-    // Repositories
-    private val userRepo = UserRepository()
-    private val appointmentRepo = AppointmentRepository()
-    private val notificationRepo = NotificationRepository()
-    private val doctorRepo = DoctorRepository()
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()

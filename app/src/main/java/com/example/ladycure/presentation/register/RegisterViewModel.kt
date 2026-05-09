@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.register
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,10 +13,10 @@ import com.example.ladycure.domain.RegisterUseCase
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-class RegisterViewModel(
+@HiltViewModel
+class RegisterViewModel @Inject constructor(
     private val registerUseCase: RegisterUseCase
 ) : ViewModel() {
-    // Form state
     var uiState by mutableStateOf(RegisterUiState())
         private set
 
@@ -104,7 +106,6 @@ data class RegisterUiState(
             email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "email"
             name.isBlank() -> "firstName"
             surname.isBlank() -> "lastName"
-            //   selectedDate.isAfter(LocalDate.now().minusYears(18)) -> "dob"
             password.isBlank() || password.length < 8
                     || !password.matches(Regex(".*[A-Z].*"))
                     || !password.matches(Regex(".*[0-9].*"))

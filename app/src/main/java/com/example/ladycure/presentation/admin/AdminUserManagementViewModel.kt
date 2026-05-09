@@ -1,4 +1,8 @@
+package com.example.ladycure.presentation.admin
+
 import androidx.compose.runtime.getValue
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -12,11 +16,11 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class AdminUserManagementViewModel(
-    private val userRepo: UserRepository = UserRepository(),
-    private val authRepo: AuthRepository = AuthRepository(),
+@HiltViewModel
+class AdminUserManagementViewModel @Inject constructor(
+    private val userRepo: UserRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
-    // Dialog visibility states
     var showAddUserDialog by mutableStateOf(false)
         private set
 
@@ -26,33 +30,27 @@ class AdminUserManagementViewModel(
     var showDeleteUserDialog by mutableStateOf(false)
         private set
 
-    // User selection states
     var selectedUser by mutableStateOf<User?>(null)
         private set
 
     var editedUser by mutableStateOf<User?>(null)
         private set
 
-    // New user state
     var newUser by mutableStateOf(User.empty().copy(role = Role.USER))
         private set
 
-    // Search and loading states
     var searchQuery by mutableStateOf("")
         private set
 
     var isLoadingUsers by mutableStateOf(false)
         private set
 
-    // Data state
-    // TODO: replace with List<User> — User.fromMap() already exists; update repository call site
     var users by mutableStateOf<List<Map<String, Any>>>(emptyList())
         private set
 
     var errorMessage by mutableStateOf<String?>(null)
         internal set
 
-    // Computed properties
     val allUsers
         get() = users
             .filter { it["role"] != Role.DOCTOR.value }
@@ -86,12 +84,10 @@ class AdminUserManagementViewModel(
         }
     }
 
-    // Search functionality
     fun updateSearchQuery(query: String) {
         searchQuery = query
     }
 
-    // Dialog control methods
     fun showAddUserDialog() {
         showAddUserDialog = true
     }
@@ -119,7 +115,6 @@ class AdminUserManagementViewModel(
         showDeleteUserDialog = false
     }
 
-    // User data modification methods
     fun updateNewUser(user: User) {
         newUser = user
     }
@@ -131,7 +126,6 @@ class AdminUserManagementViewModel(
     fun saveUserChanges() {
         viewModelScope.launch {
             selectedUser?.let { originalUser ->
-                // Validate before proceeding
                 when {
                     editedUser?.name.isNullOrBlank() -> {
                         errorMessage = "Name cannot be empty"
@@ -177,17 +171,16 @@ class AdminUserManagementViewModel(
         }
     }
 
-    // Helper function for email validation
     private fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
     private fun isValidBirthDate(date: String): Boolean {
-        val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""") // yyyy-MM-dd format
+        val pattern = Regex("""^\d{4}-\d{2}-\d{2}$""")
         if (!pattern.matches(date)) return false
 
         return try {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            dateFormat.isLenient = false // Strict parsing
+            dateFormat.isLenient = false
             dateFormat.parse(date)
             true
         } catch (e: Exception) {

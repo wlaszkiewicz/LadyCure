@@ -239,7 +239,6 @@ fun BookAppointmentSection(
                             selectedLocation = location
                             showLocationDropdown = false
                             onCitySelected(location)
-                            // Reset checkbox when selecting new city
                             rememberChoice = false
                         },
                         modifier = Modifier.padding(horizontal = 8.dp),
@@ -251,7 +250,6 @@ fun BookAppointmentSection(
             }
         }
 
-        // Horizontal scrollable list of specializations
         val scrollState = rememberScrollState()
         Row(
             modifier = Modifier

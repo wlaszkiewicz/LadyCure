@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.admin
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -14,10 +16,11 @@ import com.example.ladycure.domain.model.ApplicationStatus
 import com.example.ladycure.domain.model.DoctorApplication
 import kotlinx.coroutines.launch
 
-class AdminDashboardViewModel(
-    private val applicationRepo: ApplicationRepository = ApplicationRepository(),
-    private val adminRepo: AdminRepository = AdminRepository(),
-    private val authRepo: AuthRepository = AuthRepository(),
+@HiltViewModel
+class AdminDashboardViewModel @Inject constructor(
+    private val applicationRepo: ApplicationRepository,
+    private val adminRepo: AdminRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
     var showLogoutDialog by mutableStateOf(false)
         private set

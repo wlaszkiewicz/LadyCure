@@ -5,15 +5,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.ladycure.data.repository.NotificationRepository
 import com.example.ladycure.domain.model.Notification
 import com.example.ladycure.domain.model.NotificationType
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class NotificationsViewModel : ViewModel() {
-    private val _allNotifications = MutableStateFlow<List<Notification>>(emptyList()) // Full source
-    private val _notifications = MutableStateFlow<List<Notification>>(emptyList())     // Filtered
+@HiltViewModel
+class NotificationsViewModel @Inject constructor(
+    internal val notificationRepo: NotificationRepository
+) : ViewModel() {
+    private val _allNotifications = MutableStateFlow<List<Notification>>(emptyList())
+    private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications: StateFlow<List<Notification>> = _notifications.asStateFlow()
 
     private val _unreadCount = MutableStateFlow(0)
@@ -24,7 +29,6 @@ class NotificationsViewModel : ViewModel() {
 
     internal var currentFilter: NotificationFilter = NotificationFilter.ALL
     internal var currentType: NotificationType? = null
-    val notificationRepo = NotificationRepository()
 
     init {
         fetchNotifications()

@@ -1,6 +1,8 @@
 package com.example.ladycure.presentation.booking
 
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
@@ -15,10 +17,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class BookingSuccessViewModel(
-    private val appointmentRepo: AppointmentRepository = AppointmentRepository()
+@HiltViewModel
+class BookingSuccessViewModel @Inject constructor(
+    private val appointmentRepo: AppointmentRepository
 ) : ViewModel() {
-    // State variables
     var isLoading by mutableStateOf(true)
         private set
     var errorMessage by mutableStateOf<String?>(null)
@@ -78,7 +80,6 @@ class BookingSuccessViewModel(
         }
     }
 
-    // Helper properties for formatted date/time
     val formattedDate: String
         get() = appointment?.let {
             SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())

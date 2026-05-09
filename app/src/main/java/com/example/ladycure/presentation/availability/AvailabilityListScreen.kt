@@ -71,6 +71,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @Composable
 fun AvailabilityListScreen(
@@ -80,8 +83,8 @@ fun AvailabilityListScreen(
     doctorId: String? = null
 ) {
     val existingAvailabilities = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
-    val doctorRepo = DoctorRepository()
-    val authRepo = AuthRepository()
+    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     val isLoading = remember { mutableStateOf(false) }
     val currentMonth = remember { LocalDate.now().withDayOfMonth(1) }
     var chosenMonth by remember { mutableStateOf(currentMonth) }
@@ -320,7 +323,6 @@ private fun ExistingAvailabilityDayItem(
                     vertical = dimens.h(FractionDimens.paddingSmallH)
                 )
         ) {
-            // Date header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -360,7 +362,6 @@ private fun ExistingAvailabilityDayItem(
 
             Spacer(modifier = Modifier.height(dimens.h(FractionDimens.spacingTinyH)))
 
-            // Time slots
             availabilities.forEachIndexed { index, availability ->
                 val startTime = availability.startTime
                 val endTime = availability.endTime
@@ -440,7 +441,6 @@ private fun TimeSlotsVisualization(
             .toList()
     }
 
-    // Filter availableSlots to only include those that are in allPossibleSlots
     val validAvailableSlots = remember(availableSlots, allPossibleSlots) {
         availableSlots.filter { it in allPossibleSlots }.toSet()
     }
@@ -448,7 +448,6 @@ private fun TimeSlotsVisualization(
     val expanded = remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        // Summary header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -476,7 +475,6 @@ private fun TimeSlotsVisualization(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Visual timeline bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -503,7 +501,6 @@ private fun TimeSlotsVisualization(
             }
         }
 
-        // Time markers
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -518,7 +515,6 @@ private fun TimeSlotsVisualization(
             )
         }
 
-        // Detailed slot list (expandable)
         AnimatedVisibility(
             visible = expanded.value,
             enter = fadeIn() + expandVertically(),
@@ -529,7 +525,6 @@ private fun TimeSlotsVisualization(
                     .fillMaxWidth()
                     .padding(top = 8.dp)
             ) {
-                // Group slots by hour for better readability
                 val slotsByHour = allPossibleSlots.groupBy { it.hour }
 
                 slotsByHour.forEach { (hour, hourSlots) ->

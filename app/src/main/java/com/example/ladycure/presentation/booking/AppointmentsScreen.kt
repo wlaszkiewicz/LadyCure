@@ -75,7 +75,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.ladycure.domain.model.Appointment.Status
 import com.example.ladycure.domain.model.AppointmentSummary
@@ -109,7 +109,7 @@ import java.util.Locale
 fun AppointmentsScreen(
     navController: NavController,
     snackbarController: SnackbarController?,
-    viewModel: AppointmentViewModel = viewModel()
+    viewModel: AppointmentViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     val isLoading = viewModel.isLoading
@@ -128,7 +128,6 @@ fun AppointmentsScreen(
         }
     }
 
-    // Show loading state while role is being determined
     if (isLoading || role == null) {
         LoadingView()
         return
@@ -193,7 +192,6 @@ fun AppointmentsScreen(
                 }
             }
 
-            // Filter panel
             AnimatedVisibility(
                 visible = showFilters,
                 enter = fadeIn() + expandVertically(),
@@ -208,7 +206,6 @@ fun AppointmentsScreen(
                 )
             }
 
-            // Active filters row
             ActiveFiltersRow(
                 selectedSpecializations = if (role == "user") viewModel.selectedSpecializations else emptyList(),
                 selectedDoctors = if (role == "user") viewModel.selectedDoctors else emptyList(),
@@ -346,7 +343,7 @@ fun AppointmentsList(
     onCommentUpdated: (String, String) -> Unit,
     onCancelAppointment: (String) -> Unit,
     tab: Int,
-    viewModel: AppointmentViewModel = viewModel(),
+    viewModel: AppointmentViewModel = hiltViewModel(),
     onLoadMore: (() -> Unit)? = null
 ) {
     val dimens = rememberResponsiveDimens()
@@ -473,7 +470,7 @@ fun AppointmentCard(
     onCancel: () -> Unit,
     onCommentUpdated: (String, String) -> Unit,
     onClickStatus: () -> Unit,
-    viewModel: AppointmentViewModel = viewModel()
+    viewModel: AppointmentViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     val speciality = Speciality.fromDisplayName(appointment.enumType.speciality)
@@ -763,7 +760,6 @@ fun EnhancedFiltersSection(
                     .heightIn(max = 300.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -945,7 +941,6 @@ fun DateFilterSection(
 
             if (showDatePicker) {
                 val datePickerState = rememberDatePickerState(
-                    // TODO: DatePicker API requires UTC millis; verify this aligns with local-timezone date display
                     initialSelectedDateMillis = selectedDate?.atStartOfDay()
                         ?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
                 )

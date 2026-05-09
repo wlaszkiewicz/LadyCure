@@ -48,14 +48,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.TextButton
 import com.example.ladycure.R
-import com.example.ladycure.data.repository.AuthRepository
-import com.example.ladycure.domain.RegisterUseCase
 import com.example.ladycure.presentation.register.components.RegisterForm
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
@@ -66,20 +62,18 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(navController: NavController, snackbarController: SnackbarController) {
-    val viewModel: RegisterViewModel = viewModel(factory = RegisterViewModelFactory())
+    val viewModel: RegisterViewModel = hiltViewModel()
     val uiState = viewModel.uiState
     val coroutineScope = rememberCoroutineScope()
     var showContactUsDialog by remember { mutableStateOf(false) }
     val dimens = rememberResponsiveDimens()
 
-    // Show snackbar when error occurs
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
             coroutineScope.launch {
                 snackbarController.showMessage(
                     message = error
                 )
-                // Clear error after showing
                 viewModel.clearError()
             }
         }
@@ -94,7 +88,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Header Section
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -152,7 +145,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
             Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
-            // Registration Form
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -188,7 +180,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Footer Section
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(
             onClick = { navController.navigate("login") },
@@ -224,7 +215,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    // Title
                     Text(
                         text = "Apply!",
                         style = MaterialTheme.typography.titleLarge.copy(
@@ -236,7 +226,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
                     Spacer(modifier = Modifier.height(dimens.h(0.0175f)))
 
-                    // Message
                     Text(
                         text = "If you're a doctor and wish to join our team, please fill out the application form. After submission, our admin will review your application and get back to you via email.",
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -259,7 +248,6 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
 
                     Spacer(modifier = Modifier.height(dimens.h(0.035f)))
 
-                    // Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -311,19 +299,5 @@ fun RegisterScreen(navController: NavController, snackbarController: SnackbarCon
                 }
             }
         }
-    }
-}
-
-class RegisterViewModelFactory : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(RegisterViewModel::class.java)) {
-            return RegisterViewModel(
-                registerUseCase = RegisterUseCase(
-                    authRepository = AuthRepository()
-                )
-            ) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

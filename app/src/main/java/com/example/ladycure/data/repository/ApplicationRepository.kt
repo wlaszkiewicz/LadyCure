@@ -5,11 +5,14 @@ import com.example.ladycure.domain.model.DoctorApplication
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ApplicationRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-
+@Singleton
+class ApplicationRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
+) {
     suspend fun submitApplication(application: DoctorApplication): Result<Unit> {
         var appMap = application.toMap()
         return try {

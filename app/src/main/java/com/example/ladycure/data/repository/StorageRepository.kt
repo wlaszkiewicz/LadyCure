@@ -8,14 +8,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 import java.io.File
 
-class StorageRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-    private val storage = FirebaseStorage.getInstance()
+@Singleton
+class StorageRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore,
+    private val storage: FirebaseStorage
+) {
     private val storageRef = storage.reference
-
     suspend fun uploadReferralToFirestore(
         context: android.content.Context,
         uri: Uri,
@@ -139,14 +142,12 @@ class StorageRepository {
             context.contentResolver.openInputStream(uri)?.use { it.copyTo(tempFile.outputStream()) }
             val uploadTask = fileRef.putFile(android.net.Uri.fromFile(tempFile))
 
-            // Add progress listener
             uploadTask.addOnProgressListener { taskSnapshot ->
                 val bytesTransferred = taskSnapshot.bytesTransferred
                 val totalBytes = taskSnapshot.totalByteCount
                 onProgress(bytesTransferred, totalBytes)
             }
 
-            // Wait for upload to complete
             val task = uploadTask.await()
             val downloadUrl = task.storage.downloadUrl.await()
 

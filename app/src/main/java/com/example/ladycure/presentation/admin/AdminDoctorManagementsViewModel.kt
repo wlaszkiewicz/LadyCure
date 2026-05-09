@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.admin
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -15,9 +17,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class AdminDoctorManagementViewModel(
-    private val userRepo: UserRepository = UserRepository(),
-    private val authRepo: AuthRepository = AuthRepository(),
+@HiltViewModel
+class AdminDoctorManagementViewModel @Inject constructor(
+    private val userRepo: UserRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
     var showAddDoctorDialog by mutableStateOf(false)
         private set
@@ -43,7 +46,6 @@ class AdminDoctorManagementViewModel(
     var isLoadingDoctors by mutableStateOf(false)
         private set
 
-    // TODO: replace with List<Doctor> — Doctor.fromMap() already exists; update repository call site
     var users by mutableStateOf<List<Map<String, Any>>>(emptyList())
         private set
 
@@ -125,7 +127,6 @@ class AdminDoctorManagementViewModel(
 
     fun saveDoctorChanges() {
         editedDoctor?.let { doctor ->
-            // Validate all fields before proceeding
             val validationError = validateDoctor(doctor)
             if (validationError != null) {
                 errorMessage = validationError
@@ -175,7 +176,6 @@ class AdminDoctorManagementViewModel(
         }
     }
 
-    // Validation helper functions
     private fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }

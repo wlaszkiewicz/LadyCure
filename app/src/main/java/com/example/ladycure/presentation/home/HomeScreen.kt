@@ -52,7 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.domain.model.Speciality
@@ -81,7 +81,7 @@ import kotlin.math.sqrt
 fun HomeScreen(
     navController: NavHostController,
     snackbarController: SnackbarController? = null,
-    homeViewModel: HomeViewModel = viewModel()
+    homeViewModel: HomeViewModel = hiltViewModel()
 ) {
 
     val uiState by homeViewModel.uiState.collectAsState()
@@ -465,7 +465,6 @@ fun Header(
 
             Spacer(modifier = Modifier.size(dimens.w(0.039f)))
 
-            // User avatar
             Box(
                 modifier = Modifier
                     .size(dimens.w(0.136f))

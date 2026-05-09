@@ -99,8 +99,10 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.max
 import kotlin.math.min
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
-// --- Data Models
+
 data class DailyPeriodData(
     val date: LocalDate,
     var isPeriodDay: Boolean = false,
@@ -126,13 +128,11 @@ fun getPredictedPeriodStartDates(
     predictedStarts.add(lastPeriodStartDate)
     var currentPrediction = lastPeriodStartDate
 
-    // Predict future periods for the next 12 cycles
     repeat(12) {
         currentPrediction = currentPrediction?.plusDays(averageCycleLength.toLong())
         currentPrediction?.let { predictedStarts.add(it) }
     }
 
-    // Predict up to 3 past cycles
     currentPrediction = lastPeriodStartDate
     repeat(3) {
         currentPrediction = currentPrediction?.minusDays(averageCycleLength.toLong())
@@ -155,12 +155,11 @@ fun getPredictedOvulationDates(
     return predictedOvulations
 }
 
-// --- Period Tracker Screen ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PeriodTrackerScreen(navController: NavHostController) {
     val dimens = rememberResponsiveDimens()
-    val periodTrackerRepository = remember { PeriodTrackerRepository() }
+    val periodTrackerRepository = remember { PeriodTrackerRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
     val scope = rememberCoroutineScope()
     var currentMonth by remember { mutableStateOf(LocalDate.now()) }
     var periodSettings by remember { mutableStateOf(PeriodTrackerSettings()) }
@@ -271,7 +270,6 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                     .padding(paddingValues)
                     .padding(horizontal = dimens.w(16 / 411f))
             ) {
-                // Month navigation
                 MonthNavigationHeader(currentMonth, onMonthChange = { currentMonth = it })
 
                 Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
@@ -1239,7 +1237,6 @@ private fun DatePickerDialog(
                 modifier = Modifier.padding(dimens.w(16 / 411f)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Month navigation
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1269,7 +1266,6 @@ private fun DatePickerDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-                // Weekday headers
                 Row(modifier = Modifier.fillMaxWidth()) {
                     listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
                         Text(
@@ -1284,7 +1280,6 @@ private fun DatePickerDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Calendar grid
                 val daysInCalendar = remember(currentMonth) {
                     val firstDayOfMonth = currentMonth.with(TemporalAdjusters.firstDayOfMonth())
                     val lastDayOfMonth = currentMonth.with(TemporalAdjusters.lastDayOfMonth())
@@ -1576,7 +1571,6 @@ private fun Chip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     val dimens = rememberResponsiveDimens()
     Surface(
         shape = RoundedCornerShape(8.dp),
-        // Adjusted colors based on isSelected
         color = if (isSelected) DefaultPrimary else DefaultPrimary.copy(alpha = 0.2f),
         border = BorderStroke(
             1.dp,
@@ -1588,7 +1582,6 @@ private fun Chip(text: String, isSelected: Boolean, onClick: () -> Unit) {
             text = text,
             modifier = Modifier.padding(horizontal = dimens.w(12 / 411f), vertical = 6.dp),
             style = MaterialTheme.typography.bodySmall,
-            // Adjusted text color based on isSelected
             color = if (isSelected) Color.White else DefaultPrimary
         )
     }

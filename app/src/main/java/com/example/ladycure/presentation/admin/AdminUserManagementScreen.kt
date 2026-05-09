@@ -1,6 +1,6 @@
 package com.example.ladycure.presentation.admin
 
-import AdminUserManagementViewModel
+import com.example.ladycure.presentation.admin.AdminUserManagementViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,7 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ladycure.presentation.admin.components.AddUserDialog
 import com.example.ladycure.presentation.admin.components.AdminSearchBar
 import com.example.ladycure.presentation.admin.components.DeleteConfirmationDialog
@@ -38,7 +38,7 @@ import com.example.ladycure.utility.SnackbarController
 @Composable
 fun AdminUserManagementScreen(
     snackbarController: SnackbarController,
-    viewModel: AdminUserManagementViewModel = viewModel()
+    viewModel: AdminUserManagementViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     val errorMessage = viewModel.errorMessage

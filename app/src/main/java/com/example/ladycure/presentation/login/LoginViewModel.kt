@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.login
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,7 +11,8 @@ import androidx.navigation.NavController
 import com.example.ladycure.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
-class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
+@HiltViewModel
+class LoginViewModel @Inject constructor(private val authRepository: AuthRepository) : ViewModel() {
     var email by mutableStateOf("")
     var password by mutableStateOf("")
     var isLoading by mutableStateOf(false)

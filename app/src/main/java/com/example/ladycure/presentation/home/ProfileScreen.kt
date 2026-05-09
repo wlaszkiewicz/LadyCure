@@ -98,14 +98,17 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
     val dimens = rememberResponsiveDimens()
     val context = LocalContext.current
-    val userRepo = UserRepository()
-    val authRepo = AuthRepository()
-    val doctorRepo = remember { DoctorRepository() }
+    val userRepo = UserRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    val doctorRepo = remember { DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
     val imageUploader = remember { ImageUploader(context) }
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
@@ -223,7 +226,6 @@ fun ProfileScreen(navController: NavHostController) {
                     .padding(horizontal = dimens.w(16 / 411f), vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(dimens.h(24 / 914f))
             ) {
-                // Profile header
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
@@ -291,7 +293,6 @@ fun ProfileScreen(navController: NavHostController) {
                     }
                 }
 
-                // Settings
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -535,17 +536,14 @@ fun AccountSettingsDialog(
     onSave: (Map<String, String>) -> Unit,
     role: String? = null
 ) {
-    val doctorRepo = remember { DoctorRepository() }
+    val doctorRepo = remember { DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
     when (role) {
         "doctor" -> DoctorAccountSettingsDialog(
             userData = userData,
             onDismiss = onDismiss,
             onSave = { updatedData ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    // Cast updatedData to Map<String, Any> for updateDoctorProfile
                     doctorRepo.updateDoctorProfile(updatedData as Map<String, Any>)
-                    // Then cast back to Map<String, String> if needed by the original onSave
-                    // However, the original onSave expects Map<String, String>, so this might need adjustment in the calling component
                     onSave(updatedData.mapValues { it.value.toString() })
                 }
             }
@@ -627,7 +625,6 @@ fun DoctorAccountSettingsDialog(
     }
     var cityError by remember { mutableStateOf("") }
 
-    // Correctly initialize consultationPrice and experience as TextFieldValue holding String
     var consultationPrice by remember {
         mutableStateOf(
             TextFieldValue(
@@ -712,7 +709,6 @@ fun DoctorAccountSettingsDialog(
             phoneError = ""
         }
 
-        // Validate consultationPrice
         val price = consultationPrice.text.toDoubleOrNull()
         if (consultationPrice.text.isBlank()) {
             consultationPriceError = "Consultation price cannot be empty"
@@ -724,7 +720,6 @@ fun DoctorAccountSettingsDialog(
             consultationPriceError = ""
         }
 
-        // Validate experience
         val exp = experience.text.toIntOrNull()
         if (experience.text.isBlank()) {
             experienceError = "Experience cannot be empty"
@@ -1537,12 +1532,11 @@ fun RegularAccountSettingsDialog(
 }
 
 fun logOut(navController: NavHostController) {
-    val authRepo = AuthRepository()
+    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     authRepo.signOut()
     navController.navigate("welcome") { popUpTo(0) }
 }
 
-// Helper functions (Added for consistent validation rules)
 private fun isValidEmail(email: String): Boolean {
     return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }

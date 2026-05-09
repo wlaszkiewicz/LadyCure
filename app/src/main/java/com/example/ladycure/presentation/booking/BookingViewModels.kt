@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.booking
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -18,11 +20,11 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-class BookingViewModel(
-    private val doctorRepo: DoctorRepository = DoctorRepository()
+@HiltViewModel
+class BookingViewModel @Inject constructor(
+    private val doctorRepo: DoctorRepository
 ) : ViewModel() {
 
-    // State variables
     var isLoading by mutableStateOf(true)
         private set
     var errorMessage by mutableStateOf<String?>(null)
@@ -32,7 +34,6 @@ class BookingViewModel(
     var doctorAvailabilities by mutableStateOf(emptyList<DoctorAvailability>())
         private set
 
-    // UI state
     var selectedDate by mutableStateOf<LocalDate?>(null)
         private set
     var selectedTimeSlot by mutableStateOf<LocalTime?>(null)
@@ -45,12 +46,10 @@ class BookingViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             isLoading = true
             try {
-                // Get doctors first
                 val doctorsResult = doctorRepo.getDoctorsBySpeciality(speciality.displayName)
                 if (doctorsResult.isSuccess) {
                     doctors = doctorsResult.getOrNull()?.filter { it.city == city } ?: emptyList()
 
-                    // Then get their availabilities
                     doctorAvailabilities = doctorRepo.getAllDoctorAvailabilitiesBySpeciality(
                         speciality.displayName, city
                     )
@@ -104,7 +103,6 @@ class BookingViewModel(
         showDoctorsForSlot = show
     }
 
-    // Helper functions
     val availableDates: List<LocalDate>
         get() = doctorAvailabilities
             .mapNotNull { it.date }
@@ -208,7 +206,6 @@ class BookingViewModel(
                         availability.availableSlots.contains(timeSlot)
             }
             .filter { availability ->
-                // Check if this doctor has all required slots
                 val doctorSlots = availabilities
                     .filter { it.doctorId == availability.doctorId && it.date == date }
                     .flatMap { it.availableSlots }
@@ -239,24 +236,19 @@ class BookingViewModel(
         val requiredSlots = appointmentDuration / 15
         val validDoctorIds = mutableSetOf<String>()
 
-        // Group availabilities by doctor
         val availabilitiesByDoctor = availabilities
             .filter { it.date == date }
             .groupBy { it.doctorId }
 
-        // Check each doctor's slots
         for ((doctorId, doctorAvailabilities) in availabilitiesByDoctor) {
-            // Get all slots for this doctor on this date
             val allSlots = doctorAvailabilities
                 .flatMap { it.availableSlots }
                 .sorted()
 
-            // Check for consecutive slots
             for (i in 0..(allSlots.size - requiredSlots)) {
                 val startSlot = allSlots[i]
                 var hasConsecutive = true
 
-                // Check next slots - using toLong() for minutes
                 for (j in 1 until requiredSlots) {
                     val expectedSlot = startSlot.plusMinutes((15 * j).toLong())
                     if (allSlots.getOrNull(i + j) != expectedSlot) {

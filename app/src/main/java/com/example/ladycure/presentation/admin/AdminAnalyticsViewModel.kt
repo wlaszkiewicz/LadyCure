@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.admin
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,14 +11,13 @@ import com.example.ladycure.data.repository.AdminRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
-class AdminAnalyticsViewModel(
-    private val adminRepo: AdminRepository = AdminRepository(),
+@HiltViewModel
+class AdminAnalyticsViewModel @Inject constructor(
+    private val adminRepo: AdminRepository
 ) : ViewModel() {
-    // Loading state
     var isLoading by mutableStateOf(true)
         private set
 
-    // Data states
     var userGrowthData by mutableStateOf<List<Pair<String, Int>>>(emptyList())
         private set
     var patientGrowthData by mutableStateOf<List<Pair<String, Int>>>(emptyList())
@@ -27,11 +28,9 @@ class AdminAnalyticsViewModel(
         private set
     var applicationStats by mutableStateOf<Map<String, Int>>(emptyMap())
         private set
-    // TODO: convert to AdminStats once data flow is updated to return AdminStats from repository
     var totalStats by mutableStateOf<Map<String, Any>>(emptyMap())
         private set
 
-    // Time period selection
     var selectedTimePeriod by mutableStateOf(TimePeriod.MONTHLY)
         private set
 
@@ -51,7 +50,6 @@ class AdminAnalyticsViewModel(
         viewModelScope.launch {
             isLoading = true
             try {
-                // Fetch all data in parallel
                 val userGrowthDeferred = async { adminRepo.getUserGrowthData(selectedTimePeriod) }
                 val patientGrowthDeferred =
                     async { adminRepo.getPatientGrowthData(selectedTimePeriod) }
@@ -61,7 +59,6 @@ class AdminAnalyticsViewModel(
                 val totalStatsDeferred = async { adminRepo.getAdminStats() }
                 val usersAgeDeferred = async { adminRepo.getUsersAgeData() }
 
-                // Handle results directly
                 userGrowthData = userGrowthDeferred.await().getOrElse {
                     errorMessage = "Failed to load user growth data: ${it.message}"
                     emptyList()

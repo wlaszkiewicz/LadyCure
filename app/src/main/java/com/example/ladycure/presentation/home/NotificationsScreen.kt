@@ -58,7 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.ladycure.domain.model.Notification
 import com.example.ladycure.domain.model.NotificationType
@@ -75,7 +75,7 @@ fun NotificationsScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
     role: String,
-    viewModel: NotificationsViewModel = viewModel()
+    viewModel: NotificationsViewModel = hiltViewModel()
 ) {
     val notifications by viewModel.notifications.collectAsState()
     val unreadCount by viewModel.unreadCount.collectAsState()

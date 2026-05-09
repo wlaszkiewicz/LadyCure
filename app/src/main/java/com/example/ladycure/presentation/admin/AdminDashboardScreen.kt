@@ -50,7 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.ladycure.domain.model.ApplicationStatus
 import com.example.ladycure.domain.model.DoctorApplication
@@ -76,7 +76,7 @@ import java.time.format.DateTimeFormatter
 fun AdminDashboardScreen(
     navController: NavController,
     snackbarController: SnackbarController,
-    viewModel: AdminDashboardViewModel = viewModel()
+    viewModel: AdminDashboardViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     var errorMessage = viewModel.errorMessage
@@ -382,7 +382,6 @@ fun ApplicationItemCard(
                     .fillMaxWidth()
                     .padding(horizontal = dimens.w(0.049f), vertical = dimens.h(0.022f))
             ) {
-                // Header row with name and status
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -448,7 +447,6 @@ fun ApplicationItemCard(
                         ), // the painter of speciality has some additional padding so we add so they can be alligned
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Experience
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.WorkOutline,
@@ -466,7 +464,6 @@ fun ApplicationItemCard(
                         )
                     }
 
-                    // Submission date
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

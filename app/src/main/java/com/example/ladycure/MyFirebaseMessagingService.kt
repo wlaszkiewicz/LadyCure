@@ -9,13 +9,13 @@ import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.core.app.NotificationCompat
 import com.example.ladycure.data.repository.AuthRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlin.random.Random
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
-
-    val authRepo = AuthRepository()
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         remoteMessage.notification?.let { message ->
@@ -25,8 +25,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-
-        val repo = AuthRepository()
+        val repo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
         repo.updateFcmToken(token)
     }
 

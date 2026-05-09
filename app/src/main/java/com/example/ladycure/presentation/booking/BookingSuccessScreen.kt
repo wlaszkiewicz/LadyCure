@@ -44,7 +44,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.ladycure.R
 import com.example.ladycure.ui.theme.BabyBlue
@@ -62,21 +62,18 @@ fun BookingSuccessScreen(
     appointmentId: String,
     referralId: String? = null,
     snackbarController: SnackbarController,
-    viewModel: BookingSuccessViewModel = viewModel()
+    viewModel: BookingSuccessViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val appointment = viewModel.appointment
     val context = LocalContext.current
 
-    // Initialize data loading
     LaunchedEffect(appointmentId) {
         viewModel.loadAppointment(appointmentId)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarController.showMessage(it)
@@ -182,7 +179,6 @@ fun BookingSuccessScreen(
 
                 Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
-                // Appointment summary card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -337,7 +333,6 @@ fun BookingSuccessScreen(
 
                 Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
-                // Reminder card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(

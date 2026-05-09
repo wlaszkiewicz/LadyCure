@@ -82,7 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.TextButton
 import coil.compose.AsyncImage
@@ -107,13 +107,12 @@ fun DoctorApplicationScreen(
     snackbarController: SnackbarController
 ) {
     val dimens = rememberResponsiveDimens()
-    val viewModel: DoctorApplicationViewModel = viewModel()
+    val viewModel: DoctorApplicationViewModel = hiltViewModel()
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     var showSuccessDialog by remember { mutableStateOf(false) }
     var tooLarge = viewModel.tooLarge
 
-    // Show error messages
     LaunchedEffect(viewModel.errorMessage) {
         viewModel.errorMessage?.let { error ->
             snackbarController.showMessage(error)
@@ -188,7 +187,6 @@ fun DoctorApplicationScreen(
 
             Spacer(modifier = Modifier.height(dimens.h(0.022f)))
 
-            // Personal Information Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -212,7 +210,6 @@ fun DoctorApplicationScreen(
                         modifier = Modifier.padding(bottom = dimens.h(0.013f))
                     )
 
-                    // Email
                     OutlinedTextField(
                         value = viewModel.email,
                         onValueChange = { viewModel.email = it },
@@ -235,7 +232,6 @@ fun DoctorApplicationScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Name
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -271,7 +267,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
-                    // Dob
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = "Date of Birth",
@@ -299,7 +294,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
-                    // Password
                     OutlinedTextField(
                         value = viewModel.password,
                         onValueChange = { viewModel.password = it },
@@ -359,7 +353,6 @@ fun DoctorApplicationScreen(
                 }
             }
 
-            // Specialization card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -392,7 +385,6 @@ fun DoctorApplicationScreen(
                 }
             }
 
-            // Professional inf card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -465,7 +457,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
-                    // Years of experience
                     OutlinedTextField(
                         value = viewModel.yearsOfExperience,
                         onValueChange = { viewModel.yearsOfExperience = it },
@@ -488,7 +479,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.013f)))
 
-                    // Workplace
                     OutlinedTextField(
                         value = viewModel.currentWorkplace,
                         onValueChange = { viewModel.currentWorkplace = it },
@@ -504,7 +494,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.031f)))
 
-                    // Phone
                     OutlinedTextField(
                         value = viewModel.phoneNumber,
                         onValueChange = { viewModel.phoneNumber = it },
@@ -529,7 +518,6 @@ fun DoctorApplicationScreen(
                     )
                 }
             }
-            // Address inf card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -692,7 +680,6 @@ fun DoctorApplicationScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    // Step indicator
                     Text(
                         text = "Step ${viewModel.currentStep} of ${viewModel.totalSteps}",
                         style = MaterialTheme.typography.bodySmall,
@@ -701,7 +688,6 @@ fun DoctorApplicationScreen(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
-                    // Linear progress with percentage
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         LinearProgressIndicator(
                             progress = { viewModel.progress },
@@ -750,7 +736,6 @@ fun DoctorApplicationScreen(
                         vertical = dimens.h(0.026f)
                     )
                 ) {
-                    // Success icon
                     Box(
                         modifier = Modifier
                             .size(dimens.w(0.195f))
@@ -913,7 +898,6 @@ fun FileUploadSection(
                 contentScale = ContentScale.Crop
             )
 
-            // Remove file button
             OutlinedButton(
                 onClick = { onFileSelected(null) },
                 modifier = Modifier

@@ -1,6 +1,8 @@
 package com.example.ladycure.presentation.applications
 
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,12 +21,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
-class DoctorApplicationViewModel(
-    private val authRepository: AuthRepository = AuthRepository(),
-    private val appRepo: ApplicationRepository = ApplicationRepository(),
-    private val storageRepo: StorageRepository = StorageRepository()
+@HiltViewModel
+class DoctorApplicationViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val appRepo: ApplicationRepository,
+    private val storageRepo: StorageRepository
 ) : ViewModel() {
-    // Personal Information
     var firstName by mutableStateOf("")
     var lastName by mutableStateOf("")
     var email by mutableStateOf("")
@@ -33,7 +35,6 @@ class DoctorApplicationViewModel(
     var dateOfBirth by mutableStateOf(LocalDate.of(2000, 1, 1))
     var selectedDate by mutableStateOf(LocalDate.of(2000, 1, 1))
 
-    // Professional Information
     var speciality by mutableStateOf(Speciality.OTHER)
     var licenseNumber by mutableStateOf("")
     var yearsOfExperience by mutableStateOf("")
@@ -42,11 +43,9 @@ class DoctorApplicationViewModel(
     var address by mutableStateOf("")
     var city by mutableStateOf("")
 
-    // Document Uploads
     var licensePhotoUri by mutableStateOf<Uri?>(null)
     var diplomaPhotoUri by mutableStateOf<Uri?>(null)
 
-    // UI State
     var isLoading by mutableStateOf(false)
     var progress by mutableStateOf(0f)
     var progressText by mutableStateOf("0%")
@@ -69,7 +68,6 @@ class DoctorApplicationViewModel(
 
         viewModelScope.launch {
             try {
-                // 1. Create user account (step 1)
                 currentStep = 1
                 val authResult = authRepository.register(
                     email = email,
@@ -83,11 +81,9 @@ class DoctorApplicationViewModel(
                 if (authResult.isSuccess) {
                     val userId = authResult.getOrNull() ?: return@launch
 
-                    // Update progress (25%)
                     progress = 0.25f
                     progressText = "25%"
 
-                    // 2. Upload license (step 2)
                     currentStep = 2
                     val licensePhotoUrl = licensePhotoUri?.let { uri ->
                         storageRepo.uploadFile(
@@ -95,7 +91,6 @@ class DoctorApplicationViewModel(
                             uri = uri,
                             path = "doctor_verification/$userId/license.jpg",
                             onProgress = { uploaded, total ->
-                                // Calculate progress for this step (25-50% range)
                                 val stepProgress = uploaded.toFloat() / total.toFloat()
                                 progress = 0.25f + (0.25f * stepProgress)
                                 progressText = "${(progress * 100).toInt()}%"
@@ -103,11 +98,9 @@ class DoctorApplicationViewModel(
                         ).getOrNull()
                     } ?: ""
 
-                    // Update progress (50%)
                     progress = 0.5f
                     progressText = "50%"
 
-                    // 3. Upload diploma (step 3)
                     currentStep = 3
                     val diplomaPhotoUrl = diplomaPhotoUri?.let { uri ->
                         storageRepo.uploadFile(
@@ -115,7 +108,6 @@ class DoctorApplicationViewModel(
                             uri = uri,
                             path = "doctor_verification/$userId/diploma.jpg",
                             onProgress = { uploaded, total ->
-                                // Calculate progress for this step (50-75% range)
                                 val stepProgress = uploaded.toFloat() / total.toFloat()
                                 progress = 0.5f + (0.25f * stepProgress)
                                 progressText = "${(progress * 100).toInt()}%"
@@ -123,11 +115,9 @@ class DoctorApplicationViewModel(
                         ).getOrNull()
                     } ?: ""
 
-                    // Update progress (75%)
                     progress = 0.75f
                     progressText = "75%"
 
-                    // 4. Submit application (step 4)
                     currentStep = 4
                     val application = DoctorApplication(
                         userId = userId,
@@ -148,7 +138,6 @@ class DoctorApplicationViewModel(
                     )
                     appRepo.submitApplication(application)
 
-                    // Complete progress
                     progress = 1f
                     progressText = "100%"
 

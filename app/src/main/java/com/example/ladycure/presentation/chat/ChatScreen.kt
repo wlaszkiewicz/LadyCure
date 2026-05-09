@@ -80,6 +80,10 @@ import com.example.ladycure.utility.SnackbarController
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+
 
 data class ChatParticipantInfo(
     val uid: String,
@@ -111,9 +115,9 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
 
     val context = LocalContext.current
 
-    val authRepo = AuthRepository()
-    val userRepo = UserRepository()
-    val appointmentRepo = AppointmentRepository()
+    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    val userRepo = UserRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    val appointmentRepo = AppointmentRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     var filter by remember { mutableStateOf("All") }
     val filters = listOf("All", "Unread")
@@ -462,7 +466,7 @@ private fun ChatParticipantItem(
     modifier: Modifier = Modifier
 ) {
     val dimens = rememberResponsiveDimens()
-    val chatRepository = remember { ChatRepository() }
+    val chatRepository = remember { ChatRepository(FirebaseAuth.getInstance(), FirebaseStorage.getInstance(), FirebaseFirestore.getInstance()) }
     var currentUserId by remember { mutableStateOf<String?>(null) }
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }

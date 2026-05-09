@@ -16,10 +16,14 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AppointmentRepository {
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
+@Singleton
+class AppointmentRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
+) {
 
 
     suspend fun bookAppointment(
@@ -227,7 +231,6 @@ class AppointmentRepository {
                 newTime.plus(appointment.type.durationInMinutes.toLong(), ChronoUnit.MINUTES)
 
 
-            // Update the appointment with the new date and time
             val updatedAppointmentData = mapOf(
                 "dateTime" to Timestamp(
                     Date.from(
@@ -239,7 +242,6 @@ class AppointmentRepository {
 
             appointmentRef.update(updatedAppointmentData).await()
 
-            // get 15 minute slots that we can add back to the doctor's availability
             val againAvailableSlots = mutableSetOf<LocalTime>()
             var currentTime = oldStartTime
             while (currentTime.isBefore(oldEndTime)) {
@@ -328,7 +330,7 @@ class AppointmentRepository {
 
     suspend fun getPatientsFromAppointmentsWithUids(): Result<List<ChatParticipantInfo>> {
         return try {
-            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+            val currentUserId = auth.currentUser?.uid
                 ?: return Result.failure(IllegalStateException("User not authenticated"))
 
             val querySnapshot = firestore.collection("appointments")
@@ -359,7 +361,7 @@ class AppointmentRepository {
 
     suspend fun getDoctorsFromAppointmentsWithUids(): Result<List<ChatParticipantInfo>> {
         return try {
-            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+            val currentUserId = auth.currentUser?.uid
                 ?: return Result.failure(IllegalStateException("User not authenticated"))
 
             val querySnapshot = firestore.collection("appointments")
@@ -391,7 +393,7 @@ class AppointmentRepository {
 
     suspend fun getActiveChatParticipants(): Result<List<ChatParticipantInfo>> {
         return try {
-            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+            val currentUserId = auth.currentUser?.uid
                 ?: return Result.failure(IllegalStateException("User not authenticated"))
 
             val snapshot = firestore.collection("chats")
@@ -493,7 +495,7 @@ class AppointmentRepository {
     suspend fun getUpcomingAppointmentsSummaries(): Result<List<AppointmentSummary>> {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("Not logged in"))
-            val snapshot = FirebaseFirestore.getInstance()
+            val snapshot = firestore
                 .collection("users")
                 .document(userId)
                 .collection("appointmentSummaries")

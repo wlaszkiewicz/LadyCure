@@ -101,12 +101,10 @@ fun RatingBar(
     var manualRating by remember { mutableStateOf(rating.toString()) }
 
     Column(modifier = modifier) {
-        // Star rating and edit button
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Star rating interface
             Row {
                 for (i in 1..starCount) {
                     val starValue = i.toDouble()
@@ -166,7 +164,6 @@ fun RatingBar(
                 }
             }
 
-            // Rating value display
             Text(
                 text = "%.1f".format(rating),
                 style = MaterialTheme.typography.bodyMedium,
@@ -175,7 +172,6 @@ fun RatingBar(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Manual input toggle button
             IconButton(
                 onClick = {
                     showManualInput = !showManualInput
@@ -196,7 +192,6 @@ fun RatingBar(
             }
         }
 
-        // Manual input field (shown when enabled)
         if (showManualInput) {
             OutlinedTextField(
                 value = manualRating,

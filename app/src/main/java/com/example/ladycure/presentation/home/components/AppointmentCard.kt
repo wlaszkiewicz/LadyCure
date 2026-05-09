@@ -88,6 +88,9 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 
 @Composable
@@ -218,7 +221,7 @@ fun PatientAppointmentCard(
         }
     }
     val coroutineScope = rememberCoroutineScope()
-    val appointmentRepo = AppointmentRepository()
+    val appointmentRepo = AppointmentRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     var showCancelSuccessDialog by remember { mutableStateOf(false) }

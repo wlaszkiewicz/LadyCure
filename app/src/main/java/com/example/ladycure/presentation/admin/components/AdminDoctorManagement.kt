@@ -73,7 +73,6 @@ fun DoctorDetailsDialogSection(
     val dimens = rememberResponsiveDimens()
     Divider()
 
-    // Professional Information Section
     Text("Professional Information", style = MaterialTheme.typography.titleSmall)
     Column(
         modifier = Modifier
@@ -81,7 +80,6 @@ fun DoctorDetailsDialogSection(
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(dimens.h(0.013f))
     ) {
-        // Specialization Dropdown
         var expanded by remember { mutableStateOf(false) }
         Box {
             OutlinedTextField(
@@ -115,7 +113,6 @@ fun DoctorDetailsDialogSection(
             }
         }
 
-        // Location Information
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -147,7 +144,6 @@ fun DoctorDetailsDialogSection(
 
     Divider()
 
-    // Professional Details Section
     Text("Professional Details", style = MaterialTheme.typography.titleSmall)
     Column(
         modifier = Modifier
@@ -194,7 +190,6 @@ fun DoctorDetailsDialogSection(
             )
         }
 
-        // Rating with visual indicator
         Column {
             Text("Rating", style = MaterialTheme.typography.labelMedium)
             Row(
@@ -215,7 +210,6 @@ fun DoctorDetailsDialogSection(
 
     Divider()
 
-    // Languages Section
     Text("Languages", style = MaterialTheme.typography.titleSmall)
     Column(
         modifier = Modifier
@@ -294,7 +288,6 @@ fun DoctorDetailsDialogSection(
 
     Divider()
 
-    // Biography Section
     Text("Biography", style = MaterialTheme.typography.titleSmall)
     OutlinedTextField(
         value = doctor.bio,
@@ -384,7 +377,6 @@ private fun DoctorForm(
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(dimens.h(0.018f))
     ) {
-        // Personal Information Section
         Text("Personal Information", style = MaterialTheme.typography.titleSmall)
         Column(
             modifier = Modifier
@@ -439,7 +431,6 @@ private fun DoctorForm(
                 }
             )
 
-            // Add Edit Availability button
             Button(
                 onClick = onEditAvailabilityClick,
                 modifier = Modifier

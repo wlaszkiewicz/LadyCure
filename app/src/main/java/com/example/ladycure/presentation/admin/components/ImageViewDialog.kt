@@ -32,7 +32,6 @@ import coil.compose.AsyncImage
 import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 
-// Add this new composable function anywhere in your file
 @Composable
 fun ImageViewDialog(
     imageUrl: String,

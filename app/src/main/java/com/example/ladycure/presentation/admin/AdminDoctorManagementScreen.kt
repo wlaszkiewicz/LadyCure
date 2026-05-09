@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.ladycure.presentation.admin.components.AdminSearchBar
 import com.example.ladycure.presentation.admin.components.DoctorList
@@ -38,7 +38,7 @@ import com.example.ladycure.utility.SnackbarController
 fun AdminDoctorManagementScreen(
     snackbarController: SnackbarController,
     navController: NavController,
-    viewModel: AdminDoctorManagementViewModel = viewModel()
+    viewModel: AdminDoctorManagementViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     val errorMessage = viewModel.errorMessage

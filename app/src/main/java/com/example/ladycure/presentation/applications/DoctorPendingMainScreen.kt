@@ -66,7 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.ladycure.domain.model.ApplicationStatus
@@ -87,7 +87,7 @@ import java.time.format.DateTimeFormatter
 fun DoctorPendingMainScreen(
     navController: NavController,
     snackbarController: SnackbarController,
-    viewModel: DoctorPendingViewModel = viewModel()
+    viewModel: DoctorPendingViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     val applicationData by viewModel.applicationData.collectAsState()
@@ -103,7 +103,6 @@ fun DoctorPendingMainScreen(
     }
 
     if (applicationData == null) {
-        // Show loading or error state
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -124,7 +123,6 @@ fun DoctorPendingMainScreen(
                 .padding(horizontal = dimens.w(0.039f), vertical = dimens.h(0.017f))
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,7 +183,6 @@ fun DoctorPendingMainScreen(
     }
 
     if (showLogoutConfirmation) {
-        // Show logout confirmation dialog
         AlertDialog(
             onDismissRequest = { viewModel.dismissLogoutConfirmation() },
             title = { Text("Confirm Logout") },
@@ -369,7 +366,6 @@ private fun ApplicationPreviewCard(
 
             Spacer(modifier = Modifier.height(dimens.h(0.017f)))
 
-            // Doctor info section
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -409,12 +405,10 @@ private fun ApplicationPreviewCard(
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // First row with 2 items
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // License Number
                     GridItem(
                         icon = Icons.Default.Badge,
                         title = "License Number",
@@ -422,7 +416,6 @@ private fun ApplicationPreviewCard(
                         modifier = Modifier.weight(1f)
                     )
 
-                    // Experience
                     GridItem(
                         icon = Icons.Default.WorkHistory,
                         title = "Experience",
@@ -431,12 +424,10 @@ private fun ApplicationPreviewCard(
                     )
                 }
 
-                // Second row with 2 items
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Workplace
                     GridItem(
                         icon = Icons.Default.LocalHospital,
                         title = "Workplace",
@@ -456,7 +447,6 @@ private fun ApplicationPreviewCard(
 
             Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
-            // More subtle button
             OutlinedButton(
                 onClick = onViewDetails,
                 modifier = Modifier.fillMaxWidth(),
@@ -591,7 +581,6 @@ private fun FullApplicationDialog(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                // Header with close button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -644,7 +633,6 @@ private fun FullApplicationDialog(
                         .padding(horizontal = dimens.w(0.058f))
                         .weight(1f)
                 ) {
-                    // Personal Information Section
                     SectionHeader(
                         title = "Personal Information",
                         icon = Icons.Default.Person
@@ -680,7 +668,6 @@ private fun FullApplicationDialog(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
-                    // Professional Information Section
                     SectionHeader(
                         title = "Professional Information",
                         icon = Icons.Default.Work
@@ -711,7 +698,6 @@ private fun FullApplicationDialog(
 
                     Spacer(modifier = Modifier.height(dimens.h(0.026f)))
 
-                    // Documents Section
                     SectionHeader(
                         title = "Documents",
                         icon = Icons.Default.Description
@@ -719,7 +705,6 @@ private fun FullApplicationDialog(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // License Photo
                     DocumentPreviewItem(
                         title = "Medical License",
                         imageUrl = application.licensePhotoUrl,
@@ -728,7 +713,6 @@ private fun FullApplicationDialog(
                         viewModel = viewModel
                     )
 
-                    // Diploma
                     DocumentPreviewItem(
                         title = "Medical Diploma",
                         imageUrl = application.diplomaPhotoUrl,
@@ -738,7 +722,6 @@ private fun FullApplicationDialog(
                     )
                 }
 
-                // Footer with submission date
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -800,7 +783,7 @@ private fun DocumentPreviewItem(
     imageUrl: String,
     context: Context,
     modifier: Modifier = Modifier,
-    viewModel: DoctorPendingViewModel = viewModel()
+    viewModel: DoctorPendingViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
     Column(modifier = modifier) {

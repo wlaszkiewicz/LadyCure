@@ -47,7 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
 import coil.compose.SubcomposeAsyncImage
@@ -72,10 +72,9 @@ fun RescheduleScreen(
     appointmentId: String,
     navController: NavController,
     snackbarController: SnackbarController,
-    viewModel: RescheduleViewModel = viewModel()
+    viewModel: RescheduleViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val error = viewModel.error
     val appointment = viewModel.appointment
@@ -83,12 +82,10 @@ fun RescheduleScreen(
     val showRescheduleDialog = viewModel.showRescheduleDialog
     val showRescheduleSuccessDialog = viewModel.showRescheduleSuccessDialog
 
-    // Initialize data loading
     LaunchedEffect(appointmentId) {
         viewModel.loadAppointmentData(appointmentId)
     }
 
-    // Handle errors
     LaunchedEffect(error) {
         if (error.isNotEmpty()) {
             snackbarController.showMessage(error)
@@ -121,7 +118,6 @@ fun RescheduleScreen(
                 .background(DefaultBackground)
                 .padding(horizontal = dimens.w(16 / 411f), vertical = dimens.h(16 / 914f))
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -146,7 +142,6 @@ fun RescheduleScreen(
 
             Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-            // Doctor info
             AppointmentInfoHeader(
                 doctor = doctor,
                 appointment = appointment,
@@ -155,7 +150,6 @@ fun RescheduleScreen(
 
             Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-            // Date selection
             if (viewModel.availableDates.isNotEmpty()) {
                 Text(
                     text = "Select New Date",
@@ -172,7 +166,6 @@ fun RescheduleScreen(
                     modifier = Modifier.padding(bottom = dimens.h(24 / 914f))
                 )
 
-                // Time slots - only show if we have a selected date
                 viewModel.selectedDate?.let {
                     Text(
                         text = "Available Time Slots",
@@ -228,7 +221,6 @@ fun RescheduleScreen(
                 viewModel.rescheduleAppointment(
                     appointmentId = appointmentId,
                     onSuccess = {
-                        // Success handled in ViewModel
                     },
                     onError = { errorMessage ->
                         snackbarController.showMessage(errorMessage)
@@ -320,12 +312,10 @@ private fun AppointmentInfoHeader(
         Column(
             modifier = Modifier.padding(dimens.w(12 / 411f))
         ) {
-            // First row - Doctor and service
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Doctor avatar
                 Box(
                     modifier = Modifier
                         .size(dimens.w(50 / 411f))
@@ -369,7 +359,6 @@ private fun AppointmentInfoHeader(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Doctor name and speciality
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -388,7 +377,6 @@ private fun AppointmentInfoHeader(
                     )
                 }
 
-                // Service icon
                 Icon(
                     painter = painterResource(speciality.icon),
                     contentDescription = "Service",
@@ -399,12 +387,10 @@ private fun AppointmentInfoHeader(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Second row - Service details and time
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Service name and duration
                 Text(
                     text = "${appointment.type.displayName} • ${appointment.type.durationInMinutes}min",
                     style = MaterialTheme.typography.bodySmall,
@@ -412,7 +398,6 @@ private fun AppointmentInfoHeader(
                     color = DefaultOnPrimary
                 )
 
-                // Price
                 Text(
                     text = "$${"%.2f".format(appointment.price)}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -423,7 +408,6 @@ private fun AppointmentInfoHeader(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Third row - Date and time
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -490,7 +474,6 @@ fun RescheduleSuccessDialog(
                     vertical = dimens.h(24 / 914f)
                 )
             ) {
-                // Celebration icon
                 Box(
                     modifier = Modifier
                         .size(dimens.w(100 / 411f))
@@ -509,7 +492,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
 
-                // Title with emoji
                 Text(
                     text = "Rescheduled Successfully!",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -521,7 +503,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-                // New appointment details card
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = BabyBlue.copy(alpha = 0.05f),
@@ -562,7 +543,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-                // Additional message
                 Text(
                     text = "We've sent a confirmation to your email. You can view all your appointments in the 'My Appointments' section.",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -574,7 +554,6 @@ fun RescheduleSuccessDialog(
 
                 Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
 
-                // Action button
                 OutlinedButton(
                     onClick = onViewAppointments,
                     shape = RoundedCornerShape(14.dp),
@@ -630,7 +609,6 @@ private fun RescheduleConfirmationDialog(
                     modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
                 )
 
-                // Current appointment
                 Text(
                     text = "Current Appointment",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -699,7 +677,6 @@ private fun RescheduleConfirmationDialog(
                     }
                 }
 
-                // Arrow icon
                 Icon(
                     imageVector = Icons.Default.ArrowDownward,
                     contentDescription = "Reschedule to",
@@ -710,7 +687,6 @@ private fun RescheduleConfirmationDialog(
                         .padding(vertical = 8.dp)
                 )
 
-                // New appointment
                 Text(
                     text = "New Appointment",
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -779,7 +755,6 @@ private fun RescheduleConfirmationDialog(
                     }
                 }
 
-                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimens.w(12 / 411f))

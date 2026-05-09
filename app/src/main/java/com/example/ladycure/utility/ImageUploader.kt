@@ -18,6 +18,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import com.example.ladycure.data.repository.AuthRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.tasks.await
@@ -26,7 +28,7 @@ import java.util.UUID
 class ImageUploader(private val context: Context) {
     private val storage: FirebaseStorage = FirebaseStorage.getInstance()
     private val storageRef: StorageReference = storage.reference
-    private val authRepo: AuthRepository = AuthRepository()
+    private val authRepo: AuthRepository = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
     suspend fun uploadImage(uri: Uri, userId: String): Result<String> {
         return try {

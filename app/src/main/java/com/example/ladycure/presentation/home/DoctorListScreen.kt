@@ -75,6 +75,9 @@ import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.YellowOrange
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @Composable
 fun DoctorsListScreen(
@@ -83,7 +86,7 @@ fun DoctorsListScreen(
     snackbarController: SnackbarController
 ) {
     val dimens = rememberResponsiveDimens()
-    val doctorRepo = DoctorRepository()
+    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     val doctors = remember { mutableStateOf<List<Doctor>>(emptyList()) }
     var selectedDoctor = remember { mutableStateOf<Doctor?>(null) }
 
@@ -344,12 +347,10 @@ fun DoctorInfoCard(
         Column(
             modifier = Modifier.padding(dimens.w(16 / 411f))
         ) {
-            // Header row with image and basic info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Doctor image
                 if (doctor.profilePictureUrl.isEmpty()) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
@@ -385,7 +386,6 @@ fun DoctorInfoCard(
 
                 Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
-                // Doctor basic info
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -405,7 +405,6 @@ fun DoctorInfoCard(
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
                     )
 
-                    // Rating
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -429,9 +428,7 @@ fun DoctorInfoCard(
 
             Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
-            // Doctor details section
             Column {
-                // Experience
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -455,7 +452,6 @@ fun DoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Address
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -479,7 +475,6 @@ fun DoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Languages
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -504,7 +499,6 @@ fun DoctorInfoCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Bio (collapsible)
             var expanded by remember { mutableStateOf(false) }
             Column {
                 Row(
@@ -615,7 +609,6 @@ private fun ExpandedDoctorInfoCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Doctor image
             if (doctor.profilePictureUrl.isEmpty()) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
@@ -650,14 +643,12 @@ private fun ExpandedDoctorInfoCard(
 
             Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-            // Header row with image and basic info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
 
 
-                // Doctor basic info
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -677,7 +668,6 @@ private fun ExpandedDoctorInfoCard(
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
                     )
 
-                    // Rating
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -701,9 +691,7 @@ private fun ExpandedDoctorInfoCard(
 
             Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
-            // Doctor details section
             Column {
-                // Experience
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -727,7 +715,6 @@ private fun ExpandedDoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Address
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -751,7 +738,6 @@ private fun ExpandedDoctorInfoCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Languages
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

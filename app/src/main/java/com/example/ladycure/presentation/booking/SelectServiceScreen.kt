@@ -78,6 +78,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+
 
 @Composable
 fun SelectServiceScreen(
@@ -90,8 +94,8 @@ fun SelectServiceScreen(
     val dimens = rememberResponsiveDimens()
     var doctor by remember { mutableStateOf<Doctor?>(null) }
     var speciality by remember { mutableStateOf<Speciality?>(speciality) }
-    val referralRepo = StorageRepository()
-    val doctorRepo = DoctorRepository()
+    val referralRepo = StorageRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance(), FirebaseStorage.getInstance())
+    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedService by remember { mutableStateOf<AppointmentType?>(null) }
 
@@ -238,7 +242,6 @@ fun SelectServiceScreen(
                 modifier = Modifier.padding(horizontal = dimens.w(16 / 411f), vertical = 4.dp)
             )
 
-            // Services list
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -522,7 +525,6 @@ fun ServiceCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Price badge
                 Text(
                     text = "$${service.price}",
                     style = MaterialTheme.typography.titleMedium,
@@ -537,7 +539,6 @@ fun ServiceCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Duration and referral info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -572,7 +573,6 @@ fun ServiceCard(
                 }
             }
 
-            // Additional info
             Text(
                 text = service.additionalInfo,
                 style = MaterialTheme.typography.bodyMedium,
@@ -580,7 +580,6 @@ fun ServiceCard(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Preparation instructions (collapsible)
             var showPreparation by remember { mutableStateOf(false) }
             Column {
                 Row(
@@ -616,7 +615,6 @@ fun ServiceCard(
 
             Spacer(modifier = Modifier.height(dimens.h(12 / 914f)))
 
-            // Book button
             Button(
                 onClick = onClick,
                 modifier = Modifier.fillMaxWidth(),
@@ -655,7 +653,6 @@ fun ReferralRequiredDialog(
                     vertical = dimens.h(24 / 914f)
                 )
             ) {
-                // Header with icon
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(bottom = dimens.h(16 / 914f))
@@ -675,7 +672,6 @@ fun ReferralRequiredDialog(
                     )
                 }
 
-                // Content
                 Column(
                     modifier = Modifier.padding(bottom = dimens.h(24 / 914f))
                 ) {
@@ -691,7 +687,6 @@ fun ReferralRequiredDialog(
                     )
                 }
 
-                // Action buttons
                 Column {
                     Button(
                         onClick = onUploadReferral,

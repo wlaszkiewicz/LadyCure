@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.booking
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,9 +18,10 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class AppointmentViewModel(
-    private val userRepo: UserRepository = UserRepository(),
-    val appointmentRepo: AppointmentRepository = AppointmentRepository()
+@HiltViewModel
+class AppointmentViewModel @Inject constructor(
+    private val userRepo: UserRepository,
+    val appointmentRepo: AppointmentRepository
 ) : ViewModel() {
 
     private var loadedPastMonths = mutableSetOf<String>()
@@ -36,7 +39,6 @@ class AppointmentViewModel(
     var showEditStatusDialog by mutableStateOf(false)
         private set
 
-    // Filter state variables - now using lists for multiple selections
     var showFilters by mutableStateOf(false)
         private set
     var selectedSpecializations by mutableStateOf<List<String>>(emptyList())
@@ -67,7 +69,6 @@ class AppointmentViewModel(
                 if (roleResult.isSuccess) {
                     role = roleResult.getOrNull()
 
-                    // Load upcoming appointments
                     val upcomingResult = appointmentRepo.getUpcomingAppointmentsSummaries()
                     if (upcomingResult.isSuccess) {
                         futureAppointments = upcomingResult.getOrNull() ?: emptyList()
@@ -318,7 +319,6 @@ class AppointmentViewModel(
             }
         }
 
-    // Computed properties for filter options
     val allSpecializations: List<String>
         get() = (futureAppointments + pastAppointments).map { it.enumType.speciality }.distinct()
 

@@ -27,7 +27,6 @@ fun AdminAvailabilityListScreen(
             .fillMaxSize()
             .background(DefaultBackground)
     ) {
-        // Header with back navigation
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -37,7 +36,6 @@ fun AdminAvailabilityListScreen(
 
         }
 
-        // Reuse the existing AvailabilityListScreen but with admin context
         AvailabilityListScreen(
             navController = navController,
             snackbarController = snackbarController,

@@ -1,12 +1,15 @@
 package com.example.ladycure.presentation.chat
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ladycure.data.repository.ChatRepository
 import kotlinx.coroutines.launch
 
-class ChatViewModel(private val chatRepository: ChatRepository) : ViewModel() {
+@HiltViewModel
+class ChatViewModel @Inject constructor(private val chatRepository: ChatRepository) : ViewModel() {
 
     fun initializeChat(chatId: String, participants: List<String>) {
         viewModelScope.launch {

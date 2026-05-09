@@ -70,7 +70,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material3.Text
 import coil.compose.SubcomposeAsyncImage
@@ -98,21 +98,18 @@ fun BookAppointmentScreen(
     city: String,
     selectedService: AppointmentType,
     referralId: String? = null,
-    viewModel: BookingViewModel = viewModel()
+    viewModel: BookingViewModel = hiltViewModel()
 ) {
     val selectedSpeciality = Speciality.fromDisplayName(selectedService.speciality)
 
-    // Collect state from ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val showDoctorsForSlot = viewModel.showDoctorsForSlot
 
-    // Initialize data loading
     LaunchedEffect(selectedSpeciality) {
         viewModel.loadDoctorsBySpeciality(selectedSpeciality, city)
     }
 
-    // Handle errors
     LaunchedEffect(errorMessage) {
         errorMessage?.let { err ->
             snackbarController?.showMessage(err)
@@ -125,7 +122,6 @@ fun BookAppointmentScreen(
             .fillMaxSize()
             .background(DefaultBackground)
     ) {
-        // Header
         AppointmentHeader(
             showDoctorsForSlot = showDoctorsForSlot,
             onBackClick = {
@@ -439,7 +435,6 @@ private fun SelectedTimeInfo(
                 }
             }
 
-            // Change button with icon
             TextButton(
                 onClick = onBackClick,
                 colors = ButtonDefaults.textButtonColors(
@@ -473,7 +468,6 @@ private fun rememberRippleIndication(): Indication {
 @Composable
 private fun EmptyDoctorsView() {
     val dimens = rememberResponsiveDimens()
-    // Technically, this should never happen if the filtering logic is correct but you never know so its here just in case
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -523,12 +517,10 @@ fun DoctorCard(
                 vertical = dimens.h(16 / 914f)
             )
         ) {
-            // Header row with image and basic info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Doctor image
                 if (doctor.profilePictureUrl.isEmpty()) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
@@ -563,7 +555,6 @@ fun DoctorCard(
 
                 Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
 
-                // Doctor basic info
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -576,7 +567,6 @@ fun DoctorCard(
                         color = DefaultOnPrimary
                     )
 
-                    // Rating and experience in one line
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = 2.dp)
@@ -607,7 +597,6 @@ fun DoctorCard(
                         )
                     }
 
-                    // Languages in one line
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = 4.dp)
@@ -657,7 +646,6 @@ fun DoctorCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Bio (collapsible)
             var expanded by remember { mutableStateOf(false) }
             Column {
                 Row(

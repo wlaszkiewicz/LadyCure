@@ -33,6 +33,9 @@ import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
 import com.example.ladycure.ui.theme.DefaultPrimary
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 sealed class Screen(
     val route: String,
@@ -90,10 +93,9 @@ sealed class Screen(
 
 @Composable
 fun BottomNavBar(navController: NavHostController) {
-    val userRepo = UserRepository()
+    val userRepo = UserRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
     val userRole = remember { mutableStateOf<String?>(null) }
 
-    // Fetch user role
     LaunchedEffect(Unit) {
         val result = userRepo.getUserRole()
         if (result.isSuccess) {
@@ -101,7 +103,6 @@ fun BottomNavBar(navController: NavHostController) {
         }
     }
 
-    // Filter screens based on allowed roles
     val visibleItems = remember(userRole.value) {
         Screen.allScreens.filter { screen ->
             screen.allowedRoles.contains(userRole.value)

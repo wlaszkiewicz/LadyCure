@@ -1,5 +1,7 @@
 package com.example.ladycure.presentation.welcome
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
@@ -22,20 +24,19 @@ import com.google.firebase.auth.auth
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 
-class WelcomeViewModel(
+@HiltViewModel
+class WelcomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
-    // States
     var isLoading by mutableStateOf(true)
     var currentUser by mutableStateOf<FirebaseUser?>(null)
     var userRole by mutableStateOf<String?>(null)
     var showBiometricError by mutableStateOf(false)
     var showPasswordDialog by mutableStateOf(false)
     var password by mutableStateOf("")
-    var authenticationSuccess by mutableStateOf(false) // New state
+    var authenticationSuccess by mutableStateOf(false)
 
-    // Biometric
     private lateinit var biometricPrompt: BiometricPrompt
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
 
