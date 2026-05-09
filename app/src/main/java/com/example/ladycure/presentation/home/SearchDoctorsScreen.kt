@@ -31,10 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,8 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.booking.DoctorCard
@@ -60,47 +56,20 @@ import com.example.ladycure.ui.theme.LavenderBlush
 import com.example.ladycure.ui.theme.LightGoldenrod
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 @Composable
-fun SearchDoctorsScreen(navController: NavHostController, snackbarController: SnackbarController) {
+fun SearchDoctorsScreen(
+    navController: NavHostController,
+    snackbarController: SnackbarController,
+    viewModel: SearchDoctorsViewModel = hiltViewModel()
+) {
     val dimens = rememberResponsiveDimens()
-    val searchQuery = remember { mutableStateOf("") }
-    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    var allDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
-    var error by remember { mutableStateOf("") }
-    var filteredDoctors by remember { mutableStateOf(emptyList<Doctor>()) }
-    LaunchedEffect(Unit) {
-        val result = doctorRepo.getDoctors()
-        if (result.isSuccess) {
-            allDoctors = result.getOrNull()!!
-        } else {
-            error = result.exceptionOrNull()?.message ?: "Unknown error"
-        }
-    }
 
-    LaunchedEffect(error) {
-        if (error.isNotEmpty()) {
-            snackbarController.showMessage(
-                message = error,
-            )
-        }
-    }
-
-    LaunchedEffect(searchQuery.value) {
-        val queryWords = searchQuery.value.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
-        filteredDoctors = if (queryWords.isNotEmpty()) {
-            allDoctors.filter { doctor ->
-                queryWords.all { word ->
-                    doctor.name.contains(word, ignoreCase = true) ||
-                            doctor.surname.contains(word, ignoreCase = true) ||
-                            doctor.speciality.displayName.contains(word, ignoreCase = true)
-                }
-            }
-        } else {
-            allDoctors
+    LaunchedEffect(viewModel.error) {
+        if (viewModel.error.isNotEmpty()) {
+            snackbarController.showMessage(message = viewModel.error)
+            viewModel.clearError()
         }
     }
 
@@ -137,19 +106,19 @@ fun SearchDoctorsScreen(navController: NavHostController, snackbarController: Sn
             verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
         ) {
             SearchBar(
-                value = searchQuery.value,
-                onValueChange = { searchQuery.value = it },
+                value = viewModel.searchQuery,
+                onValueChange = { viewModel.updateSearchQuery(it) },
                 modifier = Modifier.padding(horizontal = dimens.w(16 / 411f))
             )
-            if (searchQuery.value.isNotEmpty()) {
-                if (filteredDoctors.isNotEmpty()) {
+            if (viewModel.searchQuery.isNotEmpty()) {
+                if (viewModel.filteredDoctors.isNotEmpty()) {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = dimens.w(16 / 411f))
                     ) {
-                        items(filteredDoctors) { doctor ->
+                        items(viewModel.filteredDoctors) { doctor ->
                             DoctorCard(
                                 doctor = doctor,
                                 onSelect = {

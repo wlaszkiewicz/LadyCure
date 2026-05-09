@@ -64,9 +64,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.presentation.booking.RatingBar
 import com.example.ladycure.ui.theme.DefaultBackground
@@ -75,40 +75,38 @@ import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.YellowOrange
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 @Composable
 fun DoctorsListScreen(
     navController: NavHostController,
     speciality: String,
-    snackbarController: SnackbarController
+    snackbarController: SnackbarController,
+    viewModel: DoctorListViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
-    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val doctors = remember { mutableStateOf<List<Doctor>>(emptyList()) }
     var selectedDoctor = remember { mutableStateOf<Doctor?>(null) }
-
     var showSwipingScreen by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(true) }
-    var swipeableDoctors by remember { mutableStateOf(doctors.value) }
+    var swipeableDoctors by remember { mutableStateOf<List<Doctor>>(emptyList()) }
 
     LaunchedEffect(speciality) {
-        val result = doctorRepo.getDoctorsBySpeciality(speciality)
-        if (result.isSuccess) {
-            doctors.value = result.getOrDefault(emptyList())
-            isLoading = false
-            swipeableDoctors = doctors.value.shuffled()
-        } else {
-            isLoading = false
-            snackbarController.showMessage(
-                message = "Failed to load doctors: ${result.exceptionOrNull()?.message}",
-            )
+        viewModel.loadDoctors(speciality)
+    }
+
+    LaunchedEffect(viewModel.doctors) {
+        if (viewModel.doctors.isNotEmpty()) {
+            swipeableDoctors = viewModel.doctors.shuffled()
         }
     }
 
-    if (isLoading) {
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let {
+            snackbarController.showMessage(it)
+            viewModel.clearError()
+        }
+    }
+
+    if (viewModel.isLoading) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -151,7 +149,7 @@ fun DoctorsListScreen(
                 )
             }
 
-            if (doctors.value.isEmpty()) {
+            if (viewModel.doctors.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -166,7 +164,7 @@ fun DoctorsListScreen(
                 OutlinedButton(
                     onClick = {
                         showSwipingScreen = !showSwipingScreen; swipeableDoctors =
-                        doctors.value.shuffled()
+                        viewModel.doctors.shuffled()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -290,7 +288,7 @@ fun DoctorsListScreen(
                                 vertical = dimens.h(20 / 914f)
                             ),
                         onClick = {
-                            swipeableDoctors = doctors.value.shuffled()
+                            swipeableDoctors = viewModel.doctors.shuffled()
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DefaultPrimary.copy(alpha = 0.7f),
@@ -313,7 +311,7 @@ fun DoctorsListScreen(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(dimens.h(16 / 914f))
                 ) {
-                    items(doctors.value) { doctor ->
+                    items(viewModel.doctors) { doctor ->
                         DoctorInfoCard(doctor, onSelect = {
                             selectedDoctor.value = doctor
                             navController.navigate("services/${selectedDoctor.value?.id}")

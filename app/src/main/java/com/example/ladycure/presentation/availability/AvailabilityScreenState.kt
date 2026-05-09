@@ -48,9 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.example.ladycure.data.repository.AuthRepository
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.DoctorAvailability
 import com.example.ladycure.presentation.availability.components.AvailabilityLegend
 import com.example.ladycure.presentation.availability.components.CalendarHeader
@@ -70,8 +69,6 @@ import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 data class AvailabilityScreenState(
@@ -385,65 +382,36 @@ fun BaseAvailabilityScreen(
 fun SetAvailabilityScreen(
     navController: NavHostController,
     snackbarController: SnackbarController,
-    authRepo: AuthRepository = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()),
-    doctorRepo: DoctorRepository = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()),
-    adminEditingDoctorId: String? = null // Add this new optional parameter
+    adminEditingDoctorId: String? = null,
+    viewModel: SetAvailabilityViewModel = hiltViewModel()
 ) {
-    val state = remember { mutableStateOf(AvailabilityScreenState()) }
-    val coroutineScope = rememberCoroutineScope()
+    val effectiveDoctorId = adminEditingDoctorId ?: viewModel.getCurrentUserId().toString()
 
-    val effectiveDoctorId = adminEditingDoctorId ?: authRepo.getCurrentUserId().toString()
-
-    LaunchedEffect(effectiveDoctorId) { // Relaunch if effectiveDoctorId changes
-        if (effectiveDoctorId == "null" || effectiveDoctorId.isBlank()) { // Handle null and blank string case
+    LaunchedEffect(effectiveDoctorId) {
+        if (effectiveDoctorId == "null" || effectiveDoctorId.isBlank()) {
             snackbarController.showMessage("Doctor ID is missing for availability management.")
             return@LaunchedEffect
         }
-        state.value = state.value.copy(isLoading = true)
-        try {
-            val result =
-                doctorRepo.getDoctorAvailability(effectiveDoctorId) // Use effectiveDoctorId
-            if (result.isSuccess) {
-                val availabilities = result.getOrThrow()
+        viewModel.loadAvailabilities(effectiveDoctorId)
+    }
 
-                state.value = state.value.copy(existingAvailabilities = availabilities)
-            } else {
-                snackbarController.showMessage("Error loading existing availabilities")
-            }
-        } catch (e: Exception) {
-            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
-        } finally {
-            state.value = state.value.copy(isLoading = false)
-        }
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let { snackbarController.showMessage(it); viewModel.clearError() }
+    }
+
+    LaunchedEffect(viewModel.saveSuccess) {
+        viewModel.saveSuccess?.let { snackbarController.showMessage(it); viewModel.clearSaveSuccess() }
     }
 
     BaseAvailabilityScreen(
         navController = navController,
         snackbarController = snackbarController,
-        state = state.value,
-        onStateChange = { newState -> state.value = newState },
+        state = viewModel.state,
+        onStateChange = { viewModel.updateState(it) },
         onSave = { dates, startTime, endTime ->
-            coroutineScope.launch {
-                state.value = state.value.copy(isLoading = true)
-                try {
-                    doctorRepo.updateAvailabilities(
-                        dates = dates.toList(),
-                        startTime = startTime,
-                        endTime = endTime,
-                        doctorId = effectiveDoctorId
-                    )
-                    snackbarController.showMessage("Availability saved successfully!")
-                    val newAvailabilities =
-                        doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
-                    state.value = state.value.copy(existingAvailabilities = newAvailabilities)
-                } catch (e: Exception) {
-                    snackbarController.showMessage("Error saving availability: ${e.message}")
-                } finally {
-                    state.value = state.value.copy(isLoading = false) // Reset loading state
-                }
-            }
+            viewModel.saveAvailabilities(effectiveDoctorId, dates, startTime, endTime)
         },
-        headerTitle = if (adminEditingDoctorId != null) "Edit Doctor Availability" else "Set Availability", // Dynamic header
+        headerTitle = if (adminEditingDoctorId != null) "Edit Doctor Availability" else "Set Availability",
         onViewAvailabilityClick = {
             if (adminEditingDoctorId != null) {
                 navController.navigate("adminAvailabilityList/$effectiveDoctorId")
@@ -455,71 +423,40 @@ fun SetAvailabilityScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-
 @Composable
 fun SetAvailabilityScreenAdmin(
     navController: NavHostController,
     snackbarController: SnackbarController,
     doctorId: String,
-    doctorRepo: DoctorRepository = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    viewModel: SetAvailabilityViewModel = hiltViewModel()
 ) {
-    val state = remember { mutableStateOf(AvailabilityScreenState()) }
-    val coroutineScope = rememberCoroutineScope()
-
-    val effectiveDoctorId = doctorId
-
-    LaunchedEffect(effectiveDoctorId) {
-        if (effectiveDoctorId.isBlank()) {
+    LaunchedEffect(doctorId) {
+        if (doctorId.isBlank()) {
             snackbarController.showMessage("Doctor ID is missing for availability management.")
             return@LaunchedEffect
         }
+        viewModel.loadAvailabilities(doctorId)
+    }
 
-        state.value = state.value.copy(isLoading = true)
-        try {
-            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId)
-            if (result.isSuccess) {
-                val availabilities = result.getOrThrow()
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let { snackbarController.showMessage(it); viewModel.clearError() }
+    }
 
-                state.value = state.value.copy(existingAvailabilities = availabilities)
-            } else {
-                snackbarController.showMessage("Error loading existing availabilities")
-            }
-        } catch (e: Exception) {
-            snackbarController.showMessage("Error loading existing availabilities: ${e.message}")
-        } finally {
-            state.value = state.value.copy(isLoading = false)
-        }
+    LaunchedEffect(viewModel.saveSuccess) {
+        viewModel.saveSuccess?.let { snackbarController.showMessage(it); viewModel.clearSaveSuccess() }
     }
 
     BaseAvailabilityScreen(
         navController = navController,
         snackbarController = snackbarController,
-        state = state.value,
-        onStateChange = { newState -> state.value = newState },
+        state = viewModel.state,
+        onStateChange = { viewModel.updateState(it) },
         onSave = { dates, startTime, endTime ->
-            coroutineScope.launch {
-                state.value = state.value.copy(isLoading = true)
-                try {
-                    doctorRepo.updateAvailabilities(
-                        dates = dates.toList(),
-                        startTime = startTime,
-                        endTime = endTime,
-                        doctorId = effectiveDoctorId // Use the passed doctorId
-                    )
-                    snackbarController.showMessage("Availability saved successfully!")
-                    val newAvailabilities =
-                        doctorRepo.getDoctorAvailability(effectiveDoctorId).getOrThrow()
-                    state.value = state.value.copy(existingAvailabilities = newAvailabilities)
-                } catch (e: Exception) {
-                    snackbarController.showMessage("Error saving availability: ${e.message}")
-                } finally {
-                    state.value = state.value.copy(isLoading = false)
-                }
-            }
+            viewModel.saveAvailabilities(doctorId, dates, startTime, endTime)
         },
         headerTitle = "Edit Doctor Avail.",
         onViewAvailabilityClick = {
-            navController.navigate("adminAvailabilityList/$effectiveDoctorId")
+            navController.navigate("adminAvailabilityList/$doctorId")
         }
     )
 }

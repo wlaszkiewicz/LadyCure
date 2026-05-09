@@ -33,11 +33,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -51,8 +46,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.presentation.admin.SummaryCard
 import com.example.ladycure.presentation.admin.TimePeriod
 import com.example.ladycure.ui.theme.BabyBlue
@@ -62,9 +57,6 @@ import com.example.ladycure.ui.theme.Purple
 import com.example.ladycure.ui.theme.Yellow
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
-import kotlinx.coroutines.async
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 
@@ -86,54 +78,15 @@ fun getColorForAppointmentType(index: Int): Color {
 @Composable
 fun DoctorEarningsScreen(
     navController: NavController,
-    snackbarController: SnackbarController
+    snackbarController: SnackbarController,
+    viewModel: DoctorEarningsViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
-    val doctorRepo = remember { DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
-    val coroutineScope = rememberCoroutineScope()
 
-    var isLoading by remember { mutableStateOf(true) }
-    var earningsData by remember { mutableStateOf<List<Pair<String, Double>>>(emptyList()) }
-    var earningsByType by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
-    var totalEarnings by remember { mutableStateOf(0.0) }
-    var totalAppointments by remember { mutableStateOf(0) }
-    var thisMonthEarnings by remember { mutableStateOf(0.0) }
-    var mostPopularType by remember { mutableStateOf<Pair<String, Int>?>(null) }
-
-    var selectedTimePeriod by remember { mutableStateOf(TimePeriod.MONTHLY) }
-
-    LaunchedEffect(selectedTimePeriod) {
-        isLoading = true
-        try {
-            val earningsDeferred = coroutineScope.async {
-                doctorRepo.getEarningsData(selectedTimePeriod)
-            }
-            val earningsByTypeDeferred = coroutineScope.async {
-                doctorRepo.getEarningsByAppointmentType()
-            }
-
-            val statsDeferred = coroutineScope.async {
-                doctorRepo.getEarningsStats()
-            }
-            val popularTypeDeferred = coroutineScope.async {
-                doctorRepo.getMostPopularAppointmentType()
-            }
-
-            earningsData = earningsDeferred.await().getOrElse { emptyList() }
-            earningsByType = earningsByTypeDeferred.await().getOrElse { emptyMap() }
-
-            statsDeferred.await().getOrNull()?.let { stats ->
-                totalEarnings = stats["totalEarnings"] as? Double ?: 0.0
-                totalAppointments = stats["totalAppointments"] as? Int ?: 0
-                thisMonthEarnings = stats["thisMonthEarnings"] as? Double ?: 0.0
-            }
-
-            mostPopularType = popularTypeDeferred.await().getOrNull()
-
-        } catch (e: Exception) {
-            snackbarController.showMessage("Failed to load earnings: ${e.message}")
-        } finally {
-            isLoading = false
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let {
+            snackbarController.showMessage(it)
+            viewModel.clearError()
         }
     }
 
@@ -174,10 +127,10 @@ fun DoctorEarningsScreen(
         ) {
             TimePeriod.entries.forEach { period ->
                 OutlinedButton(
-                    onClick = { selectedTimePeriod = period },
+                    onClick = { viewModel.selectTimePeriod(period) },
                     modifier = Modifier.padding(end = 8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (selectedTimePeriod == period)
+                        containerColor = if (viewModel.selectedTimePeriod == period)
                             DefaultPrimary.copy(alpha = 0.2f)
                         else
                             Color.Transparent,
@@ -185,7 +138,7 @@ fun DoctorEarningsScreen(
                     ),
                     border = BorderStroke(
                         1.dp,
-                        if (selectedTimePeriod == period) DefaultPrimary else DefaultPrimary.copy(
+                        if (viewModel.selectedTimePeriod == period) DefaultPrimary else DefaultPrimary.copy(
                             alpha = 0.5f
                         )
                     )
@@ -195,7 +148,7 @@ fun DoctorEarningsScreen(
             }
         }
 
-        if (isLoading) {
+        if (viewModel.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = DefaultPrimary)
             }
@@ -215,19 +168,19 @@ fun DoctorEarningsScreen(
                 ) {
                     SummaryCard(
                         title = "Earnings this month",
-                        value = "$${thisMonthEarnings.toInt()}",
+                        value = "$${viewModel.thisMonthEarnings.toInt()}",
                         color = DefaultPrimary,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
                         title = "Total\nEarnings",
-                        value = "$${totalEarnings.toInt()}",
+                        value = "$${viewModel.totalEarnings.toInt()}",
                         color = BabyBlue,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryCard(
                         title = "Total Appointments",
-                        value = totalAppointments.toString(),
+                        value = viewModel.totalAppointments.toString(),
                         color = Yellow,
                         modifier = Modifier.weight(1f)
                     )
@@ -252,9 +205,9 @@ fun DoctorEarningsScreen(
                             ),
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        if (earningsData.isNotEmpty()) {
+                        if (viewModel.earningsData.isNotEmpty()) {
                             BarChart(
-                                data = earningsData.map { it.first to it.second.toInt() },
+                                data = viewModel.earningsData.map { it.first to it.second.toInt() },
                                 isCurrency = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -295,9 +248,9 @@ fun DoctorEarningsScreen(
                             ),
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        if (earningsByType.isNotEmpty()) {
+                        if (viewModel.earningsByType.isNotEmpty()) {
                             PieChart(
-                                data = earningsByType,
+                                data = viewModel.earningsByType,
                                 modifier = Modifier
                                     .fillMaxWidth()
                             )
@@ -329,10 +282,10 @@ fun DoctorEarningsScreen(
                             ),
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        if (earningsByType.isNotEmpty()) {
+                        if (viewModel.earningsByType.isNotEmpty()) {
                             val earningsByTypeList =
-                                earningsByType.map { it.key to it.value.toInt() }
-                            val totalEarningsByType = earningsByType.values.sum()
+                                viewModel.earningsByType.map { it.key to it.value.toInt() }
+                            val totalEarningsByType = viewModel.earningsByType.values.sum()
 
                             BarChart(
                                 data = earningsByTypeList,
@@ -361,7 +314,7 @@ fun DoctorEarningsScreen(
 
                 SummaryCard(
                     title = "Most Popular Appointment Type",
-                    value = mostPopularType?.let { "${it.first} (${it.second})" } ?: "N/A",
+                    value = viewModel.mostPopularType?.let { "${it.first} (${it.second})" } ?: "N/A",
                     color = Purple,
                     modifier = Modifier.fillMaxWidth()
                 )

@@ -67,6 +67,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -85,8 +87,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.ladycure.data.repository.ChatRepository
-import com.example.ladycure.data.repository.DoctorRepository
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Message
 import com.example.ladycure.presentation.booking.FileTooLargeDialog
@@ -96,15 +97,9 @@ import com.example.ladycure.ui.theme.DefaultOnPrimary
 import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.PdfUploader
-import com.google.firebase.Timestamp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -113,31 +108,20 @@ fun DoctorChatScreen(
     navController: NavController,
     otherUserId: String,
     otherUserName: String,
-    chatRepository: ChatRepository = ChatRepository(FirebaseAuth.getInstance(), FirebaseStorage.getInstance(), FirebaseFirestore.getInstance()),
-    chatViewModel: ChatViewModel = ChatViewModel(chatRepository),
-    doctorRepository: DoctorRepository = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()),
+    viewModel: DoctorChatViewModel = hiltViewModel(),
+    chatViewModel: ChatViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
-    val currentUserId = chatRepository.getCurrentUserId()
+    val currentUserId = viewModel.currentUserId
     val chatId = listOf(currentUserId, otherUserId).sorted().joinToString("_")
     val context = LocalContext.current
 
     var showFileTooLargeDialog by remember { mutableStateOf(false) }
-
     var messageText by remember { mutableStateOf("") }
     var attachmentUri by remember { mutableStateOf<Uri?>(null) }
-    var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
-    var isSending by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    var otherUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
-    var currentUserProfilePictureUrl by remember { mutableStateOf<String?>(null) }
-    var otherUserPhoneNumber by remember { mutableStateOf<String?>(null) }
-    var otherUserRole by remember { mutableStateOf<String?>(null) }
-
+    val scope = rememberCoroutineScope()
     var showDoctorProfile by remember { mutableStateOf(false) }
-    var currentDoctor by remember { mutableStateOf<Doctor?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -153,83 +137,51 @@ fun DoctorChatScreen(
 
     LaunchedEffect(chatId) {
         chatViewModel.initializeChat(chatId, listOf(currentUserId, otherUserId))
-        chatRepository.getMessages(chatId) { messageList ->
-            messages = messageList
-        }
-        otherUserProfilePictureUrl = chatRepository.getUserProfilePicture(otherUserId)
-        currentUserProfilePictureUrl = chatRepository.getUserProfilePicture(currentUserId)
+        viewModel.loadChatData(chatId, otherUserId)
+    }
 
-        chatRepository.getSpecificUserData(otherUserId).onSuccess { userData ->
-            otherUserPhoneNumber = userData?.get("phone") as? String
-            otherUserRole = userData?.get("role") as? String
-        }.onFailure { e ->
-            snackbarHostState.showSnackbar("Failed to load user data: ${e.message}")
+    LaunchedEffect(viewModel.error) {
+        if (viewModel.error != null) {
+            snackbarHostState.showSnackbar(viewModel.error!!)
+            viewModel.clearError()
         }
     }
 
-    fun fetchDoctorProfile() {
-        scope.launch {
-            val result = doctorRepository.getDoctors()
-            result.onSuccess { doctors ->
-                currentDoctor = doctors.find { it.id == otherUserId }
-                showDoctorProfile = true
-            }.onFailure {
-                snackbarHostState.showSnackbar("Failed to load doctor profile")
-            }
-        }
+    LaunchedEffect(viewModel.currentDoctor) {
+        if (viewModel.currentDoctor != null) showDoctorProfile = true
     }
 
     fun onProfileClick() {
-        if (currentDoctor != null) {
+        if (viewModel.currentDoctor != null) {
             showDoctorProfile = true
         } else {
-            fetchDoctorProfile()
+            viewModel.fetchDoctorProfile(otherUserId)
         }
     }
 
     fun sendMessage() {
         if (messageText.isNotEmpty() || attachmentUri != null) {
-            isSending = true
-            scope.launch {
-                try {
-                    val userName = chatRepository.getCurrentUserName()
-                    val attachmentFileName = if (attachmentUri != null) {
-                        context.contentResolver.query(attachmentUri!!, null, null, null, null)
-                            ?.use { cursor ->
-                                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                                cursor.moveToFirst()
-                                cursor.getString(nameIndex)
-                            } ?: "Attachment"
-                    } else null
-
-                    val attachmentMimeType = if (attachmentUri != null) {
-                        context.contentResolver.getType(attachmentUri!!)
-                    } else null
-
-                    val message = Message(
-                        sender = currentUserId,
-                        senderName = userName,
-                        recipient = otherUserId,
-                        text = messageText,
-                        timestamp = Timestamp.now(),
-                        attachmentUrl = if (attachmentUri != null) {
-                            chatRepository.uploadFile(attachmentUri!!)
-                        } else null,
-                        attachmentFileName = attachmentFileName,
-                        attachmentMimeType = attachmentMimeType
-                    )
-
-                    chatRepository.sendMessage(chatId, message)
-                    messageText = ""
-                    attachmentUri = null
-                } catch (e: Exception) {
-                    snackbarHostState.showSnackbar(
-                        "Message could not be sent: ${e.message}"
-                    )
-                } finally {
-                    isSending = false
-                }
-            }
+            val attachmentFileName = if (attachmentUri != null) {
+                context.contentResolver.query(attachmentUri!!, null, null, null, null)
+                    ?.use { cursor ->
+                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        cursor.moveToFirst()
+                        cursor.getString(nameIndex)
+                    } ?: "Attachment"
+            } else null
+            val attachmentMimeType = if (attachmentUri != null) {
+                context.contentResolver.getType(attachmentUri!!)
+            } else null
+            viewModel.sendMessage(
+                chatId = chatId,
+                text = messageText,
+                attachmentUri = attachmentUri,
+                attachmentFileName = attachmentFileName,
+                attachmentMimeType = attachmentMimeType,
+                otherUserId = otherUserId
+            )
+            messageText = ""
+            attachmentUri = null
         }
     }
 
@@ -268,9 +220,9 @@ fun DoctorChatScreen(
                             .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (otherUserProfilePictureUrl != null) {
+                        if (viewModel.otherUserProfilePictureUrl != null) {
                             AsyncImage(
-                                model = otherUserProfilePictureUrl,
+                                model = viewModel.otherUserProfilePictureUrl,
                                 contentDescription = "Other user profile picture",
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -316,18 +268,18 @@ fun DoctorChatScreen(
                             )
                         )
                         Text(
-                            text = otherUserRole?.capitalize(Locale.getDefault()) ?: "User",
+                            text = viewModel.otherUserRole?.capitalize(Locale.getDefault()) ?: "User",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = Color.White.copy(alpha = 0.8f)
                             )
                         )
                     }
 
-                    if (otherUserPhoneNumber != null) {
+                    if (viewModel.otherUserPhoneNumber != null) {
                         IconButton(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_DIAL).apply {
-                                    setData("tel:${otherUserPhoneNumber}".toUri())
+                                    setData("tel:${viewModel.otherUserPhoneNumber}".toUri())
                                 }
                                 if (intent.resolveActivity(context.packageManager) != null) {
                                     context.startActivity(intent)
@@ -369,7 +321,7 @@ fun DoctorChatScreen(
                     onAttachFile = {
                         filePickerLauncher.launch("*/*")
                     },
-                    isSending = isSending,
+                    isSending = viewModel.isSending,
                     hasAttachment = attachmentUri != null
                 )
 
@@ -401,11 +353,11 @@ fun DoctorChatScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)
             ) {
-                items(messages.reversed()) { message ->
+                items(viewModel.messages.reversed()) { message ->
                     val senderProfilePictureUrl = if (message.sender == currentUserId) {
-                        currentUserProfilePictureUrl
+                        viewModel.currentUserProfilePictureUrl
                     } else {
-                        otherUserProfilePictureUrl
+                        viewModel.otherUserProfilePictureUrl
                     }
                     ModernMessageBubble(
                         message = message,
@@ -416,13 +368,13 @@ fun DoctorChatScreen(
                 }
             }
         }
-        if (showDoctorProfile && currentDoctor != null) {
+        if (showDoctorProfile && viewModel.currentDoctor != null) {
             DoctorProfileDialog(
-                doctor = currentDoctor!!,
+                doctor = viewModel.currentDoctor!!,
                 onDismiss = { showDoctorProfile = false },
                 onBookAppointment = {
                     showDoctorProfile = false
-                    navController.navigate("services/${currentDoctor!!.id}")
+                    navController.navigate("services/${viewModel.currentDoctor!!.id}")
                 }
             )
         }

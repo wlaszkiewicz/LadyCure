@@ -67,22 +67,16 @@ import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
-import com.example.ladycure.data.repository.AppointmentRepository
-import com.example.ladycure.data.repository.AuthRepository
-import com.example.ladycure.data.repository.ChatRepository
-import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.domain.model.Role
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
 import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
+import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 
 
 data class ChatParticipantInfo(
@@ -100,78 +94,29 @@ data class ChatParticipantInfo(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(navController: NavHostController, snackbarController: SnackbarController?) {
+fun ChatScreen(
+    navController: NavHostController,
+    snackbarController: SnackbarController?,
+    viewModel: ChatListViewModel = hiltViewModel()
+) {
     val dimens = rememberResponsiveDimens()
-    var role by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-    var isLoadingAdditional by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf("") }
     var showParticipantsView by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
-
-    val activeParticipants = remember { mutableStateOf<List<ChatParticipantInfo>>(emptyList()) }
-    val allPossibleParticipants =
-        remember { mutableStateOf<List<ChatParticipantInfo>>(emptyList()) }
-
-    val context = LocalContext.current
-
-    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val userRepo = UserRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val appointmentRepo = AppointmentRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-
     var filter by remember { mutableStateOf("All") }
     val filters = listOf("All", "Unread")
     var searchQuery by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
-    val loadPossibleParticipants = remember(role) {
-        suspend {
-            isLoadingAdditional = true
-            try {
-                val result = if (Role.DOCTOR == Role.fromValue(role)) {
-                    appointmentRepo.getPatientsFromAppointmentsWithUids()
-                } else {
-                    appointmentRepo.getDoctorsFromAppointmentsWithUids()
-                }
-
-                if (result.isSuccess) {
-                    allPossibleParticipants.value = result.getOrNull()?.distinct() ?: emptyList()
-                } else {
-                    error = result.exceptionOrNull()?.message ?: "Failed to load participants"
-                }
-            } finally {
-                isLoadingAdditional = false
-            }
+    LaunchedEffect(showParticipantsView, viewModel.role) {
+        if (showParticipantsView && viewModel.allPossibleParticipants.isEmpty()) {
+            viewModel.loadPossibleParticipants()
         }
     }
 
-    LaunchedEffect(Unit) {
-        val roleResult = userRepo.getUserRole()
-        if (roleResult.isSuccess) {
-            role = roleResult.getOrNull() ?: ""
-        } else {
-            error = roleResult.exceptionOrNull()?.message ?: "Unknown error"
-        }
-        val activeResult = appointmentRepo.getActiveChatParticipants()
-        if (activeResult.isSuccess) {
-            activeParticipants.value = activeResult.getOrNull()
-                ?.sortedByDescending { it.lastMessageTime ?: 0 }
-                ?: emptyList()
-        } else {
-            error = activeResult.exceptionOrNull()?.message ?: "Failed to load active chats"
-        }
-        isLoading = false
-    }
-
-    LaunchedEffect(showParticipantsView, role) {
-        if (showParticipantsView && allPossibleParticipants.value.isEmpty() && !isLoadingAdditional) {
-            loadPossibleParticipants()
-        }
-    }
-
-    LaunchedEffect(error) {
-        if (error.isNotEmpty()) {
-            snackbarController?.showMessage(error)
-            error = ""
+    LaunchedEffect(viewModel.error) {
+        if (viewModel.error.isNotEmpty()) {
+            snackbarController?.showMessage(viewModel.error)
+            viewModel.clearError()
         }
     }
 
@@ -206,7 +151,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                                 )
                             )
                             Text(
-                                text = if (Role.USER == Role.fromValue(role))
+                                text = if (Role.USER == Role.fromValue(viewModel.role))
                                     "Connect with medical professionals"
                                 else "Contact your patients",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -239,7 +184,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             }
 
             when {
-                isLoading -> {
+                viewModel.isLoading -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -250,11 +195,11 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
 
                 showParticipantsView -> {
                     ParticipantsFullScreenView(
-                        role = role,
-                        participants = allPossibleParticipants.value.filter { allParticipant ->
-                            activeParticipants.value.none { it.uid == allParticipant.uid }
+                        role = viewModel.role,
+                        participants = viewModel.allPossibleParticipants.filter { allParticipant ->
+                            viewModel.activeParticipants.none { it.uid == allParticipant.uid }
                         },
-                        isLoading = isLoadingAdditional,
+                        isLoading = viewModel.isLoadingAdditional,
                         onBack = { showParticipantsView = false },
                         onParticipantSelected = { participant ->
                             showParticipantsView = false
@@ -265,8 +210,8 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
                     )
                 }
 
-                activeParticipants.value.isNotEmpty() -> {
-                    val filteredParticipants = activeParticipants.value
+                viewModel.activeParticipants.isNotEmpty() -> {
+                    val filteredParticipants = viewModel.activeParticipants
                         .filter { participant ->
                             (searchQuery.isEmpty() ||
                                     participant.fullName.contains(
@@ -318,7 +263,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
 
                 else -> {
                     InitialChatView(
-                        role = role,
+                        role = viewModel.role,
                         onFindDoctorsClick = { showParticipantsView = true },
                         onUrgentHelpClick = { showSupportDialog = true },
                         modifier = Modifier.weight(1f)
@@ -327,7 +272,7 @@ fun ChatScreen(navController: NavHostController, snackbarController: SnackbarCon
             }
         }
 
-        if (!isLoading && !showParticipantsView) {
+        if (!viewModel.isLoading && !showParticipantsView) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -466,28 +411,10 @@ private fun ChatParticipantItem(
     modifier: Modifier = Modifier
 ) {
     val dimens = rememberResponsiveDimens()
-    val chatRepository = remember { ChatRepository(FirebaseAuth.getInstance(), FirebaseStorage.getInstance(), FirebaseFirestore.getInstance()) }
-    var currentUserId by remember { mutableStateOf<String?>(null) }
-    var profilePictureUrl by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    //var isOnline by remember { mutableStateOf(participant.isOnline) }
+    val itemViewModel: ChatParticipantItemViewModel = hiltViewModel(key = participant.uid)
 
     LaunchedEffect(participant.uid) {
-        isLoading = true
-        try {
-            currentUserId = try {
-                chatRepository.getCurrentUserId()
-            } catch (e: Exception) {
-                null
-            }
-
-            profilePictureUrl = chatRepository.getUserProfilePicture(participant.uid)
-//            chatRepository.listenForUserStatus(participant.uid) { onlineStatus ->
-//                isOnline = onlineStatus
-//            }
-        } finally {
-            isLoading = false
-        }
+        itemViewModel.loadData(participant.uid)
     }
 
     Card(
@@ -522,15 +449,15 @@ private fun ChatParticipantItem(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isLoading) {
+                    if (itemViewModel.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             color = DefaultPrimary,
                             strokeWidth = 2.dp
                         )
-                    } else if (profilePictureUrl != null) {
+                    } else if (itemViewModel.profilePictureUrl != null) {
                         AsyncImage(
-                            model = profilePictureUrl,
+                            model = itemViewModel.profilePictureUrl,
                             contentDescription = "Profile picture",
                             modifier = Modifier
                                 .fillMaxSize()

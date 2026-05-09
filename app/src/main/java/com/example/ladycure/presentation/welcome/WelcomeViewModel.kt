@@ -184,4 +184,8 @@ class WelcomeViewModel @Inject constructor(
     fun resetAuthState() {
         authenticationSuccess = false
     }
+
+    fun signOut() {
+        authRepository.signOut()
+    }
 }

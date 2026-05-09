@@ -19,22 +19,18 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.ladycure.data.repository.UserRepository
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
 import com.example.ladycure.ui.theme.DefaultPrimary
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 sealed class Screen(
@@ -92,20 +88,12 @@ sealed class Screen(
 }
 
 @Composable
-fun BottomNavBar(navController: NavHostController) {
-    val userRepo = UserRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val userRole = remember { mutableStateOf<String?>(null) }
+fun BottomNavBar(navController: NavHostController, viewModel: BottomNavBarViewModel = hiltViewModel()) {
+    val userRole = viewModel.userRole
 
-    LaunchedEffect(Unit) {
-        val result = userRepo.getUserRole()
-        if (result.isSuccess) {
-            userRole.value = result.getOrNull()
-        }
-    }
-
-    val visibleItems = remember(userRole.value) {
+    val visibleItems = remember(userRole) {
         Screen.allScreens.filter { screen ->
-            screen.allowedRoles.contains(userRole.value)
+            screen.allowedRoles.contains(userRole)
         }
     }
 
@@ -138,7 +126,7 @@ fun BottomNavBar(navController: NavHostController) {
                 selected = currentRoute == screen.route ||
                         (screen == Screen.Home && currentRoute == "doctor_main"),
                 onClick = {
-                    val targetRoute = Screen.getRouteForRole(screen.route, userRole.value)
+                    val targetRoute = Screen.getRouteForRole(screen.route, userRole)
                     navController.navigate(targetRoute) {
                         popUpTo(navController.graph.startDestinationId) {
                             saveState = true

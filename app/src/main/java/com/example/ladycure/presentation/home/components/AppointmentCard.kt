@@ -47,11 +47,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.ladycure.R
-import com.example.ladycure.data.repository.AppointmentRepository
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.Appointment.Status
 import com.example.ladycure.domain.model.AppointmentSummary
@@ -83,13 +83,10 @@ import com.example.ladycure.ui.theme.Red
 import com.example.ladycure.ui.theme.Yellow
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.SnackbarController
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 
@@ -220,12 +217,31 @@ fun PatientAppointmentCard(
             }
         }
     }
-    val coroutineScope = rememberCoroutineScope()
-    val appointmentRepo = AppointmentRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+    val viewModel: AppointmentCardViewModel = hiltViewModel(key = appointment.appointmentId)
 
     val showDetailsDialog = remember { mutableStateOf(false) }
     var showCancelSuccessDialog by remember { mutableStateOf(false) }
-    var fullAppointment = remember { mutableStateOf<Appointment?>(null) }
+
+    LaunchedEffect(viewModel.error) {
+        if (viewModel.error != null) {
+            snackbarController.showMessage(viewModel.error!!)
+            viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(viewModel.cancelSuccess) {
+        if (viewModel.cancelSuccess) {
+            onAppointmentChanged(appointment.copy(status = Status.CANCELLED))
+            showCancelSuccessDialog = true
+            viewModel.clearCancelSuccess()
+        }
+    }
+
+    LaunchedEffect(viewModel.fullAppointment) {
+        if (viewModel.fullAppointment != null) {
+            showDetailsDialog.value = true
+        }
+    }
 
     Surface(
         modifier = Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp))
@@ -237,15 +253,7 @@ fun PatientAppointmentCard(
                 containerColor = Color.White.copy(alpha = 0.9f)
             ),
             onClick = {
-                coroutineScope.launch {
-                    val result = appointmentRepo.getAppointmentById(appointment.appointmentId)
-                    if (result.isSuccess) {
-                        fullAppointment.value = result.getOrNull()
-                        showDetailsDialog.value = true
-                    } else {
-                        snackbarController.showMessage("Failed to load appointment details.")
-                    }
-                }
+                viewModel.loadAppointment(appointment.appointmentId)
             }
 
         ) {
@@ -372,7 +380,7 @@ fun PatientAppointmentCard(
     }
 
     if (showDetailsDialog.value) {
-        if (fullAppointment.value == null) {
+        if (viewModel.isLoading || viewModel.fullAppointment == null) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -381,7 +389,7 @@ fun PatientAppointmentCard(
             }
         } else {
             ShowDetailsDialog(
-                appointment = fullAppointment.value!!,
+                appointment = viewModel.fullAppointment!!,
                 onDismiss = { showDetailsDialog.value = false },
                 onReschedule = {
                     showDetailsDialog.value = false
@@ -389,20 +397,7 @@ fun PatientAppointmentCard(
                 },
                 onCancel = {
                     showDetailsDialog.value = false
-                    coroutineScope.launch {
-                        val updatedAppointment =
-                            fullAppointment.value!!.copy(status = Status.CANCELLED)
-                        val updatedSummary = appointment.copy(status = Status.CANCELLED)
-                        val updateResult =
-                            appointmentRepo.cancelAppointment(updatedAppointment.appointmentId)
-
-                        if (updateResult.isSuccess) {
-                            onAppointmentChanged(updatedSummary)
-                            showCancelSuccessDialog = true
-                        } else {
-                            snackbarController.showMessage("Update failed: ${updateResult.exceptionOrNull()?.message}")
-                        }
-                    }
+                    viewModel.cancelAppointment(appointment.appointmentId)
                 }
             )
         }

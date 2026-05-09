@@ -42,7 +42,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,8 +60,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.R
-import com.example.ladycure.data.repository.DoctorRepository
-import com.example.ladycure.data.repository.StorageRepository
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Speciality
@@ -74,13 +72,6 @@ import com.example.ladycure.ui.theme.Yellow
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import com.example.ladycure.utility.PdfUploader
 import com.example.ladycure.utility.SnackbarController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 
 
 @Composable
@@ -89,85 +80,35 @@ fun SelectServiceScreen(
     snackbarController: SnackbarController?,
     doctorId: String?,
     city: String?,
-    speciality: Speciality?
+    speciality: Speciality?,
+    viewModel: SelectServiceViewModel = hiltViewModel()
 ) {
     val dimens = rememberResponsiveDimens()
-    var doctor by remember { mutableStateOf<Doctor?>(null) }
-    var speciality by remember { mutableStateOf<Speciality?>(speciality) }
-    val referralRepo = StorageRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance(), FirebaseStorage.getInstance())
-    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedService by remember { mutableStateOf<AppointmentType?>(null) }
+    val context = LocalContext.current
 
-    var isUploading by remember { mutableStateOf(false) }
-    var showUploadSuccessDialog by remember { mutableStateOf(false) }
-    var uploadProgress by remember { mutableFloatStateOf(0f) }
-    var referralId by remember { mutableStateOf<String?>(null) }
-    var tooLarge by remember { mutableStateOf(false) }
-    var context = LocalContext.current
+    val effectiveSpeciality = viewModel.doctor?.speciality ?: speciality
 
     val pdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
-            uri?.let {
-                CoroutineScope(Dispatchers.IO).launch {
-                    if (PdfUploader.isFileTooLarge(context, uri)) {
-                        tooLarge = true
-                        return@launch
-                    }
-
-                    try {
-                        withContext(Dispatchers.Main) {
-                            isUploading = true
-                            uploadProgress = 0f
-                        }
-
-                        val result = referralRepo.uploadReferralToFirestore(
-                            context = context,
-                            uri,
-                            selectedService
-                        ) { progress ->
-                            uploadProgress = progress.progress
-                        }
-
-                        withContext(Dispatchers.Main) {
-                            isUploading = false
-                            if (result.isSuccess) {
-                                referralId = result.getOrNull()
-                                showUploadSuccessDialog = true
-                            } else {
-                                snackbarController?.showMessage(
-                                    message = result.exceptionOrNull()?.message
-                                        ?: "Could not upload PDF"
-                                )
-                            }
-                        }
-                    } catch (e: Exception) {
-                        withContext(Dispatchers.Main) {
-                            isUploading = false
-                            snackbarController?.showMessage(
-                                message = e.message ?: "Upload failed"
-                            )
-                        }
-                    }
-                }
-            }
+            uri?.let { viewModel.uploadReferral(context, it, selectedService) }
         }
     )
 
+    LaunchedEffect(viewModel.error) {
+        if (viewModel.error != null) {
+            snackbarController?.showMessage(viewModel.error!!)
+            viewModel.clearError()
+        }
+    }
 
     if (doctorId != null) {
         LaunchedEffect(doctorId) {
-            val result = doctorRepo.getDoctorById(doctorId)
-            if (result.isSuccess) {
-                doctor = result.getOrNull()
-                speciality = doctor?.speciality
-            } else {
-                errorMessage = result.exceptionOrNull()?.message
-            }
+            viewModel.loadDoctor(doctorId)
         }
     }
-    if (speciality == null) {
+    if (effectiveSpeciality == null) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -178,19 +119,14 @@ fun SelectServiceScreen(
             Text("Loading services...", color = DefaultOnPrimary)
         }
     } else {
-        val services = remember(speciality) {
+        val services = remember(effectiveSpeciality) {
             AppointmentType.entries.filter {
-                it.speciality == speciality!!.displayName
+                it.speciality == effectiveSpeciality.displayName
             }
         }
 
         var showReferralDialog by remember { mutableStateOf(false) }
 
-        if (errorMessage != null) {
-            snackbarController?.showMessage(
-                message = errorMessage ?: "An error occurred"
-            )
-        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -219,7 +155,7 @@ fun SelectServiceScreen(
                 }
                 Spacer(modifier = Modifier.width(dimens.w(16 / 411f)))
                 Text(
-                    text = speciality!!.displayName,
+                    text = effectiveSpeciality.displayName,
                     style = MaterialTheme.typography.titleLarge,
                     color = DefaultOnPrimary,
                     fontWeight = FontWeight.Bold,
@@ -265,9 +201,9 @@ fun SelectServiceScreen(
             }
         }
 
-        if (tooLarge) {
+        if (viewModel.tooLarge) {
             FileTooLargeDialog(
-                onDismiss = { tooLarge = false },
+                onDismiss = { viewModel.clearTooLarge() },
             )
         }
 
@@ -290,7 +226,7 @@ fun SelectServiceScreen(
             )
         }
 
-        if (isUploading) {
+        if (viewModel.isUploading) {
             Dialog(onDismissRequest = {}) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
@@ -312,7 +248,7 @@ fun SelectServiceScreen(
                         )
 
                         LinearProgressIndicator(
-                            progress = { uploadProgress },
+                            progress = { viewModel.uploadProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp),
@@ -323,7 +259,7 @@ fun SelectServiceScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "${(uploadProgress * 100).toInt()}%",
+                            text = "${(viewModel.uploadProgress * 100).toInt()}%",
                             style = MaterialTheme.typography.bodyMedium,
                             color = DefaultOnPrimary
                         )
@@ -345,7 +281,7 @@ fun SelectServiceScreen(
             }
         }
 
-        if (showUploadSuccessDialog) {
+        if (viewModel.showUploadSuccessDialog) {
             Dialog(onDismissRequest = {/* do nothing */ }) { // we dont want them to go back
                 Card(
                     shape = RoundedCornerShape(16.dp),
@@ -381,11 +317,11 @@ fun SelectServiceScreen(
                         Spacer(modifier = Modifier.height(dimens.h(24 / 914f)))
                         Button(
                             onClick = {
-                                showUploadSuccessDialog = false
+                                viewModel.clearUploadSuccess()
                                 if (city != null && doctorId == null) {
-                                    navController.navigate("book_appointment/$city/${selectedService!!.displayName}/${referralId}")
+                                    navController.navigate("book_appointment/$city/${selectedService!!.displayName}/${viewModel.referralId}")
                                 } else {
-                                    navController.navigate("book_appointment_dir/${doctorId}/${selectedService!!.displayName}/${referralId}")
+                                    navController.navigate("book_appointment_dir/${doctorId}/${selectedService!!.displayName}/${viewModel.referralId}")
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(

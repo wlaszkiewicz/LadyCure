@@ -56,9 +56,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.ladycure.data.repository.AuthRepository
-import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.DoctorAvailability
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultPrimary
@@ -71,8 +70,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 @Composable
@@ -80,19 +77,11 @@ fun AvailabilityListScreen(
     navController: NavController,
     snackbarController: SnackbarController,
     isAdminView: Boolean = false,
-    doctorId: String? = null
+    doctorId: String? = null,
+    viewModel: AvailabilityListViewModel = hiltViewModel()
 ) {
-    val existingAvailabilities = remember { mutableStateOf<List<DoctorAvailability>>(emptyList()) }
-    val doctorRepo = DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val isLoading = remember { mutableStateOf(false) }
     val currentMonth = remember { LocalDate.now().withDayOfMonth(1) }
     var chosenMonth by remember { mutableStateOf(currentMonth) }
-    var availabilitiesInMonth by remember {
-        mutableStateOf<Map<LocalDate?, List<DoctorAvailability>>>(
-            emptyMap()
-        )
-    }
 
     val effectiveDoctorId = if (isAdminView) {
         doctorId ?: run {
@@ -103,7 +92,7 @@ fun AvailabilityListScreen(
             return
         }
     } else {
-        authRepo.getCurrentUserId() ?: run {
+        viewModel.getCurrentUserId() ?: run {
             LaunchedEffect(Unit) {
                 snackbarController.showMessage("User not logged in")
                 navController.popBackStack()
@@ -112,7 +101,7 @@ fun AvailabilityListScreen(
         }
     }
 
-    availabilitiesInMonth = existingAvailabilities.value.filter { availability ->
+    val availabilitiesInMonth = viewModel.availabilities.filter { availability ->
         val date = availability.date
         val today = LocalDate.now()
         date != null && date.isAfter(today.minusDays(1)) &&
@@ -121,18 +110,13 @@ fun AvailabilityListScreen(
     }.groupBy { it.date }
 
     LaunchedEffect(effectiveDoctorId) {
-        isLoading.value = true
-        try {
-            val result = doctorRepo.getDoctorAvailability(effectiveDoctorId)
-            if (result.isSuccess) {
-                existingAvailabilities.value = result.getOrThrow()
-            } else {
-                snackbarController.showMessage("Error loading availability data")
-            }
-        } catch (e: Exception) {
-            snackbarController.showMessage("Error: ${e.message}")
-        } finally {
-            isLoading.value = false
+        viewModel.loadAvailability(effectiveDoctorId)
+    }
+
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let {
+            snackbarController.showMessage(it)
+            viewModel.clearError()
         }
     }
 
@@ -167,7 +151,7 @@ fun AvailabilityListScreen(
             )
         }
 
-        if (isLoading.value) {
+        if (viewModel.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = DefaultPrimary)
             }

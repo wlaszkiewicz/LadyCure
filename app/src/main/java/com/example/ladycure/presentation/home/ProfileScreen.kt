@@ -80,97 +80,32 @@ import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import com.example.ladycure.R
-import com.example.ladycure.data.repository.AuthRepository
-import com.example.ladycure.data.repository.DoctorRepository
-import com.example.ladycure.data.repository.UserRepository
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ladycure.domain.model.Speciality
 import com.example.ladycure.presentation.register.components.DatePickerButton
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
 import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
-import com.example.ladycure.utility.ImageUploader
 import com.example.ladycure.utility.rememberImagePickerLauncher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
+fun ProfileScreen(
+    navController: NavHostController,
+    viewModel: ProfileViewModel = hiltViewModel()
+) {
     val dimens = rememberResponsiveDimens()
-    val context = LocalContext.current
-    val userRepo = UserRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    val doctorRepo = remember { DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
-    val imageUploader = remember { ImageUploader(context) }
-    val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     var showAccountSettingsDialog by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
     var showNotifications by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    var currentImageUrl by remember {
-        mutableStateOf(
-            userData.value?.get("profilePictureUrl") ?: ""
-        )
-    }
 
-    var imageUri: Uri? by remember { mutableStateOf(null) }
     val imagePickerLauncher = rememberImagePickerLauncher { uri ->
-        imageUri = uri
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val userId = authRepo.getCurrentUserId() ?: return@launch
-                imageUploader.uploadImage(uri, userId).fold(
-                    onSuccess = { downloadUrl ->
-                        userRepo.updateProfilePicture(downloadUrl)
-                        currentImageUrl = downloadUrl
-                        val role = userData.value?.get("role") as? String
-                        if (role == "doctor") {
-                            userRepo.updateProfilePicture(downloadUrl)
-                            userData.value = doctorRepo.getCurrentDoctorData().getOrNull()
-                        } else {
-                            userData.value = userRepo.getCurrentUserData().getOrNull()
-                        }
-                        errorMessage = ""
-                    },
-                    onFailure = { e ->
-                        errorMessage = "Failed to update profile picture: ${e.message}"
-                    }
-                )
-            } catch (e: Exception) {
-                errorMessage = "Error: ${e.message}"
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        val userResult = userRepo.getCurrentUserData()
-        if (userResult.isFailure) {
-            errorMessage = "Failed to load user data: ${userResult.exceptionOrNull()?.message}"
-            return@LaunchedEffect
-        }
-
-        val user = userResult.getOrNull() ?: return@LaunchedEffect
-        val role = user["role"] as? String
-
-        if (role == "doctor") {
-            val doctorResult = doctorRepo.getCurrentDoctorData()
-            if (doctorResult.isFailure) {
-                errorMessage =
-                    "Failed to load doctor data: ${doctorResult.exceptionOrNull()?.message}"
-            } else {
-                userData.value = doctorResult.getOrNull()
-            }
-        } else {
-            userData.value = user
-        }
+        viewModel.uploadProfilePicture(uri)
     }
 
     Column(
@@ -198,7 +133,7 @@ fun ProfileScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(dimens.h(32 / 914f)))
 
-        if (userData.value == null) {
+        if (viewModel.userData == null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -230,7 +165,6 @@ fun ProfileScreen(navController: NavHostController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    currentImageUrl = userData.value?.get("profilePictureUrl") ?: ""
                     Box(
                         modifier = Modifier
                             .size(dimens.w(150 / 411f))
@@ -243,9 +177,9 @@ fun ProfileScreen(navController: NavHostController) {
                         contentAlignment = Alignment.Center
                     ) {
                         when {
-                            currentImageUrl != "" -> {
+                            viewModel.currentImageUrl != "" -> {
                                 SubcomposeAsyncImage(
-                                    model = currentImageUrl,
+                                    model = viewModel.currentImageUrl,
                                     contentDescription = "Profile Picture",
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -283,7 +217,7 @@ fun ProfileScreen(navController: NavHostController) {
 
                     Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
 
-                    userData.value?.let { user ->
+                    viewModel.userData?.let { user ->
                         Text(
                             text = "${user["name"]} ${user["surname"]}",
                             style = MaterialTheme.typography.headlineMedium,
@@ -324,7 +258,10 @@ fun ProfileScreen(navController: NavHostController) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = { logOut(navController) },
+                    onClick = {
+                        viewModel.signOut()
+                        navController.navigate("welcome") { popUpTo(0) }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DefaultPrimary.copy(alpha = 0.8f),
@@ -335,9 +272,9 @@ fun ProfileScreen(navController: NavHostController) {
                     Text("Sign Out")
                 }
 
-                if (errorMessage.isNotEmpty()) {
+                if (viewModel.errorMessage.isNotEmpty()) {
                     Text(
-                        text = errorMessage,
+                        text = viewModel.errorMessage,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Red,
                         modifier = Modifier.padding(vertical = 8.dp)
@@ -349,26 +286,14 @@ fun ProfileScreen(navController: NavHostController) {
 
     if (showAccountSettingsDialog) {
         AccountSettingsDialog(
-            userData = userData.value,
+            userData = viewModel.userData,
             onDismiss = { showAccountSettingsDialog = false },
             onSave = { updatedData ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    val role = userData.value?.get("role") as? String
-                    if (role == "doctor") {
-                        userData.value = doctorRepo.getCurrentDoctorData().getOrNull() ?: emptyMap()
-                    } else {
-                        val result = userRepo.updateUserData(updatedData)
-                        if (result.isSuccess) {
-                            userData.value = result.getOrNull() ?: emptyMap()
-                        } else {
-                            errorMessage =
-                                "Failed to update user data: ${result.exceptionOrNull()?.message}"
-                        }
-                    }
-                    showAccountSettingsDialog = false
-                }
+                showAccountSettingsDialog = false
+                viewModel.updateUserData(updatedData)
             },
-            role = userData.value?.get("role") as? String
+            role = viewModel.userData?.get("role") as? String,
+            onSaveDoctorProfile = { viewModel.saveDoctorProfile(it) }
         )
     }
 
@@ -534,18 +459,16 @@ fun AccountSettingsDialog(
     userData: Map<String, Any>?,
     onDismiss: () -> Unit,
     onSave: (Map<String, String>) -> Unit,
-    role: String? = null
+    role: String? = null,
+    onSaveDoctorProfile: ((Map<String, Any>) -> Unit)? = null
 ) {
-    val doctorRepo = remember { DoctorRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
     when (role) {
         "doctor" -> DoctorAccountSettingsDialog(
             userData = userData,
             onDismiss = onDismiss,
             onSave = { updatedData ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    doctorRepo.updateDoctorProfile(updatedData as Map<String, Any>)
-                    onSave(updatedData.mapValues { it.value.toString() })
-                }
+                onSaveDoctorProfile?.invoke(updatedData as Map<String, Any>)
+                onSave(updatedData.mapValues { it.value.toString() })
             }
         )
 
@@ -1531,11 +1454,6 @@ fun RegularAccountSettingsDialog(
     }
 }
 
-fun logOut(navController: NavHostController) {
-    val authRepo = AuthRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    authRepo.signOut()
-    navController.navigate("welcome") { popUpTo(0) }
-}
 
 private fun isValidEmail(email: String): Boolean {
     return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()

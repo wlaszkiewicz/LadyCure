@@ -39,13 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.ladycure.presentation.welcome.WelcomeViewModel
 import com.example.ladycure.R
 import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.auth
 
 @Composable
 fun WelcomeScreen(navController: NavController) {
@@ -91,7 +88,7 @@ fun WelcomeScreen(navController: NavController) {
             LoggedInWelcomeScreen(
                 user = viewModel.currentUser!!,
                 onContinue = { viewModel.authenticateWithBiometrics(context) },
-                onUseDifferentAccount = { Firebase.auth.signOut() }
+                onUseDifferentAccount = { viewModel.signOut() }
             )
         } else {
             LaunchedEffect(Unit) {

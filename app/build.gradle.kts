@@ -132,7 +132,7 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:2.56.2")
 
     implementation("androidx.hilt:hilt-navigation-fragment:1.0.0")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 }
 
 apply(plugin = "com.google.gms.google-services")

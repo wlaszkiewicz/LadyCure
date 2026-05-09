@@ -1,6 +1,5 @@
 package com.example.ladycure.presentation.home
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
@@ -64,10 +63,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,7 +81,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.ladycure.R
-import com.example.ladycure.data.repository.PeriodTrackerRepository
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ladycure.ui.theme.DarkMagenta
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
@@ -92,15 +89,12 @@ import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.LavenderBlush
 import com.example.ladycure.ui.theme.Lilac
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
-import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.max
 import kotlin.math.min
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 
 data class DailyPeriodData(
@@ -157,81 +151,43 @@ fun getPredictedOvulationDates(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PeriodTrackerScreen(navController: NavHostController) {
+fun PeriodTrackerScreen(
+    navController: NavHostController,
+    viewModel: PeriodTrackerViewModel = hiltViewModel()
+) {
     val dimens = rememberResponsiveDimens()
-    val periodTrackerRepository = remember { PeriodTrackerRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance()) }
-    val scope = rememberCoroutineScope()
     var currentMonth by remember { mutableStateOf(LocalDate.now()) }
-    var periodSettings by remember { mutableStateOf(PeriodTrackerSettings()) }
-    val dailyDataMap = remember { mutableStateMapOf<LocalDate, DailyPeriodData>() }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showDailyDetailDialog by remember { mutableStateOf(false) }
     var selectedDateForDetail by remember { mutableStateOf<LocalDate?>(null) }
     var showDailySummarySheet by remember { mutableStateOf(false) }
     var selectedDateForSummary by remember { mutableStateOf<LocalDate?>(null) }
 
-    LaunchedEffect(Unit) {
-
-        periodTrackerRepository.getPeriodTrackerSettings().onSuccess { settings ->
-            periodSettings = settings
-            Log.d("PeriodTrackerScreen", "Loaded settings: $settings")
-        }.onFailure { e ->
-            Log.e("PeriodTrackerScreen", "Failed to load settings: ${e.message}")
-        }
-
-        periodTrackerRepository.getDailyPeriodDataForMonth(currentMonth).onSuccess { data ->
-            dailyDataMap.clear()
-            dailyDataMap.putAll(data)
-            Log.d(
-                "PeriodTrackerScreen",
-                "Loaded daily data for ${currentMonth.month}: ${data.size} entries"
-            )
-        }.onFailure { e ->
-            Log.e(
-                "PeriodTrackerScreen",
-                "Failed to load daily data for ${currentMonth.month}: ${e.message}"
-            )
-        }
-    }
-
-
     LaunchedEffect(currentMonth) {
-        periodTrackerRepository.getDailyPeriodDataForMonth(currentMonth).onSuccess { data ->
-            dailyDataMap.clear()
-            dailyDataMap.putAll(data)
-            Log.d(
-                "PeriodTrackerScreen",
-                "Reloaded daily data for ${currentMonth.month}: ${data.size} entries"
-            )
-        }.onFailure { e ->
-            Log.e(
-                "PeriodTrackerScreen",
-                "Failed to reload daily data for ${currentMonth.month}: ${e.message}"
-            )
-        }
+        viewModel.loadMonthData(currentMonth)
     }
 
 
     val predictedPeriodStarts by remember(
-        periodSettings.lastPeriodStartDate,
-        periodSettings.averageCycleLength
+        viewModel.periodSettings.lastPeriodStartDate,
+        viewModel.periodSettings.averageCycleLength
     ) {
         mutableStateOf(
             getPredictedPeriodStartDates(
-                periodSettings.lastPeriodStartDate,
-                periodSettings.averageCycleLength
+                viewModel.periodSettings.lastPeriodStartDate,
+                viewModel.periodSettings.averageCycleLength
             )
         )
     }
 
     val predictedOvulationDays by remember(
-        periodSettings.lastPeriodStartDate,
-        periodSettings.averageCycleLength
+        viewModel.periodSettings.lastPeriodStartDate,
+        viewModel.periodSettings.averageCycleLength
     ) {
         mutableStateOf(
             getPredictedOvulationDates(
-                periodSettings.lastPeriodStartDate,
-                periodSettings.averageCycleLength
+                viewModel.periodSettings.lastPeriodStartDate,
+                viewModel.periodSettings.averageCycleLength
             )
         )
     }
@@ -292,13 +248,13 @@ fun PeriodTrackerScreen(navController: NavHostController) {
 
                         CalendarGrid(
                             currentMonth = currentMonth,
-                            periodSettings = periodSettings,
-                            dailyDataMap = dailyDataMap,
+                            periodSettings = viewModel.periodSettings,
+                            dailyDataMap = viewModel.dailyDataMap,
                             predictedPeriodStarts = predictedPeriodStarts,
                             predictedOvulationDays = predictedOvulationDays,
                             onDayClick = { date ->
                                 selectedDateForDetail = date
-                                val dailyData = dailyDataMap[date]
+                                val dailyData = viewModel.dailyDataMap[date]
                                 if (dailyData?.isPeriodDay == true || dailyData?.notes?.isNotBlank() == true ||
                                     dailyData?.moodEmoji != null || dailyData?.symptoms?.isNotEmpty() == true ||
                                     dailyData?.flowIntensity != null
@@ -320,21 +276,10 @@ fun PeriodTrackerScreen(navController: NavHostController) {
 
             if (showSettingsDialog) {
                 SettingsDialog(
-                    currentSettings = periodSettings,
+                    currentSettings = viewModel.periodSettings,
                     onSave = { newSettings ->
                         showSettingsDialog = false
-                        periodSettings = newSettings
-                        scope.launch {
-                            periodTrackerRepository.savePeriodTrackerSettings(newSettings)
-                                .onSuccess {
-                                    Log.d("PeriodTrackerScreen", "Settings saved successfully.")
-                                }.onFailure { e ->
-                                    Log.e(
-                                        "PeriodTrackerScreen",
-                                        "Failed to save settings: ${e.message}"
-                                    )
-                                }
-                        }
+                        viewModel.saveSettings(newSettings)
                     },
                     onCancel = { showSettingsDialog = false }
                 )
@@ -343,25 +288,12 @@ fun PeriodTrackerScreen(navController: NavHostController) {
             if (showDailyDetailDialog && selectedDateForDetail != null) {
                 DailyDetailDialog(
                     date = selectedDateForDetail!!,
-                    initialDailyData = dailyDataMap[selectedDateForDetail] ?: DailyPeriodData(
+                    initialDailyData = viewModel.dailyDataMap[selectedDateForDetail] ?: DailyPeriodData(
                         selectedDateForDetail!!
                     ),
                     onSave = { updatedData ->
                         showDailyDetailDialog = false
-                        dailyDataMap[updatedData.date] = updatedData
-                        scope.launch {
-                            periodTrackerRepository.saveDailyPeriodData(updatedData).onSuccess {
-                                Log.d(
-                                    "PeriodTrackerScreen",
-                                    "Daily data saved successfully for ${updatedData.date}."
-                                )
-                            }.onFailure { e ->
-                                Log.e(
-                                    "PeriodTrackerScreen",
-                                    "Failed to save daily data: ${e.message}"
-                                )
-                            }
-                        }
+                        viewModel.saveDailyData(updatedData)
                     },
                     onCancel = { showDailyDetailDialog = false }
                 )
@@ -379,7 +311,7 @@ fun PeriodTrackerScreen(navController: NavHostController) {
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                 ) {
                     selectedDateForSummary?.let { date ->
-                        val dailyData = dailyDataMap[date] ?: DailyPeriodData(date)
+                        val dailyData = viewModel.dailyDataMap[date] ?: DailyPeriodData(date)
                         DailySummarySheet(
                             date = date,
                             dailyData = dailyData,
