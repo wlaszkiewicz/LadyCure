@@ -1,4 +1,4 @@
-package com.example.ladycure.presentation.home
+package com.example.ladycure.presentation.home.components.periodtracker
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.example.ladycure.domain.model.PeriodTrackerSettings
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultOnPrimary
 import com.example.ladycure.ui.theme.DefaultPrimary

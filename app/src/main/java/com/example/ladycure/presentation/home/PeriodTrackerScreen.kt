@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,26 +43,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.ladycure.domain.model.DailyPeriodData
+import com.example.ladycure.domain.model.PeriodTrackerSettings
+import com.example.ladycure.presentation.home.components.periodtracker.SettingsDialog
 import com.example.ladycure.ui.theme.DefaultBackground
 import com.example.ladycure.ui.theme.DefaultPrimary
 import com.example.ladycure.ui.theme.rememberResponsiveDimens
 import java.time.LocalDate
 
-
-data class DailyPeriodData(
-    val date: LocalDate,
-    var isPeriodDay: Boolean = false,
-    var notes: String = "",
-    var moodEmoji: String? = null,
-    var flowIntensity: String? = null,
-    var symptoms: List<String> = emptyList()
-)
-
-data class PeriodTrackerSettings(
-    val averagePeriodLength: Int = 5,
-    val averageCycleLength: Int = 28,
-    val lastPeriodStartDate: LocalDate? = null
-)
 
 fun getPredictedPeriodStartDates(
     lastPeriodStartDate: LocalDate?,
@@ -146,6 +135,8 @@ fun PeriodTrackerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                modifier = Modifier
+                    .offset(y = (-20).dp),
                 title = {
                     Text(
                         "Period Tracker",
@@ -179,8 +170,7 @@ fun PeriodTrackerScreen(
             ) {
                 MonthNavigationHeader(currentMonth, onMonthChange = { currentMonth = it })
 
-                Spacer(modifier = Modifier.height(dimens.h(16 / 914f)))
-
+                Spacer(modifier = Modifier.height(dimens.h(8 / 914f)))
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -228,7 +218,7 @@ fun PeriodTrackerScreen(
             if (showSettingsDialog) {
                 SettingsDialog(
                     currentSettings = viewModel.periodSettings,
-                    onSave = { newSettings ->
+                    onSave = { newSettings: PeriodTrackerSettings ->
                         showSettingsDialog = false
                         viewModel.saveSettings(newSettings)
                     },
@@ -239,10 +229,11 @@ fun PeriodTrackerScreen(
             if (showDailyDetailDialog && selectedDateForDetail != null) {
                 DailyDetailDialog(
                     date = selectedDateForDetail!!,
-                    initialDailyData = viewModel.dailyDataMap[selectedDateForDetail] ?: DailyPeriodData(
-                        selectedDateForDetail!!
-                    ),
-                    onSave = { updatedData ->
+                    initialDailyData = viewModel.dailyDataMap[selectedDateForDetail]
+                        ?: DailyPeriodData(
+                            selectedDateForDetail!!
+                        ),
+                    onSave = { updatedData: DailyPeriodData ->
                         showDailyDetailDialog = false
                         viewModel.saveDailyData(updatedData)
                     },
@@ -268,7 +259,7 @@ fun PeriodTrackerScreen(
                             dailyData = dailyData,
                             onEdit = {
                                 showDailySummarySheet = false
-                                selectedDateForDetail = it
+                                selectedDateForDetail = date
                                 showDailyDetailDialog = true
                             },
                             onClose = { showDailySummarySheet = false }

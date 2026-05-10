@@ -1,16 +1,16 @@
 package com.example.ladycure.data.repository
 
 import android.util.Log
-import com.example.ladycure.presentation.home.DailyPeriodData
-import com.example.ladycure.presentation.home.PeriodTrackerSettings
+import com.example.ladycure.domain.model.DailyPeriodData
+import com.example.ladycure.domain.model.PeriodTrackerSettings
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-import javax.inject.Singleton
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class PeriodTrackerRepository @Inject constructor(
@@ -75,7 +75,8 @@ class PeriodTrackerRepository @Inject constructor(
                 @Suppress("UNCHECKED_CAST")
                 val symptoms = documentSnapshot.get("symptoms") as? List<String> ?: emptyList()
 
-                val dailyData = DailyPeriodData(date, isPeriodDay, notes, moodEmoji, flowIntensity, symptoms)
+                val dailyData =
+                    DailyPeriodData(date, isPeriodDay, notes, moodEmoji, flowIntensity, symptoms)
                 Log.d("PeriodTrackerRepository", "Daily period data fetched for $date: $dailyData")
                 Result.success(dailyData)
             } else {
@@ -178,16 +179,26 @@ class PeriodTrackerRepository @Inject constructor(
             val documentSnapshot = docRef.get().await()
 
             if (documentSnapshot.exists()) {
-                val averagePeriodLength = documentSnapshot.getLong("averagePeriodLength")?.toInt() ?: 5
-                val averageCycleLength = documentSnapshot.getLong("averageCycleLength")?.toInt() ?: 28
+                val averagePeriodLength =
+                    documentSnapshot.getLong("averagePeriodLength")?.toInt() ?: 5
+                val averageCycleLength =
+                    documentSnapshot.getLong("averageCycleLength")?.toInt() ?: 28
                 val lastPeriodStartDateString = documentSnapshot.getString("lastPeriodStartDate")
-                val lastPeriodStartDate = lastPeriodStartDateString?.let { LocalDate.parse(it, dateFormatter) }
+                val lastPeriodStartDate =
+                    lastPeriodStartDateString?.let { LocalDate.parse(it, dateFormatter) }
 
-                val settings = PeriodTrackerSettings(averagePeriodLength, averageCycleLength, lastPeriodStartDate)
+                val settings = PeriodTrackerSettings(
+                    averagePeriodLength,
+                    averageCycleLength,
+                    lastPeriodStartDate
+                )
                 Log.d("PeriodTrackerRepository", "Period tracker settings fetched: $settings")
                 Result.success(settings)
             } else {
-                Log.d("PeriodTrackerRepository", "No period tracker settings found, returning default.")
+                Log.d(
+                    "PeriodTrackerRepository",
+                    "No period tracker settings found, returning default."
+                )
                 Result.success(PeriodTrackerSettings())
             }
         } catch (e: Exception) {
