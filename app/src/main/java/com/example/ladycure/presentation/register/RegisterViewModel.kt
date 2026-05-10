@@ -1,7 +1,5 @@
 package com.example.ladycure.presentation.register
 
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import android.util.Patterns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,9 +7,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.ladycure.domain.RegisterUseCase
+import com.example.ladycure.domain.usecase.RegisterUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(

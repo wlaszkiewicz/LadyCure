@@ -10,7 +10,7 @@ import com.example.ladycure.data.repository.ChatRepository
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Message
-import com.google.firebase.Timestamp
+import com.example.ladycure.domain.usecase.SendMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DoctorChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
-    private val doctorRepository: DoctorRepository
+    private val doctorRepository: DoctorRepository,
+    private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
 
     val currentUserId: String = chatRepository.getCurrentUserId()
@@ -84,26 +85,18 @@ class DoctorChatViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             isSending = true
-            try {
-                val userName = chatRepository.getCurrentUserName()
-                val message = Message(
-                    sender = currentUserId,
-                    senderName = userName,
-                    recipient = otherUserId,
-                    text = text,
-                    timestamp = Timestamp.now(),
-                    attachmentUrl = if (attachmentUri != null) {
-                        chatRepository.uploadFile(attachmentUri)
-                    } else null,
-                    attachmentFileName = attachmentFileName,
-                    attachmentMimeType = attachmentMimeType
-                )
-                chatRepository.sendMessage(chatId, message)
-            } catch (e: Exception) {
-                error = "Message could not be sent: ${e.message}"
-            } finally {
-                isSending = false
+            val result = sendMessageUseCase(
+                chatId = chatId,
+                text = text,
+                attachmentUri = attachmentUri,
+                attachmentFileName = attachmentFileName,
+                attachmentMimeType = attachmentMimeType,
+                otherUserId = otherUserId
+            )
+            if (result.isFailure) {
+                error = "Message could not be sent: ${result.exceptionOrNull()?.message}"
             }
+            isSending = false
         }
     }
 
