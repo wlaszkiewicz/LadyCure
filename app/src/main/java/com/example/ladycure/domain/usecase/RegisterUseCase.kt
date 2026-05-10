@@ -1,4 +1,4 @@
-package com.example.ladycure.domain
+package com.example.ladycure.domain.usecase
 
 import com.example.ladycure.data.repository.AuthRepository
 import javax.inject.Inject

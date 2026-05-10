@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ladycure.data.repository.PeriodTrackerRepository
+import com.example.ladycure.domain.model.DailyPeriodData
+import com.example.ladycure.domain.model.PeriodTrackerSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate

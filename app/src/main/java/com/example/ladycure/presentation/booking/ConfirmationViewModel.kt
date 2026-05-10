@@ -9,15 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ladycure.data.repository.AppointmentRepository
-import com.example.ladycure.data.repository.AuthRepository
 import com.example.ladycure.data.repository.DoctorRepository
 import com.example.ladycure.data.repository.StorageRepository
 import com.example.ladycure.data.repository.UserRepository
-import com.example.ladycure.domain.model.Appointment
 import com.example.ladycure.domain.model.AppointmentType
 import com.example.ladycure.domain.model.Doctor
 import com.example.ladycure.domain.model.Referral
+import com.example.ladycure.domain.usecase.BookAppointmentUseCase
 import com.example.ladycure.utility.PdfUploader
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.Dispatchers
@@ -30,10 +28,9 @@ import java.util.Locale
 @HiltViewModel
 class ConfirmationViewModel @Inject constructor(
     private val userRepo: UserRepository,
-    private val authRepo: AuthRepository,
     private val doctorRepo: DoctorRepository,
-    private val appointmentRepo: AppointmentRepository,
-    private val referralRepo: StorageRepository
+    private val referralRepo: StorageRepository,
+    private val bookAppointmentUseCase: BookAppointmentUseCase
 ) : ViewModel() {
 
     var doctorInfo by mutableStateOf<Map<String, Any>?>(null)
@@ -159,41 +156,20 @@ class ConfirmationViewModel @Inject constructor(
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            try {
-                val appointment = createAppointment(doctorId, timestamp, appointmentType)
-                val result = withContext(Dispatchers.IO) {
-                    appointmentRepo.bookAppointment(appointment)
-                }
-                if (result.isSuccess) {
-                    onSuccess(result.getOrNull() ?: "")
-                } else {
-                    onError("Failed to book appointment: ${result.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                onError("Error: ${e.message}")
+            val result = withContext(Dispatchers.IO) {
+                bookAppointmentUseCase(
+                    doctorId = doctorId,
+                    timestamp = timestamp,
+                    appointmentType = appointmentType,
+                    doctorInfo = doctorInfo ?: emptyMap()
+                )
+            }
+            if (result.isSuccess) {
+                onSuccess(result.getOrNull() ?: "")
+            } else {
+                onError("Failed to book appointment: ${result.exceptionOrNull()?.message}")
             }
         }
-    }
-
-    private fun createAppointment(
-        doctorId: String,
-        timestamp: Timestamp,
-        appointmentType: AppointmentType
-    ): Appointment {
-        return Appointment(
-            appointmentId = "",
-            doctorId = doctorId,
-            dateTime = timestamp,
-            patientId = authRepo.getCurrentUserId().toString(),
-            status = Appointment.Status.PENDING,
-            type = appointmentType,
-            price = appointmentType.price,
-            address = doctorInfo?.get("address") as? String ?: "Address unavailable",
-            doctorName = (doctorInfo?.get("name") as? String + " " +
-                    doctorInfo?.get("surname") as? String),
-            patientName = userName,
-            comments = "",
-        )
     }
 
     val formattedDate: String

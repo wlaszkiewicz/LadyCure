@@ -101,7 +101,7 @@ com.example.ladycure/
 │       └── ...
 ├── domain/
 │   ├── model/               # Domain models (Appointment, Doctor, Message...)
-│   └── RegisterUseCase      # Business logic use cases
+│   └── usecase/             # Business logic use cases
 ├── presentation/            # UI layer
 │   ├── admin/               # Admin screens + ViewModels
 │   ├── booking/             # Full booking flow + ViewModels
